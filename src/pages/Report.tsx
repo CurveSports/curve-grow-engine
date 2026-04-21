@@ -384,11 +384,6 @@ export default function Report() {
           <div className="curve-card border-l-4 border-l-accent p-8">
             <p className="curve-eyebrow mb-3">Assessment Summary</p>
             <p className="text-base leading-relaxed text-foreground/90" style={{ fontSize: "16px" }}>{data.diagnosis_text}</p>
-            {Number(data.apparel_profit) > 0 && (
-              <p className="text-sm text-muted-foreground mt-4">
-                Current estimated apparel profit: {formatCurrency(data.apparel_profit)} based on reported margin.
-              </p>
-            )}
           </div>
         </section>
 
@@ -400,14 +395,41 @@ export default function Report() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <EngineCard name="Pricing" score={data.pricing_score} low={data.pricing_opportunity_low} high={data.pricing_opportunity_high} />
             <EngineCard name="Sponsorship" score={data.sponsorship_score} low={data.sponsorship_opportunity_low} high={data.sponsorship_opportunity_high} />
-            <EngineCard name="Apparel" score={data.apparel_score} low={data.apparel_opportunity_low} high={data.apparel_opportunity_high} />
+            <EngineCard
+              name="Apparel"
+              score={data.apparel_score}
+              low={data.apparel_opportunity_low}
+              high={data.apparel_opportunity_high}
+              opportunityLabel="Apparel Margin Opportunity"
+              subtext="Estimated additional annual margin from uniform markup improvement and hard goods wallet recapture"
+            />
             <EngineCard name="Events" score={data.event_score} low={data.event_opportunity_low} high={data.event_opportunity_high} />
-            <EngineCard name="Add-Ons" score={data.addon_score} low={data.addon_opportunity_low} high={data.addon_opportunity_high} />
-            <EngineCard name="Retention" score={data.retention_score} low={data.retention_opportunity_low} high={data.retention_opportunity_high} />
+            {isFacilityOrg ? (
+              <AddOnsFacilityNote />
+            ) : (
+              <EngineCard
+                name="Add-Ons — Remote Training"
+                score={data.addon_score}
+                low={data.addon_opportunity_low}
+                high={data.addon_opportunity_high}
+                subtext="Based on $100/month remote training package at 10% player adoption"
+              />
+            )}
+            <RetentionCard
+              score={Number(data.retention_score)}
+              health={String(data.retention_health ?? "Healthy")}
+              retentionPct={Number(intake?.retention_pct ?? 0)}
+              revenueProtectedPerPct={Number(data.revenue_protected_per_pct ?? 0)}
+              referralLow={Number(data.retention_referral_opportunity_low ?? 0)}
+              referralHigh={Number(data.retention_referral_opportunity_high ?? 0)}
+            />
             {isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined && (
               <EngineCard name="Facility" score={data.facility_score} low={data.facility_opportunity_low ?? 0} high={data.facility_opportunity_high ?? 0} />
             )}
           </div>
+          <p className="text-xs text-muted-foreground mt-4 italic">
+            All organizations should have a formal retention and referral plan in place.
+          </p>
         </section>
 
         <SectionDivider />
@@ -426,17 +448,19 @@ export default function Report() {
                 </tr>
               </thead>
               <tbody>
-                {([
+                {(([
                   ["Pricing", data.pricing_opportunity_low, data.pricing_opportunity_high, data.pricing_score],
                   ["Sponsorship", data.sponsorship_opportunity_low, data.sponsorship_opportunity_high, data.sponsorship_score],
-                  ["Apparel", data.apparel_opportunity_low, data.apparel_opportunity_high, data.apparel_score],
+                  ["Apparel Margin", data.apparel_opportunity_low, data.apparel_opportunity_high, data.apparel_score],
                   ["Events", data.event_opportunity_low, data.event_opportunity_high, data.event_score],
-                  ["Add-Ons", data.addon_opportunity_low, data.addon_opportunity_high, data.addon_score],
-                  ["Retention", data.retention_opportunity_low, data.retention_opportunity_high, data.retention_score],
+                  ...(!isFacilityOrg
+                    ? [["Add-Ons (Remote Training)", data.addon_opportunity_low, data.addon_opportunity_high, data.addon_score]]
+                    : []),
+                  ["Retention", data.retention_referral_opportunity_low ?? data.retention_opportunity_low, data.retention_referral_opportunity_high ?? data.retention_opportunity_high, data.retention_score],
                   ...(isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined
                     ? [["Facility", data.facility_opportunity_low ?? 0, data.facility_opportunity_high ?? 0, data.facility_score]]
                     : []),
-                ] as Array<[string, number, number, number]>).map(([n, lo, hi, s], idx) => (
+                ]) as Array<[string, number, number, number]>).map(([n, lo, hi, s], idx) => (
                   <tr key={n as string} className={idx % 2 === 1 ? "bg-muted/30" : ""}>
                     <td className="px-5 py-3 font-medium">{n}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(lo as number)}</td>
