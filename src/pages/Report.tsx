@@ -226,14 +226,26 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
     opportunityComponents.push({ name: "Affiliate", low: Number(data.affiliate_fee_opportunity_low ?? 0), high: Number(data.affiliate_fee_opportunity_high ?? 0) });
   }
 
+  const sectionNav: { id: string; label: string }[] = [
+    { id: "snapshot", label: "Snapshot" },
+    ...(data.pricing_benchmark_hs_low || data.pricing_benchmark_youth_low
+      ? [{ id: "pricing-benchmark", label: "Pricing" }]
+      : []),
+    { id: "opportunity", label: "Opportunity" },
+    { id: "summary", label: "Summary" },
+    { id: "engines", label: "Engines" },
+    { id: "breakdown", label: "Breakdown" },
+    { id: "plan", label: "90-Day Plan" },
+  ];
+
   return (
     <Wrap>
-      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in print:max-w-full">
+      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in print:max-w-full print:space-y-3">
         {/* Header */}
         <header className="flex flex-wrap items-end justify-between gap-4 pb-6 border-b border-border">
           <div>
             <p className="curve-eyebrow mb-2">Revenue Leak Report</p>
-            <h1 className="font-display text-4xl font-semibold tracking-tight inline-block border-b-2 border-accent pb-1">
+            <h1 className="font-display text-4xl font-semibold tracking-tight inline-block border-b-2 border-accent pb-1 print:text-3xl print:border-b-0">
               {org?.name ?? intake?.organization_name ?? "Organization"}
             </h1>
             {intake?.operates_multiple_brands && (intake?.operates_multiple_brands === "Yes" || intake?.operates_multiple_brands === true) && intake?.number_of_brands && (
@@ -261,7 +273,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
               className="border-accent text-accent hover:bg-accent hover:text-accent-foreground bg-background"
             >
               <Download className="h-4 w-4" />
-              Download Report
+              Print / Save PDF
             </Button>
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${TIER_STYLES[tier] ?? "bg-secondary"}`}>
               {tier} Tier
@@ -269,8 +281,27 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
           </div>
         </header>
 
+        {/* Sticky section navigation */}
+        <nav
+          aria-label="Report sections"
+          className="sticky top-0 z-20 -mx-2 px-2 py-2 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b border-border print:hidden"
+          data-print-hide="true"
+        >
+          <div className="flex gap-1 overflow-x-auto">
+            {sectionNav.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className="flex-shrink-0 px-3 py-1.5 text-xs font-medium rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                {s.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+
         {/* Revenue Snapshot */}
-        <section>
+        <section id="snapshot" className="scroll-mt-24">
           <h2 className="curve-eyebrow mb-4">Revenue Snapshot</h2>
           <div className={`grid gap-4 ${isFacilityOrg ? "md:grid-cols-3 lg:grid-cols-6" : "md:grid-cols-4"} grid-cols-1 sm:grid-cols-2`}>
             <div className="curve-card">
@@ -379,7 +410,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
 
         {/* Pricing Benchmark */}
         {(data.pricing_benchmark_hs_low || data.pricing_benchmark_youth_low) && (
-          <section>
+          <section id="pricing-benchmark" className="scroll-mt-24">
             <h2 className="curve-eyebrow mb-4">Pricing Benchmark</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
@@ -429,7 +460,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         )}
 
         {/* Revenue Opportunity */}
-        <section className="text-center py-10 border-y border-border">
+        <section id="opportunity" className="scroll-mt-24 text-center py-10 border-y border-border">
           <p className="curve-eyebrow mb-3">Revenue Opportunity</p>
           <p className="font-display text-5xl sm:text-6xl font-semibold tracking-tight">
             {formatCurrency(data.total_opportunity_low)} – {formatCurrency(data.total_opportunity_high)}
@@ -450,7 +481,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* Assessment Summary */}
-        <section>
+        <section id="summary" className="scroll-mt-24">
           <div className="curve-card border-l-4 border-l-accent p-8">
             <p className="curve-eyebrow mb-3">Assessment Summary</p>
             <p className="text-base leading-relaxed text-foreground/90" style={{ fontSize: "16px" }}>{data.diagnosis_text}</p>
@@ -460,7 +491,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* Engine Score Cards */}
-        <section>
+        <section id="engines" className="scroll-mt-24" data-print-break="true">
           <h2 className="curve-eyebrow mb-4">Engine Scores</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <EngineCard name="Pricing" score={data.pricing_score} low={data.pricing_opportunity_low} high={data.pricing_opportunity_high} />
@@ -513,7 +544,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* Opportunity Breakdown */}
-        <section>
+        <section id="breakdown" className="scroll-mt-24">
           <h2 className="curve-eyebrow mb-4">Opportunity Breakdown</h2>
           <div className="curve-card p-0 overflow-hidden">
             <table className="w-full text-sm">
@@ -563,7 +594,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* 90-Day Priority Plan */}
-        <section>
+        <section id="plan" className="scroll-mt-24" data-print-break="true">
           <h2 className="curve-eyebrow mb-4">Your 90-Day Priority Plan</h2>
           <div className="space-y-4">
             {top3.map((engine, idx) => {
