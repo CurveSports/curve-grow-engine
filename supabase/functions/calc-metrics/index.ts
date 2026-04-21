@@ -706,7 +706,7 @@ Deno.serve(async (req) => {
     const event_revenue_total = event_types.length > 0
       ? num(intake.tournaments_revenue) + num(intake.camps_revenue) + num(intake.clinics_revenue) +
         num(intake.showcase_revenue) + num(intake.recruiting_events_revenue) +
-        num(intake.data_days_revenue) + num(intake.other_events_revenue)
+        num(intake.data_days_revenue) + num(intake.tryouts_revenue) + num(intake.other_events_revenue)
       : 0;
 
     // Mirror lessons_revenue_gross into legacy lessons_revenue for backward compat
