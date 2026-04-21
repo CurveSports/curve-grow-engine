@@ -50,7 +50,6 @@ export default function AdminOrgTasks() {
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
   const draftCount = useMemo(() => tasks.filter(t => t.plan_status === "draft").length, [tasks]);
-  const activeCount = useMemo(() => tasks.filter(t => t.plan_status === "active").length, [tasks]);
 
   // Per-engine summary (used while reviewing draft plan)
   const draftByEngine = useMemo(() => {

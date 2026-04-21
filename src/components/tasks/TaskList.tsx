@@ -5,9 +5,11 @@ interface Props {
   tasks: OrgTask[];
   scores?: Record<string, number | null>;
   onSelect: (task: OrgTask) => void;
+  /** When true, draft tasks are visually marked. Admin views only. */
+  showPlanStatus?: boolean;
 }
 
-export default function TaskList({ tasks, scores, onSelect }: Props) {
+export default function TaskList({ tasks, scores, onSelect, showPlanStatus = false }: Props) {
   const grouped = groupByEngine(tasks);
   const engineOrder = ENGINES.filter(e => grouped[e]?.length);
 
@@ -21,6 +23,7 @@ export default function TaskList({ tasks, scores, onSelect }: Props) {
         const list = grouped[engine];
         const completed = list.filter(t => t.status === "completed").length;
         const score = scores?.[engine];
+        const draftInGroup = list.filter(t => t.plan_status === "draft").length;
         return (
           <div key={engine} className="curve-card p-0 overflow-hidden">
             <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30">
@@ -31,22 +34,36 @@ export default function TaskList({ tasks, scores, onSelect }: Props) {
                     Score {score}/10
                   </span>
                 )}
+                {showPlanStatus && draftInGroup > 0 && (
+                  <span className="text-xs px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 tabular-nums">
+                    {draftInGroup} draft
+                  </span>
+                )}
               </div>
               <span className="text-xs text-muted-foreground tabular-nums">{completed} / {list.length} complete</span>
             </div>
             <ul className="divide-y divide-border">
-              {list.map(t => (
-                <li key={t.id}>
-                  <button onClick={() => onSelect(t)} className="w-full text-left px-5 py-3 hover:bg-secondary/40 transition-colors flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium truncate ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{t.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{t.task_type}{t.due_date ? ` · Due ${formatDate(t.due_date)}` : ""}</p>
-                    </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_STYLE[t.status]}`}>{STATUS_LABEL[t.status]}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[t.priority]}`}>{t.priority}</span>
-                  </button>
-                </li>
-              ))}
+              {list.map(t => {
+                const isDraft = showPlanStatus && t.plan_status === "draft";
+                return (
+                  <li key={t.id}>
+                    <button
+                      onClick={() => onSelect(t)}
+                      className={`w-full text-left px-5 py-3 hover:bg-secondary/40 transition-colors flex items-center gap-3 ${isDraft ? "bg-amber-50/30" : ""}`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{t.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t.task_type}{t.due_date ? ` · Due ${formatDate(t.due_date)}` : ""}</p>
+                      </div>
+                      {isDraft && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 uppercase tracking-wider font-medium">Draft</span>
+                      )}
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_STYLE[t.status]}`}>{STATUS_LABEL[t.status]}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[t.priority]}`}>{t.priority}</span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         );
