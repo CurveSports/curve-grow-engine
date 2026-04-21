@@ -501,6 +501,50 @@ export default function Intake() {
               <NumberField label="Total Sponsorship Revenue" value={form.total_sponsorship_revenue} onChange={(v) => set("total_sponsorship_revenue", v)} min={0} currency />
 
               <div className="pt-4">
+                <SubsectionHeading title="Affiliate Program" />
+                <p className="text-sm text-muted-foreground mt-2">If your organization has satellite or affiliate clubs operating under your brand, capture that revenue here.</p>
+              </div>
+              <PillSelectField
+                label="Do you have affiliate organizations?"
+                value={form.has_affiliates}
+                onChange={(v) => set("has_affiliates", v)}
+                options={["Yes", "No"]}
+              />
+              {form.has_affiliates === "Yes" && (
+                <>
+                  <NumberField
+                    label="Number of affiliates"
+                    value={form.number_of_affiliates}
+                    onChange={(v) => set("number_of_affiliates", v)}
+                    min={0}
+                  />
+                  <NumberField
+                    label="Total affiliate players you charge fees on"
+                    value={form.affiliate_players_charged}
+                    onChange={(v) => set("affiliate_players_charged", v)}
+                    min={0}
+                    hint="Enter the capped number you actually charge, not total roster sizes across all affiliates"
+                  />
+                  <NumberField
+                    label="Annual per-player affiliation fee"
+                    value={form.affiliate_fee_per_player}
+                    onChange={(v) => set("affiliate_fee_per_player", v)}
+                    min={0}
+                    currency
+                    hint="Typically $100–$150 per player but varies by agreement"
+                  />
+                  <NumberField
+                    label="Annual apparel revenue from affiliates"
+                    value={form.affiliate_apparel_revenue}
+                    onChange={(v) => set("affiliate_apparel_revenue", v)}
+                    min={0}
+                    currency
+                    hint="Include any margin or credits you receive on affiliate apparel orders — enter your best estimate as this varies significantly"
+                  />
+                </>
+              )}
+
+              <div className="pt-4">
                 <SubsectionHeading title="Apparel & Gear" />
                 <p className="text-sm text-muted-foreground mt-2">Help us understand how your organization handles uniforms, hard goods, and add-on gear.</p>
               </div>
