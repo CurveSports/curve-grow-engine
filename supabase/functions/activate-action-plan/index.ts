@@ -5,6 +5,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = "Curve OS <onboarding@resend.dev>";
+const APP_URL = "https://curve-grow-engine.lovable.app";
+
 const ENGINE_SCORE_FIELDS: Record<string, string> = {
   Pricing: "pricing_score",
   Sponsorship: "sponsorship_score",
@@ -36,18 +40,23 @@ Deno.serve(async (req) => {
     const { data: roleRow } = await admin.from("user_roles").select("role").eq("user_id", uid).eq("role", "admin").maybeSingle();
     if (!roleRow) return json({ error: "forbidden" }, 403);
 
-    const { org_id } = await req.json();
+    const { org_id, mode } = await req.json();
     if (!org_id) return json({ error: "org_id required" }, 400);
+    // mode: "activate" (default) flips drafts→active and stamps plan_activated_at;
+    //       "topup" only adds missing template tasks (as drafts) without activating
 
-    const { data: org } = await admin.from("organizations").select("id, plan_activated_at").eq("id", org_id).maybeSingle();
+    const { data: org } = await admin.from("organizations").select("id, name, plan_activated_at").eq("id", org_id).maybeSingle();
     if (!org) return json({ error: "org not found" }, 404);
-    if (org.plan_activated_at) return json({ error: "plan already activated", activated_at: org.plan_activated_at }, 409);
 
     const { data: intake } = await admin.from("organization_intake").select("org_type").eq("org_id", org_id).maybeSingle();
     const { data: metrics } = await admin.from("derived_metrics").select("*").eq("org_id", org_id).maybeSingle();
     if (!metrics) return json({ error: "no derived metrics — complete intake first" }, 400);
 
     const isFacilityOrg = !!intake?.org_type && FACILITY_ORG_TYPES.has(intake.org_type);
+
+    // Top-up: only add tasks that don't already exist (matched by template_id)
+    const { data: existing } = await admin.from("org_tasks").select("id, template_id").eq("org_id", org_id);
+    const existingTemplateIds = new Set((existing ?? []).map((t: any) => t.template_id).filter(Boolean));
 
     const { data: templates } = await admin.from("task_templates").select("*").eq("is_system_template", true);
     if (!templates) return json({ error: "no templates" }, 500);
@@ -74,6 +83,7 @@ Deno.serve(async (req) => {
       }
 
       for (const t of chosen) {
+        if (existingTemplateIds.has(t.id)) continue; // never duplicate
         const due = new Date(today);
         due.setDate(due.getDate() + (t.suggested_days_to_complete ?? 30));
         tasksToInsert.push({
@@ -84,6 +94,7 @@ Deno.serve(async (req) => {
           engine: t.engine,
           task_type: t.task_type,
           status: "not_started",
+          plan_status: "draft", // top-up always lands in draft
           priority,
           suggested_due_date: due.toISOString().slice(0, 10),
           due_date: due.toISOString().slice(0, 10),
@@ -92,19 +103,67 @@ Deno.serve(async (req) => {
       }
     }
 
+    let inserted_count = 0;
     if (tasksToInsert.length > 0) {
       const { data: inserted, error } = await admin.from("org_tasks").insert(tasksToInsert).select("id");
       if (error) return json({ error: error.message }, 500);
+      inserted_count = inserted?.length ?? 0;
       const activityRows = (inserted ?? []).map((t: any) => ({
-        task_id: t.id, org_id, action: "created", performed_by: uid, new_value: "auto-generated from system template",
+        task_id: t.id, org_id, action: "created", performed_by: uid,
+        new_value: org.plan_activated_at ? "top-up draft (admin re-run)" : "draft (admin re-run)",
       }));
       if (activityRows.length) await admin.from("task_activity_log").insert(activityRows);
+      await admin.from("derived_metrics").update({ tasks_generated_at: new Date().toISOString() }).eq("org_id", org_id);
     }
 
-    await admin.from("organizations").update({ plan_activated_at: new Date().toISOString() }).eq("id", org_id);
-    await admin.from("derived_metrics").update({ tasks_generated_at: new Date().toISOString() }).eq("org_id", org_id);
+    if (mode === "topup") {
+      return json({ success: true, mode: "topup", added: inserted_count });
+    }
 
-    return json({ success: true, tasks_created: tasksToInsert.length });
+    // ACTIVATE: flip remaining drafts to active and stamp plan_activated_at
+    const { data: flipped, error: flipErr } = await admin
+      .from("org_tasks")
+      .update({ plan_status: "active", last_activity_at: new Date().toISOString() })
+      .eq("org_id", org_id)
+      .eq("plan_status", "draft")
+      .select("id");
+    if (flipErr) return json({ error: flipErr.message }, 500);
+
+    const activated_at = new Date().toISOString();
+    if (!org.plan_activated_at) {
+      await admin.from("organizations").update({ plan_activated_at: activated_at }).eq("id", org_id);
+    }
+
+    // Notify org users
+    if (RESEND_API_KEY) {
+      const { data: profs } = await admin.from("profiles").select("email").eq("org_id", org_id);
+      const recipients = (profs ?? []).map((p: any) => p.email).filter(Boolean);
+      if (recipients.length > 0) {
+        const subject = "Your 90-Day Action Plan is ready";
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+          <h2 style="color:#0f5132;">Your 90-Day Action Plan is ready</h2>
+          <p>The Curve team has finished reviewing your Revenue Leak Report and your action plan is now available. Log in to view your priorities and get started.</p>
+          <p style="margin-top:24px;"><a href="${APP_URL}/dashboard" style="background:#0f5132;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Open your Action Plan →</a></p>
+        </div>`;
+        try {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+            body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html }),
+          });
+        } catch (e) {
+          console.error("activation email error", e);
+        }
+      }
+    }
+
+    return json({
+      success: true,
+      mode: "activate",
+      tasks_added: inserted_count,
+      tasks_activated: flipped?.length ?? 0,
+      plan_activated_at: org.plan_activated_at ?? activated_at,
+    });
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }

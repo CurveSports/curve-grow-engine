@@ -6,6 +6,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = "Curve OS <onboarding@resend.dev>";
+const APP_URL = "https://curve-grow-engine.lovable.app";
+
+const ENGINE_SCORE_FIELDS: Record<string, string> = {
+  Pricing: "pricing_score",
+  Sponsorship: "sponsorship_score",
+  Apparel: "apparel_score",
+  Events: "event_score",
+  "Add-Ons": "addon_score",
+  Retention: "retention_score",
+  Facility: "facility_score",
+};
+const FACILITY_ORG_TYPES = new Set(["Facility + Teams", "Facility Only", "Teams + Facility"]);
+
 const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, n));
 const num = (v: any) => (v === null || v === undefined || v === "" ? 0 : Number(v));
 
@@ -375,6 +390,106 @@ function calculate(intake: any) {
   };
 }
 
+async function generateDraftTasks(admin: any, org_id: string, metrics: any, isFacilityOrg: boolean, uid: string): Promise<number> {
+  // Skip if any tasks already exist for org (don't duplicate on intake re-submit)
+  const { count } = await admin.from("org_tasks").select("id", { count: "exact", head: true }).eq("org_id", org_id);
+  if ((count ?? 0) > 0) return 0;
+
+  const { data: templates } = await admin.from("task_templates").select("*").eq("is_system_template", true);
+  if (!templates || templates.length === 0) return 0;
+
+  const today = new Date();
+  const tasksToInsert: any[] = [];
+
+  for (const engine of Object.keys(ENGINE_SCORE_FIELDS)) {
+    if (engine === "Facility" && !isFacilityOrg) continue;
+    const scoreField = ENGINE_SCORE_FIELDS[engine];
+    const score = metrics[scoreField] ?? null;
+    if (score === null || score >= 9) continue;
+
+    const engineTemplates = templates.filter((t: any) => t.engine === engine);
+    let chosen = engineTemplates;
+    let priority: "high" | "medium" | "low" = "medium";
+
+    if (score <= 3) priority = "high";
+    else if (score <= 6) priority = "medium";
+    else if (score === 7) priority = "low";
+    else if (score === 8) {
+      chosen = engineTemplates.filter((t: any) => t.task_type === "Track");
+      priority = "low";
+    }
+
+    for (const t of chosen) {
+      const due = new Date(today);
+      due.setDate(due.getDate() + (t.suggested_days_to_complete ?? 30));
+      tasksToInsert.push({
+        org_id,
+        template_id: t.id,
+        title: t.title,
+        description: t.description,
+        engine: t.engine,
+        task_type: t.task_type,
+        status: "not_started",
+        plan_status: "draft",
+        priority,
+        suggested_due_date: due.toISOString().slice(0, 10),
+        due_date: due.toISOString().slice(0, 10),
+        assigned_by: uid,
+      });
+    }
+  }
+
+  if (tasksToInsert.length === 0) return 0;
+  const { data: inserted, error } = await admin.from("org_tasks").insert(tasksToInsert).select("id");
+  if (error) { console.error("draft task insert error", error); return 0; }
+  const activityRows = (inserted ?? []).map((t: any) => ({
+    task_id: t.id, org_id, action: "created", performed_by: uid, new_value: "auto-generated draft (intake)",
+  }));
+  if (activityRows.length) await admin.from("task_activity_log").insert(activityRows);
+  await admin.from("derived_metrics").update({ tasks_generated_at: new Date().toISOString() }).eq("org_id", org_id);
+  return tasksToInsert.length;
+}
+
+async function notifyAdminsNewIntake(admin: any, org: { id: string; name: string }, metrics: any, taskCount: number) {
+  if (!RESEND_API_KEY) return;
+  // Find all admins
+  const { data: adminRoles } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+  if (!adminRoles || adminRoles.length === 0) return;
+  const userIds = adminRoles.map((r: any) => r.user_id);
+  const { data: profs } = await admin.from("profiles").select("email").in("user_id", userIds);
+  const recipients = (profs ?? []).map((p: any) => p.email).filter(Boolean);
+  if (recipients.length === 0) return;
+
+  const subject = `New intake completed — ${org.name} is ready for plan review`;
+  const reviewUrl = `${APP_URL}/admin/org/${org.id}/tasks`;
+  const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <h2 style="color:#0f5132;">New intake ready for plan review</h2>
+    <p><strong>${escape(org.name)}</strong> just completed intake. Draft tasks have been generated for your review.</p>
+    <table style="border-collapse:collapse;margin:16px 0;">
+      <tr><td style="padding:6px 12px;color:#666;">Monetization tier</td><td style="padding:6px 12px;"><strong>${escape(metrics.monetization_tier ?? "—")}</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Total engine score</td><td style="padding:6px 12px;"><strong>${metrics.total_engine_score ?? "—"}</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Priority engine</td><td style="padding:6px 12px;"><strong>${escape(metrics.priority_engine ?? "—")}</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Draft tasks generated</td><td style="padding:6px 12px;"><strong>${taskCount}</strong></td></tr>
+    </table>
+    <p style="margin-top:24px;"><a href="${reviewUrl}" style="background:#0f5132;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Review &amp; activate plan →</a></p>
+  </div>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+      body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html }),
+    });
+    if (!res.ok) console.error("admin notify resend error", res.status, await res.text());
+  } catch (e) {
+    console.error("admin notify exception", e);
+  }
+}
+
+function escape(s: string): string {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -445,7 +560,20 @@ Deno.serve(async (req) => {
       .upsert({ org_id, ...metrics }, { onConflict: "org_id" });
     if (metErr) throw metErr;
 
-    return new Response(JSON.stringify({ ok: true, metrics }), {
+    // Auto-generate draft tasks (only if none exist yet) and notify admins
+    const isFacilityOrg = !!intake?.org_type && FACILITY_ORG_TYPES.has(intake.org_type);
+    let tasksGenerated = 0;
+    try {
+      tasksGenerated = await generateDraftTasks(supabase, org_id, metrics, isFacilityOrg, userData.user.id);
+      if (tasksGenerated > 0) {
+        const { data: org } = await supabase.from("organizations").select("id, name").eq("id", org_id).maybeSingle();
+        if (org) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
+      }
+    } catch (e) {
+      console.error("draft task generation failed (non-fatal)", e);
+    }
+
+    return new Response(JSON.stringify({ ok: true, metrics, draft_tasks_generated: tasksGenerated }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
