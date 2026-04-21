@@ -548,6 +548,9 @@ export default function Intake() {
               {form.event_types_offered?.includes("Data Days") && (
                 <NumberField label="Data Days Annual Revenue" value={form.data_days_revenue} onChange={(v) => set("data_days_revenue", v)} min={0} currency />
               )}
+              {form.event_types_offered?.includes("Tryouts") && (
+                <NumberField label="Tryouts Annual Revenue" value={form.tryouts_revenue} onChange={(v) => set("tryouts_revenue", v)} min={0} currency />
+              )}
               {form.event_types_offered?.includes("Other Events") && (
                 <NumberField label="Other Events Annual Revenue" value={form.other_events_revenue} onChange={(v) => set("other_events_revenue", v)} min={0} currency />
               )}
