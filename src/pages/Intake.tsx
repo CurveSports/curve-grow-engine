@@ -17,7 +17,10 @@ import {
   SPONSORSHIP_APPROACH, SECTION_TITLES, EVENT_TYPES, LESSONS_CAPTURE_MODEL,
   UNIFORM_PACKAGE_COST, UNIFORM_MARKUP, HARD_GOODS_PURCHASED, HARD_GOODS_SPEND,
   HARD_GOODS_MARKUP, TEAM_STORE_STATUS, ADDON_SOFT_GOODS_SPEND,
+  DUES_MODELS, MONTHS_ACTIVE, TOURNAMENT_FEE_STRUCTURES, TOURNAMENTS_PER_PLAYER,
+  REVENUE_VERIFICATION,
 } from "@/lib/intakeOptions";
+import { formatCurrency } from "@/lib/format";
 
 type Form = Record<string, any>;
 
@@ -36,7 +39,19 @@ const empty: Form = {
   total_players: "", hs_players: "", youth_players: "", total_teams: "", average_roster_size: "",
   seasons_offered: [], team_structure: "", typical_player_participation: "",
   player_commitment_level: "", demand_for_organization: "", player_selection_approach: "",
-  total_annual_revenue: "", avg_hs_player_fee: "", avg_youth_player_fee: "",
+  // Dues model
+  dues_model: "",
+  spring_youth_players: "", spring_youth_fee: "",
+  summer_hs_players: "", summer_hs_fee: "", summer_youth_players: "", summer_youth_fee: "",
+  fall_hs_players: "", fall_hs_fee: "", fall_youth_players: "", fall_youth_fee: "",
+  monthly_hs_fee: "", monthly_youth_fee: "", avg_months_active: "",
+  tournament_fee_structure: "",
+  tournaments_per_hs_player: "", tournaments_per_youth_player: "",
+  tournament_fee_per_player: "",
+  alacarte_annual_hs_spend: "", alacarte_annual_youth_spend: "",
+  flat_annual_hs_fee: "", flat_annual_youth_fee: "",
+  mixed_annual_hs_fee: "", mixed_annual_youth_fee: "",
+  revenue_verification: "",
   dues_inclusions: [], tiered_packages: "", price_point: "",
   knows_profit_margin: "", profit_margin_range: "",
   seeks_sponsorships: "", number_of_sponsors: "", total_sponsorship_revenue: "",
