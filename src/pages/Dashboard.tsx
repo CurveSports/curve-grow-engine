@@ -110,6 +110,12 @@ export default function Dashboard() {
             />
           </div>
 
+          {profile?.org_id && (
+            <div className="mb-6">
+              <WeeklyFocusCard orgId={profile.org_id} tasks={tasks as any} editable={false} />
+            </div>
+          )}
+
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
           ) : (
