@@ -184,21 +184,18 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
   const overdue = tasks.filter(t => t.status === "overdue" || (t.due_date && new Date(t.due_date) < new Date() && t.status !== "completed")).length;
   const completionPct = total ? Math.round((completed / total) * 100) : 0;
 
-  // Derived "Health Score X/40" — sum of top 4 engine scores (gives a 4–40 range)
+  // Health scores from derived_metrics; fallback to engine sum if not yet calculated
   const engineScores = Object.entries(ENGINE_SCORE_FIELD)
     .map(([eng, field]) => ({ name: eng, score: Number((metrics as any)[field] ?? 0) }))
     .filter(e => e.score > 0)
     .sort((a, b) => b.score - a.score);
-  const healthScore = engineScores.slice(0, 4).reduce((s, e) => s + e.score, 0);
-
-  // "This week's focus" derived: top 3-5 high-priority active tasks
-  const focusTasks = [...tasks]
-    .filter(t => t.status !== "completed")
-    .sort((a, b) => {
-      const pri = { high: 0, medium: 1, low: 2 } as any;
-      return (pri[a.priority] ?? 9) - (pri[b.priority] ?? 9);
-    })
-    .slice(0, 4);
+  const fallbackHealth = engineScores.slice(0, 4).reduce((s, e) => s + e.score, 0);
+  const overallHealth = (metrics as any).overall_health_score ?? fallbackHealth;
+  const opsHealth = (metrics as any).operations_health_score ?? null;
+  const marketHealth = (metrics as any).market_position_health_score ?? null;
+  const programHealth = (metrics as any).program_health_score ?? null;
+  const strategicHealth = (metrics as any).strategic_clarity_score ?? null;
+  const hasDimensions = opsHealth !== null || marketHealth !== null || programHealth !== null || strategicHealth !== null;
 
   const oppLow = Number(metrics.total_opportunity_low ?? 0);
   const oppHigh = Number(metrics.total_opportunity_high ?? 0);
@@ -210,7 +207,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard label="Revenue Opportunity" value={`${formatCurrency(oppLow)} – ${formatCurrency(oppHigh)}`} />
         <MetricCard label="Total Engine Score" value={`${totalScore}`} suffix="/60" />
-        <MetricCard label="Health Score" value={`${healthScore}`} suffix="/40" accent="health" />
+        <MetricCard label="Health Score" value={`${overallHealth}`} suffix="/40" accent="health" />
         <MetricCard label="Task Completion" value={`${completionPct}%`}>
           <div className="mt-2 h-1.5 w-full bg-secondary rounded-full overflow-hidden">
             <div className="h-full bg-accent transition-all" style={{ width: `${completionPct}%` }} />
@@ -218,28 +215,18 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </MetricCard>
       </div>
 
-      {/* Row 2: This week's focus */}
-      <div className="curve-card border-l-4 border-l-warning">
-        <div className="flex items-center justify-between mb-4">
-          <p className="curve-eyebrow text-warning">This Week's Focus</p>
-          <span className="text-xs text-muted-foreground">Derived from highest-priority open tasks</span>
+      {/* Health dimensions 2x2 (collapses to 1 col on mobile, 4 on lg) */}
+      {hasDimensions && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <DimensionCard label="Operations Health" score={opsHealth} />
+          <DimensionCard label="Market Position" score={marketHealth} />
+          <DimensionCard label="Program Health" score={programHealth} />
+          <DimensionCard label="Strategic Clarity" score={strategicHealth} />
         </div>
-        {focusTasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No open tasks — plan not yet activated or all tasks complete.</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {focusTasks.map(t => (
-              <li key={t.id} className="py-3 flex items-center gap-3">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border bg-secondary text-foreground border-border uppercase tracking-wide">
-                  {t.engine}
-                </span>
-                <span className="flex-1 text-sm font-medium text-foreground truncate">{t.title}</span>
-                <StatusPill status={t.status} dueDate={t.due_date} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      )}
+
+      {/* Row 2: This week's focus (admin-editable) */}
+      <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
 
       {/* Row 3: two columns */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
