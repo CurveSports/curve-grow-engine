@@ -410,7 +410,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
 
         {/* Pricing Benchmark */}
         {(data.pricing_benchmark_hs_low || data.pricing_benchmark_youth_low) && (
-          <section>
+          <section id="pricing-benchmark" className="scroll-mt-24">
             <h2 className="curve-eyebrow mb-4">Pricing Benchmark</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {[
@@ -460,7 +460,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         )}
 
         {/* Revenue Opportunity */}
-        <section className="text-center py-10 border-y border-border">
+        <section id="opportunity" className="scroll-mt-24 text-center py-10 border-y border-border">
           <p className="curve-eyebrow mb-3">Revenue Opportunity</p>
           <p className="font-display text-5xl sm:text-6xl font-semibold tracking-tight">
             {formatCurrency(data.total_opportunity_low)} – {formatCurrency(data.total_opportunity_high)}
@@ -481,7 +481,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* Assessment Summary */}
-        <section>
+        <section id="summary" className="scroll-mt-24">
           <div className="curve-card border-l-4 border-l-accent p-8">
             <p className="curve-eyebrow mb-3">Assessment Summary</p>
             <p className="text-base leading-relaxed text-foreground/90" style={{ fontSize: "16px" }}>{data.diagnosis_text}</p>
@@ -491,7 +491,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* Engine Score Cards */}
-        <section>
+        <section id="engines" className="scroll-mt-24" data-print-break="true">
           <h2 className="curve-eyebrow mb-4">Engine Scores</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <EngineCard name="Pricing" score={data.pricing_score} low={data.pricing_opportunity_low} high={data.pricing_opportunity_high} />
@@ -544,7 +544,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* Opportunity Breakdown */}
-        <section>
+        <section id="breakdown" className="scroll-mt-24">
           <h2 className="curve-eyebrow mb-4">Opportunity Breakdown</h2>
           <div className="curve-card p-0 overflow-hidden">
             <table className="w-full text-sm">
@@ -594,7 +594,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         <SectionDivider />
 
         {/* 90-Day Priority Plan */}
-        <section>
+        <section id="plan" className="scroll-mt-24" data-print-break="true">
           <h2 className="curve-eyebrow mb-4">Your 90-Day Priority Plan</h2>
           <div className="space-y-4">
             {top3.map((engine, idx) => {
