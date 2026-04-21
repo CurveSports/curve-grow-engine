@@ -146,10 +146,37 @@ export default function Report() {
             {isFacilityOrg && (
               <div className="curve-card">
                 <p className="text-xs text-muted-foreground">Facility Rental Revenue</p>
-                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(intake?.facility_rental_revenue ?? 0)}</p>
+                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(intake?.annual_facility_rental_revenue ?? intake?.facility_rental_revenue ?? 0)}</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {data.facility_revenue_pct !== null ? formatPct(data.facility_revenue_pct, 1) : "—"} of total revenue
+                  {data.facility_revenue_pct !== null && data.facility_revenue_pct !== undefined ? formatPct(data.facility_revenue_pct, 1) : "—"} of total revenue
                 </p>
+              </div>
+            )}
+            {isFacilityOrg && (
+              <div className="curve-card">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">Facility Revenue Target</p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" aria-label="info"><Info className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-xs">
+                        Based on average family spend of $400/month on private instruction. A facility serving your player base should capture a minimum of $1,200 per player annually in facility and instruction revenue.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(data.facility_revenue_benchmark ?? 0)}</p>
+                {data.facility_at_benchmark ? (
+                  <p className="text-xs text-accent mt-2 flex items-center gap-1">
+                    <Check className="h-3.5 w-3.5" /> On track
+                  </p>
+                ) : (
+                  <p className="text-xs text-destructive/80 mt-2">
+                    Gap: {formatCurrency(Number(data.facility_revenue_gap ?? 0))}
+                  </p>
+                )}
               </div>
             )}
           </div>
