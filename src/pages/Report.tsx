@@ -235,6 +235,20 @@ export default function Report() {
             <h1 className="font-display text-4xl font-semibold tracking-tight inline-block border-b-2 border-accent pb-1">
               {org?.name ?? intake?.organization_name ?? "Organization"}
             </h1>
+            {intake?.operates_multiple_brands && (intake?.operates_multiple_brands === "Yes" || intake?.operates_multiple_brands === true) && intake?.number_of_brands && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="ml-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border bg-secondary text-foreground border-border align-middle cursor-help">
+                      {intake.number_of_brands} Brands
+                    </span>
+                  </TooltipTrigger>
+                  {intake?.brand_descriptions && (
+                    <TooltipContent className="max-w-xs text-xs">{intake.brand_descriptions}</TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <p className="text-sm text-muted-foreground mt-2">
               Generated {formatDate(data.calculated_at)}
             </p>
