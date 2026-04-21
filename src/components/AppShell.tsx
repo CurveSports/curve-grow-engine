@@ -18,7 +18,7 @@ type NavItem = {
 const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin", label: "Home", icon: LayoutDashboard, match: (p) => p === "/admin" },
   { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p.startsWith("/admin/org") || p === "/admin" },
-  { to: "/admin/tasks", label: "Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
+  { to: "/admin/tasks", label: "Portfolio Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
   { to: "/admin/templates", label: "Templates", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
 ];
@@ -31,7 +31,7 @@ const ADMIN_SOON: NavItem[] = [
 const ORG_PRIMARY: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
   { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
-  { to: "/dashboard", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
+  { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
 ];
 const ORG_SOON: NavItem[] = [
   { label: "Sponsorships", icon: Megaphone, soon: true },
