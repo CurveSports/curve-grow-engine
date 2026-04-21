@@ -16,6 +16,7 @@ type Row = {
   last_activity: string | null;
   by_engine: Record<string, { total: number; completed: number }>;
   plan_activated_at: string | null;
+  revenue_needs_review: boolean;
 };
 
 const ENGINE_COLORS = (pct: number | null): string => {
@@ -31,14 +32,17 @@ export default function AdminTasks() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: orgs }, { data: tasks }, { data: metrics }] = await Promise.all([
+      const [{ data: orgs }, { data: tasks }, { data: metrics }, { data: intakes }] = await Promise.all([
         supabase.from("organizations").select("id, name, plan_activated_at"),
         supabase.from("org_tasks").select("org_id, engine, status, last_activity_at, plan_status"),
         supabase.from("derived_metrics").select("org_id, monetization_tier"),
+        supabase.from("organization_intake").select("org_id, revenue_needs_review"),
       ]);
 
       const tierByOrg = new Map<string, string | null>();
       for (const m of metrics ?? []) tierByOrg.set((m as any).org_id, (m as any).monetization_tier);
+      const reviewByOrg = new Map<string, boolean>();
+      for (const i of intakes ?? []) reviewByOrg.set((i as any).org_id, !!(i as any).revenue_needs_review);
 
       const r: Row[] = (orgs ?? []).map((o: any) => {
         const list = (tasks ?? []).filter((t: any) => t.org_id === o.id);
@@ -61,6 +65,7 @@ export default function AdminTasks() {
           last_activity: last,
           by_engine,
           plan_activated_at: o.plan_activated_at,
+          revenue_needs_review: reviewByOrg.get(o.id) ?? false,
         };
       });
       setRows(r);
@@ -93,11 +98,24 @@ export default function AdminTasks() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-2 flex-wrap">
                       <Link to={`/admin/org/${o.id}/tasks`} className="font-medium hover:text-accent transition-colors">{o.name}</Link>
+                      {o.revenue_needs_review && (
+                        <span
+                          title="Org indicated their calculated revenue total may not be accurate. Verify before activating plan."
+                          className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-warning/30 bg-warning-soft text-warning font-medium cursor-help"
+                        >
+                          Revenue Review
+                        </span>
+                      )}
                       {needsReview && (
                         <Link to={`/admin/org/${o.id}/tasks`} className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium">
                           Review Plan · {o.draft}
                         </Link>
                       )}
+                      {!o.plan_activated_at && o.draft === 0 && (
+                        <span className="text-xs text-muted-foreground">(awaiting intake)</span>
+                      )}
+                    </div>
+                  </td>
                       {!o.plan_activated_at && o.draft === 0 && (
                         <span className="text-xs text-muted-foreground">(awaiting intake)</span>
                       )}
