@@ -343,6 +343,42 @@ export default function Report() {
 
         <SectionDivider />
 
+        {/* Pricing Benchmark */}
+        {(data.pricing_benchmark_hs_low || data.pricing_benchmark_youth_low) && (
+          <section>
+            <h2 className="curve-eyebrow mb-4">Pricing Benchmark</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {[
+                { title: "HS Player Pricing", fee: data.annual_hs_equivalent, low: data.pricing_benchmark_hs_low, high: data.pricing_benchmark_hs_high, status: data.hs_fee_vs_market },
+                { title: "Youth Player Pricing", fee: data.annual_youth_equivalent, low: data.pricing_benchmark_youth_low, high: data.pricing_benchmark_youth_high, status: data.youth_fee_vs_market },
+              ].map((c) => {
+                const badgeStyles =
+                  c.status === "Below Market" ? "bg-destructive/10 text-destructive border-destructive/30"
+                  : c.status === "Above Market" ? "bg-blue-50 text-blue-700 border-blue-200"
+                  : c.status === "At Market" ? "bg-accent-soft text-accent border-accent/30"
+                  : "bg-secondary text-muted-foreground border-border";
+                return (
+                  <div key={c.title} className="curve-card">
+                    <div className="flex items-baseline justify-between mb-3">
+                      <h3 className="font-display font-semibold text-base">{c.title}</h3>
+                      {c.status && (
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${badgeStyles}`}>{c.status}</span>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Your blended annual fee</p>
+                    <p className="font-display text-2xl font-semibold tabular-nums mt-1">{formatCurrency(Number(c.fee ?? 0))}</p>
+                    <p className="text-xs text-muted-foreground mt-3">Market range for your area</p>
+                    <p className="text-sm font-medium tabular-nums mt-1">{formatCurrency(Number(c.low ?? 0))} – {formatCurrency(Number(c.high ?? 0))}</p>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3 italic">Benchmarks reflect full annual fees including all seasons, membership, and tournament participation for your market type.</p>
+          </section>
+        )}
+
+        <SectionDivider />
+
         {/* Concentration alert */}
         {(data.high_dues_concentration || data.high_sponsorship_dependency) && (
           <>
