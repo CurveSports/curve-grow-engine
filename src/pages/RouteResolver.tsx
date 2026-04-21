@@ -5,9 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Routes the user to the right place based on their state.
 export default function RouteResolver() {
-  const { loading, session, role, profile } = useAuth();
+  const { loading, session, role, profile, refresh } = useAuth();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
+  const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
     if (loading) return;
@@ -25,10 +26,22 @@ export default function RouteResolver() {
         else navigate("/intake", { replace: true });
         return;
       }
-      // Has session but no role / no org — show pending state
+
+      // No role yet — try to claim a pending invitation (self-heal)
+      if (!claimed) {
+        setClaimed(true);
+        const { data, error } = await supabase.rpc("claim_pending_invitation");
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!error && row?.claimed) {
+          await refresh();
+          return; // effect will re-run with new role
+        }
+      }
+
+      // Has session but no role / no invite — show pending state
       setChecking(false);
     })();
-  }, [loading, session, role, profile, navigate]);
+  }, [loading, session, role, profile, navigate, refresh, claimed]);
 
   if (loading || checking) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
