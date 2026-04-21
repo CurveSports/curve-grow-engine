@@ -164,13 +164,21 @@ export default function Intake() {
   }
 
   const totalSteps = SECTION_TITLES.length;
+  const scrollTop = () => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    document.querySelectorAll("main, [data-scroll-container]").forEach((el) => {
+      (el as HTMLElement).scrollTop = 0;
+    });
+  };
   const goNext = () => {
     setStep((s) => Math.min(totalSteps - 1, s + 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollTop();
   };
   const goBack = () => {
     setStep((s) => Math.max(0, s - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollTop();
   };
 
   return (
@@ -216,7 +224,17 @@ export default function Intake() {
           {step === 1 && (
             <>
               <SubsectionHeading title="Player & team counts" />
-              <NumberField label="Total Players" value={form.total_players} onChange={(v) => set("total_players", v)} min={0} />
+              <div>
+                <NumberField
+                  label="Total Players"
+                  value={form.total_players}
+                  onChange={(v) => set("total_players", v)}
+                  min={0}
+                />
+                <div className="mt-2 rounded-md border-l-2 border-accent bg-accent-soft/40 px-3 py-2 text-xs text-foreground">
+                  <span className="font-semibold">Important:</span> this number must be as accurate as possible. Many of your assessment calculations — revenue per player, opportunity sizing, and benchmarks — depend directly on your organization size.
+                </div>
+              </div>
               <NumberField label="High School Players" value={form.hs_players} onChange={(v) => set("hs_players", v)} min={0} />
               <NumberField label="Youth Players (14U and below)" value={form.youth_players} onChange={(v) => set("youth_players", v)} min={0} />
               <NumberField label="Total Teams" value={form.total_teams} onChange={(v) => set("total_teams", v)} min={0} />
