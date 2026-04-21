@@ -217,7 +217,7 @@ export default function AdminOrgTasks() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setConfirmOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleActivate} className="bg-emerald-600 hover:bg-emerald-700">
+            <AlertDialogAction onClick={handleActivate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
               Confirm Activation
             </AlertDialogAction>
           </AlertDialogFooter>
