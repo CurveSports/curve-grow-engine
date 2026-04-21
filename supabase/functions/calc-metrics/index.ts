@@ -301,12 +301,16 @@ function calculate(intake: any) {
   if (intake.seeks_sponsorships === "No") sponsorship -= 1;
   const sponsorship_score = clamp(sponsorship, 1, 10);
 
+  // Apparel score — uses new intake fields where available; preserves baseline logic
   let apparel = 3;
-  if (intake.apparel_model === "Fully controlled in-house") apparel += 3;
-  if (intake.apparel_model === "Outsourced with markup") apparel += 1;
-  if (apparel_revenue_per_player > 150) apparel += 2;
-  if (apparel_revenue_per_player > 75) apparel += 1;
-  if (intake.apparel_model === "Minimal") apparel -= 1;
+  // Bonus when org captures uniform markup at 30%+ (in-house equivalent)
+  if (intake.uniform_markup === "30%+") apparel += 3;
+  else if (intake.uniform_markup === "20–30%" || intake.uniform_markup === "20-30%") apparel += 2;
+  else if (intake.uniform_markup === "10–20%" || intake.uniform_markup === "10-20%") apparel += 1;
+  // Hard goods participation bonus
+  if (intake.hard_goods_purchased === "Yes regularly") apparel += 1;
+  // Team store bonus
+  if (intake.team_store_status === "Yes full store") apparel += 1;
   const apparel_score = clamp(apparel, 1, 10);
 
   let event = 2;
