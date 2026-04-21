@@ -227,7 +227,12 @@ function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolea
   const lessons = Number(form.lessons_revenue_gross) || 0;
   const facility = isFacility ? Number(form.annual_facility_rental_revenue) || 0 : 0;
   const other = Number(form.other_addon_revenue) || 0;
-  const total = dues + sponsor + events + lessons + facility + other;
+  const hasAffiliates = form.has_affiliates === "Yes";
+  const affPlayers = Number(form.affiliate_players_charged) || 0;
+  const affFee = Number(form.affiliate_fee_per_player) || 0;
+  const affFees = hasAffiliates ? affPlayers * affFee : 0;
+  const affApparel = hasAffiliates ? Number(form.affiliate_apparel_revenue) || 0 : 0;
+  const total = dues + sponsor + events + lessons + facility + other + affFees + affApparel;
 
   const Row = ({ label, value, show = true }: { label: string; value: number; show?: boolean }) =>
     show ? (
@@ -244,6 +249,8 @@ function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolea
       <Row label="Sponsorship" value={sponsor} show={sponsor > 0 || form.total_sponsorship_revenue !== ""} />
       <Row label="Events" value={events} show={events > 0} />
       <Row label="Lessons" value={lessons} show={lessons > 0} />
+      <Row label="Affiliate Fees" value={affFees} show={hasAffiliates} />
+      <Row label="Affiliate Apparel" value={affApparel} show={hasAffiliates} />
       <Row label="Facility Rental" value={facility} show={isFacility} />
       <Row label="Other" value={other} show={other > 0} />
       <div className="border-t border-border pt-2 mt-2 flex justify-between font-display font-semibold tabular-nums">
