@@ -148,3 +148,71 @@
     animation: curve-shimmer 1.6s ease-in-out infinite;
   }
 }
+
+/* Smooth scroll for in-page anchor nav */
+html { scroll-behavior: smooth; }
+
+/* ============================================================
+   Print mode — Revenue Assessment Report
+   Goal: clean, paginated, ink-friendly output.
+   ============================================================ */
+@media print {
+  @page {
+    size: Letter;
+    margin: 0.6in 0.5in;
+  }
+
+  html, body {
+    background: #fff !important;
+    color: #0f172a !important;
+    font-size: 11pt;
+  }
+
+  /* Hide app chrome, sticky bars, and interactive controls */
+  nav,
+  aside,
+  header[data-app-header],
+  .print\:hidden,
+  [data-print-hide="true"] {
+    display: none !important;
+  }
+
+  /* Strip shadows / borders that print poorly */
+  .curve-card {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  section {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-top: 0.4rem;
+  }
+
+  /* Force section starts onto fresh pages where helpful */
+  section[data-print-break="true"] {
+    page-break-before: always;
+    break-before: page;
+  }
+
+  h1, h2, h3 { color: #0f172a !important; }
+
+  /* Avoid orphaned headings */
+  h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+
+  /* Tables */
+  table { page-break-inside: auto; }
+  tr    { page-break-inside: avoid; break-inside: avoid; }
+  thead { display: table-header-group; }
+
+  /* Backgrounds (engine cards, badges) — preserve color where possible */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Disable the smooth scroll inside print */
+  html { scroll-behavior: auto; }
+}
