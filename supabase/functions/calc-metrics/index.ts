@@ -253,12 +253,34 @@ function calculate(intake: any) {
     else youth_fee_vs_market = "At Market";
   }
 
+  // Affiliate revenue (only if has_affiliates = true)
+  const has_affiliates = intake.has_affiliates === "Yes" || intake.has_affiliates === true;
+  const number_of_affiliates = num(intake.number_of_affiliates);
+  const affiliate_players_charged = num(intake.affiliate_players_charged);
+  const affiliate_fee_per_player = num(intake.affiliate_fee_per_player);
+  const affiliate_apparel_revenue = num(intake.affiliate_apparel_revenue);
+
+  const affiliate_fee_revenue = has_affiliates ? affiliate_players_charged * affiliate_fee_per_player : 0;
+  const affiliate_total_revenue = has_affiliates ? affiliate_fee_revenue + affiliate_apparel_revenue : 0;
+  const affiliate_revenue_per_affiliate = has_affiliates && number_of_affiliates > 0
+    ? affiliate_total_revenue / number_of_affiliates : 0;
+
+  // Affiliate opportunity (per-player fee gap to $100–$150 market rate)
+  const affiliate_fee_opportunity_low = has_affiliates
+    ? Math.max(0, (affiliate_players_charged * 100) - affiliate_fee_revenue)
+    : 0;
+  const affiliate_fee_opportunity_high = has_affiliates
+    ? Math.max(0, (affiliate_players_charged * 150) - affiliate_fee_revenue)
+    : 0;
+
   const calculated_total_revenue =
     dues_revenue +
     event_revenue_total +
     lessons_revenue_org +
     sponsor_rev +
     facility_rev +
+    affiliate_fee_revenue +
+    affiliate_apparel_revenue +
     other_addon;
   const total_revenue = calculated_total_revenue;
 
