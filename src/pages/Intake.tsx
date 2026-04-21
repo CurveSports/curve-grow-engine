@@ -248,12 +248,7 @@ function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolea
     </div>
   );
 }
-  return (
-    <div className="border-l-2 border-accent pl-4 py-1">
-      <h2 className="font-display text-xl font-bold tracking-tight">{title}</h2>
-    </div>
-  );
-}
+
 
 function StepBar({ step, total }: { step: number; total: number }) {
   return (
