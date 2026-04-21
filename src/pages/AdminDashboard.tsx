@@ -36,15 +36,19 @@ export default function AdminDashboard() {
       const { data: orgs } = await supabase
         .from("organizations")
         .select("id, name, organization_intake(submitted_at), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine)");
-      const r: Row[] = (orgs ?? []).map((o: any) => ({
-        id: o.id,
-        name: o.name,
-        tier: o.derived_metrics?.[0]?.monetization_tier ?? null,
-        total_engine_score: o.derived_metrics?.[0]?.total_engine_score ?? null,
-        revenue_per_player: o.derived_metrics?.[0]?.revenue_per_player ?? null,
-        priority_engine: o.derived_metrics?.[0]?.priority_engine ?? null,
-        submitted_at: o.organization_intake?.[0]?.submitted_at ?? null,
-      }));
+      const r: Row[] = (orgs ?? []).map((o: any) => {
+        const intake = Array.isArray(o.organization_intake) ? o.organization_intake[0] : o.organization_intake;
+        const metrics = Array.isArray(o.derived_metrics) ? o.derived_metrics[0] : o.derived_metrics;
+        return {
+          id: o.id,
+          name: o.name,
+          tier: metrics?.monetization_tier ?? null,
+          total_engine_score: metrics?.total_engine_score ?? null,
+          revenue_per_player: metrics?.revenue_per_player ?? null,
+          priority_engine: metrics?.priority_engine ?? null,
+          submitted_at: intake?.submitted_at ?? null,
+        };
+      });
       setRows(r);
       setLoading(false);
     })();
