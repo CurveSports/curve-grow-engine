@@ -670,6 +670,10 @@ function calculate(intake: any) {
     pricing_benchmark_hs_low, pricing_benchmark_hs_high,
     pricing_benchmark_youth_low, pricing_benchmark_youth_high,
     hs_fee_vs_market, youth_fee_vs_market,
+    // Round 1 health scores
+    operations_health_score, market_position_health_score, program_health_score,
+    strategic_clarity_score, overall_health_score,
+    selection_leakage_flag, growth_opportunity_direction,
     calculated_at: new Date().toISOString(),
   };
 }
