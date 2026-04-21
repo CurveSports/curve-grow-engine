@@ -224,7 +224,13 @@ export default function Intake() {
           {step === 1 && (
             <>
               <SubsectionHeading title="Player & team counts" />
-              <NumberField label="Total Players" value={form.total_players} onChange={(v) => set("total_players", v)} min={0} />
+              <NumberField
+                label="Total Players"
+                value={form.total_players}
+                onChange={(v) => set("total_players", v)}
+                min={0}
+                hint="Important: this number must be accurate. Many of your assessment calculations (revenue per player, opportunity sizing, benchmarks) depend on it."
+              />
               <NumberField label="High School Players" value={form.hs_players} onChange={(v) => set("hs_players", v)} min={0} />
               <NumberField label="Youth Players (14U and below)" value={form.youth_players} onChange={(v) => set("youth_players", v)} min={0} />
               <NumberField label="Total Teams" value={form.total_teams} onChange={(v) => set("total_teams", v)} min={0} />
