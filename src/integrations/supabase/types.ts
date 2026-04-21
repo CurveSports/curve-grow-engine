@@ -21,12 +21,15 @@ export type Database = {
           addon_opportunity_high: number | null
           addon_opportunity_low: number | null
           addon_score: number | null
+          annual_hs_equivalent: number | null
+          annual_youth_equivalent: number | null
           apparel_opportunity_high: number | null
           apparel_opportunity_low: number | null
           apparel_score: number | null
           asset_score: number | null
           at_benchmark: boolean | null
           audience_score: number | null
+          blended_annual_fee_overall: number | null
           calculated_at: string
           calculated_total_revenue: number | null
           diagnosis_text: string | null
@@ -51,6 +54,7 @@ export type Database = {
           hard_goods_margin_per_player_low: number | null
           high_dues_concentration: boolean | null
           high_sponsorship_dependency: boolean | null
+          hs_fee_vs_market: string | null
           hs_player_pct: number | null
           id: string
           lessons_revenue_org: number | null
@@ -62,6 +66,10 @@ export type Database = {
           non_dues_revenue: number | null
           non_dues_revenue_per_player: number | null
           org_id: string
+          pricing_benchmark_hs_high: number | null
+          pricing_benchmark_hs_low: number | null
+          pricing_benchmark_youth_high: number | null
+          pricing_benchmark_youth_low: number | null
           pricing_opportunity_high: number | null
           pricing_opportunity_low: number | null
           pricing_score: number | null
@@ -86,6 +94,7 @@ export type Database = {
           total_opportunity_high: number | null
           total_opportunity_low: number | null
           uniform_margin_gap_per_player: number | null
+          youth_fee_vs_market: string | null
         }
         Insert: {
           add_on_revenue?: number | null
@@ -93,12 +102,15 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
+          annual_hs_equivalent?: number | null
+          annual_youth_equivalent?: number | null
           apparel_opportunity_high?: number | null
           apparel_opportunity_low?: number | null
           apparel_score?: number | null
           asset_score?: number | null
           at_benchmark?: boolean | null
           audience_score?: number | null
+          blended_annual_fee_overall?: number | null
           calculated_at?: string
           calculated_total_revenue?: number | null
           diagnosis_text?: string | null
@@ -123,6 +135,7 @@ export type Database = {
           hard_goods_margin_per_player_low?: number | null
           high_dues_concentration?: boolean | null
           high_sponsorship_dependency?: boolean | null
+          hs_fee_vs_market?: string | null
           hs_player_pct?: number | null
           id?: string
           lessons_revenue_org?: number | null
@@ -134,6 +147,10 @@ export type Database = {
           non_dues_revenue?: number | null
           non_dues_revenue_per_player?: number | null
           org_id: string
+          pricing_benchmark_hs_high?: number | null
+          pricing_benchmark_hs_low?: number | null
+          pricing_benchmark_youth_high?: number | null
+          pricing_benchmark_youth_low?: number | null
           pricing_opportunity_high?: number | null
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
@@ -158,6 +175,7 @@ export type Database = {
           total_opportunity_high?: number | null
           total_opportunity_low?: number | null
           uniform_margin_gap_per_player?: number | null
+          youth_fee_vs_market?: string | null
         }
         Update: {
           add_on_revenue?: number | null
@@ -165,12 +183,15 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
+          annual_hs_equivalent?: number | null
+          annual_youth_equivalent?: number | null
           apparel_opportunity_high?: number | null
           apparel_opportunity_low?: number | null
           apparel_score?: number | null
           asset_score?: number | null
           at_benchmark?: boolean | null
           audience_score?: number | null
+          blended_annual_fee_overall?: number | null
           calculated_at?: string
           calculated_total_revenue?: number | null
           diagnosis_text?: string | null
@@ -195,6 +216,7 @@ export type Database = {
           hard_goods_margin_per_player_low?: number | null
           high_dues_concentration?: boolean | null
           high_sponsorship_dependency?: boolean | null
+          hs_fee_vs_market?: string | null
           hs_player_pct?: number | null
           id?: string
           lessons_revenue_org?: number | null
@@ -206,6 +228,10 @@ export type Database = {
           non_dues_revenue?: number | null
           non_dues_revenue_per_player?: number | null
           org_id?: string
+          pricing_benchmark_hs_high?: number | null
+          pricing_benchmark_hs_low?: number | null
+          pricing_benchmark_youth_high?: number | null
+          pricing_benchmark_youth_low?: number | null
           pricing_opportunity_high?: number | null
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
@@ -230,6 +256,7 @@ export type Database = {
           total_opportunity_high?: number | null
           total_opportunity_low?: number | null
           uniform_margin_gap_per_player?: number | null
+          youth_fee_vs_market?: string | null
         }
         Relationships: [
           {
@@ -398,11 +425,12 @@ export type Database = {
       organization_intake: {
         Row: {
           addon_soft_goods_spend: string | null
+          alacarte_annual_hs_spend: number | null
+          alacarte_annual_youth_spend: number | null
           annual_facility_rental_revenue: number | null
           average_roster_size: number | null
-          avg_hs_player_fee: number | null
+          avg_months_active: number | null
           avg_player_years: number | null
-          avg_youth_player_fee: number | null
           camps_revenue: number | null
           city_state: string | null
           clinics_revenue: number | null
@@ -412,10 +440,17 @@ export type Database = {
           data_days_revenue: number | null
           demand_for_organization: string | null
           dues_inclusions: string[] | null
+          dues_model: string | null
           email: string | null
           event_types_offered: string[] | null
           events_per_year: number | null
           facility_rental_revenue: number | null
+          fall_hs_fee: number | null
+          fall_hs_players: number | null
+          fall_youth_fee: number | null
+          fall_youth_players: number | null
+          flat_annual_hs_fee: number | null
+          flat_annual_youth_fee: number | null
           hard_goods_markup: string | null
           hard_goods_purchased: string | null
           hard_goods_spend: string | null
@@ -429,6 +464,10 @@ export type Database = {
           local_market_competition: string | null
           market_strategy: string | null
           market_type: string | null
+          mixed_annual_hs_fee: number | null
+          mixed_annual_youth_fee: number | null
+          monthly_hs_fee: number | null
+          monthly_youth_fee: number | null
           number_of_sponsors: number | null
           operational_structure: string | null
           org_id: string
@@ -448,20 +487,31 @@ export type Database = {
           profit_margin_range: string | null
           recruiting_events_revenue: number | null
           retention_pct: number | null
+          revenue_needs_review: boolean | null
+          revenue_verification: string | null
           runs_own_events: string | null
           seasons_offered: string[] | null
           seeks_sponsorships: string | null
           showcase_revenue: number | null
           sponsorship_approach: string | null
+          spring_youth_fee: number | null
+          spring_youth_players: number | null
           submitted_at: string
+          summer_hs_fee: number | null
+          summer_hs_players: number | null
+          summer_youth_fee: number | null
+          summer_youth_players: number | null
           team_store_status: string | null
           team_structure: string | null
           tiered_packages: string | null
-          total_annual_revenue: number | null
           total_event_revenue: number | null
           total_players: number | null
           total_sponsorship_revenue: number | null
           total_teams: number | null
+          tournament_fee_per_player: number | null
+          tournament_fee_structure: string | null
+          tournaments_per_hs_player: string | null
+          tournaments_per_youth_player: string | null
           tournaments_revenue: number | null
           typical_player_participation: string | null
           uniform_markup: string | null
@@ -473,11 +523,12 @@ export type Database = {
         }
         Insert: {
           addon_soft_goods_spend?: string | null
+          alacarte_annual_hs_spend?: number | null
+          alacarte_annual_youth_spend?: number | null
           annual_facility_rental_revenue?: number | null
           average_roster_size?: number | null
-          avg_hs_player_fee?: number | null
+          avg_months_active?: number | null
           avg_player_years?: number | null
-          avg_youth_player_fee?: number | null
           camps_revenue?: number | null
           city_state?: string | null
           clinics_revenue?: number | null
@@ -487,10 +538,17 @@ export type Database = {
           data_days_revenue?: number | null
           demand_for_organization?: string | null
           dues_inclusions?: string[] | null
+          dues_model?: string | null
           email?: string | null
           event_types_offered?: string[] | null
           events_per_year?: number | null
           facility_rental_revenue?: number | null
+          fall_hs_fee?: number | null
+          fall_hs_players?: number | null
+          fall_youth_fee?: number | null
+          fall_youth_players?: number | null
+          flat_annual_hs_fee?: number | null
+          flat_annual_youth_fee?: number | null
           hard_goods_markup?: string | null
           hard_goods_purchased?: string | null
           hard_goods_spend?: string | null
@@ -504,6 +562,10 @@ export type Database = {
           local_market_competition?: string | null
           market_strategy?: string | null
           market_type?: string | null
+          mixed_annual_hs_fee?: number | null
+          mixed_annual_youth_fee?: number | null
+          monthly_hs_fee?: number | null
+          monthly_youth_fee?: number | null
           number_of_sponsors?: number | null
           operational_structure?: string | null
           org_id: string
@@ -523,20 +585,31 @@ export type Database = {
           profit_margin_range?: string | null
           recruiting_events_revenue?: number | null
           retention_pct?: number | null
+          revenue_needs_review?: boolean | null
+          revenue_verification?: string | null
           runs_own_events?: string | null
           seasons_offered?: string[] | null
           seeks_sponsorships?: string | null
           showcase_revenue?: number | null
           sponsorship_approach?: string | null
+          spring_youth_fee?: number | null
+          spring_youth_players?: number | null
           submitted_at?: string
+          summer_hs_fee?: number | null
+          summer_hs_players?: number | null
+          summer_youth_fee?: number | null
+          summer_youth_players?: number | null
           team_store_status?: string | null
           team_structure?: string | null
           tiered_packages?: string | null
-          total_annual_revenue?: number | null
           total_event_revenue?: number | null
           total_players?: number | null
           total_sponsorship_revenue?: number | null
           total_teams?: number | null
+          tournament_fee_per_player?: number | null
+          tournament_fee_structure?: string | null
+          tournaments_per_hs_player?: string | null
+          tournaments_per_youth_player?: string | null
           tournaments_revenue?: number | null
           typical_player_participation?: string | null
           uniform_markup?: string | null
@@ -548,11 +621,12 @@ export type Database = {
         }
         Update: {
           addon_soft_goods_spend?: string | null
+          alacarte_annual_hs_spend?: number | null
+          alacarte_annual_youth_spend?: number | null
           annual_facility_rental_revenue?: number | null
           average_roster_size?: number | null
-          avg_hs_player_fee?: number | null
+          avg_months_active?: number | null
           avg_player_years?: number | null
-          avg_youth_player_fee?: number | null
           camps_revenue?: number | null
           city_state?: string | null
           clinics_revenue?: number | null
@@ -562,10 +636,17 @@ export type Database = {
           data_days_revenue?: number | null
           demand_for_organization?: string | null
           dues_inclusions?: string[] | null
+          dues_model?: string | null
           email?: string | null
           event_types_offered?: string[] | null
           events_per_year?: number | null
           facility_rental_revenue?: number | null
+          fall_hs_fee?: number | null
+          fall_hs_players?: number | null
+          fall_youth_fee?: number | null
+          fall_youth_players?: number | null
+          flat_annual_hs_fee?: number | null
+          flat_annual_youth_fee?: number | null
           hard_goods_markup?: string | null
           hard_goods_purchased?: string | null
           hard_goods_spend?: string | null
@@ -579,6 +660,10 @@ export type Database = {
           local_market_competition?: string | null
           market_strategy?: string | null
           market_type?: string | null
+          mixed_annual_hs_fee?: number | null
+          mixed_annual_youth_fee?: number | null
+          monthly_hs_fee?: number | null
+          monthly_youth_fee?: number | null
           number_of_sponsors?: number | null
           operational_structure?: string | null
           org_id?: string
@@ -598,20 +683,31 @@ export type Database = {
           profit_margin_range?: string | null
           recruiting_events_revenue?: number | null
           retention_pct?: number | null
+          revenue_needs_review?: boolean | null
+          revenue_verification?: string | null
           runs_own_events?: string | null
           seasons_offered?: string[] | null
           seeks_sponsorships?: string | null
           showcase_revenue?: number | null
           sponsorship_approach?: string | null
+          spring_youth_fee?: number | null
+          spring_youth_players?: number | null
           submitted_at?: string
+          summer_hs_fee?: number | null
+          summer_hs_players?: number | null
+          summer_youth_fee?: number | null
+          summer_youth_players?: number | null
           team_store_status?: string | null
           team_structure?: string | null
           tiered_packages?: string | null
-          total_annual_revenue?: number | null
           total_event_revenue?: number | null
           total_players?: number | null
           total_sponsorship_revenue?: number | null
           total_teams?: number | null
+          tournament_fee_per_player?: number | null
+          tournament_fee_structure?: string | null
+          tournaments_per_hs_player?: string | null
+          tournaments_per_youth_player?: string | null
           tournaments_revenue?: number | null
           typical_player_participation?: string | null
           uniform_markup?: string | null

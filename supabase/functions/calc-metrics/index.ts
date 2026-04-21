@@ -96,15 +96,30 @@ function formatCurrency(n: number) {
   return "$" + Math.round(n).toLocaleString("en-US");
 }
 
+// Tournaments-per-player midpoints (mirrors src/lib/intakeOptions.ts)
+const TOURNAMENTS_PER_PLAYER_MIDPOINT: Record<string, number> = {
+  "1–2": 1.5, "1-2": 1.5,
+  "3–4": 3.5, "3-4": 3.5,
+  "5–6": 5.5, "5-6": 5.5,
+  "7–8": 7.5, "7-8": 7.5,
+  "8+": 9,
+};
+
+// Pricing benchmarks by market type
+const PRICING_BENCHMARKS: Record<string, { hsLow: number; hsHigh: number; youthLow: number; youthHigh: number }> = {
+  "Rural":                { hsLow: 2500, hsHigh: 4000,  youthLow: 1500, youthHigh: 2500 },
+  "Suburban":             { hsLow: 2500, hsHigh: 4000,  youthLow: 1500, youthHigh: 2500 },
+  "Mid-size Metro":       { hsLow: 4000, hsHigh: 6000,  youthLow: 2500, youthHigh: 4000 },
+  "Major Metro":          { hsLow: 6000, hsHigh: 10000, youthLow: 3500, youthHigh: 6000 },
+  "High-income Suburban": { hsLow: 6000, hsHigh: 10000, youthLow: 3500, youthHigh: 6000 },
+};
+
 function calculate(intake: any) {
   const total_players = Math.max(num(intake.total_players), 1);
   const hs_players = num(intake.hs_players);
   const youth_players = num(intake.youth_players);
-  const hs_fee = num(intake.avg_hs_player_fee);
-  const youth_fee = num(intake.avg_youth_player_fee);
   const sponsors = num(intake.number_of_sponsors);
   const sponsor_rev = num(intake.total_sponsorship_revenue);
-  // apparel_revenue removed from intake — apparel is no longer counted in total revenue
   const events_per_year = num(intake.events_per_year);
   const camps = num(intake.camps_revenue);
   const clinics = num(intake.clinics_revenue);
@@ -147,8 +162,90 @@ function calculate(intake: any) {
 
   const facility_rev = isFacility ? num(intake.annual_facility_rental_revenue ?? intake.facility_rental_revenue) : 0;
 
-  // Dues + system-calculated total revenue (replaces manually entered total_annual_revenue)
-  const dues_revenue = hs_players * hs_fee + youth_players * youth_fee;
+  // ===== DUES REVENUE BY MODEL =====
+  // Auto-select monthly when year-round is chosen
+  const seasons: string[] = Array.isArray(intake.seasons_offered) ? intake.seasons_offered : [];
+  let dues_model: string = intake.dues_model ?? "";
+  if (seasons.includes("Year-round")) dues_model = "Monthly Membership";
+
+  let dues_revenue = 0;
+  let annual_hs_equivalent = 0;
+  let annual_youth_equivalent = 0;
+
+  if (dues_model === "Per Season") {
+    const sYouthP = num(intake.spring_youth_players);
+    const sYouthF = num(intake.spring_youth_fee);
+    const suHsP = num(intake.summer_hs_players);
+    const suHsF = num(intake.summer_hs_fee);
+    const suYouthP = num(intake.summer_youth_players);
+    const suYouthF = num(intake.summer_youth_fee);
+    const fHsP = num(intake.fall_hs_players);
+    const fHsF = num(intake.fall_hs_fee);
+    const fYouthP = num(intake.fall_youth_players);
+    const fYouthF = num(intake.fall_youth_fee);
+
+    dues_revenue =
+      sYouthP * sYouthF +
+      suHsP * suHsF + suYouthP * suYouthF +
+      fHsP * fHsF + fYouthP * fYouthF;
+
+    annual_hs_equivalent = hs_players > 0
+      ? (suHsP * suHsF + fHsP * fHsF) / hs_players
+      : 0;
+    annual_youth_equivalent = youth_players > 0
+      ? (sYouthP * sYouthF + suYouthP * suYouthF + fYouthP * fYouthF) / youth_players
+      : 0;
+  } else if (dues_model === "Monthly Membership") {
+    const mHsFee = num(intake.monthly_hs_fee);
+    const mYouthFee = num(intake.monthly_youth_fee);
+    const months = num(intake.avg_months_active) || 12;
+    const tStruct = intake.tournament_fee_structure;
+
+    let tFeesHs = 0;
+    let tFeesYouth = 0;
+    if (tStruct === "Standard fee per tournament") {
+      const perFee = num(intake.tournament_fee_per_player);
+      tFeesHs = (TOURNAMENTS_PER_PLAYER_MIDPOINT[intake.tournaments_per_hs_player] ?? 0) * perFee;
+      tFeesYouth = (TOURNAMENTS_PER_PLAYER_MIDPOINT[intake.tournaments_per_youth_player] ?? 0) * perFee;
+    } else if (tStruct === "À la carte — players register and pay per event") {
+      tFeesHs = num(intake.alacarte_annual_hs_spend);
+      tFeesYouth = num(intake.alacarte_annual_youth_spend);
+    } // included → 0,0
+
+    annual_hs_equivalent = (mHsFee * months) + tFeesHs;
+    annual_youth_equivalent = (mYouthFee * months) + tFeesYouth;
+    dues_revenue = (hs_players * annual_hs_equivalent) + (youth_players * annual_youth_equivalent);
+  } else if (dues_model === "Flat Annual Fee") {
+    annual_hs_equivalent = num(intake.flat_annual_hs_fee);
+    annual_youth_equivalent = num(intake.flat_annual_youth_fee);
+    dues_revenue = (hs_players * annual_hs_equivalent) + (youth_players * annual_youth_equivalent);
+  } else if (dues_model === "Mixed") {
+    annual_hs_equivalent = num(intake.mixed_annual_hs_fee);
+    annual_youth_equivalent = num(intake.mixed_annual_youth_fee);
+    dues_revenue = (hs_players * annual_hs_equivalent) + (youth_players * annual_youth_equivalent);
+  }
+
+  const blended_annual_fee_overall = total_players > 0 ? dues_revenue / total_players : 0;
+
+  // Pricing benchmark vs. market
+  const pb = PRICING_BENCHMARKS[orgType ? intake.market_type : intake.market_type] ?? PRICING_BENCHMARKS[intake.market_type] ?? null;
+  const pricing_benchmark_hs_low = pb?.hsLow ?? null;
+  const pricing_benchmark_hs_high = pb?.hsHigh ?? null;
+  const pricing_benchmark_youth_low = pb?.youthLow ?? null;
+  const pricing_benchmark_youth_high = pb?.youthHigh ?? null;
+  let hs_fee_vs_market: string | null = null;
+  let youth_fee_vs_market: string | null = null;
+  if (pb && annual_hs_equivalent > 0) {
+    if (annual_hs_equivalent < pb.hsLow) hs_fee_vs_market = "Below Market";
+    else if (annual_hs_equivalent > pb.hsHigh) hs_fee_vs_market = "Above Market";
+    else hs_fee_vs_market = "At Market";
+  }
+  if (pb && annual_youth_equivalent > 0) {
+    if (annual_youth_equivalent < pb.youthLow) youth_fee_vs_market = "Below Market";
+    else if (annual_youth_equivalent > pb.youthHigh) youth_fee_vs_market = "Above Market";
+    else youth_fee_vs_market = "At Market";
+  }
+
   const calculated_total_revenue =
     dues_revenue +
     event_revenue_total +
@@ -455,6 +552,11 @@ function calculate(intake: any) {
     high_dues_concentration, high_sponsorship_dependency,
     diagnosis_text: diagnosis,
     next_steps,
+    // New dues-model derived fields
+    annual_hs_equivalent, annual_youth_equivalent, blended_annual_fee_overall,
+    pricing_benchmark_hs_low, pricing_benchmark_hs_high,
+    pricing_benchmark_youth_low, pricing_benchmark_youth_high,
+    hs_fee_vs_market, youth_fee_vs_market,
     calculated_at: new Date().toISOString(),
   };
 }
@@ -609,6 +711,10 @@ Deno.serve(async (req) => {
     // Mirror lessons_revenue_gross into legacy lessons_revenue for backward compat
     const lessons_gross = intake.lessons_revenue_gross ?? intake.lessons_revenue ?? null;
 
+    // Derive revenue_needs_review flag from verification answer
+    const verification = intake.revenue_verification ?? null;
+    const revenue_needs_review = verification === "Close but not exact" || verification === "Something seems off";
+
     const intakeRow = {
       ...intake,
       org_id,
@@ -616,6 +722,7 @@ Deno.serve(async (req) => {
       total_event_revenue: event_revenue_total,
       lessons_revenue: lessons_gross,
       lessons_revenue_gross: lessons_gross,
+      revenue_needs_review,
     };
     const { error: intakeErr } = await supabase
       .from("organization_intake")

@@ -72,3 +72,31 @@ export const SECTION_TITLES = [
   "Retention",
   "Operations",
 ];
+
+// Dues model
+export const DUES_MODELS = ["Per Season", "Monthly Membership", "Flat Annual Fee", "Mixed"] as const;
+export const MONTHS_ACTIVE = ["8", "9", "10", "11", "12"] as const;
+export const TOURNAMENT_FEE_STRUCTURES = [
+  "Standard fee per tournament",
+  "À la carte — players register and pay per event",
+  "Included in monthly membership",
+] as const;
+export const TOURNAMENTS_PER_PLAYER = ["1–2", "3–4", "5–6", "7–8", "8+"] as const;
+export const REVENUE_VERIFICATION = [
+  "Yes that looks right",
+  "Close but not exact",
+  "Something seems off",
+] as const;
+
+// Midpoints used by the calc engine
+export const TOURNAMENTS_PER_PLAYER_MIDPOINT: Record<string, number> = {
+  "1–2": 1.5,
+  "1-2": 1.5,
+  "3–4": 3.5,
+  "3-4": 3.5,
+  "5–6": 5.5,
+  "5-6": 5.5,
+  "7–8": 7.5,
+  "7-8": 7.5,
+  "8+": 9,
+};
