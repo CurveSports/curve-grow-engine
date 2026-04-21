@@ -61,7 +61,7 @@ const empty: Form = {
   runs_own_events: "", events_per_year: "", total_event_revenue: "",
   event_types_offered: [],
   tournaments_revenue: "", camps_revenue: "", clinics_revenue: "", showcase_revenue: "",
-  recruiting_events_revenue: "", data_days_revenue: "", other_events_revenue: "",
+  recruiting_events_revenue: "", data_days_revenue: "", tryouts_revenue: "", other_events_revenue: "",
   other_addon_revenue: "",
   lessons_revenue: "", lessons_revenue_gross: "", lessons_revenue_model: "", lessons_capture_pct: "",
   annual_facility_rental_revenue: "",
