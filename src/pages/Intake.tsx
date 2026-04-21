@@ -278,11 +278,64 @@ export default function Intake() {
               <NumberField label="Total Sponsorship Revenue" value={form.total_sponsorship_revenue} onChange={(v) => set("total_sponsorship_revenue", v)} min={0} currency />
 
               <div className="pt-4">
-                <SubsectionHeading title="Apparel" />
+                <SubsectionHeading title="Apparel & Gear" />
+                <p className="text-sm text-muted-foreground mt-2">Help us understand how your organization handles uniforms, hard goods, and add-on gear.</p>
               </div>
-              <NumberField label="Apparel Revenue" value={form.apparel_revenue} onChange={(v) => set("apparel_revenue", v)} min={0} currency />
-              <SelectField label="Estimated Apparel Margin" value={form.apparel_margin} onChange={(v) => set("apparel_margin", v)} options={APPAREL_MARGIN} />
-              <SelectField label="Apparel Model" value={form.apparel_model} onChange={(v) => set("apparel_model", v)} options={APPAREL_MODEL} />
+              <TextField
+                label="Who is your primary uniform and apparel vendor?"
+                value={form.uniform_vendor}
+                onChange={(v) => set("uniform_vendor", v)}
+                hint="e.g. Marucci, Wilson, BSN, Augusta"
+              />
+              <SelectField
+                label="Estimated uniform package cost per player"
+                value={form.uniform_package_cost}
+                onChange={(v) => set("uniform_package_cost", v)}
+                options={UNIFORM_PACKAGE_COST}
+              />
+              <SelectField
+                label="Current markup on uniform package"
+                value={form.uniform_markup}
+                onChange={(v) => set("uniform_markup", v)}
+                options={UNIFORM_MARKUP}
+              />
+              <SelectField
+                label="Do players purchase hard goods through your organization?"
+                value={form.hard_goods_purchased}
+                onChange={(v) => set("hard_goods_purchased", v)}
+                options={HARD_GOODS_PURCHASED}
+                hint="Hard goods include bats, helmets, bags, gloves, and accessories"
+              />
+              {form.hard_goods_purchased && form.hard_goods_purchased !== "No" && (
+                <>
+                  <SelectField
+                    label="Estimated hard goods spend per player annually through your org"
+                    value={form.hard_goods_spend}
+                    onChange={(v) => set("hard_goods_spend", v)}
+                    options={HARD_GOODS_SPEND}
+                  />
+                  <SelectField
+                    label="Current markup on hard goods"
+                    value={form.hard_goods_markup}
+                    onChange={(v) => set("hard_goods_markup", v)}
+                    options={HARD_GOODS_MARKUP}
+                  />
+                </>
+              )}
+              <SelectField
+                label="Do you have an active team store or add-on catalog beyond the required uniform?"
+                value={form.team_store_status}
+                onChange={(v) => set("team_store_status", v)}
+                options={TEAM_STORE_STATUS}
+              />
+              {form.team_store_status && form.team_store_status !== "No" && (
+                <SelectField
+                  label="Estimated add-on soft goods spend per player annually through your org"
+                  value={form.addon_soft_goods_spend}
+                  onChange={(v) => set("addon_soft_goods_spend", v)}
+                  options={ADDON_SOFT_GOODS_SPEND}
+                />
+              )}
 
               <div className="pt-4">
                 <SubsectionHeading title="Events & Programs" />
