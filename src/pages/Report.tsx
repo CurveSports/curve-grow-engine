@@ -227,7 +227,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
   }
 
   return (
-    <AppShell>
+    <Wrap>
       <div className="max-w-6xl mx-auto space-y-6 animate-fade-in print:max-w-full">
         {/* Header */}
         <header className="flex flex-wrap items-end justify-between gap-4 pb-6 border-b border-border">
