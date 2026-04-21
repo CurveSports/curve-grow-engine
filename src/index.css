@@ -4,93 +4,106 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Curve OS design system — curvesports.com inspired
-   Clean white, near-black ink, single green accent. */
+/* Curve OS design system v2 — dark nav, light content, green accent */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 8%;          /* near-black ink */
+    /* Content surface */
+    --background: 210 40% 98%;          /* #F8FAFC */
+    --foreground: 222 47% 11%;          /* #0F172A */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 8%;
+    --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 0 0% 8%;             /* dark ink as primary */
+    --primary: 222 47% 11%;             /* near-black ink */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 8%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 40%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;    /* #64748B */
 
-    --accent: 142 71% 45%;          /* curve green #22C55E */
+    --accent: 142 71% 45%;              /* curve green #22C55E */
     --accent-foreground: 0 0% 100%;
     --accent-soft: 142 71% 95%;
 
-    --destructive: 0 75% 50%;
+    --destructive: 0 84% 60%;           /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 38 92% 50%;              /* #F59E0B */
     --warning-soft: 38 92% 95%;
 
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --info: 217 91% 60%;                /* #3B82F6 */
+    --info-soft: 217 91% 95%;
+
+    --health: 258 90% 66%;              /* #8B5CF6 */
+    --health-soft: 258 90% 95%;
+
+    --neutral: 215 20% 65%;             /* #94A3B8 */
+
+    --border: 214 32% 91%;              /* #E2E8F0 */
+    --input: 214 32% 91%;
     --ring: 142 71% 45%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;                  /* 12px cards */
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 0 0% 8%;
+    /* Dark navigation surface */
+    --nav-background: 222 47% 11%;      /* #0F172A */
+    --nav-foreground: 0 0% 100%;
+    --nav-muted: 215 20% 65%;           /* #94A3B8 inactive text */
+    --nav-active-bg: 142 71% 45%;       /* green pill */
+    --nav-active-foreground: 0 0% 100%;
+    --nav-border: 217 33% 18%;
+    --nav-hover: 217 33% 16%;
+
+    /* Sidebar tokens (legacy compat with shadcn sidebar primitives) */
+    --sidebar-background: 222 47% 11%;
+    --sidebar-foreground: 215 20% 65%;
+    --sidebar-primary: 142 71% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 8%;
-    --sidebar-border: 0 0% 90%;
+    --sidebar-accent: 217 33% 16%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 217 33% 18%;
     --sidebar-ring: 142 71% 45%;
   }
 
   .dark {
-    --background: 0 0% 8%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 8%;
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 65%;
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 47% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 65%;
     --accent: 142 71% 45%;
     --accent-foreground: 0 0% 100%;
     --accent-soft: 142 30% 18%;
-    --destructive: 0 75% 50%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-soft: 38 30% 18%;
-    --border: 0 0% 18%;
-    --input: 0 0% 18%;
+    --info: 217 91% 60%;
+    --info-soft: 217 30% 18%;
+    --health: 258 90% 66%;
+    --health-soft: 258 30% 18%;
+    --neutral: 215 20% 55%;
+    --border: 217 33% 18%;
+    --input: 217 33% 18%;
     --ring: 142 71% 45%;
-    --sidebar-background: 0 0% 10%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 0 0% 8%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 18%;
-    --sidebar-ring: 142 71% 45%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   html, body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
@@ -105,12 +118,33 @@
 
 @layer components {
   .curve-card {
-    @apply bg-card border border-border rounded-lg p-6;
+    @apply bg-card border border-border rounded-xl p-6 shadow-[0_1px_3px_rgba(0,0,0,0.05)];
+  }
+  .curve-card-interactive {
+    @apply curve-card transition-all duration-200 hover:border-accent hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] cursor-pointer;
   }
   .curve-container {
-    @apply max-w-6xl mx-auto px-6;
+    @apply max-w-[1280px] mx-auto px-8;
   }
   .curve-eyebrow {
-    @apply text-xs uppercase tracking-[0.18em] text-muted-foreground font-medium;
+    @apply text-[11px] uppercase tracking-[0.18em] text-neutral font-semibold;
+  }
+  .curve-stat {
+    @apply font-display text-3xl font-semibold tabular-nums text-foreground;
+  }
+}
+
+@layer utilities {
+  .text-neutral { color: hsl(var(--neutral)); }
+  .bg-neutral { background-color: hsl(var(--neutral)); }
+  /* Skeleton shimmer with green tint */
+  @keyframes curve-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .curve-shimmer {
+    background: linear-gradient(90deg, hsl(var(--muted)) 0%, hsl(var(--accent-soft)) 50%, hsl(var(--muted)) 100%);
+    background-size: 200% 100%;
+    animation: curve-shimmer 1.6s ease-in-out infinite;
   }
 }
