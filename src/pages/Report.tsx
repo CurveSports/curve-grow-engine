@@ -359,6 +359,18 @@ export default function Report() {
                 )}
               </div>
             )}
+            {hasAffiliates && (
+              <div className="curve-card">
+                <p className="text-xs text-muted-foreground">Affiliate Revenue</p>
+                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(Number(data.affiliate_total_revenue ?? 0))}</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {Number(intake?.number_of_affiliates ?? 0)} affiliates / {Number(intake?.affiliate_players_charged ?? 0)} players
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Fee revenue: {formatCurrency(Number(data.affiliate_fee_revenue ?? 0))} / Apparel: {formatCurrency(Number(intake?.affiliate_apparel_revenue ?? 0))}
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
@@ -483,6 +495,14 @@ export default function Report() {
             {isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined && (
               <EngineCard name="Facility" score={data.facility_score} low={data.facility_opportunity_low ?? 0} high={data.facility_opportunity_high ?? 0} />
             )}
+            {hasAffiliates && data.affiliate_score !== null && data.affiliate_score !== undefined && (
+              <EngineCard
+                name="Affiliate Program"
+                score={Number(data.affiliate_score)}
+                low={Number(data.affiliate_fee_opportunity_low ?? 0)}
+                high={Number(data.affiliate_fee_opportunity_high ?? 0)}
+              />
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-4 italic">
             All organizations should have a formal retention and referral plan in place.
@@ -516,6 +536,9 @@ export default function Report() {
                   ["Retention", data.retention_referral_opportunity_low ?? data.retention_opportunity_low, data.retention_referral_opportunity_high ?? data.retention_opportunity_high, data.retention_score],
                   ...(isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined
                     ? [["Facility", data.facility_opportunity_low ?? 0, data.facility_opportunity_high ?? 0, data.facility_score]]
+                    : []),
+                  ...(hasAffiliates && data.affiliate_score !== null && data.affiliate_score !== undefined
+                    ? [["Affiliate Program", data.affiliate_fee_opportunity_low ?? 0, data.affiliate_fee_opportunity_high ?? 0, data.affiliate_score]]
                     : []),
                 ]) as Array<[string, number, number, number]>).map(([n, lo, hi, s], idx) => (
                   <tr key={n as string} className={idx % 2 === 1 ? "bg-muted/30" : ""}>
