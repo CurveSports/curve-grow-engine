@@ -29,7 +29,12 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-function EngineCard({ name, score, low, high }: { name: string; score: number; low: number; high: number }) {
+function EngineCard({
+  name, score, low, high, opportunityLabel, subtext,
+}: {
+  name: string; score: number; low: number; high: number;
+  opportunityLabel?: string; subtext?: string;
+}) {
   return (
     <div className="curve-card min-h-[180px] flex flex-col">
       <div className="flex items-baseline justify-between mb-4">
@@ -41,11 +46,61 @@ function EngineCard({ name, score, low, high }: { name: string; score: number; l
       </div>
       <ScoreBar score={score} />
       <div className="mt-auto pt-4">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Opportunity</p>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{opportunityLabel ?? "Opportunity"}</p>
         <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">
           {formatCurrency(low)} – {formatCurrency(high)}
         </p>
+        {subtext && <p className="text-xs text-muted-foreground mt-2 leading-snug">{subtext}</p>}
       </div>
+    </div>
+  );
+}
+
+function RetentionCard({
+  score, health, retentionPct, revenueProtectedPerPct, referralLow, referralHigh,
+}: {
+  score: number; health: string; retentionPct: number;
+  revenueProtectedPerPct: number; referralLow: number; referralHigh: number;
+}) {
+  const healthStyles =
+    health === "Healthy"
+      ? "bg-accent-soft text-accent border-accent/30"
+      : health === "Needs Attention"
+      ? "bg-warning-soft text-warning border-warning/30"
+      : "bg-destructive/10 text-destructive border-destructive/30";
+  return (
+    <div className="curve-card min-h-[180px] flex flex-col">
+      <div className="flex items-baseline justify-between mb-4">
+        <h3 className="font-display font-semibold text-base">Retention</h3>
+        <span className="font-display tabular-nums leading-none">
+          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
+        </span>
+      </div>
+      <ScoreBar score={score} />
+      <div className="mt-4 space-y-2">
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${healthStyles}`}>
+          {health}
+        </span>
+        <p className="text-xs text-muted-foreground">Retention rate: {Math.round(retentionPct)}%</p>
+        <p className="text-xs text-muted-foreground leading-snug">
+          Every 1% improvement protects approximately {formatCurrency(revenueProtectedPerPct)} in annual revenue
+        </p>
+        <p className="text-xs text-foreground/80 tabular-nums">
+          Referral opportunity: {formatCurrency(referralLow)} – {formatCurrency(referralHigh)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AddOnsFacilityNote() {
+  return (
+    <div className="curve-card min-h-[180px] flex flex-col justify-center items-center text-center p-6">
+      <h3 className="font-display font-semibold text-base mb-3">Add-Ons</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Add-on programming is captured in your Facility engine
+      </p>
     </div>
   );
 }
@@ -148,15 +203,17 @@ export default function Report() {
   }
   const top3 = [...engines].sort((a, b) => a.score - b.score).slice(0, 3);
 
-  // Opportunity components for breakdown line
+  // Opportunity components for breakdown line (use Apparel Margin / Add-Ons rename, hide based on org type)
   const opportunityComponents: { name: string; low: number; high: number }[] = [
     { name: "Pricing", low: Number(data.pricing_opportunity_low ?? 0), high: Number(data.pricing_opportunity_high ?? 0) },
     { name: "Sponsorship", low: Number(data.sponsorship_opportunity_low ?? 0), high: Number(data.sponsorship_opportunity_high ?? 0) },
     { name: "Events", low: Number(data.event_opportunity_low ?? 0), high: Number(data.event_opportunity_high ?? 0) },
-    { name: "Apparel", low: Number(data.apparel_opportunity_low ?? 0), high: Number(data.apparel_opportunity_high ?? 0) },
-    { name: "Add-Ons", low: Number(data.addon_opportunity_low ?? 0), high: Number(data.addon_opportunity_high ?? 0) },
-    { name: "Retention", low: Number(data.retention_opportunity_low ?? 0), high: Number(data.retention_opportunity_high ?? 0) },
+    { name: "Apparel Margin", low: Number(data.apparel_opportunity_low ?? 0), high: Number(data.apparel_opportunity_high ?? 0) },
+    { name: "Retention", low: Number(data.retention_referral_opportunity_low ?? data.retention_opportunity_low ?? 0), high: Number(data.retention_referral_opportunity_high ?? data.retention_opportunity_high ?? 0) },
   ];
+  if (!isFacilityOrg) {
+    opportunityComponents.push({ name: "Add-Ons (Remote Training)", low: Number(data.addon_opportunity_low ?? 0), high: Number(data.addon_opportunity_high ?? 0) });
+  }
   if (isFacilityOrg) {
     opportunityComponents.push({ name: "Facility", low: Number(data.facility_opportunity_low ?? 0), high: Number(data.facility_opportunity_high ?? 0) });
   }
@@ -264,7 +321,7 @@ export default function Report() {
                         <button type="button" aria-label="info"><Info className="h-3.5 w-3.5 text-muted-foreground" /></button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs text-xs">
-                        Based on average family spend of $400/month on private instruction. A facility serving your player base should capture a minimum of $1,200 per player annually in facility and instruction revenue.
+                        Based on average family spend of $400/month on private instruction. A facility serving your player base should capture approximately 50% of that spend — $2,400 per player annually — through structured in-house instruction and programming. Geography and existing coach relationships are factored into this estimate.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -327,11 +384,6 @@ export default function Report() {
           <div className="curve-card border-l-4 border-l-accent p-8">
             <p className="curve-eyebrow mb-3">Assessment Summary</p>
             <p className="text-base leading-relaxed text-foreground/90" style={{ fontSize: "16px" }}>{data.diagnosis_text}</p>
-            {Number(data.apparel_profit) > 0 && (
-              <p className="text-sm text-muted-foreground mt-4">
-                Current estimated apparel profit: {formatCurrency(data.apparel_profit)} based on reported margin.
-              </p>
-            )}
           </div>
         </section>
 
@@ -343,14 +395,41 @@ export default function Report() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <EngineCard name="Pricing" score={data.pricing_score} low={data.pricing_opportunity_low} high={data.pricing_opportunity_high} />
             <EngineCard name="Sponsorship" score={data.sponsorship_score} low={data.sponsorship_opportunity_low} high={data.sponsorship_opportunity_high} />
-            <EngineCard name="Apparel" score={data.apparel_score} low={data.apparel_opportunity_low} high={data.apparel_opportunity_high} />
+            <EngineCard
+              name="Apparel"
+              score={data.apparel_score}
+              low={data.apparel_opportunity_low}
+              high={data.apparel_opportunity_high}
+              opportunityLabel="Apparel Margin Opportunity"
+              subtext="Estimated additional annual margin from uniform markup improvement and hard goods wallet recapture"
+            />
             <EngineCard name="Events" score={data.event_score} low={data.event_opportunity_low} high={data.event_opportunity_high} />
-            <EngineCard name="Add-Ons" score={data.addon_score} low={data.addon_opportunity_low} high={data.addon_opportunity_high} />
-            <EngineCard name="Retention" score={data.retention_score} low={data.retention_opportunity_low} high={data.retention_opportunity_high} />
+            {isFacilityOrg ? (
+              <AddOnsFacilityNote />
+            ) : (
+              <EngineCard
+                name="Add-Ons — Remote Training"
+                score={data.addon_score}
+                low={data.addon_opportunity_low}
+                high={data.addon_opportunity_high}
+                subtext="Based on $100/month remote training package at 10% player adoption"
+              />
+            )}
+            <RetentionCard
+              score={Number(data.retention_score)}
+              health={String(data.retention_health ?? "Healthy")}
+              retentionPct={Number(intake?.retention_pct ?? 0)}
+              revenueProtectedPerPct={Number(data.revenue_protected_per_pct ?? 0)}
+              referralLow={Number(data.retention_referral_opportunity_low ?? 0)}
+              referralHigh={Number(data.retention_referral_opportunity_high ?? 0)}
+            />
             {isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined && (
               <EngineCard name="Facility" score={data.facility_score} low={data.facility_opportunity_low ?? 0} high={data.facility_opportunity_high ?? 0} />
             )}
           </div>
+          <p className="text-xs text-muted-foreground mt-4 italic">
+            All organizations should have a formal retention and referral plan in place.
+          </p>
         </section>
 
         <SectionDivider />
@@ -369,17 +448,19 @@ export default function Report() {
                 </tr>
               </thead>
               <tbody>
-                {([
+                {(([
                   ["Pricing", data.pricing_opportunity_low, data.pricing_opportunity_high, data.pricing_score],
                   ["Sponsorship", data.sponsorship_opportunity_low, data.sponsorship_opportunity_high, data.sponsorship_score],
-                  ["Apparel", data.apparel_opportunity_low, data.apparel_opportunity_high, data.apparel_score],
+                  ["Apparel Margin", data.apparel_opportunity_low, data.apparel_opportunity_high, data.apparel_score],
                   ["Events", data.event_opportunity_low, data.event_opportunity_high, data.event_score],
-                  ["Add-Ons", data.addon_opportunity_low, data.addon_opportunity_high, data.addon_score],
-                  ["Retention", data.retention_opportunity_low, data.retention_opportunity_high, data.retention_score],
+                  ...(!isFacilityOrg
+                    ? [["Add-Ons (Remote Training)", data.addon_opportunity_low, data.addon_opportunity_high, data.addon_score]]
+                    : []),
+                  ["Retention", data.retention_referral_opportunity_low ?? data.retention_opportunity_low, data.retention_referral_opportunity_high ?? data.retention_opportunity_high, data.retention_score],
                   ...(isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined
                     ? [["Facility", data.facility_opportunity_low ?? 0, data.facility_opportunity_high ?? 0, data.facility_score]]
                     : []),
-                ] as Array<[string, number, number, number]>).map(([n, lo, hi, s], idx) => (
+                ]) as Array<[string, number, number, number]>).map(([n, lo, hi, s], idx) => (
                   <tr key={n as string} className={idx % 2 === 1 ? "bg-muted/30" : ""}>
                     <td className="px-5 py-3 font-medium">{n}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(lo as number)}</td>

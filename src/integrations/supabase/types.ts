@@ -21,13 +21,12 @@ export type Database = {
           addon_opportunity_high: number | null
           addon_opportunity_low: number | null
           addon_score: number | null
-          apparel_margin_pct: number | null
           apparel_opportunity_high: number | null
           apparel_opportunity_low: number | null
-          apparel_profit: number | null
-          apparel_revenue_per_player: number | null
           apparel_score: number | null
+          asset_score: number | null
           at_benchmark: boolean | null
+          audience_score: number | null
           calculated_at: string
           calculated_total_revenue: number | null
           diagnosis_text: string | null
@@ -37,8 +36,7 @@ export type Database = {
           estimated_returning_players: number | null
           event_opportunity_high: number | null
           event_opportunity_low: number | null
-          event_revenue_mature_high: number | null
-          event_revenue_mature_low: number | null
+          event_revenue_target: number | null
           event_score: number | null
           facility_at_benchmark: boolean | null
           facility_opportunity_high: number | null
@@ -47,6 +45,10 @@ export type Database = {
           facility_revenue_gap: number | null
           facility_revenue_pct: number | null
           facility_score: number | null
+          fmv_per_sponsor_high: number | null
+          fmv_per_sponsor_low: number | null
+          hard_goods_margin_per_player_high: number | null
+          hard_goods_margin_per_player_low: number | null
           high_dues_concentration: boolean | null
           high_sponsorship_dependency: boolean | null
           hs_player_pct: number | null
@@ -64,13 +66,17 @@ export type Database = {
           pricing_opportunity_low: number | null
           pricing_score: number | null
           priority_engine: string | null
+          retention_health: string | null
           retention_opportunity_high: number | null
           retention_opportunity_low: number | null
+          retention_referral_opportunity_high: number | null
+          retention_referral_opportunity_low: number | null
           retention_score: number | null
           revenue_benchmark: number | null
           revenue_gap: number | null
           revenue_per_event: number | null
           revenue_per_player: number | null
+          revenue_protected_per_pct: number | null
           sponsorship_opportunity_high: number | null
           sponsorship_opportunity_low: number | null
           sponsorship_revenue_per_sponsor: number | null
@@ -79,6 +85,7 @@ export type Database = {
           total_engine_score: number | null
           total_opportunity_high: number | null
           total_opportunity_low: number | null
+          uniform_margin_gap_per_player: number | null
         }
         Insert: {
           add_on_revenue?: number | null
@@ -86,13 +93,12 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
-          apparel_margin_pct?: number | null
           apparel_opportunity_high?: number | null
           apparel_opportunity_low?: number | null
-          apparel_profit?: number | null
-          apparel_revenue_per_player?: number | null
           apparel_score?: number | null
+          asset_score?: number | null
           at_benchmark?: boolean | null
+          audience_score?: number | null
           calculated_at?: string
           calculated_total_revenue?: number | null
           diagnosis_text?: string | null
@@ -102,8 +108,7 @@ export type Database = {
           estimated_returning_players?: number | null
           event_opportunity_high?: number | null
           event_opportunity_low?: number | null
-          event_revenue_mature_high?: number | null
-          event_revenue_mature_low?: number | null
+          event_revenue_target?: number | null
           event_score?: number | null
           facility_at_benchmark?: boolean | null
           facility_opportunity_high?: number | null
@@ -112,6 +117,10 @@ export type Database = {
           facility_revenue_gap?: number | null
           facility_revenue_pct?: number | null
           facility_score?: number | null
+          fmv_per_sponsor_high?: number | null
+          fmv_per_sponsor_low?: number | null
+          hard_goods_margin_per_player_high?: number | null
+          hard_goods_margin_per_player_low?: number | null
           high_dues_concentration?: boolean | null
           high_sponsorship_dependency?: boolean | null
           hs_player_pct?: number | null
@@ -129,13 +138,17 @@ export type Database = {
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
           priority_engine?: string | null
+          retention_health?: string | null
           retention_opportunity_high?: number | null
           retention_opportunity_low?: number | null
+          retention_referral_opportunity_high?: number | null
+          retention_referral_opportunity_low?: number | null
           retention_score?: number | null
           revenue_benchmark?: number | null
           revenue_gap?: number | null
           revenue_per_event?: number | null
           revenue_per_player?: number | null
+          revenue_protected_per_pct?: number | null
           sponsorship_opportunity_high?: number | null
           sponsorship_opportunity_low?: number | null
           sponsorship_revenue_per_sponsor?: number | null
@@ -144,6 +157,7 @@ export type Database = {
           total_engine_score?: number | null
           total_opportunity_high?: number | null
           total_opportunity_low?: number | null
+          uniform_margin_gap_per_player?: number | null
         }
         Update: {
           add_on_revenue?: number | null
@@ -151,13 +165,12 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
-          apparel_margin_pct?: number | null
           apparel_opportunity_high?: number | null
           apparel_opportunity_low?: number | null
-          apparel_profit?: number | null
-          apparel_revenue_per_player?: number | null
           apparel_score?: number | null
+          asset_score?: number | null
           at_benchmark?: boolean | null
+          audience_score?: number | null
           calculated_at?: string
           calculated_total_revenue?: number | null
           diagnosis_text?: string | null
@@ -167,8 +180,7 @@ export type Database = {
           estimated_returning_players?: number | null
           event_opportunity_high?: number | null
           event_opportunity_low?: number | null
-          event_revenue_mature_high?: number | null
-          event_revenue_mature_low?: number | null
+          event_revenue_target?: number | null
           event_score?: number | null
           facility_at_benchmark?: boolean | null
           facility_opportunity_high?: number | null
@@ -177,6 +189,10 @@ export type Database = {
           facility_revenue_gap?: number | null
           facility_revenue_pct?: number | null
           facility_score?: number | null
+          fmv_per_sponsor_high?: number | null
+          fmv_per_sponsor_low?: number | null
+          hard_goods_margin_per_player_high?: number | null
+          hard_goods_margin_per_player_low?: number | null
           high_dues_concentration?: boolean | null
           high_sponsorship_dependency?: boolean | null
           hs_player_pct?: number | null
@@ -194,13 +210,17 @@ export type Database = {
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
           priority_engine?: string | null
+          retention_health?: string | null
           retention_opportunity_high?: number | null
           retention_opportunity_low?: number | null
+          retention_referral_opportunity_high?: number | null
+          retention_referral_opportunity_low?: number | null
           retention_score?: number | null
           revenue_benchmark?: number | null
           revenue_gap?: number | null
           revenue_per_event?: number | null
           revenue_per_player?: number | null
+          revenue_protected_per_pct?: number | null
           sponsorship_opportunity_high?: number | null
           sponsorship_opportunity_low?: number | null
           sponsorship_revenue_per_sponsor?: number | null
@@ -209,6 +229,7 @@ export type Database = {
           total_engine_score?: number | null
           total_opportunity_high?: number | null
           total_opportunity_low?: number | null
+          uniform_margin_gap_per_player?: number | null
         }
         Relationships: [
           {
@@ -376,10 +397,8 @@ export type Database = {
       }
       organization_intake: {
         Row: {
+          addon_soft_goods_spend: string | null
           annual_facility_rental_revenue: number | null
-          apparel_margin: string | null
-          apparel_model: string | null
-          apparel_revenue: number | null
           average_roster_size: number | null
           avg_hs_player_fee: number | null
           avg_player_years: number | null
@@ -397,6 +416,9 @@ export type Database = {
           event_types_offered: string[] | null
           events_per_year: number | null
           facility_rental_revenue: number | null
+          hard_goods_markup: string | null
+          hard_goods_purchased: string | null
+          hard_goods_spend: string | null
           hs_players: number | null
           id: string
           knows_profit_margin: string | null
@@ -432,6 +454,7 @@ export type Database = {
           showcase_revenue: number | null
           sponsorship_approach: string | null
           submitted_at: string
+          team_store_status: string | null
           team_structure: string | null
           tiered_packages: string | null
           total_annual_revenue: number | null
@@ -441,15 +464,16 @@ export type Database = {
           total_teams: number | null
           tournaments_revenue: number | null
           typical_player_participation: string | null
+          uniform_markup: string | null
+          uniform_package_cost: string | null
+          uniform_vendor: string | null
           updated_at: string
           years_in_operation: string | null
           youth_players: number | null
         }
         Insert: {
+          addon_soft_goods_spend?: string | null
           annual_facility_rental_revenue?: number | null
-          apparel_margin?: string | null
-          apparel_model?: string | null
-          apparel_revenue?: number | null
           average_roster_size?: number | null
           avg_hs_player_fee?: number | null
           avg_player_years?: number | null
@@ -467,6 +491,9 @@ export type Database = {
           event_types_offered?: string[] | null
           events_per_year?: number | null
           facility_rental_revenue?: number | null
+          hard_goods_markup?: string | null
+          hard_goods_purchased?: string | null
+          hard_goods_spend?: string | null
           hs_players?: number | null
           id?: string
           knows_profit_margin?: string | null
@@ -502,6 +529,7 @@ export type Database = {
           showcase_revenue?: number | null
           sponsorship_approach?: string | null
           submitted_at?: string
+          team_store_status?: string | null
           team_structure?: string | null
           tiered_packages?: string | null
           total_annual_revenue?: number | null
@@ -511,15 +539,16 @@ export type Database = {
           total_teams?: number | null
           tournaments_revenue?: number | null
           typical_player_participation?: string | null
+          uniform_markup?: string | null
+          uniform_package_cost?: string | null
+          uniform_vendor?: string | null
           updated_at?: string
           years_in_operation?: string | null
           youth_players?: number | null
         }
         Update: {
+          addon_soft_goods_spend?: string | null
           annual_facility_rental_revenue?: number | null
-          apparel_margin?: string | null
-          apparel_model?: string | null
-          apparel_revenue?: number | null
           average_roster_size?: number | null
           avg_hs_player_fee?: number | null
           avg_player_years?: number | null
@@ -537,6 +566,9 @@ export type Database = {
           event_types_offered?: string[] | null
           events_per_year?: number | null
           facility_rental_revenue?: number | null
+          hard_goods_markup?: string | null
+          hard_goods_purchased?: string | null
+          hard_goods_spend?: string | null
           hs_players?: number | null
           id?: string
           knows_profit_margin?: string | null
@@ -572,6 +604,7 @@ export type Database = {
           showcase_revenue?: number | null
           sponsorship_approach?: string | null
           submitted_at?: string
+          team_store_status?: string | null
           team_structure?: string | null
           tiered_packages?: string | null
           total_annual_revenue?: number | null
@@ -581,6 +614,9 @@ export type Database = {
           total_teams?: number | null
           tournaments_revenue?: number | null
           typical_player_participation?: string | null
+          uniform_markup?: string | null
+          uniform_package_cost?: string | null
+          uniform_vendor?: string | null
           updated_at?: string
           years_in_operation?: string | null
           youth_players?: number | null

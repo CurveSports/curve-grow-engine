@@ -32,12 +32,26 @@ const MARKET_MULTIPLIERS: Record<string, number> = {
   "High-income Suburban": 1.6,
 };
 
-const APPAREL_MARGIN: Record<string, number> = {
-  "Strong 30%+": 0.30,
-  "Moderate 15-30%": 0.22,
-  "Moderate 15–30%": 0.22,
-  "Minimal under 15%": 0.12,
-  "Not Sure": 0.20,
+// Apparel midpoint maps for new opportunity formula
+const UNIFORM_PACKAGE_MIDPOINT: Record<string, number> = {
+  "Under $100": 75,
+  "$100–$200": 150,
+  "$100-$200": 150,
+  "$200–$350": 275,
+  "$200-$350": 275,
+  "$350–$500": 425,
+  "$350-$500": 425,
+  "Over $500": 550,
+};
+
+const UNIFORM_MARKUP_PCT: Record<string, number> = {
+  "Under 10%": 0.07,
+  "10–20%": 0.15,
+  "10-20%": 0.15,
+  "20–30%": 0.25,
+  "20-30%": 0.25,
+  "30%+": 0.32,
+  "Not Sure": 0.12,
 };
 
 const NEXT_STEPS: Record<string, string[]> = {
@@ -90,7 +104,7 @@ function calculate(intake: any) {
   const youth_fee = num(intake.avg_youth_player_fee);
   const sponsors = num(intake.number_of_sponsors);
   const sponsor_rev = num(intake.total_sponsorship_revenue);
-  const apparel_rev = num(intake.apparel_revenue);
+  // apparel_revenue removed from intake — apparel is no longer counted in total revenue
   const events_per_year = num(intake.events_per_year);
   const camps = num(intake.camps_revenue);
   const clinics = num(intake.clinics_revenue);
@@ -140,7 +154,6 @@ function calculate(intake: any) {
     event_revenue_total +
     lessons_revenue_org +
     sponsor_rev +
-    apparel_rev +
     facility_rev +
     other_addon;
   const total_revenue = calculated_total_revenue;
@@ -167,41 +180,89 @@ function calculate(intake: any) {
   const estimated_churned_players = total_players - estimated_returning_players;
   const revenue_gap = Math.max(0, revenue_benchmark - revenue_per_player);
   const at_benchmark = revenue_per_player >= revenue_benchmark;
-  const apparel_margin_pct = APPAREL_MARGIN[intake.apparel_margin] ?? 0.20;
-  const apparel_profit = apparel_rev * apparel_margin_pct;
-  const apparel_revenue_per_player = apparel_rev / total_players;
   const facility_revenue_pct =
     isFacility && total_revenue > 0 ? facility_rev / total_revenue : null;
 
-  // Step 4 — opportunities
-  const pricing_opportunity_low = Math.min(250000, Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.5));
-  const pricing_opportunity_high = Math.min(500000, Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.9));
-  const sponsorship_opportunity_low =
-    (sponsors === 0 ? 10000 : Math.max(7500, sponsors * 1500)) * market_multiplier;
-  const sponsorship_opportunity_high =
-    (sponsors === 0 ? 30000 : Math.max(25000, sponsors * 5000)) * market_multiplier;
-  const apparel_opportunity_low = total_players * 75;
-  const apparel_opportunity_high = total_players * 200;
+  // Step 4 — opportunities (NEW FORMULAS)
 
-  // New event opportunity
-  const event_revenue_mature_low = total_players * 150;
-  const event_revenue_mature_high = total_players * 400;
-  const event_opportunity_low = Math.max(event_revenue_mature_low * 0.1, Math.max(0, event_revenue_mature_low - event_revenue_total));
-  const event_opportunity_high = Math.max(0, event_revenue_mature_high - event_revenue_total);
+  // Pricing opportunity
+  const pricing_opportunity_low = dues_revenue * 0.20;
+  const pricing_opportunity_high = dues_revenue * 0.30;
 
-  const addon_opportunity_low = total_players * 150;
-  const addon_opportunity_high = total_players * 500;
-  const retention_opportunity_low = (total_players * 0.03) * revenue_per_player;
-  const retention_opportunity_high = (total_players * 0.08) * revenue_per_player;
+  // Sponsorship opportunity
+  const audience_score = (total_players * 4) / 1000;
+  let asset_score: number;
+  if (orgType === "Facility + Teams" && runs_events) asset_score = 1.3;
+  else if (orgType === "Travel Teams Only" && runs_events) asset_score = 1.0;
+  else if (!runs_events) asset_score = 0.7;
+  else asset_score = 1.0; // facility only with events default
+  const fmv_per_sponsor_low = 2000 * market_multiplier * audience_score * asset_score * 0.8;
+  const fmv_per_sponsor_high = 2000 * market_multiplier * audience_score * asset_score * 1.2;
+  const sponsors_low = 12;
+  const sponsors_high = 15;
+  const gross_sponsorship_opportunity_low = sponsors_low * fmv_per_sponsor_low;
+  const gross_sponsorship_opportunity_high = sponsors_high * fmv_per_sponsor_high;
+  const sponsorship_opportunity_low = Math.max(0, gross_sponsorship_opportunity_low - sponsor_rev);
+  const sponsorship_opportunity_high = Math.max(0, gross_sponsorship_opportunity_high - sponsor_rev);
 
-  // Facility opportunity
+  // Apparel opportunity (NEW)
+  const uniform_package_midpoint = UNIFORM_PACKAGE_MIDPOINT[intake.uniform_package_cost] ?? 0;
+  const current_uniform_markup_pct = UNIFORM_MARKUP_PCT[intake.uniform_markup] ?? 0.12;
+  const target_uniform_markup_pct = 0.30;
+  const uniform_margin_gap_per_player = Math.max(
+    0,
+    (uniform_package_midpoint * target_uniform_markup_pct) -
+      (uniform_package_midpoint * current_uniform_markup_pct),
+  );
+  const hard_goods_baseline = 600;
+  const hard_goods_capture_low = 0.25;
+  const hard_goods_capture_high = 0.40;
+  const hard_goods_markup_low = 0.20;
+  const hard_goods_markup_high = 0.30;
+  let hard_goods_margin_per_player_low = 0;
+  let hard_goods_margin_per_player_high = 0;
+  if (intake.hard_goods_purchased && intake.hard_goods_purchased !== "No") {
+    hard_goods_margin_per_player_low = hard_goods_baseline * hard_goods_capture_low * hard_goods_markup_low;
+    hard_goods_margin_per_player_high = hard_goods_baseline * hard_goods_capture_high * hard_goods_markup_high;
+  }
+  const apparel_opportunity_low =
+    (uniform_margin_gap_per_player + hard_goods_margin_per_player_low) * total_players * 0.7;
+  const apparel_opportunity_high =
+    (uniform_margin_gap_per_player + hard_goods_margin_per_player_high) * total_players * 1.0;
+
+  // Event opportunity (NEW)
+  const event_revenue_target = total_players * 500;
+  const event_revenue_total_for_calc = runs_events ? event_revenue_total : 0;
+  const event_opportunity_low = Math.max(0, event_revenue_target - event_revenue_total_for_calc) * 0.6;
+  const event_opportunity_high = Math.max(0, event_revenue_target - event_revenue_total_for_calc) * 1.0;
+
+  // Add-On opportunity (NEW)
+  let addon_opportunity_low = 0;
+  let addon_opportunity_high = 0;
+  if (orgType === "Travel Teams Only") {
+    addon_opportunity_low = total_players * 0.10 * 100 * 10;
+    addon_opportunity_high = total_players * 0.10 * 100 * 12;
+  }
+
+  // Retention (NEW: health flag + referral opportunity)
+  let retention_health: string;
+  if (retention_pct >= 80) retention_health = "Healthy";
+  else if (retention_pct >= 70) retention_health = "Needs Attention";
+  else retention_health = "At Risk";
+  const retention_referral_opportunity_low = total_players * 0.05 * revenue_per_player;
+  const retention_referral_opportunity_high = total_players * 0.10 * revenue_per_player;
+  const retention_opportunity_low = retention_referral_opportunity_low;
+  const retention_opportunity_high = retention_referral_opportunity_high;
+  const revenue_protected_per_pct = 0.01 * total_players * revenue_per_player;
+
+  // Facility opportunity (NEW: benchmark $2400/player)
   let facility_revenue_benchmark: number | null = null;
   let facility_revenue_gap: number | null = null;
   let facility_at_benchmark: boolean | null = null;
   let facility_opportunity_low = 0;
   let facility_opportunity_high = 0;
   if (isFacility) {
-    facility_revenue_benchmark = total_players * 1200;
+    facility_revenue_benchmark = total_players * 2400;
     facility_revenue_gap = Math.max(0, facility_revenue_benchmark - facility_rev);
     facility_at_benchmark = facility_rev >= facility_revenue_benchmark;
     facility_opportunity_low = facility_revenue_gap * 0.4;
@@ -240,12 +301,16 @@ function calculate(intake: any) {
   if (intake.seeks_sponsorships === "No") sponsorship -= 1;
   const sponsorship_score = clamp(sponsorship, 1, 10);
 
+  // Apparel score — uses new intake fields where available; preserves baseline logic
   let apparel = 3;
-  if (intake.apparel_model === "Fully controlled in-house") apparel += 3;
-  if (intake.apparel_model === "Outsourced with markup") apparel += 1;
-  if (apparel_revenue_per_player > 150) apparel += 2;
-  if (apparel_revenue_per_player > 75) apparel += 1;
-  if (intake.apparel_model === "Minimal") apparel -= 1;
+  // Bonus when org captures uniform markup at 30%+ (in-house equivalent)
+  if (intake.uniform_markup === "30%+") apparel += 3;
+  else if (intake.uniform_markup === "20–30%" || intake.uniform_markup === "20-30%") apparel += 2;
+  else if (intake.uniform_markup === "10–20%" || intake.uniform_markup === "10-20%") apparel += 1;
+  // Hard goods participation bonus
+  if (intake.hard_goods_purchased === "Yes regularly") apparel += 1;
+  // Team store bonus
+  if (intake.team_store_status === "Yes full store") apparel += 1;
   const apparel_score = clamp(apparel, 1, 10);
 
   let event = 2;
@@ -369,14 +434,18 @@ function calculate(intake: any) {
     sponsorship_revenue_per_sponsor, add_on_revenue, add_on_revenue_per_player,
     revenue_per_event, estimated_returning_players, estimated_churned_players,
     revenue_gap, at_benchmark,
-    apparel_margin_pct, apparel_profit, apparel_revenue_per_player, facility_revenue_pct,
+    facility_revenue_pct,
     pricing_opportunity_low, pricing_opportunity_high,
     sponsorship_opportunity_low, sponsorship_opportunity_high,
+    audience_score, asset_score, fmv_per_sponsor_low, fmv_per_sponsor_high,
     apparel_opportunity_low, apparel_opportunity_high,
-    event_opportunity_low, event_opportunity_high,
-    event_revenue_mature_low, event_revenue_mature_high,
+    uniform_margin_gap_per_player,
+    hard_goods_margin_per_player_low, hard_goods_margin_per_player_high,
+    event_opportunity_low, event_opportunity_high, event_revenue_target,
     addon_opportunity_low, addon_opportunity_high,
     retention_opportunity_low, retention_opportunity_high,
+    retention_health, retention_referral_opportunity_low, retention_referral_opportunity_high,
+    revenue_protected_per_pct,
     facility_revenue_benchmark, facility_revenue_gap, facility_at_benchmark,
     facility_opportunity_low, facility_opportunity_high, facility_score,
     lessons_revenue_org,

@@ -31,9 +31,16 @@ export const PRICE_POINT = ["Above Market", "At Market", "Below Market", "Not Su
 export const KNOWS_MARGIN = ["Yes", "No"] as const;
 export const MARGIN_RANGES = ["Under 10%", "10-20%", "20-30%", "30%+"] as const;
 export const SPONSORSHIPS = ["Yes", "No", "Informally"] as const;
-export const APPAREL_MARGIN = ["Strong 30%+", "Moderate 15-30%", "Minimal under 15%", "Not Sure"] as const;
-export const APPAREL_MODEL = ["Fully controlled in-house", "Outsourced with markup", "Minimal"] as const;
 export const YES_NO = ["Yes", "No"] as const;
+
+// New apparel & gear options
+export const UNIFORM_PACKAGE_COST = ["Under $100", "$100–$200", "$200–$350", "$350–$500", "Over $500"] as const;
+export const UNIFORM_MARKUP = ["Under 10%", "10–20%", "20–30%", "30%+", "Not Sure"] as const;
+export const HARD_GOODS_PURCHASED = ["Yes regularly", "Sometimes", "No"] as const;
+export const HARD_GOODS_SPEND = ["Under $100", "$100–$250", "$250–$500", "Over $500", "Not Sure"] as const;
+export const HARD_GOODS_MARKUP = ["Under 10%", "10–20%", "20–30%", "Not Sure"] as const;
+export const TEAM_STORE_STATUS = ["Yes full store", "Yes limited", "No"] as const;
+export const ADDON_SOFT_GOODS_SPEND = ["Under $50", "$50–$150", "$150–$300", "Over $300", "Not Sure"] as const;
 
 export const OPS_STRUCTURE = ["Clear systems", "Some structure", "Reactive"] as const;
 export const PARENT_COMMS = ["Standardized", "Proactive", "Individualized", "Bulk", "Reactive", "None"] as const;
