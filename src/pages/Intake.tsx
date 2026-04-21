@@ -69,6 +69,11 @@ const empty: Form = {
   retention_pct: "", avg_player_years: "",
   operational_structure: "", parent_communication: [], coach_alignment: "",
   coaching_structure: "", pricing_approach: "", sponsorship_approach: "",
+  // Affiliate program
+  has_affiliates: "", number_of_affiliates: "", affiliate_players_charged: "",
+  affiliate_fee_per_player: "", affiliate_apparel_revenue: "",
+  // Multiple brands
+  operates_multiple_brands: "", number_of_brands: "", brand_descriptions: "",
 };
 
 function SubsectionHeading({ title }: { title: string }) {
