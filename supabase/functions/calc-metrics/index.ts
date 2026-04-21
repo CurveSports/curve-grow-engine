@@ -574,6 +574,67 @@ function calculate(intake: any) {
 
   const next_steps = NEXT_STEPS[priority_engine] ?? NEXT_STEPS["Pricing"];
 
+  // ===== Round 1 health scores =====
+  const opStruct = intake.operational_structure === "Clear systems" ? 8
+    : intake.operational_structure === "Some structure" ? 5
+    : intake.operational_structure === "Reactive" ? 2 : 5;
+  const coachAlign = intake.coach_alignment === "Highly aligned" ? 8
+    : intake.coach_alignment === "Somewhat" ? 5
+    : intake.coach_alignment === "Not aligned" ? 2 : 5;
+  const coachStruct = intake.coaching_structure === "Structured" ? 8
+    : intake.coaching_structure === "Somewhat" ? 5
+    : intake.coaching_structure === "Coach-dependent" ? 2 : 5;
+  const pcArr: string[] = Array.isArray(intake.parent_communication) ? intake.parent_communication : [];
+  const parentCommScore = (pcArr.includes("Standardized") && pcArr.includes("Proactive")) ? 8
+    : (pcArr.includes("Standardized") || pcArr.includes("Proactive")) ? 5 : 2;
+  const operations_health_score = clamp(Math.round((opStruct + coachAlign + coachStruct + parentCommScore) / 4), 1, 10);
+
+  const demandS = intake.demand_for_organization === "High demand with waitlists" ? 9
+    : intake.demand_for_organization === "Balanced" ? 6
+    : intake.demand_for_organization === "Inconsistent" ? 4
+    : intake.demand_for_organization === "Struggling to fill" ? 2 : 5;
+  const compS = intake.local_market_competition === "Limited" ? 8
+    : intake.local_market_competition === "Moderate" ? 5
+    : intake.local_market_competition === "Highly Competitive" ? 3 : 5;
+  const growthS = intake.current_growth_trend === "Growing" ? 9
+    : intake.current_growth_trend === "Stable" ? 6
+    : intake.current_growth_trend === "Declining" ? 2
+    : intake.current_growth_trend === "Not Sure" ? 4 : 5;
+  const market_position_health_score = clamp(Math.round((demandS + compS + growthS) / 3), 1, 10);
+
+  const commitS = intake.player_commitment_level === "Mostly full-time" ? 9
+    : intake.player_commitment_level === "Mixed" ? 6
+    : intake.player_commitment_level === "Mostly seasonal" ? 3 : 5;
+  const partS = intake.typical_player_participation === "3+ seasons" ? 9
+    : intake.typical_player_participation === "2 seasons" ? 6
+    : intake.typical_player_participation === "1 season" ? 3 : 5;
+  const retC = retention_pct >= 85 ? 9 : retention_pct >= 75 ? 7 : retention_pct >= 65 ? 5 : 3;
+  const program_health_score = clamp(Math.round((commitS + partS + retC) / 3), 1, 10);
+
+  const focusS = intake.organization_focus === "Development-focused" ? 8
+    : intake.organization_focus === "Hybrid" ? 6
+    : intake.organization_focus === "Exposure-focused" ? 4 : 5;
+  const priceS = intake.pricing_approach === "Structured" ? 9
+    : intake.pricing_approach === "Competitor-based" ? 5
+    : intake.pricing_approach === "Not defined" ? 2 : 5;
+  const sponS = intake.sponsorship_approach === "Structured" ? 9
+    : intake.sponsorship_approach === "Somewhat" ? 5
+    : intake.sponsorship_approach === "None" ? 2 : 5;
+  const marketStratS = intake.market_strategy ? 7 : 5;
+  const strategic_clarity_score = clamp(Math.round((focusS + priceS + sponS + marketStratS) / 4), 1, 10);
+
+  const overall_health_score = operations_health_score + market_position_health_score + program_health_score + strategic_clarity_score;
+
+  const operates_multiple_brands = intake.operates_multiple_brands === true || intake.operates_multiple_brands === "Yes";
+  const selection_leakage_flag =
+    intake.player_selection_approach === "Regularly cut players"
+    && !operates_multiple_brands
+    && addon_score <= 5;
+
+  const growth_opportunity_direction = hs_player_pct >= 0.60 ? "Youth Feeder Development"
+    : hs_player_pct <= 0.30 ? "HS Program Expansion"
+    : "Pipeline Optimization";
+
   return {
     market_multiplier, revenue_benchmark, revenue_per_player, hs_player_pct,
     calculated_total_revenue,
@@ -609,6 +670,10 @@ function calculate(intake: any) {
     pricing_benchmark_hs_low, pricing_benchmark_hs_high,
     pricing_benchmark_youth_low, pricing_benchmark_youth_high,
     hs_fee_vs_market, youth_fee_vs_market,
+    // Round 1 health scores
+    operations_health_score, market_position_health_score, program_health_score,
+    strategic_clarity_score, overall_health_score,
+    selection_leakage_flag, growth_opportunity_direction,
     calculated_at: new Date().toISOString(),
   };
 }
@@ -661,6 +726,26 @@ async function generateDraftTasks(admin: any, org_id: string, metrics: any, isFa
         assigned_by: uid,
       });
     }
+  }
+
+  // Selection-leakage auto-task (Round 1)
+  if (metrics.selection_leakage_flag === true) {
+    const due = new Date(today);
+    due.setDate(due.getDate() + 14);
+    tasksToInsert.push({
+      org_id,
+      template_id: null,
+      title: "Evaluate developmental programming for cut players",
+      description: "Players being cut without an alternative program represents lost family revenue. Evaluate whether a developmental tier, training-only membership, or alternative program could retain these families and capture wallet share that currently goes to competing organizations or leaves the market entirely.",
+      engine: "Add-Ons",
+      task_type: "Strategy",
+      status: "not_started",
+      plan_status: "draft",
+      priority: "high",
+      suggested_due_date: due.toISOString().slice(0, 10),
+      due_date: due.toISOString().slice(0, 10),
+      assigned_by: uid,
+    });
   }
 
   if (tasksToInsert.length === 0) return 0;

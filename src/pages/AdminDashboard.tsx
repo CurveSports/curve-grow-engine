@@ -39,6 +39,7 @@ type OrgRow = {
   task_due_week: number;
   task_overdue: number;
   last_activity_at: string | null;
+  overall_health_score: number | null;
 };
 
 type Density = "compact" | "standard" | "detailed";
@@ -58,7 +59,7 @@ export default function AdminDashboard() {
       const [orgsRes, tasksRes, activityRes] = await Promise.all([
         supabase
           .from("organizations")
-          .select("id, name, plan_activated_at, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high)"),
+          .select("id, name, plan_activated_at, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score)"),
         supabase.from("org_tasks").select("org_id, status, due_date, completed_at, last_activity_at"),
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
       ]);
@@ -92,6 +93,7 @@ export default function AdminDashboard() {
           plan_activated_at: o.plan_activated_at,
           task_total: tk.total, task_complete: tk.complete, task_due_week: tk.due_week, task_overdue: tk.overdue,
           last_activity_at: tk.last,
+          overall_health_score: metrics?.overall_health_score ?? null,
         };
       });
       setOrgs(r);
@@ -309,8 +311,8 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
 
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-health" />
-              Health: {org.total_engine_score ?? "—"}/60
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#8B5CF6" }} />
+              Health: <span className="font-semibold" style={{ color: "#8B5CF6" }}>{org.overall_health_score ?? "—"}/40</span>
             </span>
             <span>{daysAgo !== null ? `Active ${daysAgo}d ago` : "No activity"}</span>
           </div>

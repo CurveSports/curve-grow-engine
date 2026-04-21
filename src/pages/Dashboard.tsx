@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { OrgTask, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
 import { CheckCircle2, AlertCircle, Calendar, ListChecks, Clock } from "lucide-react";
+import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
 
 export default function Dashboard() {
   const { profile } = useAuth();
@@ -108,6 +109,12 @@ export default function Dashboard() {
               valueClass="text-base font-medium"
             />
           </div>
+
+          {profile?.org_id && (
+            <div className="mb-6">
+              <WeeklyFocusCard orgId={profile.org_id} tasks={tasks as any} editable={false} />
+            </div>
+          )}
 
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>
