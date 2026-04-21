@@ -313,19 +313,19 @@ export default function Intake() {
               <NumberField label="Total Events per Year across all types" value={form.events_per_year} onChange={(v) => set("events_per_year", v)} min={0} />
               <NumberField label="Other Add-On Revenue" value={form.other_addon_revenue} onChange={(v) => set("other_addon_revenue", v)} min={0} currency />
 
-              <div className="pt-4">
-                <SubsectionHeading title="Lessons & Individual Training" />
-                <p className="text-sm text-muted-foreground mt-2">Individual or small group instruction outside of team practice.</p>
-              </div>
-              <NumberField
-                label="Lessons and Individual Training Revenue"
-                value={form.lessons_revenue_gross}
-                onChange={(v) => { set("lessons_revenue_gross", v); set("lessons_revenue", v); }}
-                min={0}
-                currency
-              />
               {form.org_type === "Travel Teams Only" && (
                 <>
+                  <div className="pt-4">
+                    <SubsectionHeading title="Lessons & Individual Training" />
+                    <p className="text-sm text-muted-foreground mt-2">Individual or small group instruction outside of team practice.</p>
+                  </div>
+                  <NumberField
+                    label="Lessons and Individual Training Revenue"
+                    value={form.lessons_revenue_gross}
+                    onChange={(v) => { set("lessons_revenue_gross", v); set("lessons_revenue", v); }}
+                    min={0}
+                    currency
+                  />
                   <SelectField
                     label="Does your organization capture this revenue directly?"
                     value={form.lessons_revenue_model}
