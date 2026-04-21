@@ -41,12 +41,14 @@ export type Database = {
           diagnosis_text: string | null
           dues_revenue: number | null
           dues_revenue_pct: number | null
+          engagement_complexity: string | null
           estimated_churned_players: number | null
           estimated_returning_players: number | null
           event_opportunity_high: number | null
           event_opportunity_low: number | null
           event_revenue_target: number | null
           event_score: number | null
+          execution_risk: string | null
           facility_at_benchmark: boolean | null
           facility_opportunity_high: number | null
           facility_opportunity_low: number | null
@@ -56,6 +58,7 @@ export type Database = {
           facility_score: number | null
           fmv_per_sponsor_high: number | null
           fmv_per_sponsor_low: number | null
+          growth_opportunity_direction: string | null
           hard_goods_margin_per_player_high: number | null
           hard_goods_margin_per_player_low: number | null
           high_dues_concentration: boolean | null
@@ -65,13 +68,17 @@ export type Database = {
           id: string
           lessons_revenue_org: number | null
           market_multiplier: number | null
+          market_position_health_score: number | null
+          market_risk: string | null
           monetization_tier:
             | Database["public"]["Enums"]["monetization_tier"]
             | null
           next_steps: Json | null
           non_dues_revenue: number | null
           non_dues_revenue_per_player: number | null
+          operations_health_score: number | null
           org_id: string
+          overall_health_score: number | null
           pricing_benchmark_hs_high: number | null
           pricing_benchmark_hs_low: number | null
           pricing_benchmark_youth_high: number | null
@@ -80,21 +87,25 @@ export type Database = {
           pricing_opportunity_low: number | null
           pricing_score: number | null
           priority_engine: string | null
+          program_health_score: number | null
           retention_health: string | null
           retention_opportunity_high: number | null
           retention_opportunity_low: number | null
           retention_referral_opportunity_high: number | null
           retention_referral_opportunity_low: number | null
+          retention_risk: string | null
           retention_score: number | null
           revenue_benchmark: number | null
           revenue_gap: number | null
           revenue_per_event: number | null
           revenue_per_player: number | null
           revenue_protected_per_pct: number | null
+          selection_leakage_flag: boolean | null
           sponsorship_opportunity_high: number | null
           sponsorship_opportunity_low: number | null
           sponsorship_revenue_per_sponsor: number | null
           sponsorship_score: number | null
+          strategic_clarity_score: number | null
           tasks_generated_at: string | null
           total_engine_score: number | null
           total_opportunity_high: number | null
@@ -128,12 +139,14 @@ export type Database = {
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
+          engagement_complexity?: string | null
           estimated_churned_players?: number | null
           estimated_returning_players?: number | null
           event_opportunity_high?: number | null
           event_opportunity_low?: number | null
           event_revenue_target?: number | null
           event_score?: number | null
+          execution_risk?: string | null
           facility_at_benchmark?: boolean | null
           facility_opportunity_high?: number | null
           facility_opportunity_low?: number | null
@@ -143,6 +156,7 @@ export type Database = {
           facility_score?: number | null
           fmv_per_sponsor_high?: number | null
           fmv_per_sponsor_low?: number | null
+          growth_opportunity_direction?: string | null
           hard_goods_margin_per_player_high?: number | null
           hard_goods_margin_per_player_low?: number | null
           high_dues_concentration?: boolean | null
@@ -152,13 +166,17 @@ export type Database = {
           id?: string
           lessons_revenue_org?: number | null
           market_multiplier?: number | null
+          market_position_health_score?: number | null
+          market_risk?: string | null
           monetization_tier?:
             | Database["public"]["Enums"]["monetization_tier"]
             | null
           next_steps?: Json | null
           non_dues_revenue?: number | null
           non_dues_revenue_per_player?: number | null
+          operations_health_score?: number | null
           org_id: string
+          overall_health_score?: number | null
           pricing_benchmark_hs_high?: number | null
           pricing_benchmark_hs_low?: number | null
           pricing_benchmark_youth_high?: number | null
@@ -167,21 +185,25 @@ export type Database = {
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
           priority_engine?: string | null
+          program_health_score?: number | null
           retention_health?: string | null
           retention_opportunity_high?: number | null
           retention_opportunity_low?: number | null
           retention_referral_opportunity_high?: number | null
           retention_referral_opportunity_low?: number | null
+          retention_risk?: string | null
           retention_score?: number | null
           revenue_benchmark?: number | null
           revenue_gap?: number | null
           revenue_per_event?: number | null
           revenue_per_player?: number | null
           revenue_protected_per_pct?: number | null
+          selection_leakage_flag?: boolean | null
           sponsorship_opportunity_high?: number | null
           sponsorship_opportunity_low?: number | null
           sponsorship_revenue_per_sponsor?: number | null
           sponsorship_score?: number | null
+          strategic_clarity_score?: number | null
           tasks_generated_at?: string | null
           total_engine_score?: number | null
           total_opportunity_high?: number | null
@@ -215,12 +237,14 @@ export type Database = {
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
+          engagement_complexity?: string | null
           estimated_churned_players?: number | null
           estimated_returning_players?: number | null
           event_opportunity_high?: number | null
           event_opportunity_low?: number | null
           event_revenue_target?: number | null
           event_score?: number | null
+          execution_risk?: string | null
           facility_at_benchmark?: boolean | null
           facility_opportunity_high?: number | null
           facility_opportunity_low?: number | null
@@ -230,6 +254,7 @@ export type Database = {
           facility_score?: number | null
           fmv_per_sponsor_high?: number | null
           fmv_per_sponsor_low?: number | null
+          growth_opportunity_direction?: string | null
           hard_goods_margin_per_player_high?: number | null
           hard_goods_margin_per_player_low?: number | null
           high_dues_concentration?: boolean | null
@@ -239,13 +264,17 @@ export type Database = {
           id?: string
           lessons_revenue_org?: number | null
           market_multiplier?: number | null
+          market_position_health_score?: number | null
+          market_risk?: string | null
           monetization_tier?:
             | Database["public"]["Enums"]["monetization_tier"]
             | null
           next_steps?: Json | null
           non_dues_revenue?: number | null
           non_dues_revenue_per_player?: number | null
+          operations_health_score?: number | null
           org_id?: string
+          overall_health_score?: number | null
           pricing_benchmark_hs_high?: number | null
           pricing_benchmark_hs_low?: number | null
           pricing_benchmark_youth_high?: number | null
@@ -254,21 +283,25 @@ export type Database = {
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
           priority_engine?: string | null
+          program_health_score?: number | null
           retention_health?: string | null
           retention_opportunity_high?: number | null
           retention_opportunity_low?: number | null
           retention_referral_opportunity_high?: number | null
           retention_referral_opportunity_low?: number | null
+          retention_risk?: string | null
           retention_score?: number | null
           revenue_benchmark?: number | null
           revenue_gap?: number | null
           revenue_per_event?: number | null
           revenue_per_player?: number | null
           revenue_protected_per_pct?: number | null
+          selection_leakage_flag?: boolean | null
           sponsorship_opportunity_high?: number | null
           sponsorship_opportunity_low?: number | null
           sponsorship_revenue_per_sponsor?: number | null
           sponsorship_score?: number | null
+          strategic_clarity_score?: number | null
           tasks_generated_at?: string | null
           total_engine_score?: number | null
           total_opportunity_high?: number | null
@@ -365,6 +398,100 @@ export type Database = {
           },
         ]
       }
+      org_notes: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          note_text: string
+          org_id: string
+          tag: Database["public"]["Enums"]["org_note_tag"] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          note_text: string
+          org_id: string
+          tag?: Database["public"]["Enums"]["org_note_tag"] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          note_text?: string
+          org_id?: string
+          tag?: Database["public"]["Enums"]["org_note_tag"] | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_projects: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          display_order: number
+          engine: Database["public"]["Enums"]["task_engine"] | null
+          id: string
+          name: string
+          org_id: string
+          release_date: string | null
+          released_at: string | null
+          released_by: string | null
+          status: Database["public"]["Enums"]["org_project_status"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          display_order?: number
+          engine?: Database["public"]["Enums"]["task_engine"] | null
+          id?: string
+          name: string
+          org_id: string
+          release_date?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: Database["public"]["Enums"]["org_project_status"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          display_order?: number
+          engine?: Database["public"]["Enums"]["task_engine"] | null
+          id?: string
+          name?: string
+          org_id?: string
+          release_date?: string | null
+          released_at?: string | null
+          released_by?: string | null
+          status?: Database["public"]["Enums"]["org_project_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_projects_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_tasks: {
         Row: {
           assigned_by: string | null
@@ -379,6 +506,7 @@ export type Database = {
           org_id: string
           plan_status: Database["public"]["Enums"]["plan_status"]
           priority: Database["public"]["Enums"]["task_priority"]
+          project_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           suggested_due_date: string | null
           task_type: Database["public"]["Enums"]["task_type"]
@@ -398,6 +526,7 @@ export type Database = {
           org_id: string
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           suggested_due_date?: string | null
           task_type: Database["public"]["Enums"]["task_type"]
@@ -417,6 +546,7 @@ export type Database = {
           org_id?: string
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
+          project_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           suggested_due_date?: string | null
           task_type?: Database["public"]["Enums"]["task_type"]
@@ -432,10 +562,58 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "org_tasks_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "org_projects"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "org_tasks_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_weekly_focus: {
+        Row: {
+          created_at: string
+          focus_note: string | null
+          focus_task_ids: Json | null
+          id: string
+          org_id: string
+          set_by: string
+          updated_at: string
+          week_starting: string
+        }
+        Insert: {
+          created_at?: string
+          focus_note?: string | null
+          focus_task_ids?: Json | null
+          id?: string
+          org_id: string
+          set_by: string
+          updated_at?: string
+          week_starting: string
+        }
+        Update: {
+          created_at?: string
+          focus_note?: string | null
+          focus_task_ids?: Json | null
+          id?: string
+          org_id?: string
+          set_by?: string
+          updated_at?: string
+          week_starting?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_weekly_focus_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -779,6 +957,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          last_activity_at: string
           name: string
           org_type: string | null
           phone: string | null
@@ -792,6 +971,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          last_activity_at?: string
           name: string
           org_type?: string | null
           phone?: string | null
@@ -805,6 +985,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          last_activity_at?: string
           name?: string
           org_type?: string | null
           phone?: string | null
@@ -1075,6 +1256,14 @@ export type Database = {
         | "task_completed"
         | "task_overdue"
         | "no_activity_digest"
+      org_note_tag:
+        | "internal_planning"
+        | "kickoff"
+        | "check_in"
+        | "issue"
+        | "win"
+        | "renewal"
+      org_project_status: "draft" | "active" | "completed"
       plan_status: "draft" | "active"
       task_action:
         | "created"
@@ -1238,6 +1427,15 @@ export const Constants = {
         "task_overdue",
         "no_activity_digest",
       ],
+      org_note_tag: [
+        "internal_planning",
+        "kickoff",
+        "check_in",
+        "issue",
+        "win",
+        "renewal",
+      ],
+      org_project_status: ["draft", "active", "completed"],
       plan_status: ["draft", "active"],
       task_action: [
         "created",
