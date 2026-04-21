@@ -7,6 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 // Org primary user: invite peers to their organization
 export default function Team() {
@@ -16,17 +22,37 @@ export default function Team() {
   const [invites, setInvites] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
 
+  const [primaryUserId, setPrimaryUserId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
   const load = async () => {
     if (!profile?.org_id) return;
-    const [{ data: inv }, { data: mem }] = await Promise.all([
+    const [{ data: inv }, { data: mem }, { data: org }] = await Promise.all([
       supabase.from("invitations").select("*").eq("org_id", profile.org_id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, email, full_name").eq("org_id", profile.org_id),
+      supabase.from("organizations").select("primary_user_id").eq("id", profile.org_id).maybeSingle(),
     ]);
     setInvites(inv ?? []);
     setMembers(mem ?? []);
+    setPrimaryUserId(org?.primary_user_id ?? null);
   };
 
   useEffect(() => { load(); }, [profile?.org_id]);
+
+  const removeMember = async (uid: string) => {
+    setRemovingId(uid);
+    try {
+      const { error } = await supabase.functions.invoke("delete-user", { body: { user_id: uid } });
+      if (error) throw error;
+      toast.success("Member removed");
+      load();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to remove member");
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,12 +118,45 @@ export default function Team() {
                 {members.length === 0 && (
                   <tr><td className="px-5 py-6 text-sm text-muted-foreground">No members yet.</td></tr>
                 )}
-                {members.map((m) => (
-                  <tr key={m.user_id}>
-                    <td className="px-5 py-3">{m.full_name ?? m.email}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{m.email}</td>
-                  </tr>
-                ))}
+                {members.map((m) => {
+                  const isPrimaryRow = m.user_id === primaryUserId;
+                  const isSelf = m.user_id === user?.id;
+                  const canRemove = !isPrimaryRow && !isSelf;
+                  return (
+                    <tr key={m.user_id}>
+                      <td className="px-5 py-3">
+                        {m.full_name ?? m.email}
+                        {isPrimaryRow && <span className="ml-2 text-xs text-muted-foreground">(primary)</span>}
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground">{m.email}</td>
+                      <td className="px-5 py-3 text-right">
+                        {canRemove && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" disabled={removingId === m.user_id} className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete {m.full_name ?? m.email}'s account and revoke their access to your organization. This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => removeMember(m.user_id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

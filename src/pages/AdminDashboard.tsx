@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminTasks from "@/pages/admin/AdminTasks";
 import AdminTemplates from "@/pages/admin/AdminTemplates";
+import AdminUsers from "@/pages/admin/AdminUsers";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ArrowUpDown } from "lucide-react";
 
@@ -108,6 +109,7 @@ export default function AdminDashboard() {
           <TabsTrigger value="orgs">Organizations</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orgs">
@@ -164,6 +166,7 @@ export default function AdminDashboard() {
 
         <TabsContent value="tasks"><AdminTasks /></TabsContent>
         <TabsContent value="templates"><AdminTemplates /></TabsContent>
+        <TabsContent value="users"><AdminUsers /></TabsContent>
       </Tabs>
     </AppShell>
   );
