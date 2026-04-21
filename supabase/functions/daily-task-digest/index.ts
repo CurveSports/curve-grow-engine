@@ -5,9 +5,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Daily 8am job. Marks overdue tasks, finds stalled tasks, and logs digest entries
-// in notification_log. Email delivery is intentionally not wired yet — connect a
-// provider (Resend) later and read from notification_log to send.
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+const FROM_EMAIL = "Curve OS <onboarding@resend.dev>";
+const ADMIN_EMAIL = "matt.gerber@curvesports.com";
+
+// Daily 8am job. Marks overdue tasks, finds stalled tasks, logs digest entries
+// in notification_log, and sends emails via Resend.
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -54,8 +57,24 @@ Deno.serve(async (req) => {
       byOrg.set(t.org_id, arr);
     }
 
-    // 5. Log per-org digests + admin digest
+    // 5. Lookup org names + recipient emails
+    const orgIds = Array.from(byOrg.keys());
+    const { data: orgs } = await admin.from("organizations").select("id, name").in("id", orgIds);
+    const orgNameById = new Map<string, string>((orgs ?? []).map((o: any) => [o.id, o.name]));
+
+    const { data: profiles } = await admin.from("profiles").select("email, org_id").in("org_id", orgIds);
+    const emailsByOrg = new Map<string, string[]>();
+    for (const p of profiles ?? []) {
+      if (!p.email || !p.org_id) continue;
+      const arr = emailsByOrg.get(p.org_id) ?? [];
+      arr.push(p.email);
+      emailsByOrg.set(p.org_id, arr);
+    }
+
+    // 6. Log digests + send emails
     const logs: any[] = [];
+    let emailsSent = 0;
+
     for (const [orgId, list] of byOrg.entries()) {
       logs.push({
         org_id: orgId,
@@ -63,20 +82,84 @@ Deno.serve(async (req) => {
         recipient_role: "org_all",
         task_ids: list.map((t: any) => t.id),
       });
+
+      const recipients = emailsByOrg.get(orgId) ?? [];
+      const orgName = orgNameById.get(orgId) ?? "Your organization";
+      if (recipients.length && RESEND_API_KEY) {
+        const ok = await sendEmail(recipients, `Action Plan update: ${list.length} task${list.length === 1 ? "" : "s"} need attention`, orgDigestHtml(orgName, list));
+        if (ok) emailsSent++;
+      }
     }
+
     logs.push({
       org_id: null,
       notification_type: "no_activity_digest",
       recipient_role: "admin",
       task_ids: fresh.map((t: any) => t.id),
     });
+
+    if (RESEND_API_KEY) {
+      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById));
+      emailsSent++;
+    }
+
     await admin.from("notification_log").insert(logs);
 
-    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size });
+    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent });
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }
 });
+
+async function sendEmail(to: string[], subject: string, html: string): Promise<boolean> {
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+    });
+    if (!res.ok) {
+      console.error("Resend error", res.status, await res.text());
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("Resend exception", e);
+    return false;
+  }
+}
+
+function orgDigestHtml(orgName: string, tasks: any[]): string {
+  const rows = tasks.map((t) => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;"><strong>${escape(t.title)}</strong><br/><span style="color:#666;font-size:12px;">${escape(t.engine)} · ${escape(t.status)}</span></td>
+      <td style="padding:8px 12px;border-bottom:1px solid #eee;color:#666;font-size:12px;">${t.due_date ? `Due ${t.due_date}` : ""}</td>
+    </tr>`).join("");
+  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <h2 style="color:#0f5132;">Action Plan update for ${escape(orgName)}</h2>
+    <p>The following tasks need your attention:</p>
+    <table style="width:100%;border-collapse:collapse;">${rows}</table>
+    <p style="margin-top:24px;"><a href="https://curve-grow-engine.lovable.app/dashboard" style="background:#0f5132;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Open your Action Plan</a></p>
+  </div>`;
+}
+
+function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>): string {
+  const sections = Array.from(byOrg.entries()).map(([orgId, list]) =>
+    `<h3 style="margin-bottom:4px;">${escape(names.get(orgId) ?? orgId)} <span style="color:#666;font-weight:normal;font-size:13px;">(${list.length})</span></h3>
+     <ul>${list.map((t) => `<li>${escape(t.title)} <span style="color:#666;font-size:12px;">— ${escape(t.engine)} · ${escape(t.status)}</span></li>`).join("")}</ul>`
+  ).join("");
+  return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <h2 style="color:#0f5132;">Curve OS daily digest</h2>
+    ${sections}
+  </div>`;
+}
+
+function escape(s: string): string {
+  return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
