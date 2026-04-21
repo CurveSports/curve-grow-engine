@@ -116,11 +116,6 @@ export default function AdminTasks() {
                       )}
                     </div>
                   </td>
-                      {!o.plan_activated_at && o.draft === 0 && (
-                        <span className="text-xs text-muted-foreground">(awaiting intake)</span>
-                      )}
-                    </div>
-                  </td>
                   <td className="px-5 py-4 text-xs">{o.tier ?? "—"}</td>
                   <td className="px-5 py-4 min-w-[180px]">
                     {o.total > 0 ? (
