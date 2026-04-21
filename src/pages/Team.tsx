@@ -118,12 +118,45 @@ export default function Team() {
                 {members.length === 0 && (
                   <tr><td className="px-5 py-6 text-sm text-muted-foreground">No members yet.</td></tr>
                 )}
-                {members.map((m) => (
-                  <tr key={m.user_id}>
-                    <td className="px-5 py-3">{m.full_name ?? m.email}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{m.email}</td>
-                  </tr>
-                ))}
+                {members.map((m) => {
+                  const isPrimaryRow = m.user_id === primaryUserId;
+                  const isSelf = m.user_id === user?.id;
+                  const canRemove = !isPrimaryRow && !isSelf;
+                  return (
+                    <tr key={m.user_id}>
+                      <td className="px-5 py-3">
+                        {m.full_name ?? m.email}
+                        {isPrimaryRow && <span className="ml-2 text-xs text-muted-foreground">(primary)</span>}
+                      </td>
+                      <td className="px-5 py-3 text-muted-foreground">{m.email}</td>
+                      <td className="px-5 py-3 text-right">
+                        {canRemove && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="sm" disabled={removingId === m.user_id} className="text-destructive hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove team member?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete {m.full_name ?? m.email}'s account and revoke their access to your organization. This cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => removeMember(m.user_id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
