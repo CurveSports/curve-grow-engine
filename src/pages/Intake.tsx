@@ -414,6 +414,33 @@ export default function Intake() {
               </div>
               <SelectField label="How would you describe your local market?" value={form.market_type} onChange={(v) => set("market_type", v)} options={MARKET_TYPES} />
               <SelectField label="Organization Type" value={form.org_type} onChange={(v) => set("org_type", v)} options={ORG_TYPES} />
+
+              <PillSelectField
+                label="Do you operate multiple brands?"
+                value={form.operates_multiple_brands}
+                onChange={(v) => set("operates_multiple_brands", v)}
+                options={["Yes", "No"]}
+              />
+              {form.operates_multiple_brands === "Yes" && (
+                <>
+                  <NumberField
+                    label="Number of brands"
+                    value={form.number_of_brands}
+                    onChange={(v) => set("number_of_brands", v)}
+                    min={1}
+                  />
+                  <div className="space-y-3">
+                    <label className="block text-base font-medium text-foreground leading-snug">Briefly describe each brand and its focus</label>
+                    <textarea
+                      value={form.brand_descriptions ?? ""}
+                      onChange={(e) => set("brand_descriptions", e.target.value)}
+                      rows={4}
+                      className="w-full rounded-md border border-border bg-background text-base text-foreground px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
+                    />
+                    <p className="text-xs text-muted-foreground">e.g. "Elite Baseball — showcase and travel / Elite Development — youth development program" (optional)</p>
+                  </div>
+                </>
+              )}
               <SelectField label="Years in Operation" value={form.years_in_operation} onChange={(v) => set("years_in_operation", v)} options={YEARS_OPTIONS} />
               <SelectField label="Current Growth Trend" value={form.current_growth_trend} onChange={(v) => set("current_growth_trend", v)} options={GROWTH_TRENDS} />
               <SelectField label="Player Mix" value={form.player_mix} onChange={(v) => set("player_mix", v)} options={PLAYER_MIX} />
