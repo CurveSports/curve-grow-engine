@@ -376,7 +376,7 @@ export default function Intake() {
               <SubsectionHeading title="How you operate" />
               <SelectField label="Operational Structure" value={form.operational_structure} onChange={(v) => set("operational_structure", v)} options={OPS_STRUCTURE} />
               <MultiCheckField label="Parent Communication approach" values={form.parent_communication} onChange={(v) => set("parent_communication", v)} options={PARENT_COMMS} />
-              <SelectField label="Coach Alignment" value={form.coach_alignment} onChange={(v) => set("coach_alignment", v)} options={COACH_ALIGNMENT} />
+              <SelectField label="How Aligned are your Coaches to the Revenue Goals of the Company" value={form.coach_alignment} onChange={(v) => set("coach_alignment", v)} options={COACH_ALIGNMENT} />
               <SelectField label="Player Development Structure" value={form.coaching_structure} onChange={(v) => set("coaching_structure", v)} options={COACHING_STRUCTURE} />
               <SelectField label="Pricing Approach" value={form.pricing_approach} onChange={(v) => set("pricing_approach", v)} options={PRICING_APPROACH} />
               <SelectField label="Sponsorship Approach" value={form.sponsorship_approach} onChange={(v) => set("sponsorship_approach", v)} options={SPONSORSHIP_APPROACH} />
