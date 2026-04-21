@@ -13,7 +13,7 @@ import {
   COMMITMENT, DEMAND, SELECTION, DUES_INCLUSIONS, TIERED, PRICE_POINT, KNOWS_MARGIN,
   MARGIN_RANGES, SPONSORSHIPS, APPAREL_MARGIN, APPAREL_MODEL, YES_NO,
   OPS_STRUCTURE, PARENT_COMMS, COACH_ALIGNMENT, COACHING_STRUCTURE, PRICING_APPROACH,
-  SPONSORSHIP_APPROACH, SECTION_TITLES,
+  SPONSORSHIP_APPROACH, SECTION_TITLES, EVENT_TYPES, LESSONS_CAPTURE_MODEL,
 } from "@/lib/intakeOptions";
 
 type Form = Record<string, any>;
@@ -39,7 +39,12 @@ const empty: Form = {
   seeks_sponsorships: "", number_of_sponsors: "", total_sponsorship_revenue: "",
   apparel_revenue: "", apparel_margin: "", apparel_model: "",
   runs_own_events: "", events_per_year: "", total_event_revenue: "",
-  camps_revenue: "", clinics_revenue: "", lessons_revenue: "", showcase_revenue: "", other_addon_revenue: "",
+  event_types_offered: [],
+  tournaments_revenue: "", camps_revenue: "", clinics_revenue: "", showcase_revenue: "",
+  recruiting_events_revenue: "", data_days_revenue: "", other_events_revenue: "",
+  other_addon_revenue: "",
+  lessons_revenue: "", lessons_revenue_gross: "", lessons_revenue_model: "", lessons_capture_pct: "",
+  annual_facility_rental_revenue: "",
   facility_rental_revenue: "",
   retention_pct: "", avg_player_years: "",
   operational_structure: "", parent_communication: [], coach_alignment: "",
