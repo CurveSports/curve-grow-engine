@@ -552,6 +552,11 @@ function calculate(intake: any) {
     high_dues_concentration, high_sponsorship_dependency,
     diagnosis_text: diagnosis,
     next_steps,
+    // New dues-model derived fields
+    annual_hs_equivalent, annual_youth_equivalent, blended_annual_fee_overall,
+    pricing_benchmark_hs_low, pricing_benchmark_hs_high,
+    pricing_benchmark_youth_low, pricing_benchmark_youth_high,
+    hs_fee_vs_market, youth_fee_vs_market,
     calculated_at: new Date().toISOString(),
   };
 }
