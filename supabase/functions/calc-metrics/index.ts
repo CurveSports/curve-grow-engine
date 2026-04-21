@@ -728,6 +728,26 @@ async function generateDraftTasks(admin: any, org_id: string, metrics: any, isFa
     }
   }
 
+  // Selection-leakage auto-task (Round 1)
+  if (metrics.selection_leakage_flag === true) {
+    const due = new Date(today);
+    due.setDate(due.getDate() + 14);
+    tasksToInsert.push({
+      org_id,
+      template_id: null,
+      title: "Evaluate developmental programming for cut players",
+      description: "Players being cut without an alternative program represents lost family revenue. Evaluate whether a developmental tier, training-only membership, or alternative program could retain these families and capture wallet share that currently goes to competing organizations or leaves the market entirely.",
+      engine: "Add-Ons",
+      task_type: "Strategy",
+      status: "not_started",
+      plan_status: "draft",
+      priority: "high",
+      suggested_due_date: due.toISOString().slice(0, 10),
+      due_date: due.toISOString().slice(0, 10),
+      assigned_by: uid,
+    });
+  }
+
   if (tasksToInsert.length === 0) return 0;
   const { data: inserted, error } = await admin.from("org_tasks").insert(tasksToInsert).select("id");
   if (error) { console.error("draft task insert error", error); return 0; }
