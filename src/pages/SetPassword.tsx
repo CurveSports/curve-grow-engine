@@ -16,9 +16,21 @@ export default function SetPassword() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const validatePassword = (pwd: string) => {
+    const errors: string[] = [];
+    if (pwd.length < 8) errors.push("At least 8 characters");
+    if (!/[A-Z]/.test(pwd)) errors.push("1 uppercase letter");
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)) errors.push("1 special character");
+    return errors;
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 8) { toast.error("Password must be at least 8 characters."); return; }
+    const validationErrors = validatePassword(password);
+    if (validationErrors.length > 0) {
+      toast.error("Password must include: " + validationErrors.join(", "));
+      return;
+    }
     if (password !== confirm) { toast.error("Passwords don't match."); return; }
     setLoading(true);
     const { error } = await supabase.auth.updateUser({ password });
