@@ -373,33 +373,3 @@ function BriefTab() {
   );
 }
 
-/* ─────────────────────────  NOTES (placeholder)  ───────────────────────── */
-
-function NotesTab({ orgId }: { orgId: string }) {
-  const [text, setText] = useState("");
-  return (
-    <div className="space-y-4">
-      <div className="curve-card border-l-4 border-l-info">
-        <div className="flex items-start gap-3">
-          <StickyNote className="h-5 w-5 text-info mt-0.5" />
-          <div>
-            <p className="font-semibold text-foreground">Notes feed — Coming Soon</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Persistent chronological notes per org will live here. The backing <code className="text-xs bg-secondary px-1 py-0.5 rounded">org_notes</code> table will be added in the next phase along with author / timestamp / tag (Pre-sale, Kickoff, Check-in, Issue, Win, Renewal).
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="curve-card opacity-60 pointer-events-none">
-        <p className="curve-eyebrow mb-2">Add Note (preview)</p>
-        <Textarea placeholder="Write a note about this organization…" rows={3} value={text} onChange={(e) => setText(e.target.value)} />
-        <div className="mt-3 flex justify-end">
-          <Button size="sm" disabled>Save Note</Button>
-        </div>
-      </div>
-      <div className="curve-card text-center py-12">
-        <p className="text-muted-foreground text-sm">No notes yet — add the first one once the notes feature ships.</p>
-      </div>
-    </div>
-  );
-}
