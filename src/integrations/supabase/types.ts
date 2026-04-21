@@ -75,6 +75,7 @@ export type Database = {
           sponsorship_opportunity_low: number | null
           sponsorship_revenue_per_sponsor: number | null
           sponsorship_score: number | null
+          tasks_generated_at: string | null
           total_engine_score: number | null
           total_opportunity_high: number | null
           total_opportunity_low: number | null
@@ -139,6 +140,7 @@ export type Database = {
           sponsorship_opportunity_low?: number | null
           sponsorship_revenue_per_sponsor?: number | null
           sponsorship_score?: number | null
+          tasks_generated_at?: string | null
           total_engine_score?: number | null
           total_opportunity_high?: number | null
           total_opportunity_low?: number | null
@@ -203,6 +205,7 @@ export type Database = {
           sponsorship_opportunity_low?: number | null
           sponsorship_revenue_per_sponsor?: number | null
           sponsorship_score?: number | null
+          tasks_generated_at?: string | null
           total_engine_score?: number | null
           total_opportunity_high?: number | null
           total_opportunity_low?: number | null
@@ -257,6 +260,113 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_log: {
+        Row: {
+          id: string
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          org_id: string | null
+          recipient_role: Database["public"]["Enums"]["notification_recipient_role"]
+          sent_at: string
+          task_ids: Json
+        }
+        Insert: {
+          id?: string
+          notification_type: Database["public"]["Enums"]["notification_type"]
+          org_id?: string | null
+          recipient_role: Database["public"]["Enums"]["notification_recipient_role"]
+          sent_at?: string
+          task_ids?: Json
+        }
+        Update: {
+          id?: string
+          notification_type?: Database["public"]["Enums"]["notification_type"]
+          org_id?: string | null
+          recipient_role?: Database["public"]["Enums"]["notification_recipient_role"]
+          sent_at?: string
+          task_ids?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_tasks: {
+        Row: {
+          assigned_by: string | null
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string
+          due_date: string | null
+          engine: Database["public"]["Enums"]["task_engine"]
+          id: string
+          last_activity_at: string
+          org_id: string
+          priority: Database["public"]["Enums"]["task_priority"]
+          status: Database["public"]["Enums"]["task_status"]
+          suggested_due_date: string | null
+          task_type: Database["public"]["Enums"]["task_type"]
+          template_id: string | null
+          title: string
+        }
+        Insert: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description: string
+          due_date?: string | null
+          engine: Database["public"]["Enums"]["task_engine"]
+          id?: string
+          last_activity_at?: string
+          org_id: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          status?: Database["public"]["Enums"]["task_status"]
+          suggested_due_date?: string | null
+          task_type: Database["public"]["Enums"]["task_type"]
+          template_id?: string | null
+          title: string
+        }
+        Update: {
+          assigned_by?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string
+          due_date?: string | null
+          engine?: Database["public"]["Enums"]["task_engine"]
+          id?: string
+          last_activity_at?: string
+          org_id?: string
+          priority?: Database["public"]["Enums"]["task_priority"]
+          status?: Database["public"]["Enums"]["task_status"]
+          suggested_due_date?: string | null
+          task_type?: Database["public"]["Enums"]["task_type"]
+          template_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "task_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -492,6 +602,7 @@ export type Database = {
           name: string
           org_type: string | null
           phone: string | null
+          plan_activated_at: string | null
           primary_user_id: string | null
           updated_at: string
         }
@@ -504,6 +615,7 @@ export type Database = {
           name: string
           org_type?: string | null
           phone?: string | null
+          plan_activated_at?: string | null
           primary_user_id?: string | null
           updated_at?: string
         }
@@ -516,6 +628,7 @@ export type Database = {
           name?: string
           org_type?: string | null
           phone?: string | null
+          plan_activated_at?: string | null
           primary_user_id?: string | null
           updated_at?: string
         }
@@ -558,6 +671,132 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      task_activity_log: {
+        Row: {
+          action: Database["public"]["Enums"]["task_action"]
+          created_at: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          org_id: string
+          performed_by: string | null
+          task_id: string
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["task_action"]
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          org_id: string
+          performed_by?: string | null
+          task_id: string
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["task_action"]
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          org_id?: string
+          performed_by?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_activity_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_activity_log_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "org_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_notes: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          note_text: string
+          org_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          note_text: string
+          org_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          note_text?: string
+          org_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_notes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "org_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      task_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          engine: Database["public"]["Enums"]["task_engine"]
+          id: string
+          is_system_template: boolean
+          suggested_days_to_complete: number
+          task_type: Database["public"]["Enums"]["task_type"]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          engine: Database["public"]["Enums"]["task_engine"]
+          id?: string
+          is_system_template?: boolean
+          suggested_days_to_complete?: number
+          task_type: Database["public"]["Enums"]["task_type"]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          engine?: Database["public"]["Enums"]["task_engine"]
+          id?: string
+          is_system_template?: boolean
+          suggested_days_to_complete?: number
+          task_type?: Database["public"]["Enums"]["task_type"]
+          title?: string
+        }
+        Relationships: []
       }
       user_onboarding: {
         Row: {
@@ -651,6 +890,30 @@ export type Database = {
         | "Growth"
         | "Advanced"
         | "Elite"
+      notification_recipient_role: "admin" | "org_all"
+      notification_type:
+        | "task_completed"
+        | "task_overdue"
+        | "no_activity_digest"
+      task_action:
+        | "created"
+        | "status_changed"
+        | "note_added"
+        | "due_date_changed"
+        | "reassigned"
+        | "completed"
+      task_engine:
+        | "Pricing"
+        | "Sponsorship"
+        | "Apparel"
+        | "Events"
+        | "Add-Ons"
+        | "Retention"
+        | "Facility"
+        | "Operations"
+      task_priority: "high" | "medium" | "low"
+      task_status: "not_started" | "in_progress" | "completed" | "overdue"
+      task_type: "Strategy" | "Execute" | "Communication" | "Track"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -787,6 +1050,33 @@ export const Constants = {
         "Advanced",
         "Elite",
       ],
+      notification_recipient_role: ["admin", "org_all"],
+      notification_type: [
+        "task_completed",
+        "task_overdue",
+        "no_activity_digest",
+      ],
+      task_action: [
+        "created",
+        "status_changed",
+        "note_added",
+        "due_date_changed",
+        "reassigned",
+        "completed",
+      ],
+      task_engine: [
+        "Pricing",
+        "Sponsorship",
+        "Apparel",
+        "Events",
+        "Add-Ons",
+        "Retention",
+        "Facility",
+        "Operations",
+      ],
+      task_priority: ["high", "medium", "low"],
+      task_status: ["not_started", "in_progress", "completed", "overdue"],
+      task_type: ["Strategy", "Execute", "Communication", "Track"],
     },
   },
 } as const
