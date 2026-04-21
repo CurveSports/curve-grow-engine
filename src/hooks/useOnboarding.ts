@@ -43,8 +43,7 @@ export function useOnboarding() {
     if (!user) return;
     const now = new Date().toISOString();
     setState((s) => ({ ...(s ?? empty), [field]: now }));
-    await supabase
-      .from("user_onboarding")
+    await (supabase.from("user_onboarding") as any)
       .upsert({ user_id: user.id, [field]: now }, { onConflict: "user_id" });
   }, [user]);
 
