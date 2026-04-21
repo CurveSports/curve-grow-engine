@@ -18,6 +18,7 @@ const ENGINE_SCORE_FIELDS: Record<string, string> = {
   "Add-Ons": "addon_score",
   Retention: "retention_score",
   Facility: "facility_score",
+  Affiliate: "affiliate_score",
 };
 const FACILITY_ORG_TYPES = new Set(["Facility + Teams", "Facility Only", "Teams + Facility"]);
 
