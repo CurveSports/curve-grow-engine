@@ -32,11 +32,6 @@ export default function RouteResolver() {
       if (!role) { setChecking(false); return; }
 
       // 1. Password gate — must be set before anything else
-      const hasPassword =
-        !!onboarding?.password_set_at ||
-        // App-level fallback: identity has password provider
-        (user?.identities ?? []).some((i: any) => i.provider === "email" && i.identity_data?.email);
-      // The fallback above isn't perfectly reliable, so trust onboarding row first.
       if (!onboarding?.password_set_at) {
         navigate("/set-password", { replace: true });
         return;
