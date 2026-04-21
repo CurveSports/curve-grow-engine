@@ -127,6 +127,7 @@ function calculate(intake: any) {
   const tournaments = num(intake.tournaments_revenue);
   const recruiting_events = num(intake.recruiting_events_revenue);
   const data_days = num(intake.data_days_revenue);
+  const tryouts = num(intake.tryouts_revenue);
   const other_events = num(intake.other_events_revenue);
   const other_addon = num(intake.other_addon_revenue);
   const retention_pct = num(intake.retention_pct);
@@ -139,7 +140,7 @@ function calculate(intake: any) {
   const event_types: string[] = Array.isArray(intake.event_types_offered) ? intake.event_types_offered : [];
   const runs_events = event_types.length > 0;
   const event_revenue_total = runs_events
-    ? tournaments + camps + clinics + showcase + recruiting_events + data_days + other_events
+    ? tournaments + camps + clinics + showcase + recruiting_events + data_days + tryouts + other_events
     : 0;
   const revenue_per_event = events_per_year > 0 && runs_events ? event_revenue_total / events_per_year : 0;
 
@@ -705,7 +706,7 @@ Deno.serve(async (req) => {
     const event_revenue_total = event_types.length > 0
       ? num(intake.tournaments_revenue) + num(intake.camps_revenue) + num(intake.clinics_revenue) +
         num(intake.showcase_revenue) + num(intake.recruiting_events_revenue) +
-        num(intake.data_days_revenue) + num(intake.other_events_revenue)
+        num(intake.data_days_revenue) + num(intake.tryouts_revenue) + num(intake.other_events_revenue)
       : 0;
 
     // Mirror lessons_revenue_gross into legacy lessons_revenue for backward compat

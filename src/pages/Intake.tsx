@@ -61,7 +61,7 @@ const empty: Form = {
   runs_own_events: "", events_per_year: "", total_event_revenue: "",
   event_types_offered: [],
   tournaments_revenue: "", camps_revenue: "", clinics_revenue: "", showcase_revenue: "",
-  recruiting_events_revenue: "", data_days_revenue: "", other_events_revenue: "",
+  recruiting_events_revenue: "", data_days_revenue: "", tryouts_revenue: "", other_events_revenue: "",
   other_addon_revenue: "",
   lessons_revenue: "", lessons_revenue_gross: "", lessons_revenue_model: "", lessons_capture_pct: "",
   annual_facility_rental_revenue: "",
@@ -217,7 +217,7 @@ function computeDuesPreview(form: Form): number {
 function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolean }) {
   const dues = computeDuesPreview(form);
   const sponsor = Number(form.total_sponsorship_revenue) || 0;
-  const eventsList = ["tournaments_revenue","camps_revenue","clinics_revenue","showcase_revenue","recruiting_events_revenue","data_days_revenue","other_events_revenue"];
+  const eventsList = ["tournaments_revenue","camps_revenue","clinics_revenue","showcase_revenue","recruiting_events_revenue","data_days_revenue","tryouts_revenue","other_events_revenue"];
   const events = eventsList.reduce((s, k) => s + (Number(form[k]) || 0), 0);
   const lessons = Number(form.lessons_revenue_gross) || 0;
   const facility = isFacility ? Number(form.annual_facility_rental_revenue) || 0 : 0;
@@ -547,6 +547,9 @@ export default function Intake() {
               )}
               {form.event_types_offered?.includes("Data Days") && (
                 <NumberField label="Data Days Annual Revenue" value={form.data_days_revenue} onChange={(v) => set("data_days_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Tryouts") && (
+                <NumberField label="Tryouts Annual Revenue" value={form.tryouts_revenue} onChange={(v) => set("tryouts_revenue", v)} min={0} currency />
               )}
               {form.event_types_offered?.includes("Other Events") && (
                 <NumberField label="Other Events Annual Revenue" value={form.other_events_revenue} onChange={(v) => set("other_events_revenue", v)} min={0} currency />

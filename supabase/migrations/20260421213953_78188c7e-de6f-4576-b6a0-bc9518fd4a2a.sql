@@ -1,0 +1,1 @@
+ALTER TABLE public.organization_intake ADD COLUMN tryouts_revenue numeric;

@@ -56,6 +56,7 @@ export const EVENT_TYPES = [
   "Showcases",
   "Recruiting Events",
   "Data Days",
+  "Tryouts",
   "Other Events",
 ] as const;
 

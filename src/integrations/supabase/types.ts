@@ -513,6 +513,7 @@ export type Database = {
           tournaments_per_hs_player: string | null
           tournaments_per_youth_player: string | null
           tournaments_revenue: number | null
+          tryouts_revenue: number | null
           typical_player_participation: string | null
           uniform_markup: string | null
           uniform_package_cost: string | null
@@ -611,6 +612,7 @@ export type Database = {
           tournaments_per_hs_player?: string | null
           tournaments_per_youth_player?: string | null
           tournaments_revenue?: number | null
+          tryouts_revenue?: number | null
           typical_player_participation?: string | null
           uniform_markup?: string | null
           uniform_package_cost?: string | null
@@ -709,6 +711,7 @@ export type Database = {
           tournaments_per_hs_player?: string | null
           tournaments_per_youth_player?: string | null
           tournaments_revenue?: number | null
+          tryouts_revenue?: number | null
           typical_player_participation?: string | null
           uniform_markup?: string | null
           uniform_package_cost?: string | null
