@@ -21,6 +21,12 @@ export type Database = {
           addon_opportunity_high: number | null
           addon_opportunity_low: number | null
           addon_score: number | null
+          affiliate_fee_opportunity_high: number | null
+          affiliate_fee_opportunity_low: number | null
+          affiliate_fee_revenue: number | null
+          affiliate_revenue_per_affiliate: number | null
+          affiliate_score: number | null
+          affiliate_total_revenue: number | null
           annual_hs_equivalent: number | null
           annual_youth_equivalent: number | null
           apparel_opportunity_high: number | null
@@ -102,6 +108,12 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
+          affiliate_fee_opportunity_high?: number | null
+          affiliate_fee_opportunity_low?: number | null
+          affiliate_fee_revenue?: number | null
+          affiliate_revenue_per_affiliate?: number | null
+          affiliate_score?: number | null
+          affiliate_total_revenue?: number | null
           annual_hs_equivalent?: number | null
           annual_youth_equivalent?: number | null
           apparel_opportunity_high?: number | null
@@ -183,6 +195,12 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
+          affiliate_fee_opportunity_high?: number | null
+          affiliate_fee_opportunity_low?: number | null
+          affiliate_fee_revenue?: number | null
+          affiliate_revenue_per_affiliate?: number | null
+          affiliate_score?: number | null
+          affiliate_total_revenue?: number | null
           annual_hs_equivalent?: number | null
           annual_youth_equivalent?: number | null
           apparel_opportunity_high?: number | null
@@ -425,12 +443,16 @@ export type Database = {
       organization_intake: {
         Row: {
           addon_soft_goods_spend: string | null
+          affiliate_apparel_revenue: number | null
+          affiliate_fee_per_player: number | null
+          affiliate_players_charged: number | null
           alacarte_annual_hs_spend: number | null
           alacarte_annual_youth_spend: number | null
           annual_facility_rental_revenue: number | null
           average_roster_size: number | null
           avg_months_active: number | null
           avg_player_years: number | null
+          brand_descriptions: string | null
           camps_revenue: number | null
           city_state: string | null
           clinics_revenue: number | null
@@ -454,6 +476,7 @@ export type Database = {
           hard_goods_markup: string | null
           hard_goods_purchased: string | null
           hard_goods_spend: string | null
+          has_affiliates: boolean | null
           hs_players: number | null
           id: string
           knows_profit_margin: string | null
@@ -468,7 +491,10 @@ export type Database = {
           mixed_annual_youth_fee: number | null
           monthly_hs_fee: number | null
           monthly_youth_fee: number | null
+          number_of_affiliates: number | null
+          number_of_brands: number | null
           number_of_sponsors: number | null
+          operates_multiple_brands: boolean | null
           operational_structure: string | null
           org_id: string
           org_type: string | null
@@ -524,12 +550,16 @@ export type Database = {
         }
         Insert: {
           addon_soft_goods_spend?: string | null
+          affiliate_apparel_revenue?: number | null
+          affiliate_fee_per_player?: number | null
+          affiliate_players_charged?: number | null
           alacarte_annual_hs_spend?: number | null
           alacarte_annual_youth_spend?: number | null
           annual_facility_rental_revenue?: number | null
           average_roster_size?: number | null
           avg_months_active?: number | null
           avg_player_years?: number | null
+          brand_descriptions?: string | null
           camps_revenue?: number | null
           city_state?: string | null
           clinics_revenue?: number | null
@@ -553,6 +583,7 @@ export type Database = {
           hard_goods_markup?: string | null
           hard_goods_purchased?: string | null
           hard_goods_spend?: string | null
+          has_affiliates?: boolean | null
           hs_players?: number | null
           id?: string
           knows_profit_margin?: string | null
@@ -567,7 +598,10 @@ export type Database = {
           mixed_annual_youth_fee?: number | null
           monthly_hs_fee?: number | null
           monthly_youth_fee?: number | null
+          number_of_affiliates?: number | null
+          number_of_brands?: number | null
           number_of_sponsors?: number | null
+          operates_multiple_brands?: boolean | null
           operational_structure?: string | null
           org_id: string
           org_type?: string | null
@@ -623,12 +657,16 @@ export type Database = {
         }
         Update: {
           addon_soft_goods_spend?: string | null
+          affiliate_apparel_revenue?: number | null
+          affiliate_fee_per_player?: number | null
+          affiliate_players_charged?: number | null
           alacarte_annual_hs_spend?: number | null
           alacarte_annual_youth_spend?: number | null
           annual_facility_rental_revenue?: number | null
           average_roster_size?: number | null
           avg_months_active?: number | null
           avg_player_years?: number | null
+          brand_descriptions?: string | null
           camps_revenue?: number | null
           city_state?: string | null
           clinics_revenue?: number | null
@@ -652,6 +690,7 @@ export type Database = {
           hard_goods_markup?: string | null
           hard_goods_purchased?: string | null
           hard_goods_spend?: string | null
+          has_affiliates?: boolean | null
           hs_players?: number | null
           id?: string
           knows_profit_margin?: string | null
@@ -666,7 +705,10 @@ export type Database = {
           mixed_annual_youth_fee?: number | null
           monthly_hs_fee?: number | null
           monthly_youth_fee?: number | null
+          number_of_affiliates?: number | null
+          number_of_brands?: number | null
           number_of_sponsors?: number | null
+          operates_multiple_brands?: boolean | null
           operational_structure?: string | null
           org_id?: string
           org_type?: string | null
@@ -1050,6 +1092,7 @@ export type Database = {
         | "Retention"
         | "Facility"
         | "Operations"
+        | "Affiliate"
       task_priority: "high" | "medium" | "low"
       task_status: "not_started" | "in_progress" | "completed" | "overdue"
       task_type: "Strategy" | "Execute" | "Communication" | "Track"
@@ -1213,6 +1256,7 @@ export const Constants = {
         "Retention",
         "Facility",
         "Operations",
+        "Affiliate",
       ],
       task_priority: ["high", "medium", "low"],
       task_status: ["not_started", "in_progress", "completed", "overdue"],

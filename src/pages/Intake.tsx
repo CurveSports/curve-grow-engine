@@ -69,6 +69,11 @@ const empty: Form = {
   retention_pct: "", avg_player_years: "",
   operational_structure: "", parent_communication: [], coach_alignment: "",
   coaching_structure: "", pricing_approach: "", sponsorship_approach: "",
+  // Affiliate program
+  has_affiliates: "", number_of_affiliates: "", affiliate_players_charged: "",
+  affiliate_fee_per_player: "", affiliate_apparel_revenue: "",
+  // Multiple brands
+  operates_multiple_brands: "", number_of_brands: "", brand_descriptions: "",
 };
 
 function SubsectionHeading({ title }: { title: string }) {
@@ -222,7 +227,12 @@ function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolea
   const lessons = Number(form.lessons_revenue_gross) || 0;
   const facility = isFacility ? Number(form.annual_facility_rental_revenue) || 0 : 0;
   const other = Number(form.other_addon_revenue) || 0;
-  const total = dues + sponsor + events + lessons + facility + other;
+  const hasAffiliates = form.has_affiliates === "Yes";
+  const affPlayers = Number(form.affiliate_players_charged) || 0;
+  const affFee = Number(form.affiliate_fee_per_player) || 0;
+  const affFees = hasAffiliates ? affPlayers * affFee : 0;
+  const affApparel = hasAffiliates ? Number(form.affiliate_apparel_revenue) || 0 : 0;
+  const total = dues + sponsor + events + lessons + facility + other + affFees + affApparel;
 
   const Row = ({ label, value, show = true }: { label: string; value: number; show?: boolean }) =>
     show ? (
@@ -239,6 +249,8 @@ function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolea
       <Row label="Sponsorship" value={sponsor} show={sponsor > 0 || form.total_sponsorship_revenue !== ""} />
       <Row label="Events" value={events} show={events > 0} />
       <Row label="Lessons" value={lessons} show={lessons > 0} />
+      <Row label="Affiliate Fees" value={affFees} show={hasAffiliates} />
+      <Row label="Affiliate Apparel" value={affApparel} show={hasAffiliates} />
       <Row label="Facility Rental" value={facility} show={isFacility} />
       <Row label="Other" value={other} show={other > 0} />
       <div className="border-t border-border pt-2 mt-2 flex justify-between font-display font-semibold tabular-nums">
@@ -402,6 +414,33 @@ export default function Intake() {
               </div>
               <SelectField label="How would you describe your local market?" value={form.market_type} onChange={(v) => set("market_type", v)} options={MARKET_TYPES} />
               <SelectField label="Organization Type" value={form.org_type} onChange={(v) => set("org_type", v)} options={ORG_TYPES} />
+
+              <PillSelectField
+                label="Do you operate multiple brands?"
+                value={form.operates_multiple_brands}
+                onChange={(v) => set("operates_multiple_brands", v)}
+                options={["Yes", "No"]}
+              />
+              {form.operates_multiple_brands === "Yes" && (
+                <>
+                  <NumberField
+                    label="Number of brands"
+                    value={form.number_of_brands}
+                    onChange={(v) => set("number_of_brands", v)}
+                    min={1}
+                  />
+                  <div className="space-y-3">
+                    <label className="block text-base font-medium text-foreground leading-snug">Briefly describe each brand and its focus</label>
+                    <textarea
+                      value={form.brand_descriptions ?? ""}
+                      onChange={(e) => set("brand_descriptions", e.target.value)}
+                      rows={4}
+                      className="w-full rounded-md border border-border bg-background text-base text-foreground px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent transition"
+                    />
+                    <p className="text-xs text-muted-foreground">e.g. "Elite Baseball — showcase and travel / Elite Development — youth development program" (optional)</p>
+                  </div>
+                </>
+              )}
               <SelectField label="Years in Operation" value={form.years_in_operation} onChange={(v) => set("years_in_operation", v)} options={YEARS_OPTIONS} />
               <SelectField label="Current Growth Trend" value={form.current_growth_trend} onChange={(v) => set("current_growth_trend", v)} options={GROWTH_TRENDS} />
               <SelectField label="Player Mix" value={form.player_mix} onChange={(v) => set("player_mix", v)} options={PLAYER_MIX} />
@@ -460,6 +499,50 @@ export default function Intake() {
               <SelectField label="Do you actively seek sponsorships" value={form.seeks_sponsorships} onChange={(v) => set("seeks_sponsorships", v)} options={SPONSORSHIPS} />
               <NumberField label="Number of Sponsors" value={form.number_of_sponsors} onChange={(v) => set("number_of_sponsors", v)} min={0} />
               <NumberField label="Total Sponsorship Revenue" value={form.total_sponsorship_revenue} onChange={(v) => set("total_sponsorship_revenue", v)} min={0} currency />
+
+              <div className="pt-4">
+                <SubsectionHeading title="Affiliate Program" />
+                <p className="text-sm text-muted-foreground mt-2">If your organization has satellite or affiliate clubs operating under your brand, capture that revenue here.</p>
+              </div>
+              <PillSelectField
+                label="Do you have affiliate organizations?"
+                value={form.has_affiliates}
+                onChange={(v) => set("has_affiliates", v)}
+                options={["Yes", "No"]}
+              />
+              {form.has_affiliates === "Yes" && (
+                <>
+                  <NumberField
+                    label="Number of affiliates"
+                    value={form.number_of_affiliates}
+                    onChange={(v) => set("number_of_affiliates", v)}
+                    min={0}
+                  />
+                  <NumberField
+                    label="Total affiliate players you charge fees on"
+                    value={form.affiliate_players_charged}
+                    onChange={(v) => set("affiliate_players_charged", v)}
+                    min={0}
+                    hint="Enter the capped number you actually charge, not total roster sizes across all affiliates"
+                  />
+                  <NumberField
+                    label="Annual per-player affiliation fee"
+                    value={form.affiliate_fee_per_player}
+                    onChange={(v) => set("affiliate_fee_per_player", v)}
+                    min={0}
+                    currency
+                    hint="Typically $100–$150 per player but varies by agreement"
+                  />
+                  <NumberField
+                    label="Annual apparel revenue from affiliates"
+                    value={form.affiliate_apparel_revenue}
+                    onChange={(v) => set("affiliate_apparel_revenue", v)}
+                    min={0}
+                    currency
+                    hint="Include any margin or credits you receive on affiliate apparel orders — enter your best estimate as this varies significantly"
+                  />
+                </>
+              )}
 
               <div className="pt-4">
                 <SubsectionHeading title="Apparel & Gear" />

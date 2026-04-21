@@ -18,6 +18,7 @@ const ENGINE_SCORE_FIELDS: Record<string, string> = {
   "Add-Ons": "addon_score",
   Retention: "retention_score",
   Facility: "facility_score",
+  Affiliate: "affiliate_score",
 };
 const FACILITY_ORG_TYPES = new Set(["Facility + Teams", "Facility Only", "Teams + Facility"]);
 
@@ -89,6 +90,11 @@ const NEXT_STEPS: Record<string, string[]> = {
     "Build a structured private instruction program that runs through your organization rather than through individual coaches independently.",
     "Audit your current facility schedule and identify unused blocks — mornings, weekday afternoons, and off-season windows are typically the highest opportunity.",
     "Build a rental rate card for cage time, field time, and full facility use and begin outreach to local high schools, rec leagues, and other travel clubs.",
+  ],
+  Affiliate: [
+    "Audit current affiliate fee agreements and identify any orgs being charged below the $100–$150 per player market rate.",
+    "Build a standardized affiliate agreement template that includes fee structure, apparel requirements, brand standards, and annual renewal terms.",
+    "Identify 3–5 high-quality organizations in new markets that would be strong affiliate candidates and begin conversations.",
   ],
 };
 
@@ -247,12 +253,34 @@ function calculate(intake: any) {
     else youth_fee_vs_market = "At Market";
   }
 
+  // Affiliate revenue (only if has_affiliates = true)
+  const has_affiliates = intake.has_affiliates === "Yes" || intake.has_affiliates === true;
+  const number_of_affiliates = num(intake.number_of_affiliates);
+  const affiliate_players_charged = num(intake.affiliate_players_charged);
+  const affiliate_fee_per_player = num(intake.affiliate_fee_per_player);
+  const affiliate_apparel_revenue = num(intake.affiliate_apparel_revenue);
+
+  const affiliate_fee_revenue = has_affiliates ? affiliate_players_charged * affiliate_fee_per_player : 0;
+  const affiliate_total_revenue = has_affiliates ? affiliate_fee_revenue + affiliate_apparel_revenue : 0;
+  const affiliate_revenue_per_affiliate = has_affiliates && number_of_affiliates > 0
+    ? affiliate_total_revenue / number_of_affiliates : 0;
+
+  // Affiliate opportunity (per-player fee gap to $100–$150 market rate)
+  const affiliate_fee_opportunity_low = has_affiliates
+    ? Math.max(0, (affiliate_players_charged * 100) - affiliate_fee_revenue)
+    : 0;
+  const affiliate_fee_opportunity_high = has_affiliates
+    ? Math.max(0, (affiliate_players_charged * 150) - affiliate_fee_revenue)
+    : 0;
+
   const calculated_total_revenue =
     dues_revenue +
     event_revenue_total +
     lessons_revenue_org +
     sponsor_rev +
     facility_rev +
+    affiliate_fee_revenue +
+    affiliate_apparel_revenue +
     other_addon;
   const total_revenue = calculated_total_revenue;
 
@@ -369,10 +397,12 @@ function calculate(intake: any) {
 
   const total_opportunity_low =
     pricing_opportunity_low + sponsorship_opportunity_low + apparel_opportunity_low +
-    event_opportunity_low + addon_opportunity_low + retention_opportunity_low + facility_opportunity_low;
+    event_opportunity_low + addon_opportunity_low + retention_opportunity_low + facility_opportunity_low +
+    affiliate_fee_opportunity_low;
   const total_opportunity_high =
     pricing_opportunity_high + sponsorship_opportunity_high + apparel_opportunity_high +
-    event_opportunity_high + addon_opportunity_high + retention_opportunity_high + facility_opportunity_high;
+    event_opportunity_high + addon_opportunity_high + retention_opportunity_high + facility_opportunity_high +
+    affiliate_fee_opportunity_high;
 
   // Step 5 — scores
   let pricing = 5;
@@ -456,10 +486,23 @@ function calculate(intake: any) {
     facility_score = clamp(f, 1, 10);
   }
 
+  // Affiliate score
+  let affiliate_score: number | null = null;
+  if (has_affiliates) {
+    let a = 3;
+    if (affiliate_fee_per_player >= 150) a += 2;
+    if (affiliate_fee_per_player >= 100) a += 1;
+    if (number_of_affiliates >= 10) a += 2;
+    if (number_of_affiliates >= 5) a += 1;
+    if (affiliate_apparel_revenue > 0) a += 1;
+    if (affiliate_fee_per_player < 100) a -= 2;
+    affiliate_score = clamp(a, 1, 10);
+  }
+
   // Step 6
   const total_engine_score =
     pricing_score + sponsorship_score + apparel_score + event_score + addon_score + retention_score +
-    (facility_score ?? 0);
+    (facility_score ?? 0) + (affiliate_score ?? 0);
 
   let monetization_tier: string;
   if (total_engine_score <= 20) monetization_tier = "Foundational";
@@ -481,6 +524,10 @@ function calculate(intake: any) {
   if (facility_score !== null) {
     order.push("Facility");
     scoreMap["Facility"] = facility_score;
+  }
+  if (affiliate_score !== null) {
+    order.push("Affiliate");
+    scoreMap["Affiliate"] = affiliate_score;
   }
   let minScore = 11;
   let priority_engine = order[0];
@@ -507,6 +554,8 @@ function calculate(intake: any) {
     diagnosis = "Retention is the multiplier on everything else you build. With a retention rate below average, every dollar you invest in new player acquisition is partially offset by churn. Strengthening the family experience and re-enrollment systems should be the first priority.";
   } else if (addon_score <= 3 && pricing_score >= 6 && sponsorship_score >= 5) {
     diagnosis = `Your core revenue engines are performing well. The primary gap is in add-on programming — camps, clinics, lessons, and showcases — where organizations your size typically capture an additional ${formatCurrency(addon_opportunity_low)}–${formatCurrency(addon_opportunity_high)} annually.`;
+  } else if (affiliate_score !== null && affiliate_score <= 4) {
+    diagnosis = `Your affiliate program is an underutilized revenue engine. At $100–$150 per player in affiliation fees plus apparel margin, a well-structured affiliate network of ${number_of_affiliates} organizations has the potential to generate ${formatCurrency(affiliate_fee_opportunity_low)}–${formatCurrency(affiliate_fee_opportunity_high)} in additional annual fee revenue alone — before apparel margin is factored in.`;
   } else if (total_engine_score >= 45) {
     diagnosis = "You're operating at a high level across most revenue categories. The focus at this stage is optimization and expansion — tightening the engines that score below 8 and layering in more sophisticated monetization strategies.";
   } else {
@@ -546,6 +595,8 @@ function calculate(intake: any) {
     revenue_protected_per_pct,
     facility_revenue_benchmark, facility_revenue_gap, facility_at_benchmark,
     facility_opportunity_low, facility_opportunity_high, facility_score,
+    affiliate_fee_revenue, affiliate_total_revenue, affiliate_revenue_per_affiliate,
+    affiliate_score, affiliate_fee_opportunity_low, affiliate_fee_opportunity_high,
     lessons_revenue_org,
     total_opportunity_low, total_opportunity_high,
     pricing_score, sponsorship_score, apparel_score, event_score, addon_score, retention_score,
@@ -575,6 +626,7 @@ async function generateDraftTasks(admin: any, org_id: string, metrics: any, isFa
 
   for (const engine of Object.keys(ENGINE_SCORE_FIELDS)) {
     if (engine === "Facility" && !isFacilityOrg) continue;
+    if (engine === "Affiliate" && !(metrics.affiliate_score !== null && metrics.affiliate_score !== undefined)) continue;
     const scoreField = ENGINE_SCORE_FIELDS[engine];
     const score = metrics[scoreField] ?? null;
     if (score === null || score >= 9) continue;
