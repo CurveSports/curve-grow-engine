@@ -140,6 +140,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           </Dialog>
         </div>
       </div>
+      )}
 
       {isReviewMode && (
         <>
@@ -228,7 +229,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppShell>
+    </Wrap>
   );
 }
 
