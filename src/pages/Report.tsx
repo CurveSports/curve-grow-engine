@@ -603,6 +603,6 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
           </div>
         </section>
       </div>
-    </AppShell>
+    </Wrap>
   );
 }
