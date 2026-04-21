@@ -32,12 +32,26 @@ const MARKET_MULTIPLIERS: Record<string, number> = {
   "High-income Suburban": 1.6,
 };
 
-const APPAREL_MARGIN: Record<string, number> = {
-  "Strong 30%+": 0.30,
-  "Moderate 15-30%": 0.22,
-  "Moderate 15–30%": 0.22,
-  "Minimal under 15%": 0.12,
-  "Not Sure": 0.20,
+// Apparel midpoint maps for new opportunity formula
+const UNIFORM_PACKAGE_MIDPOINT: Record<string, number> = {
+  "Under $100": 75,
+  "$100–$200": 150,
+  "$100-$200": 150,
+  "$200–$350": 275,
+  "$200-$350": 275,
+  "$350–$500": 425,
+  "$350-$500": 425,
+  "Over $500": 550,
+};
+
+const UNIFORM_MARKUP_PCT: Record<string, number> = {
+  "Under 10%": 0.07,
+  "10–20%": 0.15,
+  "10-20%": 0.15,
+  "20–30%": 0.25,
+  "20-30%": 0.25,
+  "30%+": 0.32,
+  "Not Sure": 0.12,
 };
 
 const NEXT_STEPS: Record<string, string[]> = {
