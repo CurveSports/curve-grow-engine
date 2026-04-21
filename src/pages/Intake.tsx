@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import AppShell from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -92,11 +93,14 @@ function StepBar({ step, total }: { step: number; total: number }) {
 
 export default function Intake() {
   const { profile } = useAuth();
+  const { mark } = useOnboarding();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(empty);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => { mark("intake_started_at"); }, [mark]);
 
   useEffect(() => {
     (async () => {
@@ -140,6 +144,7 @@ export default function Intake() {
       if (error) throw error;
       if (!data?.ok) throw new Error(data?.error ?? "Calculation failed");
 
+      await mark("intake_completed_at");
       toast.success("Assessment submitted");
       navigate("/report");
     } catch (e: any) {

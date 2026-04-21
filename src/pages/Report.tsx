@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import AppShell from "@/components/AppShell";
 import { formatCurrency, formatPct, formatDate } from "@/lib/format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -47,6 +48,7 @@ function EngineCard({ name, score, low, high }: { name: string; score: number; l
 export default function Report() {
   const { orgId: paramOrgId } = useParams<{ orgId?: string }>();
   const { profile, role } = useAuth();
+  const { mark } = useOnboarding();
   const [data, setData] = useState<any>(null);
   const [org, setOrg] = useState<any>(null);
   const [intake, setIntake] = useState<any>(null);
@@ -54,6 +56,11 @@ export default function Report() {
   const [err, setErr] = useState<string | null>(null);
 
   const orgId = paramOrgId ?? profile?.org_id;
+
+  useEffect(() => {
+    // Only count "viewed" when an org user is looking at their own report.
+    if (!paramOrgId && role === "org_user") mark("report_viewed_at");
+  }, [paramOrgId, role, mark]);
 
   useEffect(() => {
     (async () => {

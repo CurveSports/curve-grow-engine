@@ -1,21 +1,51 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useOnboarding } from "@/hooks/useOnboarding";
 import { supabase } from "@/integrations/supabase/client";
 
-// Routes the user to the right place based on their state.
+// Routes the user to the right place based on their onboarding + role state.
 export default function RouteResolver() {
-  const { loading, session, role, profile, refresh } = useAuth();
+  const { loading, session, role, profile, user, refresh } = useAuth();
+  const { state: onboarding, loading: obLoading } = useOnboarding();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
   const [claimed, setClaimed] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || obLoading) return;
 
     (async () => {
       if (!session) { navigate("/auth", { replace: true }); return; }
+
+      // No role yet — try to claim a pending invitation (self-heal)
+      if (!role && !claimed) {
+        setClaimed(true);
+        const { data, error } = await supabase.rpc("claim_pending_invitation");
+        const row = Array.isArray(data) ? data[0] : data;
+        if (!error && row?.claimed) {
+          await refresh();
+          return;
+        }
+      }
+
+      if (!role) { setChecking(false); return; }
+
+      // 1. Password gate — must be set before anything else
+      if (!onboarding?.password_set_at) {
+        navigate("/set-password", { replace: true });
+        return;
+      }
+
+      // 2. Welcome gate
+      if (!onboarding?.welcomed_at) {
+        navigate("/welcome", { replace: true });
+        return;
+      }
+
+      // 3. Role-based destination
       if (role === "admin") { navigate("/admin", { replace: true }); return; }
+
       if (role === "org_user" && profile?.org_id) {
         const { data: intake } = await supabase
           .from("organization_intake")
@@ -27,23 +57,11 @@ export default function RouteResolver() {
         return;
       }
 
-      // No role yet — try to claim a pending invitation (self-heal)
-      if (!claimed) {
-        setClaimed(true);
-        const { data, error } = await supabase.rpc("claim_pending_invitation");
-        const row = Array.isArray(data) ? data[0] : data;
-        if (!error && row?.claimed) {
-          await refresh();
-          return; // effect will re-run with new role
-        }
-      }
-
-      // Has session but no role / no invite — show pending state
       setChecking(false);
     })();
-  }, [loading, session, role, profile, navigate, refresh, claimed]);
+  }, [loading, obLoading, session, role, profile, user, onboarding, navigate, refresh, claimed]);
 
-  if (loading || checking) {
+  if (loading || obLoading || checking) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">Loading…</div>;
   }
 
