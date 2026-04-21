@@ -626,6 +626,7 @@ async function generateDraftTasks(admin: any, org_id: string, metrics: any, isFa
 
   for (const engine of Object.keys(ENGINE_SCORE_FIELDS)) {
     if (engine === "Facility" && !isFacilityOrg) continue;
+    if (engine === "Affiliate" && !(metrics.affiliate_score !== null && metrics.affiliate_score !== undefined)) continue;
     const scoreField = ENGINE_SCORE_FIELDS[engine];
     const score = metrics[scoreField] ?? null;
     if (score === null || score >= 9) continue;
