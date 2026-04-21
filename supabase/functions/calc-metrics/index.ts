@@ -711,6 +711,10 @@ Deno.serve(async (req) => {
     // Mirror lessons_revenue_gross into legacy lessons_revenue for backward compat
     const lessons_gross = intake.lessons_revenue_gross ?? intake.lessons_revenue ?? null;
 
+    // Derive revenue_needs_review flag from verification answer
+    const verification = intake.revenue_verification ?? null;
+    const revenue_needs_review = verification === "Close but not exact" || verification === "Something seems off";
+
     const intakeRow = {
       ...intake,
       org_id,
@@ -718,6 +722,7 @@ Deno.serve(async (req) => {
       total_event_revenue: event_revenue_total,
       lessons_revenue: lessons_gross,
       lessons_revenue_gross: lessons_gross,
+      revenue_needs_review,
     };
     const { error: intakeErr } = await supabase
       .from("organization_intake")
