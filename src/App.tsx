@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RouteResolver from "@/pages/RouteResolver";
 import Auth from "@/pages/Auth";
+import ResetPassword from "@/pages/ResetPassword";
 import Intake from "@/pages/Intake";
 import Report from "@/pages/Report";
 import AdminDashboard from "@/pages/AdminDashboard";
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<RouteResolver />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/intake" element={<ProtectedRoute role="org_user"><Intake /></ProtectedRoute>} />
             <Route path="/report" element={<ProtectedRoute role="org_user"><Report /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute role="org_user"><Team /></ProtectedRoute>} />
