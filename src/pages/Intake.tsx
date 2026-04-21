@@ -6,7 +6,7 @@ import { useOnboarding } from "@/hooks/useOnboarding";
 import AppShell from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { TextField, NumberField, SelectField, MultiCheckField } from "@/components/intake/Fields";
+import { TextField, NumberField, SelectField, PillSelectField, MultiCheckField } from "@/components/intake/Fields";
 import { cn } from "@/lib/utils";
 import {
   MARKET_TYPES, ORG_TYPES, YEARS_OPTIONS, GROWTH_TRENDS, PLAYER_MIX, COMPETITION,
