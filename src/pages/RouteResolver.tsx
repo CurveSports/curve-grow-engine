@@ -52,7 +52,7 @@ export default function RouteResolver() {
           .select("id")
           .eq("org_id", profile.org_id)
           .maybeSingle();
-        if (intake) navigate("/report", { replace: true });
+        if (intake) navigate("/dashboard", { replace: true });
         else navigate("/intake", { replace: true });
         return;
       }

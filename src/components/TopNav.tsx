@@ -19,12 +19,13 @@ export default function TopNav() {
         <nav className="flex items-center gap-6 text-sm">
           {role === "admin" && (
             <>
-              <Link to="/admin" className="text-foreground/70 hover:text-foreground transition-colors">Organizations</Link>
+              <Link to="/admin" className="text-foreground/70 hover:text-foreground transition-colors">Admin</Link>
               <Link to="/admin/invite" className="text-foreground/70 hover:text-foreground transition-colors">Invite</Link>
             </>
           )}
           {role === "org_user" && (
             <>
+              <Link to="/dashboard" className="text-foreground/70 hover:text-foreground transition-colors">Dashboard</Link>
               <Link to="/report" className="text-foreground/70 hover:text-foreground transition-colors">Report</Link>
               {isPrimary && (
                 <Link to="/team" className="text-foreground/70 hover:text-foreground transition-colors">Team</Link>

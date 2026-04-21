@@ -14,7 +14,9 @@ import Intake from "@/pages/Intake";
 import Report from "@/pages/Report";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminInvite from "@/pages/AdminInvite";
+import AdminOrgTasks from "@/pages/admin/AdminOrgTasks";
 import Team from "@/pages/Team";
+import Dashboard from "@/pages/Dashboard";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -33,11 +35,13 @@ const App = () => (
             <Route path="/set-password" element={<ProtectedRoute><SetPassword /></ProtectedRoute>} />
             <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
             <Route path="/intake" element={<ProtectedRoute role="org_user"><Intake /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute role="org_user"><Dashboard /></ProtectedRoute>} />
             <Route path="/report" element={<ProtectedRoute role="org_user"><Report /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute role="org_user"><Team /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin"><Report /></ProtectedRoute>} />
+            <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin"><AdminOrgTasks /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

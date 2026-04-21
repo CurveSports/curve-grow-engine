@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminTasks from "@/pages/admin/AdminTasks";
+import AdminTemplates from "@/pages/admin/AdminTemplates";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { ArrowUpDown } from "lucide-react";
 
@@ -21,6 +24,7 @@ type Row = {
   revenue_per_player: number | null;
   priority_engine: string | null;
   submitted_at: string | null;
+  plan_activated_at: string | null;
 };
 
 type SortKey = "name" | "tier" | "total_engine_score" | "revenue_per_player" | "submitted_at";
@@ -35,7 +39,7 @@ export default function AdminDashboard() {
     (async () => {
       const { data: orgs } = await supabase
         .from("organizations")
-        .select("id, name, organization_intake(submitted_at), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine)");
+        .select("id, name, plan_activated_at, organization_intake(submitted_at), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine)");
       const r: Row[] = (orgs ?? []).map((o: any) => {
         const intake = Array.isArray(o.organization_intake) ? o.organization_intake[0] : o.organization_intake;
         const metrics = Array.isArray(o.derived_metrics) ? o.derived_metrics[0] : o.derived_metrics;
@@ -47,6 +51,7 @@ export default function AdminDashboard() {
           revenue_per_player: metrics?.revenue_per_player ?? null,
           priority_engine: metrics?.priority_engine ?? null,
           submitted_at: intake?.submitted_at ?? null,
+          plan_activated_at: o.plan_activated_at,
         };
       });
       setRows(r);
@@ -88,8 +93,7 @@ export default function AdminDashboard() {
       <div className="flex items-end justify-between mb-8">
         <div>
           <p className="curve-eyebrow mb-2">Curve Admin</p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">Organizations</h1>
-          <p className="text-sm text-muted-foreground mt-1">{rows.length} total</p>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Admin</h1>
         </div>
         <Link
           to="/admin/invite"
@@ -99,47 +103,68 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
-      <div className="curve-card p-0 overflow-hidden">
-        {loading ? (
-          <p className="p-6 text-sm text-muted-foreground">Loading…</p>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase tracking-wider">
-                <Th k="name">Organization</Th>
-                <Th k="tier">Monetization Tier</Th>
-                <Th k="total_engine_score" align="right">Engine Score</Th>
-                <Th k="revenue_per_player" align="right">Revenue / Player</Th>
-                <th className="px-5 py-3 font-medium">Priority Engine</th>
-                <Th k="submitted_at">Submitted</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {sorted.map((o) => (
-                <tr key={o.id} className="hover:bg-secondary/40 transition-colors">
-                  <td className="px-5 py-4">
-                    <Link to={`/admin/org/${o.id}`} className="font-medium hover:text-accent transition-colors">{o.name}</Link>
-                  </td>
-                  <td className="px-5 py-4">
-                    {o.tier ? (
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${TIER_STYLES[o.tier] ?? "bg-secondary"}`}>
-                        {o.tier}
-                      </span>
-                    ) : <span className="text-muted-foreground text-xs">No assessment</span>}
-                  </td>
-                  <td className="px-5 py-4 text-right tabular-nums">{o.total_engine_score ?? "—"}</td>
-                  <td className="px-5 py-4 text-right tabular-nums">{o.revenue_per_player !== null ? formatCurrency(o.revenue_per_player) : "—"}</td>
-                  <td className="px-5 py-4">{o.priority_engine ?? "—"}</td>
-                  <td className="px-5 py-4 text-muted-foreground">{o.submitted_at ? formatDate(o.submitted_at) : "—"}</td>
-                </tr>
-              ))}
-              {sorted.length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">No organizations yet. Create one to get started.</td></tr>
-              )}
-            </tbody>
-          </table>
-        )}
-      </div>
+      <Tabs defaultValue="orgs">
+        <TabsList className="mb-6">
+          <TabsTrigger value="orgs">Organizations</TabsTrigger>
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="orgs">
+          <div className="curve-card p-0 overflow-hidden">
+            {loading ? (
+              <p className="p-6 text-sm text-muted-foreground">Loading…</p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase tracking-wider">
+                    <Th k="name">Organization</Th>
+                    <Th k="tier">Monetization Tier</Th>
+                    <Th k="total_engine_score" align="right">Engine Score</Th>
+                    <Th k="revenue_per_player" align="right">Revenue / Player</Th>
+                    <th className="px-5 py-3 font-medium">Priority Engine</th>
+                    <Th k="submitted_at">Submitted</Th>
+                    <th className="px-5 py-3 font-medium">Plan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {sorted.map((o) => (
+                    <tr key={o.id} className="hover:bg-secondary/40 transition-colors">
+                      <td className="px-5 py-4">
+                        <Link to={`/admin/org/${o.id}`} className="font-medium hover:text-accent transition-colors">{o.name}</Link>
+                      </td>
+                      <td className="px-5 py-4">
+                        {o.tier ? (
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${TIER_STYLES[o.tier] ?? "bg-secondary"}`}>
+                            {o.tier}
+                          </span>
+                        ) : <span className="text-muted-foreground text-xs">No assessment</span>}
+                      </td>
+                      <td className="px-5 py-4 text-right tabular-nums">{o.total_engine_score ?? "—"}</td>
+                      <td className="px-5 py-4 text-right tabular-nums">{o.revenue_per_player !== null ? formatCurrency(o.revenue_per_player) : "—"}</td>
+                      <td className="px-5 py-4">{o.priority_engine ?? "—"}</td>
+                      <td className="px-5 py-4 text-muted-foreground">{o.submitted_at ? formatDate(o.submitted_at) : "—"}</td>
+                      <td className="px-5 py-4">
+                        {o.plan_activated_at ? (
+                          <Link to={`/admin/org/${o.id}/tasks`} className="text-xs text-accent hover:underline">View tasks</Link>
+                        ) : o.submitted_at ? (
+                          <Link to={`/admin/org/${o.id}/tasks`} className="text-xs text-muted-foreground hover:text-foreground">Activate</Link>
+                        ) : <span className="text-xs text-muted-foreground">—</span>}
+                      </td>
+                    </tr>
+                  ))}
+                  {sorted.length === 0 && (
+                    <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No organizations yet. Create one to get started.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="tasks"><AdminTasks /></TabsContent>
+        <TabsContent value="templates"><AdminTemplates /></TabsContent>
+      </Tabs>
     </AppShell>
   );
 }
