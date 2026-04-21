@@ -71,7 +71,6 @@ function calculate(intake: any) {
   const total_players = Math.max(num(intake.total_players), 1);
   const hs_players = num(intake.hs_players);
   const youth_players = num(intake.youth_players);
-  const total_revenue = num(intake.total_annual_revenue);
   const hs_fee = num(intake.avg_hs_player_fee);
   const youth_fee = num(intake.avg_youth_player_fee);
   const sponsors = num(intake.number_of_sponsors);
@@ -119,6 +118,18 @@ function calculate(intake: any) {
 
   const facility_rev = isFacility ? num(intake.annual_facility_rental_revenue ?? intake.facility_rental_revenue) : 0;
 
+  // Dues + system-calculated total revenue (replaces manually entered total_annual_revenue)
+  const dues_revenue = hs_players * hs_fee + youth_players * youth_fee;
+  const calculated_total_revenue =
+    dues_revenue +
+    event_revenue_total +
+    lessons_revenue_org +
+    sponsor_rev +
+    apparel_rev +
+    facility_rev +
+    other_addon;
+  const total_revenue = calculated_total_revenue;
+
   // Step 1
   const market_multiplier = MARKET_MULTIPLIERS[intake.market_type] ?? 1.0;
 
@@ -131,7 +142,6 @@ function calculate(intake: any) {
   // Step 3
   const revenue_per_player = total_revenue / total_players;
   const hs_player_pct = hs_players / total_players;
-  const dues_revenue = hs_players * hs_fee + youth_players * youth_fee;
   const non_dues_revenue = total_revenue - dues_revenue;
   const non_dues_revenue_per_player = non_dues_revenue / total_players;
   const dues_revenue_pct = total_revenue > 0 ? dues_revenue / total_revenue : 0;
@@ -339,6 +349,7 @@ function calculate(intake: any) {
 
   return {
     market_multiplier, revenue_benchmark, revenue_per_player, hs_player_pct,
+    calculated_total_revenue,
     dues_revenue, non_dues_revenue, non_dues_revenue_per_player, dues_revenue_pct,
     sponsorship_revenue_per_sponsor, add_on_revenue, add_on_revenue_per_player,
     revenue_per_event, estimated_returning_players, estimated_churned_players,

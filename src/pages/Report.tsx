@@ -85,7 +85,7 @@ export default function Report() {
   const isFacilityOrg = org?.org_type === "Facility + Teams" || org?.org_type === "Facility Only" ||
     intake?.org_type === "Facility + Teams" || intake?.org_type === "Facility Only";
 
-  const totalRevenue = Number(intake?.total_annual_revenue ?? 0);
+  const totalRevenue = Number(data.calculated_total_revenue ?? intake?.total_annual_revenue ?? 0);
   const tier = data.monetization_tier as string;
 
   return (
@@ -112,7 +112,19 @@ export default function Report() {
           <h2 className="curve-eyebrow mb-4">Revenue Snapshot</h2>
           <div className={`grid gap-4 ${isFacilityOrg ? "md:grid-cols-3 lg:grid-cols-6" : "md:grid-cols-4"} grid-cols-1 sm:grid-cols-2`}>
             <div className="curve-card">
-              <p className="text-xs text-muted-foreground">Total Annual Revenue</p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs text-muted-foreground">Total Annual Revenue</p>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" aria-label="info"><Info className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs text-xs">
+                      Calculated from all revenue streams entered above.
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(totalRevenue)}</p>
             </div>
             <div className="curve-card">

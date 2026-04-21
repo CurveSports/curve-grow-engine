@@ -237,7 +237,7 @@ export default function Intake() {
           {step === 2 && (
             <>
               <SubsectionHeading title="Dues & top-line revenue" />
-              <NumberField label="Total Annual Revenue" value={form.total_annual_revenue} onChange={(v) => set("total_annual_revenue", v)} min={0} currency />
+              <NumberField label="Estimated Total Annual Revenue — we will verify this against your individual revenue entries" value={form.total_annual_revenue} onChange={(v) => set("total_annual_revenue", v)} min={0} currency />
               <NumberField label="Average HS Player Fee per year" value={form.avg_hs_player_fee} onChange={(v) => set("avg_hs_player_fee", v)} min={0} currency />
               <NumberField label="Average Youth Player Fee per year" value={form.avg_youth_player_fee} onChange={(v) => set("avg_youth_player_fee", v)} min={0} currency />
               <MultiCheckField label="What is included in dues" values={form.dues_inclusions} onChange={(v) => set("dues_inclusions", v)} options={DUES_INCLUSIONS} />

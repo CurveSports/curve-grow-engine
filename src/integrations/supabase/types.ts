@@ -29,6 +29,7 @@ export type Database = {
           apparel_score: number | null
           at_benchmark: boolean | null
           calculated_at: string
+          calculated_total_revenue: number | null
           diagnosis_text: string | null
           dues_revenue: number | null
           dues_revenue_pct: number | null
@@ -92,6 +93,7 @@ export type Database = {
           apparel_score?: number | null
           at_benchmark?: boolean | null
           calculated_at?: string
+          calculated_total_revenue?: number | null
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
@@ -155,6 +157,7 @@ export type Database = {
           apparel_score?: number | null
           at_benchmark?: boolean | null
           calculated_at?: string
+          calculated_total_revenue?: number | null
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
