@@ -164,13 +164,21 @@ export default function Intake() {
   }
 
   const totalSteps = SECTION_TITLES.length;
+  const scrollTop = () => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+    document.querySelectorAll("main, [data-scroll-container]").forEach((el) => {
+      (el as HTMLElement).scrollTop = 0;
+    });
+  };
   const goNext = () => {
     setStep((s) => Math.min(totalSteps - 1, s + 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollTop();
   };
   const goBack = () => {
     setStep((s) => Math.max(0, s - 1));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollTop();
   };
 
   return (
