@@ -556,6 +556,42 @@ export type Database = {
           },
         ]
       }
+      user_onboarding: {
+        Row: {
+          created_at: string
+          id: string
+          intake_completed_at: string | null
+          intake_started_at: string | null
+          password_set_at: string | null
+          report_viewed_at: string | null
+          updated_at: string
+          user_id: string
+          welcomed_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          intake_completed_at?: string | null
+          intake_started_at?: string | null
+          password_set_at?: string | null
+          report_viewed_at?: string | null
+          updated_at?: string
+          user_id: string
+          welcomed_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          intake_completed_at?: string | null
+          intake_started_at?: string | null
+          password_set_at?: string | null
+          report_viewed_at?: string | null
+          updated_at?: string
+          user_id?: string
+          welcomed_at?: string | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
