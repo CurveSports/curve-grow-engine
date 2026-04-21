@@ -311,6 +311,7 @@ export type Database = {
           id: string
           last_activity_at: string
           org_id: string
+          plan_status: Database["public"]["Enums"]["plan_status"]
           priority: Database["public"]["Enums"]["task_priority"]
           status: Database["public"]["Enums"]["task_status"]
           suggested_due_date: string | null
@@ -329,6 +330,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           org_id: string
+          plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           status?: Database["public"]["Enums"]["task_status"]
           suggested_due_date?: string | null
@@ -347,6 +349,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           org_id?: string
+          plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           status?: Database["public"]["Enums"]["task_status"]
           suggested_due_date?: string | null
@@ -895,6 +898,7 @@ export type Database = {
         | "task_completed"
         | "task_overdue"
         | "no_activity_digest"
+      plan_status: "draft" | "active"
       task_action:
         | "created"
         | "status_changed"
@@ -1056,6 +1060,7 @@ export const Constants = {
         "task_overdue",
         "no_activity_digest",
       ],
+      plan_status: ["draft", "active"],
       task_action: [
         "created",
         "status_changed",
