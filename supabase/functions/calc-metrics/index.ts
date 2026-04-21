@@ -397,10 +397,12 @@ function calculate(intake: any) {
 
   const total_opportunity_low =
     pricing_opportunity_low + sponsorship_opportunity_low + apparel_opportunity_low +
-    event_opportunity_low + addon_opportunity_low + retention_opportunity_low + facility_opportunity_low;
+    event_opportunity_low + addon_opportunity_low + retention_opportunity_low + facility_opportunity_low +
+    affiliate_fee_opportunity_low;
   const total_opportunity_high =
     pricing_opportunity_high + sponsorship_opportunity_high + apparel_opportunity_high +
-    event_opportunity_high + addon_opportunity_high + retention_opportunity_high + facility_opportunity_high;
+    event_opportunity_high + addon_opportunity_high + retention_opportunity_high + facility_opportunity_high +
+    affiliate_fee_opportunity_high;
 
   // Step 5 — scores
   let pricing = 5;
