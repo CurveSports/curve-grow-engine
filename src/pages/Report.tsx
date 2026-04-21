@@ -147,7 +147,7 @@ function SectionDivider() {
   return <div className="py-4"><div className="h-px bg-border" /></div>;
 }
 
-export default function Report() {
+export default function Report({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
   const { orgId: paramOrgId } = useParams<{ orgId?: string }>();
   const { profile, role } = useAuth();
   const { mark } = useOnboarding();
@@ -157,7 +157,7 @@ export default function Report() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
 
-  const orgId = paramOrgId ?? profile?.org_id;
+  const orgId = orgIdProp ?? paramOrgId ?? profile?.org_id;
 
   useEffect(() => {
     if (!paramOrgId && role === "org_user") mark("report_viewed_at");
@@ -179,9 +179,10 @@ export default function Report() {
     })();
   }, [orgId]);
 
-  if (loading) return <AppShell><p className="text-muted-foreground text-sm">Loading…</p></AppShell>;
-  if (!orgId) return <AppShell><p className="text-muted-foreground text-sm">No organization linked.</p></AppShell>;
-  if (err || !data) return <AppShell><p className="text-muted-foreground text-sm">{err ?? "No data."}</p></AppShell>;
+  const Wrap = ({ children }: { children: any }) => bare ? <>{children}</> : <AppShell>{children}</AppShell>;
+  if (loading) return <Wrap><p className="text-muted-foreground text-sm">Loading…</p></Wrap>;
+  if (!orgId) return <Wrap><p className="text-muted-foreground text-sm">No organization linked.</p></Wrap>;
+  if (err || !data) return <Wrap><p className="text-muted-foreground text-sm">{err ?? "No data."}</p></Wrap>;
 
   const isFacilityOrg = org?.org_type === "Facility + Teams" || org?.org_type === "Facility Only" ||
     intake?.org_type === "Facility + Teams" || intake?.org_type === "Facility Only";
