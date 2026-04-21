@@ -95,11 +95,11 @@ export default function AdminOrgTasks() {
 
   // Get score badge color based on score
   const getScoreBadgeClasses = (score: number | null) => {
-    if (score === null) return "bg-muted text-muted-foreground";
-    if (score <= 3) return "bg-destructive text-destructive-foreground";
-    if (score <= 6) return "bg-amber-500/15 text-amber-700 border-amber-500/30";
-    if (score <= 7) return "bg-emerald-500/15 text-emerald-700 border-emerald-500/30";
-    return "bg-muted text-muted-foreground";
+    if (score === null) return "bg-muted text-muted-foreground border-transparent";
+    if (score <= 3) return "bg-destructive/15 text-destructive border-destructive/30";
+    if (score <= 6) return "bg-warning/15 text-warning border-warning/30";
+    if (score <= 7) return "bg-accent/15 text-accent border-accent/30";
+    return "bg-muted text-muted-foreground border-transparent";
   };
 
   return (
@@ -139,14 +139,14 @@ export default function AdminOrgTasks() {
       {isReviewMode && (
         <>
           {/* Amber draft mode banner */}
-          <div className="mb-6 p-4 rounded-lg border border-amber-500/30 bg-amber-50 dark:bg-amber-950/20">
+          <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning-soft">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-warning" />
               </div>
               <div>
-                <p className="font-medium text-amber-900 dark:text-amber-100">Draft Plan — Not visible to org until activated</p>
-                <p className="text-sm text-amber-700 dark:text-amber-200">Tasks are in draft mode and only visible to Curve admins. Org users will see nothing until you activate the plan.</p>
+                <p className="font-medium text-foreground">Draft Plan — Not visible to org until activated</p>
+                <p className="text-sm text-muted-foreground">Tasks are in draft mode and only visible to Curve admins. Org users will see nothing until you activate the plan.</p>
               </div>
             </div>
           </div>
@@ -187,17 +187,16 @@ export default function AdminOrgTasks() {
         )
       )}
 
-      {/* Full-width Activate Plan button at bottom for review mode */}
-      {isReviewMode && (
-        <div className="mt-8 pt-6 border-t">
-          <Button
-            size="lg"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-            onClick={() => setConfirmOpen(true)}
-            disabled={activating}
-          >
-            {activating ? "Activating…" : `Activate Plan for ${orgName}`}
-          </Button>
+          {/* Full-width Activate Plan button at bottom for review mode */}
+          <div className="mt-8 pt-6 border-t">
+            <Button
+              size="lg"
+              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+              onClick={() => setConfirmOpen(true)}
+              disabled={activating}
+            >
+              {activating ? "Activating…" : `Activate Plan for ${orgName}`}
+            </Button>
           <p className="text-xs text-center text-muted-foreground mt-2">
             {draftCount} task{draftCount === 1 ? "" : "s"} will become visible to {orgName} immediately
           </p>
