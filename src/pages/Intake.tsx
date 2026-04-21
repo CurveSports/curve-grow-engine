@@ -601,6 +601,19 @@ export default function Intake() {
                   />
                 </>
               )}
+
+              <div className="pt-6">
+                <LiveRevenueTotal form={form} isFacility={isFacility} />
+              </div>
+
+              <div className="pt-4">
+                <PillSelectField
+                  label="Does this total look like an accurate picture of your organization's annual revenue?"
+                  value={form.revenue_verification}
+                  onChange={(v) => set("revenue_verification", v)}
+                  options={REVENUE_VERIFICATION}
+                />
+              </div>
             </>
           )}
 
