@@ -4,9 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useOnboarding } from "@/hooks/useOnboarding";
 import AppShell from "@/components/AppShell";
+import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPct, formatDate } from "@/lib/format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, Check } from "lucide-react";
+import { Info, Check, Download } from "lucide-react";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
@@ -30,19 +31,65 @@ function ScoreBar({ score }: { score: number }) {
 
 function EngineCard({ name, score, low, high }: { name: string; score: number; low: number; high: number }) {
   return (
-    <div className="curve-card">
-      <div className="flex items-baseline justify-between mb-3">
+    <div className="curve-card min-h-[180px] flex flex-col">
+      <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-display font-semibold text-base">{name}</h3>
-        <span className="font-display text-2xl font-semibold tabular-nums">
-          {score}<span className="text-muted-foreground text-base font-normal"> / 10</span>
+        <span className="font-display tabular-nums leading-none">
+          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
         </span>
       </div>
       <ScoreBar score={score} />
-      <p className="text-xs text-muted-foreground mt-3">
-        Opportunity: <span className="text-foreground font-medium">{formatCurrency(low)} – {formatCurrency(high)}</span>
-      </p>
+      <div className="mt-auto pt-4">
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Opportunity</p>
+        <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">
+          {formatCurrency(low)} – {formatCurrency(high)}
+        </p>
+      </div>
     </div>
   );
+}
+
+const NEXT_STEPS_FALLBACK: Record<string, string[]> = {
+  Pricing: [
+    "Audit your current fee structure against the top 3 competitors in your market.",
+    "Build a tiered package option that bundles high-value services at a premium price point.",
+    "Define a clear pricing strategy document that all staff can reference and communicate.",
+  ],
+  Sponsorship: [
+    "Identify 10–15 local businesses with natural alignment to youth sports and families.",
+    "Build a sponsorship package with three tiers: presenting, supporting, and community.",
+    "Assign one person as the sponsorship point of contact and set a 30-day outreach goal.",
+  ],
+  Apparel: [
+    "Audit your current apparel process and calculate your actual margin per player.",
+    "Explore moving to an in-house or direct vendor model to capture full margin.",
+    "Create a required gear package bundled into registration to guarantee baseline revenue.",
+  ],
+  Events: [
+    "Identify one showcase or tournament format you can own and run annually.",
+    "Build a simple event P&L template to understand your true revenue per event.",
+    "Survey current families on interest in a showcase or recruiting-focused event.",
+  ],
+  "Add-Ons": [
+    "Survey current families on interest in private lessons, small group training, and camps.",
+    "Launch one structured off-season camp as a low-risk test of add-on demand.",
+    "Create a simple program menu families can reference year-round.",
+  ],
+  Retention: [
+    "Implement a weekly communication standard for all coaches immediately.",
+    "Build a formal re-enrollment process with early commitment incentives.",
+    "Conduct brief exit interviews with any family that does not re-enroll this cycle.",
+  ],
+  Facility: [
+    "Build a structured private instruction program that runs through your organization rather than through individual coaches independently.",
+    "Audit your current facility schedule and identify unused blocks — mornings, weekday afternoons, and off-season windows are typically the highest opportunity.",
+    "Build a rental rate card for cage time, field time, and full facility use and begin outreach to local high schools, rec leagues, and other travel clubs.",
+  ],
+};
+
+function SectionDivider() {
+  return <div className="py-4"><div className="h-px bg-border" /></div>;
 }
 
 export default function Report() {
@@ -58,7 +105,6 @@ export default function Report() {
   const orgId = paramOrgId ?? profile?.org_id;
 
   useEffect(() => {
-    // Only count "viewed" when an org user is looking at their own report.
     if (!paramOrgId && role === "org_user") mark("report_viewed_at");
   }, [paramOrgId, role, mark]);
 
@@ -88,23 +134,60 @@ export default function Report() {
   const totalRevenue = Number(data.calculated_total_revenue ?? intake?.total_annual_revenue ?? 0);
   const tier = data.monetization_tier as string;
 
+  // Build top 3 lowest-scoring engines
+  const engines: { name: string; score: number }[] = [
+    { name: "Pricing", score: Number(data.pricing_score) },
+    { name: "Sponsorship", score: Number(data.sponsorship_score) },
+    { name: "Apparel", score: Number(data.apparel_score) },
+    { name: "Events", score: Number(data.event_score) },
+    { name: "Add-Ons", score: Number(data.addon_score) },
+    { name: "Retention", score: Number(data.retention_score) },
+  ];
+  if (isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined) {
+    engines.push({ name: "Facility", score: Number(data.facility_score) });
+  }
+  const top3 = [...engines].sort((a, b) => a.score - b.score).slice(0, 3);
+
+  // Opportunity components for breakdown line
+  const opportunityComponents: { name: string; low: number; high: number }[] = [
+    { name: "Pricing", low: Number(data.pricing_opportunity_low ?? 0), high: Number(data.pricing_opportunity_high ?? 0) },
+    { name: "Sponsorship", low: Number(data.sponsorship_opportunity_low ?? 0), high: Number(data.sponsorship_opportunity_high ?? 0) },
+    { name: "Events", low: Number(data.event_opportunity_low ?? 0), high: Number(data.event_opportunity_high ?? 0) },
+    { name: "Apparel", low: Number(data.apparel_opportunity_low ?? 0), high: Number(data.apparel_opportunity_high ?? 0) },
+    { name: "Add-Ons", low: Number(data.addon_opportunity_low ?? 0), high: Number(data.addon_opportunity_high ?? 0) },
+    { name: "Retention", low: Number(data.retention_opportunity_low ?? 0), high: Number(data.retention_opportunity_high ?? 0) },
+  ];
+  if (isFacilityOrg) {
+    opportunityComponents.push({ name: "Facility", low: Number(data.facility_opportunity_low ?? 0), high: Number(data.facility_opportunity_high ?? 0) });
+  }
+
   return (
     <AppShell>
-      <div className="max-w-5xl mx-auto space-y-10 animate-fade-in">
+      <div className="max-w-6xl mx-auto space-y-6 animate-fade-in print:max-w-full">
         {/* Header */}
-        <header className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
+        <header className="flex flex-wrap items-end justify-between gap-4 pb-6 border-b border-border">
           <div>
             <p className="curve-eyebrow mb-2">Revenue Leak Report</p>
-            <h1 className="font-display text-4xl font-semibold tracking-tight">
+            <h1 className="font-display text-4xl font-semibold tracking-tight inline-block border-b-2 border-accent pb-1">
               {org?.name ?? intake?.organization_name ?? "Organization"}
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-muted-foreground mt-2">
               Generated {formatDate(data.calculated_at)}
             </p>
           </div>
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${TIER_STYLES[tier] ?? "bg-secondary"}`}>
-            {tier} Tier
-          </span>
+          <div className="flex items-center gap-3 print:hidden">
+            <Button
+              variant="outline"
+              onClick={() => window.print()}
+              className="border-accent text-accent hover:bg-accent hover:text-accent-foreground bg-background"
+            >
+              <Download className="h-4 w-4" />
+              Download Report
+            </Button>
+            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${TIER_STYLES[tier] ?? "bg-secondary"}`}>
+              {tier} Tier
+            </span>
+          </div>
         </header>
 
         {/* Revenue Snapshot */}
@@ -201,20 +284,25 @@ export default function Report() {
           </div>
         </section>
 
+        <SectionDivider />
+
         {/* Concentration alert */}
         {(data.high_dues_concentration || data.high_sponsorship_dependency) && (
-          <div className="rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-sm space-y-1">
-            {data.high_dues_concentration && (
-              <p><span className="font-semibold">Revenue Concentration Alert:</span> 85%+ of revenue is from player fees. Diversification is a priority.</p>
-            )}
-            {data.high_sponsorship_dependency && (
-              <p><span className="font-semibold">Sponsorship Dependency Alert:</span> Sponsorships represent 30%+ of total revenue. Multi-year agreements are recommended.</p>
-            )}
-          </div>
+          <>
+            <div className="rounded-lg border border-warning/30 bg-warning-soft px-4 py-3 text-sm space-y-1">
+              {data.high_dues_concentration && (
+                <p><span className="font-semibold">Revenue Concentration Alert:</span> 85%+ of revenue is from player fees. Diversification is a priority.</p>
+              )}
+              {data.high_sponsorship_dependency && (
+                <p><span className="font-semibold">Sponsorship Dependency Alert:</span> Sponsorships represent 30%+ of total revenue. Multi-year agreements are recommended.</p>
+              )}
+            </div>
+            <SectionDivider />
+          </>
         )}
 
         {/* Revenue Opportunity */}
-        <section className="text-center py-8 border-y border-border">
+        <section className="text-center py-10 border-y border-border">
           <p className="curve-eyebrow mb-3">Revenue Opportunity</p>
           <p className="font-display text-5xl sm:text-6xl font-semibold tracking-tight">
             {formatCurrency(data.total_opportunity_low)} – {formatCurrency(data.total_opportunity_high)}
@@ -222,20 +310,32 @@ export default function Report() {
           <p className="text-sm text-muted-foreground mt-3 max-w-xl mx-auto">
             Estimated additional annual revenue available based on your current structure and market.
           </p>
+          <p className="text-xs text-muted-foreground mt-4 max-w-4xl mx-auto tabular-nums">
+            {opportunityComponents.map((c, idx) => (
+              <span key={c.name}>
+                <span className="font-medium text-foreground/70">{c.name}:</span> {formatCurrency(c.low)}–{formatCurrency(c.high)}
+                {idx < opportunityComponents.length - 1 && <span className="mx-2 text-border">|</span>}
+              </span>
+            ))}
+          </p>
         </section>
+
+        <SectionDivider />
 
         {/* Assessment Summary */}
         <section>
-          <div className="curve-card border-l-4 border-l-accent">
-            <p className="curve-eyebrow mb-2">Assessment Summary</p>
-            <p className="text-base leading-relaxed text-foreground/90">{data.diagnosis_text}</p>
+          <div className="curve-card border-l-4 border-l-accent p-8">
+            <p className="curve-eyebrow mb-3">Assessment Summary</p>
+            <p className="text-base leading-relaxed text-foreground/90" style={{ fontSize: "16px" }}>{data.diagnosis_text}</p>
             {Number(data.apparel_profit) > 0 && (
-              <p className="text-sm text-muted-foreground mt-3">
+              <p className="text-sm text-muted-foreground mt-4">
                 Current estimated apparel profit: {formatCurrency(data.apparel_profit)} based on reported margin.
               </p>
             )}
           </div>
         </section>
+
+        <SectionDivider />
 
         {/* Engine Score Cards */}
         <section>
@@ -253,6 +353,8 @@ export default function Report() {
           </div>
         </section>
 
+        <SectionDivider />
+
         {/* Opportunity Breakdown */}
         <section>
           <h2 className="curve-eyebrow mb-4">Opportunity Breakdown</h2>
@@ -266,7 +368,7 @@ export default function Report() {
                   <th className="px-5 py-3 font-medium text-right">Score</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody>
                 {([
                   ["Pricing", data.pricing_opportunity_low, data.pricing_opportunity_high, data.pricing_score],
                   ["Sponsorship", data.sponsorship_opportunity_low, data.sponsorship_opportunity_high, data.sponsorship_score],
@@ -277,15 +379,15 @@ export default function Report() {
                   ...(isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined
                     ? [["Facility", data.facility_opportunity_low ?? 0, data.facility_opportunity_high ?? 0, data.facility_score]]
                     : []),
-                ] as Array<[string, number, number, number]>).map(([n, lo, hi, s]) => (
-                  <tr key={n as string}>
+                ] as Array<[string, number, number, number]>).map(([n, lo, hi, s], idx) => (
+                  <tr key={n as string} className={idx % 2 === 1 ? "bg-muted/30" : ""}>
                     <td className="px-5 py-3 font-medium">{n}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(lo as number)}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(hi as number)}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{s as number} / 10</td>
                   </tr>
                 ))}
-                <tr className="bg-secondary/50 font-semibold">
+                <tr className="bg-secondary/60 font-bold border-t-2 border-border">
                   <td className="px-5 py-3">Total</td>
                   <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(data.total_opportunity_low)}</td>
                   <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(data.total_opportunity_high)}</td>
@@ -296,21 +398,46 @@ export default function Report() {
           </div>
         </section>
 
-        {/* Recommended First Moves */}
+        <SectionDivider />
+
+        {/* 90-Day Priority Plan */}
         <section>
-          <div className="curve-card border-l-4 border-l-accent">
-            <p className="curve-eyebrow mb-2">Recommended First Moves</p>
-            <h3 className="font-display text-xl font-semibold mb-4">{data.priority_engine}</h3>
-            <ol className="space-y-3">
-              {(Array.isArray(data.next_steps) ? data.next_steps : []).map((s: string, i: number) => (
-                <li key={i} className="flex gap-3">
-                  <span className="flex-shrink-0 h-6 w-6 rounded-full bg-accent text-accent-foreground text-xs font-semibold flex items-center justify-center">
-                    {i + 1}
-                  </span>
-                  <span className="text-sm leading-relaxed pt-0.5">{s}</span>
-                </li>
-              ))}
-            </ol>
+          <h2 className="curve-eyebrow mb-4">Your 90-Day Priority Plan</h2>
+          <div className="space-y-4">
+            {top3.map((engine, idx) => {
+              const steps = NEXT_STEPS_FALLBACK[engine.name] ?? NEXT_STEPS_FALLBACK["Pricing"];
+              const isPrimary = idx === 0;
+              return (
+                <div
+                  key={engine.name}
+                  className={`curve-card ${isPrimary ? "border-l-[6px] border-l-accent" : "border-l-4 border-l-accent/40"} ${isPrimary ? "p-7" : "p-6"}`}
+                >
+                  <div className="flex items-baseline justify-between gap-3 mb-4">
+                    <div className="flex items-baseline gap-3">
+                      <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
+                        Priority #{idx + 1}
+                      </span>
+                      <h3 className={`font-display font-semibold ${isPrimary ? "text-2xl" : "text-xl"}`}>
+                        {engine.name}
+                      </h3>
+                    </div>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-accent-soft text-accent border border-accent/30 tabular-nums">
+                      {engine.score} / 10
+                    </span>
+                  </div>
+                  <ol className="space-y-3">
+                    {steps.map((s, i) => (
+                      <li key={i} className="flex gap-3">
+                        <span className="flex-shrink-0 h-6 w-6 rounded-full bg-accent text-accent-foreground text-xs font-semibold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <span className="text-sm leading-relaxed pt-0.5">{s}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              );
+            })}
           </div>
         </section>
       </div>

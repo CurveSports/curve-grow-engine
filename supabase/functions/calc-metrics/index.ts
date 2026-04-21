@@ -159,8 +159,8 @@ function calculate(intake: any) {
     isFacility && total_revenue > 0 ? facility_rev / total_revenue : null;
 
   // Step 4 — opportunities
-  const pricing_opportunity_low = Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.5);
-  const pricing_opportunity_high = Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.9);
+  const pricing_opportunity_low = Math.min(250000, Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.5));
+  const pricing_opportunity_high = Math.min(500000, Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.9));
   const sponsorship_opportunity_low =
     (sponsors === 0 ? 10000 : Math.max(7500, sponsors * 1500)) * market_multiplier;
   const sponsorship_opportunity_high =
@@ -171,7 +171,7 @@ function calculate(intake: any) {
   // New event opportunity
   const event_revenue_mature_low = total_players * 150;
   const event_revenue_mature_high = total_players * 400;
-  const event_opportunity_low = Math.max(0, event_revenue_mature_low - event_revenue_total);
+  const event_opportunity_low = Math.max(event_revenue_mature_low * 0.1, Math.max(0, event_revenue_mature_low - event_revenue_total));
   const event_opportunity_high = Math.max(0, event_revenue_mature_high - event_revenue_total);
 
   const addon_opportunity_low = total_players * 150;
