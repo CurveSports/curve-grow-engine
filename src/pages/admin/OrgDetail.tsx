@@ -303,15 +303,19 @@ function MetricCard({ label, value, suffix, children, accent }: { label: string;
   );
 }
 
-function StatusPill({ status, dueDate }: { status: string; dueDate: string | null }) {
-  const isOverdue = dueDate && new Date(dueDate) < new Date() && status !== "completed";
-  if (status === "completed") {
-    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent text-accent-foreground"><CheckCircle2 className="h-3 w-3" /> Done</span>;
-  }
-  if (isOverdue) {
-    return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-destructive text-destructive-foreground"><AlertCircle className="h-3 w-3" /> Overdue</span>;
-  }
-  return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-info text-info-foreground"><Clock className="h-3 w-3" /> Open</span>;
+function DimensionCard({ label, score }: { label: string; score: number | null }) {
+  const pct = score ? (score / 10) * 100 : 0;
+  return (
+    <div className="curve-card">
+      <p className="curve-eyebrow">{label}</p>
+      <p className="font-display text-2xl font-semibold mt-2 tabular-nums" style={{ color: "#8B5CF6" }}>
+        {score ?? "—"}<span className="text-muted-foreground text-base font-normal">/10</span>
+      </p>
+      <div className="mt-2 h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+        <div className="h-full transition-all" style={{ width: `${pct}%`, backgroundColor: "#8B5CF6" }} />
+      </div>
+    </div>
+  );
 }
 
 function timeAgo(iso: string) {
