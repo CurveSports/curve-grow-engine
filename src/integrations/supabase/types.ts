@@ -528,6 +528,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_pending_invitation: {
+        Args: never
+        Returns: {
+          claimed: boolean
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       current_org_id: { Args: never; Returns: string }
       has_role: {
         Args: {
