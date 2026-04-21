@@ -203,15 +203,17 @@ export default function Report() {
   }
   const top3 = [...engines].sort((a, b) => a.score - b.score).slice(0, 3);
 
-  // Opportunity components for breakdown line
+  // Opportunity components for breakdown line (use Apparel Margin / Add-Ons rename, hide based on org type)
   const opportunityComponents: { name: string; low: number; high: number }[] = [
     { name: "Pricing", low: Number(data.pricing_opportunity_low ?? 0), high: Number(data.pricing_opportunity_high ?? 0) },
     { name: "Sponsorship", low: Number(data.sponsorship_opportunity_low ?? 0), high: Number(data.sponsorship_opportunity_high ?? 0) },
     { name: "Events", low: Number(data.event_opportunity_low ?? 0), high: Number(data.event_opportunity_high ?? 0) },
-    { name: "Apparel", low: Number(data.apparel_opportunity_low ?? 0), high: Number(data.apparel_opportunity_high ?? 0) },
-    { name: "Add-Ons", low: Number(data.addon_opportunity_low ?? 0), high: Number(data.addon_opportunity_high ?? 0) },
-    { name: "Retention", low: Number(data.retention_opportunity_low ?? 0), high: Number(data.retention_opportunity_high ?? 0) },
+    { name: "Apparel Margin", low: Number(data.apparel_opportunity_low ?? 0), high: Number(data.apparel_opportunity_high ?? 0) },
+    { name: "Retention", low: Number(data.retention_referral_opportunity_low ?? data.retention_opportunity_low ?? 0), high: Number(data.retention_referral_opportunity_high ?? data.retention_opportunity_high ?? 0) },
   ];
+  if (!isFacilityOrg) {
+    opportunityComponents.push({ name: "Add-Ons (Remote Training)", low: Number(data.addon_opportunity_low ?? 0), high: Number(data.addon_opportunity_high ?? 0) });
+  }
   if (isFacilityOrg) {
     opportunityComponents.push({ name: "Facility", low: Number(data.facility_opportunity_low ?? 0), high: Number(data.facility_opportunity_high ?? 0) });
   }
@@ -319,7 +321,7 @@ export default function Report() {
                         <button type="button" aria-label="info"><Info className="h-3.5 w-3.5 text-muted-foreground" /></button>
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs text-xs">
-                        Based on average family spend of $400/month on private instruction. A facility serving your player base should capture a minimum of $1,200 per player annually in facility and instruction revenue.
+                        Based on average family spend of $400/month on private instruction. A facility serving your player base should capture approximately 50% of that spend — $2,400 per player annually — through structured in-house instruction and programming. Geography and existing coach relationships are factored into this estimate.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
