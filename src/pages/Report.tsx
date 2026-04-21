@@ -29,7 +29,12 @@ function ScoreBar({ score }: { score: number }) {
   );
 }
 
-function EngineCard({ name, score, low, high }: { name: string; score: number; low: number; high: number }) {
+function EngineCard({
+  name, score, low, high, opportunityLabel, subtext,
+}: {
+  name: string; score: number; low: number; high: number;
+  opportunityLabel?: string; subtext?: string;
+}) {
   return (
     <div className="curve-card min-h-[180px] flex flex-col">
       <div className="flex items-baseline justify-between mb-4">
@@ -41,11 +46,61 @@ function EngineCard({ name, score, low, high }: { name: string; score: number; l
       </div>
       <ScoreBar score={score} />
       <div className="mt-auto pt-4">
-        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Opportunity</p>
+        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{opportunityLabel ?? "Opportunity"}</p>
         <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">
           {formatCurrency(low)} – {formatCurrency(high)}
         </p>
+        {subtext && <p className="text-xs text-muted-foreground mt-2 leading-snug">{subtext}</p>}
       </div>
+    </div>
+  );
+}
+
+function RetentionCard({
+  score, health, retentionPct, revenueProtectedPerPct, referralLow, referralHigh,
+}: {
+  score: number; health: string; retentionPct: number;
+  revenueProtectedPerPct: number; referralLow: number; referralHigh: number;
+}) {
+  const healthStyles =
+    health === "Healthy"
+      ? "bg-accent-soft text-accent border-accent/30"
+      : health === "Needs Attention"
+      ? "bg-warning-soft text-warning border-warning/30"
+      : "bg-destructive/10 text-destructive border-destructive/30";
+  return (
+    <div className="curve-card min-h-[180px] flex flex-col">
+      <div className="flex items-baseline justify-between mb-4">
+        <h3 className="font-display font-semibold text-base">Retention</h3>
+        <span className="font-display tabular-nums leading-none">
+          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
+        </span>
+      </div>
+      <ScoreBar score={score} />
+      <div className="mt-4 space-y-2">
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${healthStyles}`}>
+          {health}
+        </span>
+        <p className="text-xs text-muted-foreground">Retention rate: {Math.round(retentionPct)}%</p>
+        <p className="text-xs text-muted-foreground leading-snug">
+          Every 1% improvement protects approximately {formatCurrency(revenueProtectedPerPct)} in annual revenue
+        </p>
+        <p className="text-xs text-foreground/80 tabular-nums">
+          Referral opportunity: {formatCurrency(referralLow)} – {formatCurrency(referralHigh)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AddOnsFacilityNote() {
+  return (
+    <div className="curve-card min-h-[180px] flex flex-col justify-center items-center text-center p-6">
+      <h3 className="font-display font-semibold text-base mb-3">Add-Ons</h3>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Add-on programming is captured in your Facility engine
+      </p>
     </div>
   );
 }
