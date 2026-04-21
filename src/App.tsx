@@ -15,6 +15,7 @@ import Report from "@/pages/Report";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdminInvite from "@/pages/AdminInvite";
 import AdminOrgTasks from "@/pages/admin/AdminOrgTasks";
+import OrgDetail from "@/pages/admin/OrgDetail";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import NotFound from "./pages/NotFound.tsx";
@@ -40,8 +41,8 @@ const App = () => (
             <Route path="/team" element={<ProtectedRoute role="org_user"><Team /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />
-            <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin"><Report /></ProtectedRoute>} />
-            <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin"><AdminOrgTasks /></ProtectedRoute>} />
+            <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin"><OrgDetail /></ProtectedRoute>} />
+            <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin"><OrgDetail /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

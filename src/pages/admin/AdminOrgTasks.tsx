@@ -15,8 +15,9 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
-export default function AdminOrgTasks() {
-  const { orgId } = useParams<{ orgId: string }>();
+export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
+  const params = useParams<{ orgId: string }>();
+  const orgId = orgIdProp ?? params.orgId;
   const [orgName, setOrgName] = useState("");
   const [planActivatedAt, setPlanActivatedAt] = useState<string | null>(null);
   const [tasks, setTasks] = useState<OrgTask[]>([]);
@@ -102,11 +103,15 @@ export default function AdminOrgTasks() {
     return "bg-muted text-muted-foreground border-transparent";
   };
 
+  const Wrap = ({ children }: { children: any }) => bare ? <>{children}</> : <AppShell>{children}</AppShell>;
   return (
-    <AppShell>
-      <div className="mb-2">
-        <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations</Link>
-      </div>
+    <Wrap>
+      {!bare && (
+        <div className="mb-2">
+          <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations</Link>
+        </div>
+      )}
+      {!bare && (
       <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
         <div>
           <p className="curve-eyebrow mb-2">{isReviewMode ? "Plan Review" : "Action Plan"}</p>
@@ -135,6 +140,7 @@ export default function AdminOrgTasks() {
           </Dialog>
         </div>
       </div>
+      )}
 
       {isReviewMode && (
         <>
@@ -223,7 +229,7 @@ export default function AdminOrgTasks() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </AppShell>
+    </Wrap>
   );
 }
 
