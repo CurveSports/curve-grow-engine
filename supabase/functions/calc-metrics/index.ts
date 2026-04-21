@@ -486,10 +486,23 @@ function calculate(intake: any) {
     facility_score = clamp(f, 1, 10);
   }
 
+  // Affiliate score
+  let affiliate_score: number | null = null;
+  if (has_affiliates) {
+    let a = 3;
+    if (affiliate_fee_per_player >= 150) a += 2;
+    if (affiliate_fee_per_player >= 100) a += 1;
+    if (number_of_affiliates >= 10) a += 2;
+    if (number_of_affiliates >= 5) a += 1;
+    if (affiliate_apparel_revenue > 0) a += 1;
+    if (affiliate_fee_per_player < 100) a -= 2;
+    affiliate_score = clamp(a, 1, 10);
+  }
+
   // Step 6
   const total_engine_score =
     pricing_score + sponsorship_score + apparel_score + event_score + addon_score + retention_score +
-    (facility_score ?? 0);
+    (facility_score ?? 0) + (affiliate_score ?? 0);
 
   let monetization_tier: string;
   if (total_engine_score <= 20) monetization_tier = "Foundational";
