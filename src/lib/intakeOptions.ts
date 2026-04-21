@@ -42,6 +42,22 @@ export const COACHING_STRUCTURE = ["Structured", "Somewhat", "Coach-dependent"] 
 export const PRICING_APPROACH = ["Structured", "Competitor-based", "Not defined"] as const;
 export const SPONSORSHIP_APPROACH = ["Structured", "Somewhat", "None"] as const;
 
+export const EVENT_TYPES = [
+  "Tournaments we host",
+  "Camps",
+  "Clinics",
+  "Showcases",
+  "Recruiting Events",
+  "Data Days",
+  "Other Events",
+] as const;
+
+export const LESSONS_CAPTURE_MODEL = [
+  "We capture it directly",
+  "It goes to individual coaches",
+  "Mixed — we capture some",
+] as const;
+
 export const SECTION_TITLES = [
   "Organization Profile",
   "Player & Team Structure",

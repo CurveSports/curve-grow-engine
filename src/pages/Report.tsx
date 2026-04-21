@@ -103,7 +103,7 @@ export default function Report() {
         {/* Revenue Snapshot */}
         <section>
           <h2 className="curve-eyebrow mb-4">Revenue Snapshot</h2>
-          <div className={`grid gap-4 ${isFacilityOrg ? "md:grid-cols-5" : "md:grid-cols-4"} grid-cols-1 sm:grid-cols-2`}>
+          <div className={`grid gap-4 ${isFacilityOrg ? "md:grid-cols-3 lg:grid-cols-6" : "md:grid-cols-4"} grid-cols-1 sm:grid-cols-2`}>
             <div className="curve-card">
               <p className="text-xs text-muted-foreground">Total Annual Revenue</p>
               <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(totalRevenue)}</p>
@@ -146,10 +146,37 @@ export default function Report() {
             {isFacilityOrg && (
               <div className="curve-card">
                 <p className="text-xs text-muted-foreground">Facility Rental Revenue</p>
-                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(intake?.facility_rental_revenue ?? 0)}</p>
+                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(intake?.annual_facility_rental_revenue ?? intake?.facility_rental_revenue ?? 0)}</p>
                 <p className="text-xs text-muted-foreground mt-2">
-                  {data.facility_revenue_pct !== null ? formatPct(data.facility_revenue_pct, 1) : "—"} of total revenue
+                  {data.facility_revenue_pct !== null && data.facility_revenue_pct !== undefined ? formatPct(data.facility_revenue_pct, 1) : "—"} of total revenue
                 </p>
+              </div>
+            )}
+            {isFacilityOrg && (
+              <div className="curve-card">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-xs text-muted-foreground">Facility Revenue Target</p>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" aria-label="info"><Info className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs text-xs">
+                        Based on average family spend of $400/month on private instruction. A facility serving your player base should capture a minimum of $1,200 per player annually in facility and instruction revenue.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(data.facility_revenue_benchmark ?? 0)}</p>
+                {data.facility_at_benchmark ? (
+                  <p className="text-xs text-accent mt-2 flex items-center gap-1">
+                    <Check className="h-3.5 w-3.5" /> On track
+                  </p>
+                ) : (
+                  <p className="text-xs text-destructive/80 mt-2">
+                    Gap: {formatCurrency(Number(data.facility_revenue_gap ?? 0))}
+                  </p>
+                )}
               </div>
             )}
           </div>
@@ -201,6 +228,9 @@ export default function Report() {
             <EngineCard name="Events" score={data.event_score} low={data.event_opportunity_low} high={data.event_opportunity_high} />
             <EngineCard name="Add-Ons" score={data.addon_score} low={data.addon_opportunity_low} high={data.addon_opportunity_high} />
             <EngineCard name="Retention" score={data.retention_score} low={data.retention_opportunity_low} high={data.retention_opportunity_high} />
+            {isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined && (
+              <EngineCard name="Facility" score={data.facility_score} low={data.facility_opportunity_low ?? 0} high={data.facility_opportunity_high ?? 0} />
+            )}
           </div>
         </section>
 
@@ -218,14 +248,17 @@ export default function Report() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {[
+                {([
                   ["Pricing", data.pricing_opportunity_low, data.pricing_opportunity_high, data.pricing_score],
                   ["Sponsorship", data.sponsorship_opportunity_low, data.sponsorship_opportunity_high, data.sponsorship_score],
                   ["Apparel", data.apparel_opportunity_low, data.apparel_opportunity_high, data.apparel_score],
                   ["Events", data.event_opportunity_low, data.event_opportunity_high, data.event_score],
                   ["Add-Ons", data.addon_opportunity_low, data.addon_opportunity_high, data.addon_score],
                   ["Retention", data.retention_opportunity_low, data.retention_opportunity_high, data.retention_score],
-                ].map(([n, lo, hi, s]) => (
+                  ...(isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined
+                    ? [["Facility", data.facility_opportunity_low ?? 0, data.facility_opportunity_high ?? 0, data.facility_score]]
+                    : []),
+                ] as Array<[string, number, number, number]>).map(([n, lo, hi, s]) => (
                   <tr key={n as string}>
                     <td className="px-5 py-3 font-medium">{n}</td>
                     <td className="px-5 py-3 text-right tabular-nums">{formatCurrency(lo as number)}</td>

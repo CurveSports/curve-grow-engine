@@ -13,7 +13,7 @@ import {
   COMMITMENT, DEMAND, SELECTION, DUES_INCLUSIONS, TIERED, PRICE_POINT, KNOWS_MARGIN,
   MARGIN_RANGES, SPONSORSHIPS, APPAREL_MARGIN, APPAREL_MODEL, YES_NO,
   OPS_STRUCTURE, PARENT_COMMS, COACH_ALIGNMENT, COACHING_STRUCTURE, PRICING_APPROACH,
-  SPONSORSHIP_APPROACH, SECTION_TITLES,
+  SPONSORSHIP_APPROACH, SECTION_TITLES, EVENT_TYPES, LESSONS_CAPTURE_MODEL,
 } from "@/lib/intakeOptions";
 
 type Form = Record<string, any>;
@@ -39,7 +39,12 @@ const empty: Form = {
   seeks_sponsorships: "", number_of_sponsors: "", total_sponsorship_revenue: "",
   apparel_revenue: "", apparel_margin: "", apparel_model: "",
   runs_own_events: "", events_per_year: "", total_event_revenue: "",
-  camps_revenue: "", clinics_revenue: "", lessons_revenue: "", showcase_revenue: "", other_addon_revenue: "",
+  event_types_offered: [],
+  tournaments_revenue: "", camps_revenue: "", clinics_revenue: "", showcase_revenue: "",
+  recruiting_events_revenue: "", data_days_revenue: "", other_events_revenue: "",
+  other_addon_revenue: "",
+  lessons_revenue: "", lessons_revenue_gross: "", lessons_revenue_model: "", lessons_capture_pct: "",
+  annual_facility_rental_revenue: "",
   facility_rental_revenue: "",
   retention_pct: "", avg_player_years: "",
   operational_structure: "", parent_communication: [], coach_alignment: "",
@@ -253,22 +258,84 @@ export default function Intake() {
               <SelectField label="Apparel Model" value={form.apparel_model} onChange={(v) => set("apparel_model", v)} options={APPAREL_MODEL} />
 
               <div className="pt-4">
-                <SubsectionHeading title="Events & add-ons" />
+                <SubsectionHeading title="Events & Programs" />
               </div>
-              <SelectField label="Do you run your own events" value={form.runs_own_events} onChange={(v) => set("runs_own_events", v)} options={YES_NO} />
-              {runsEvents && (
+              <MultiCheckField
+                label="Which of the following does your organization run?"
+                values={form.event_types_offered}
+                onChange={(v) => set("event_types_offered", v)}
+                options={EVENT_TYPES}
+              />
+              {form.event_types_offered?.includes("Tournaments we host") && (
+                <NumberField label="Tournaments Annual Revenue" value={form.tournaments_revenue} onChange={(v) => set("tournaments_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Camps") && (
+                <NumberField label="Camps Annual Revenue" value={form.camps_revenue} onChange={(v) => set("camps_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Clinics") && (
+                <NumberField label="Clinics Annual Revenue" value={form.clinics_revenue} onChange={(v) => set("clinics_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Showcases") && (
+                <NumberField label="Showcases Annual Revenue" value={form.showcase_revenue} onChange={(v) => set("showcase_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Recruiting Events") && (
+                <NumberField label="Recruiting Events Annual Revenue" value={form.recruiting_events_revenue} onChange={(v) => set("recruiting_events_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Data Days") && (
+                <NumberField label="Data Days Annual Revenue" value={form.data_days_revenue} onChange={(v) => set("data_days_revenue", v)} min={0} currency />
+              )}
+              {form.event_types_offered?.includes("Other Events") && (
+                <NumberField label="Other Events Annual Revenue" value={form.other_events_revenue} onChange={(v) => set("other_events_revenue", v)} min={0} currency />
+              )}
+              <NumberField label="Total Events per Year across all types" value={form.events_per_year} onChange={(v) => set("events_per_year", v)} min={0} />
+              <NumberField label="Other Add-On Revenue" value={form.other_addon_revenue} onChange={(v) => set("other_addon_revenue", v)} min={0} currency />
+
+              <div className="pt-4">
+                <SubsectionHeading title="Lessons & Individual Training" />
+                <p className="text-sm text-muted-foreground mt-2">Individual or small group instruction outside of team practice.</p>
+              </div>
+              <NumberField
+                label="Lessons and Individual Training Revenue"
+                value={form.lessons_revenue_gross}
+                onChange={(v) => { set("lessons_revenue_gross", v); set("lessons_revenue", v); }}
+                min={0}
+                currency
+              />
+              {form.org_type === "Travel Teams Only" && (
                 <>
-                  <NumberField label="Events per Year" value={form.events_per_year} onChange={(v) => set("events_per_year", v)} min={0} />
-                  <NumberField label="Total Annual Event Revenue" value={form.total_event_revenue} onChange={(v) => set("total_event_revenue", v)} min={0} currency />
+                  <SelectField
+                    label="Does your organization capture this revenue directly?"
+                    value={form.lessons_revenue_model}
+                    onChange={(v) => set("lessons_revenue_model", v)}
+                    options={LESSONS_CAPTURE_MODEL}
+                  />
+                  {form.lessons_revenue_model === "Mixed — we capture some" && (
+                    <NumberField
+                      label="What percentage does the organization capture?"
+                      value={form.lessons_capture_pct}
+                      onChange={(v) => set("lessons_capture_pct", v)}
+                      min={0}
+                      hint="0–100"
+                    />
+                  )}
                 </>
               )}
-              <NumberField label="Camps Revenue" value={form.camps_revenue} onChange={(v) => set("camps_revenue", v)} min={0} currency />
-              <NumberField label="Clinics Revenue" value={form.clinics_revenue} onChange={(v) => set("clinics_revenue", v)} min={0} currency />
-              <NumberField label="Lessons Revenue" value={form.lessons_revenue} onChange={(v) => set("lessons_revenue", v)} min={0} currency />
-              <NumberField label="Showcase Revenue" value={form.showcase_revenue} onChange={(v) => set("showcase_revenue", v)} min={0} currency />
-              <NumberField label="Other Add-On Revenue" value={form.other_addon_revenue} onChange={(v) => set("other_addon_revenue", v)} min={0} currency />
+
               {isFacility && (
-                <NumberField label="Annual Facility Rental Revenue" value={form.facility_rental_revenue} onChange={(v) => set("facility_rental_revenue", v)} min={0} currency />
+                <>
+                  <div className="pt-4">
+                    <SubsectionHeading title="Facility Revenue" />
+                    <p className="text-sm text-muted-foreground mt-2">Revenue generated from your facility outside of your own team programming and lessons.</p>
+                  </div>
+                  <NumberField
+                    label="Annual Facility Rental Revenue"
+                    value={form.annual_facility_rental_revenue}
+                    onChange={(v) => { set("annual_facility_rental_revenue", v); set("facility_rental_revenue", v); }}
+                    min={0}
+                    currency
+                    hint="Include third party rentals, open facility time, and outside organizations using your space."
+                  />
+                </>
               )}
             </>
           )}

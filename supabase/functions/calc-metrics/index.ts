@@ -56,6 +56,11 @@ const NEXT_STEPS: Record<string, string[]> = {
     "Build a formal re-enrollment process with early commitment incentives.",
     "Conduct brief exit interviews with any family that does not re-enroll this cycle.",
   ],
+  Facility: [
+    "Build a structured private instruction program that runs through your organization rather than through individual coaches independently.",
+    "Audit your current facility schedule and identify unused blocks — mornings, weekday afternoons, and off-season windows are typically the highest opportunity.",
+    "Build a rental rate card for cage time, field time, and full facility use and begin outreach to local high schools, rec leagues, and other travel clubs.",
+  ],
 };
 
 function formatCurrency(n: number) {
@@ -73,24 +78,51 @@ function calculate(intake: any) {
   const sponsor_rev = num(intake.total_sponsorship_revenue);
   const apparel_rev = num(intake.apparel_revenue);
   const events_per_year = num(intake.events_per_year);
-  const event_rev = num(intake.total_event_revenue);
-  const runs_events_raw = intake.runs_own_events === "Yes";
-  const runs_events = runs_events_raw && events_per_year > 0;
   const camps = num(intake.camps_revenue);
   const clinics = num(intake.clinics_revenue);
-  const lessons = num(intake.lessons_revenue);
   const showcase = num(intake.showcase_revenue);
+  const tournaments = num(intake.tournaments_revenue);
+  const recruiting_events = num(intake.recruiting_events_revenue);
+  const data_days = num(intake.data_days_revenue);
+  const other_events = num(intake.other_events_revenue);
   const other_addon = num(intake.other_addon_revenue);
   const retention_pct = num(intake.retention_pct);
   const avg_years = num(intake.avg_player_years);
-  const facility_rev = num(intake.facility_rental_revenue);
+
+  const orgType = intake.org_type;
+  const isFacility = orgType === "Facility + Teams" || orgType === "Facility Only";
+
+  // Event types
+  const event_types: string[] = Array.isArray(intake.event_types_offered) ? intake.event_types_offered : [];
+  const runs_events = event_types.length > 0;
+  const event_revenue_total = runs_events
+    ? tournaments + camps + clinics + showcase + recruiting_events + data_days + other_events
+    : 0;
+  const revenue_per_event = events_per_year > 0 && runs_events ? event_revenue_total / events_per_year : 0;
+
+  // Lessons revenue
+  const lessons_revenue_gross = num(intake.lessons_revenue_gross ?? intake.lessons_revenue);
+  let lessons_revenue_model: string;
+  if (isFacility) {
+    lessons_revenue_model = "org";
+  } else {
+    const m = intake.lessons_revenue_model;
+    if (m === "We capture it directly") lessons_revenue_model = "org";
+    else if (m === "It goes to individual coaches") lessons_revenue_model = "coaches";
+    else if (m === "Mixed — we capture some" || m === "Mixed - we capture some" || m === "mixed") lessons_revenue_model = "mixed";
+    else lessons_revenue_model = "org";
+  }
+  let lessons_revenue_org = 0;
+  if (lessons_revenue_model === "org") lessons_revenue_org = lessons_revenue_gross;
+  else if (lessons_revenue_model === "coaches") lessons_revenue_org = 0;
+  else if (lessons_revenue_model === "mixed") lessons_revenue_org = lessons_revenue_gross * (num(intake.lessons_capture_pct) / 100);
+
+  const facility_rev = isFacility ? num(intake.annual_facility_rental_revenue ?? intake.facility_rental_revenue) : 0;
 
   // Step 1
   const market_multiplier = MARKET_MULTIPLIERS[intake.market_type] ?? 1.0;
 
   // Step 2
-  const orgType = intake.org_type;
-  const isFacility = orgType === "Facility + Teams" || orgType === "Facility Only";
   let revenue_benchmark: number;
   if (orgType === "Facility + Teams") revenue_benchmark = 10000;
   else if (hs_players / total_players >= 0.6) revenue_benchmark = 8000;
@@ -104,9 +136,8 @@ function calculate(intake: any) {
   const non_dues_revenue_per_player = non_dues_revenue / total_players;
   const dues_revenue_pct = total_revenue > 0 ? dues_revenue / total_revenue : 0;
   const sponsorship_revenue_per_sponsor = sponsors > 0 ? sponsor_rev / sponsors : 0;
-  const add_on_revenue = camps + clinics + lessons + showcase + other_addon;
+  const add_on_revenue = camps + clinics + lessons_revenue_org + showcase + other_addon;
   const add_on_revenue_per_player = add_on_revenue / total_players;
-  const revenue_per_event = events_per_year > 0 ? event_rev / events_per_year : 0;
   const estimated_returning_players = total_players * (retention_pct / 100);
   const estimated_churned_players = total_players - estimated_returning_players;
   const revenue_gap = Math.max(0, revenue_benchmark - revenue_per_player);
@@ -117,7 +148,7 @@ function calculate(intake: any) {
   const facility_revenue_pct =
     isFacility && total_revenue > 0 ? facility_rev / total_revenue : null;
 
-  // Step 4
+  // Step 4 — opportunities
   const pricing_opportunity_low = Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.5);
   const pricing_opportunity_high = Math.max(0, (revenue_benchmark - revenue_per_player) * total_players * 0.9);
   const sponsorship_opportunity_low =
@@ -126,20 +157,38 @@ function calculate(intake: any) {
     (sponsors === 0 ? 30000 : Math.max(25000, sponsors * 5000)) * market_multiplier;
   const apparel_opportunity_low = total_players * 75;
   const apparel_opportunity_high = total_players * 200;
-  const event_opportunity_low =
-    events_per_year > 0 ? Math.max(revenue_per_event * 2, total_players * 75) : total_players * 50;
-  const event_opportunity_high =
-    events_per_year > 0 ? Math.max(revenue_per_event * 4, total_players * 150) : total_players * 200;
+
+  // New event opportunity
+  const event_revenue_mature_low = total_players * 150;
+  const event_revenue_mature_high = total_players * 400;
+  const event_opportunity_low = Math.max(0, event_revenue_mature_low - event_revenue_total);
+  const event_opportunity_high = Math.max(0, event_revenue_mature_high - event_revenue_total);
+
   const addon_opportunity_low = total_players * 150;
   const addon_opportunity_high = total_players * 500;
   const retention_opportunity_low = (total_players * 0.03) * revenue_per_player;
   const retention_opportunity_high = (total_players * 0.08) * revenue_per_player;
+
+  // Facility opportunity
+  let facility_revenue_benchmark: number | null = null;
+  let facility_revenue_gap: number | null = null;
+  let facility_at_benchmark: boolean | null = null;
+  let facility_opportunity_low = 0;
+  let facility_opportunity_high = 0;
+  if (isFacility) {
+    facility_revenue_benchmark = total_players * 1200;
+    facility_revenue_gap = Math.max(0, facility_revenue_benchmark - facility_rev);
+    facility_at_benchmark = facility_rev >= facility_revenue_benchmark;
+    facility_opportunity_low = facility_revenue_gap * 0.4;
+    facility_opportunity_high = facility_revenue_gap * 0.8;
+  }
+
   const total_opportunity_low =
     pricing_opportunity_low + sponsorship_opportunity_low + apparel_opportunity_low +
-    event_opportunity_low + addon_opportunity_low + retention_opportunity_low;
+    event_opportunity_low + addon_opportunity_low + retention_opportunity_low + facility_opportunity_low;
   const total_opportunity_high =
     pricing_opportunity_high + sponsorship_opportunity_high + apparel_opportunity_high +
-    event_opportunity_high + addon_opportunity_high + retention_opportunity_high;
+    event_opportunity_high + addon_opportunity_high + retention_opportunity_high + facility_opportunity_high;
 
   // Step 5 — scores
   let pricing = 5;
@@ -190,7 +239,7 @@ function calculate(intake: any) {
   if (add_on_revenue_per_player > 500) addon += 2;
   if (camps >= 500) addon += 1;
   if (clinics >= 500) addon += 1;
-  if (lessons >= 500) addon += 1;
+  if (lessons_revenue_org >= 500) addon += 1;
   if (showcase >= 500) addon += 1;
   const addon_score = clamp(addon, 1, 10);
 
@@ -206,9 +255,23 @@ function calculate(intake: any) {
   if (intake.operational_structure === "Clear systems") retention += 1;
   const retention_score = clamp(retention, 1, 10);
 
+  // Facility score
+  let facility_score: number | null = null;
+  if (isFacility && facility_revenue_benchmark !== null) {
+    let f = 3;
+    if (facility_rev >= facility_revenue_benchmark) f += 2;
+    if (facility_rev >= facility_revenue_benchmark * 0.5) f += 1;
+    if (facility_revenue_pct !== null && facility_revenue_pct > 0.20) f += 2;
+    if (facility_revenue_pct !== null && facility_revenue_pct > 0.10) f += 1;
+    if (lessons_revenue_org > total_players * 200) f += 1;
+    if (facility_rev === 0) f -= 2;
+    facility_score = clamp(f, 1, 10);
+  }
+
   // Step 6
   const total_engine_score =
-    pricing_score + sponsorship_score + apparel_score + event_score + addon_score + retention_score;
+    pricing_score + sponsorship_score + apparel_score + event_score + addon_score + retention_score +
+    (facility_score ?? 0);
 
   let monetization_tier: string;
   if (total_engine_score <= 20) monetization_tier = "Foundational";
@@ -227,6 +290,10 @@ function calculate(intake: any) {
     "Add-Ons": addon_score,
     Retention: retention_score,
   };
+  if (facility_score !== null) {
+    order.push("Facility");
+    scoreMap["Facility"] = facility_score;
+  }
   let minScore = 11;
   let priority_engine = order[0];
   for (const k of order) {
@@ -281,8 +348,12 @@ function calculate(intake: any) {
     sponsorship_opportunity_low, sponsorship_opportunity_high,
     apparel_opportunity_low, apparel_opportunity_high,
     event_opportunity_low, event_opportunity_high,
+    event_revenue_mature_low, event_revenue_mature_high,
     addon_opportunity_low, addon_opportunity_high,
     retention_opportunity_low, retention_opportunity_high,
+    facility_revenue_benchmark, facility_revenue_gap, facility_at_benchmark,
+    facility_opportunity_low, facility_opportunity_high, facility_score,
+    lessons_revenue_org,
     total_opportunity_low, total_opportunity_high,
     pricing_score, sponsorship_score, apparel_score, event_score, addon_score, retention_score,
     total_engine_score, monetization_tier, priority_engine,
@@ -322,7 +393,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Authorize: must be admin or member of this org
     const { data: profile } = await supabase.from("profiles").select("org_id").eq("user_id", userData.user.id).maybeSingle();
     const { data: roles } = await supabase.from("user_roles").select("role").eq("user_id", userData.user.id);
     const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
@@ -332,17 +402,33 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Upsert intake
-    const intakeRow = { ...intake, org_id };
+    // Derive runs_own_events / total_event_revenue from event_types_offered
+    const event_types: string[] = Array.isArray(intake.event_types_offered) ? intake.event_types_offered : [];
+    const runs_own_events_str = event_types.length > 0 ? "Yes" : "No";
+    const event_revenue_total = event_types.length > 0
+      ? num(intake.tournaments_revenue) + num(intake.camps_revenue) + num(intake.clinics_revenue) +
+        num(intake.showcase_revenue) + num(intake.recruiting_events_revenue) +
+        num(intake.data_days_revenue) + num(intake.other_events_revenue)
+      : 0;
+
+    // Mirror lessons_revenue_gross into legacy lessons_revenue for backward compat
+    const lessons_gross = intake.lessons_revenue_gross ?? intake.lessons_revenue ?? null;
+
+    const intakeRow = {
+      ...intake,
+      org_id,
+      runs_own_events: runs_own_events_str,
+      total_event_revenue: event_revenue_total,
+      lessons_revenue: lessons_gross,
+      lessons_revenue_gross: lessons_gross,
+    };
     const { error: intakeErr } = await supabase
       .from("organization_intake")
       .upsert(intakeRow, { onConflict: "org_id" });
     if (intakeErr) throw intakeErr;
 
-    // Calculate
-    const metrics = calculate(intake);
+    const metrics = calculate(intakeRow);
 
-    // Upsert derived metrics
     const { error: metErr } = await supabase
       .from("derived_metrics")
       .upsert({ org_id, ...metrics }, { onConflict: "org_id" });
