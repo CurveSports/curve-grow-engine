@@ -104,7 +104,7 @@ function calculate(intake: any) {
   const youth_fee = num(intake.avg_youth_player_fee);
   const sponsors = num(intake.number_of_sponsors);
   const sponsor_rev = num(intake.total_sponsorship_revenue);
-  const apparel_rev = num(intake.apparel_revenue);
+  // apparel_revenue removed from intake — apparel is no longer counted in total revenue
   const events_per_year = num(intake.events_per_year);
   const camps = num(intake.camps_revenue);
   const clinics = num(intake.clinics_revenue);
@@ -154,7 +154,6 @@ function calculate(intake: any) {
     event_revenue_total +
     lessons_revenue_org +
     sponsor_rev +
-    apparel_rev +
     facility_rev +
     other_addon;
   const total_revenue = calculated_total_revenue;
@@ -181,9 +180,6 @@ function calculate(intake: any) {
   const estimated_churned_players = total_players - estimated_returning_players;
   const revenue_gap = Math.max(0, revenue_benchmark - revenue_per_player);
   const at_benchmark = revenue_per_player >= revenue_benchmark;
-  const apparel_margin_pct = APPAREL_MARGIN[intake.apparel_margin] ?? 0.20;
-  const apparel_profit = apparel_rev * apparel_margin_pct;
-  const apparel_revenue_per_player = apparel_rev / total_players;
   const facility_revenue_pct =
     isFacility && total_revenue > 0 ? facility_rev / total_revenue : null;
 
