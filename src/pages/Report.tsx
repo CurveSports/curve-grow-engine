@@ -201,6 +201,10 @@ export default function Report() {
   if (isFacilityOrg && data.facility_score !== null && data.facility_score !== undefined) {
     engines.push({ name: "Facility", score: Number(data.facility_score) });
   }
+  const hasAffiliates = intake?.has_affiliates === "Yes" || intake?.has_affiliates === true;
+  if (hasAffiliates && data.affiliate_score !== null && data.affiliate_score !== undefined) {
+    engines.push({ name: "Affiliate Program", score: Number(data.affiliate_score) });
+  }
   const top3 = [...engines].sort((a, b) => a.score - b.score).slice(0, 3);
 
   // Opportunity components for breakdown line (use Apparel Margin / Add-Ons rename, hide based on org type)
@@ -216,6 +220,9 @@ export default function Report() {
   }
   if (isFacilityOrg) {
     opportunityComponents.push({ name: "Facility", low: Number(data.facility_opportunity_low ?? 0), high: Number(data.facility_opportunity_high ?? 0) });
+  }
+  if (hasAffiliates) {
+    opportunityComponents.push({ name: "Affiliate", low: Number(data.affiliate_fee_opportunity_low ?? 0), high: Number(data.affiliate_fee_opportunity_high ?? 0) });
   }
 
   return (
