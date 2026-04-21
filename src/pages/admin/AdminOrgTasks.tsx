@@ -6,12 +6,13 @@ import TaskList from "@/components/tasks/TaskList";
 import TaskDetailPanel from "@/components/tasks/TaskDetailPanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, RefreshCw } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export default function AdminOrgTasks() {
@@ -26,6 +27,7 @@ export default function AdminOrgTasks() {
   const [activating, setActivating] = useState(false);
   const [toppingUp, setToppingUp] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const load = async () => {
     if (!orgId) return;
@@ -62,6 +64,7 @@ export default function AdminOrgTasks() {
   }, [tasks]);
 
   const handleActivate = async () => {
+    setConfirmOpen(false);
     setActivating(true);
     const { data, error } = await supabase.functions.invoke("activate-action-plan", { body: { org_id: orgId } });
     setActivating(false);
@@ -90,6 +93,15 @@ export default function AdminOrgTasks() {
 
   const isReviewMode = !planActivatedAt && draftCount > 0;
 
+  // Get score badge color based on score
+  const getScoreBadgeClasses = (score: number | null) => {
+    if (score === null) return "bg-muted text-muted-foreground border-transparent";
+    if (score <= 3) return "bg-destructive/15 text-destructive border-destructive/30";
+    if (score <= 6) return "bg-warning/15 text-warning border-warning/30";
+    if (score <= 7) return "bg-accent/15 text-accent border-accent/30";
+    return "bg-muted text-muted-foreground border-transparent";
+  };
+
   return (
     <AppShell>
       <div className="mb-2">
@@ -103,7 +115,7 @@ export default function AdminOrgTasks() {
             {planActivatedAt
               ? `Plan activated ${formatDate(planActivatedAt)}`
               : draftCount > 0
-                ? `${draftCount} draft task${draftCount === 1 ? "" : "s"} awaiting review — not yet visible to org`
+                ? `${draftCount} draft task${draftCount === 1 ? "" : "s"} awaiting review`
                 : "Plan not activated yet"}
           </p>
         </div>
@@ -121,29 +133,48 @@ export default function AdminOrgTasks() {
               <AddTaskForm orgId={orgId!} templates={templates} planActive={!!planActivatedAt} onSaved={() => { setAddOpen(false); load(); }} />
             </DialogContent>
           </Dialog>
-          {!planActivatedAt && draftCount > 0 && (
-            <Button onClick={handleActivate} disabled={activating}>{activating ? "Activating…" : "Activate Plan"}</Button>
-          )}
         </div>
       </div>
 
       {isReviewMode && (
-        <div className="curve-card mb-6">
-          <p className="curve-eyebrow mb-3">Draft plan summary</p>
-          <div className="flex flex-wrap gap-2">
-            {Object.entries(draftByEngine).map(([engine, count]) => (
-              <span key={engine} className="text-xs px-2.5 py-1 rounded-full border border-border bg-secondary/50 tabular-nums">
-                {engine} · {count}
-              </span>
-            ))}
-            <span className="text-xs px-2.5 py-1 rounded-full border border-accent/30 bg-accent-soft text-accent tabular-nums ml-auto">
-              {draftCount} total
-            </span>
+        <>
+          {/* Amber draft mode banner */}
+          <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning-soft">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Draft Plan — Not visible to org until activated</p>
+                <p className="text-sm text-muted-foreground">Tasks are in draft mode and only visible to Curve admins. Org users will see nothing until you activate the plan.</p>
+              </div>
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-3">
-            Edit titles, descriptions, due dates, or priorities. Delete tasks you don't want. Add new ones manually. When ready, click <strong>Activate Plan</strong> to publish to the org.
-          </p>
-        </div>
+
+          {/* Engine summary cards */}
+          <div className="mb-6">
+            <p className="curve-eyebrow mb-4">Plan coverage by engine</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+              {Object.entries(draftByEngine).map(([engine, count]) => (
+                <div key={engine} className="p-3 rounded-lg border bg-card">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{engine}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getScoreBadgeClasses(scores[engine])}`}>
+                      {scores[engine] ?? "—"}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-semibold tabular-nums">{count}</span>
+                    <span className="text-xs text-muted-foreground">task{count === 1 ? "" : "s"}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              Review, edit, or remove tasks below. New tasks added manually will join the draft plan. Click <strong>Activate Plan</strong> when ready to publish.
+            </p>
+          </div>
+        </>
       )}
 
       {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
@@ -156,7 +187,42 @@ export default function AdminOrgTasks() {
         )
       )}
 
+      {/* Full-width Activate Plan button at bottom for review mode */}
+      {isReviewMode && (
+        <div className="mt-8 pt-6 border-t">
+          <Button
+            size="lg"
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+            onClick={() => setConfirmOpen(true)}
+            disabled={activating}
+          >
+            {activating ? "Activating…" : `Activate Plan for ${orgName}`}
+          </Button>
+          <p className="text-xs text-center text-muted-foreground mt-2">
+            {draftCount} task{draftCount === 1 ? "" : "s"} will become visible to {orgName} immediately
+          </p>
+        </div>
+      )}
+
       <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={true} onChanged={load} />
+
+      {/* Confirmation modal */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Activate this plan for {orgName}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              They will be notified immediately and tasks will become visible. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleActivate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+              Confirm Activation
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppShell>
   );
 }
