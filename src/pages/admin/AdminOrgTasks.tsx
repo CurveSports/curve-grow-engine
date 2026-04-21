@@ -15,8 +15,9 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
-export default function AdminOrgTasks() {
-  const { orgId } = useParams<{ orgId: string }>();
+export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
+  const params = useParams<{ orgId: string }>();
+  const orgId = orgIdProp ?? params.orgId;
   const [orgName, setOrgName] = useState("");
   const [planActivatedAt, setPlanActivatedAt] = useState<string | null>(null);
   const [tasks, setTasks] = useState<OrgTask[]>([]);
