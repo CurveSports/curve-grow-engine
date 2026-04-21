@@ -7,13 +7,14 @@ import TaskDetailPanel from "@/components/tasks/TaskDetailPanel";
 import { useAuth } from "@/hooks/useAuth";
 import { OrgTask, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
-import { CheckCircle2, AlertCircle, Calendar, ListChecks } from "lucide-react";
+import { CheckCircle2, AlertCircle, Calendar, ListChecks, Clock } from "lucide-react";
 
 export default function Dashboard() {
   const { profile } = useAuth();
   const [tasks, setTasks] = useState<OrgTask[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [planActivated, setPlanActivated] = useState<string | null>(null);
+  const [hasMetrics, setHasMetrics] = useState(false);
   const [selected, setSelected] = useState<OrgTask | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -26,9 +27,12 @@ export default function Dashboard() {
     ]);
     setTasks((t as OrgTask[]) ?? []);
     if (m) {
+      setHasMetrics(true);
       const s: Record<string, number | null> = {};
       for (const [eng, field] of Object.entries(ENGINE_SCORE_FIELD)) s[eng] = (m as any)[field];
       setScores(s);
+    } else {
+      setHasMetrics(false);
     }
     setPlanActivated(o?.plan_activated_at ?? null);
     setLoading(false);
@@ -47,6 +51,9 @@ export default function Dashboard() {
     return { completedThisWeek, open, overdue, upcoming };
   }, [tasks]);
 
+  // Org user holding state: intake done, metrics calculated, but admin hasn't activated plan
+  const showHoldingState = !loading && hasMetrics && !planActivated;
+
   return (
     <AppShell>
       <div className="mb-8">
@@ -57,31 +64,60 @@ export default function Dashboard() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={<CheckCircle2 className="h-4 w-4 text-accent" />} label="Tasks This Week" value={stats.completedThisWeek} />
-        <StatCard icon={<ListChecks className="h-4 w-4" />} label="Open Tasks" value={stats.open} />
-        <StatCard
-          icon={<AlertCircle className={`h-4 w-4 ${stats.overdue > 0 ? "text-red-600" : "text-accent"}`} />}
-          label="Overdue Tasks"
-          value={stats.overdue}
-          valueClass={stats.overdue > 0 ? "text-red-600" : ""}
-        />
-        <StatCard
-          icon={<Calendar className="h-4 w-4" />}
-          label="Next Due"
-          value={stats.upcoming ? formatDate(stats.upcoming.due_date!) : "—"}
-          subtitle={stats.upcoming?.title}
-          valueClass="text-base font-medium"
-        />
-      </div>
-
-      {loading ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+      {showHoldingState ? (
+        <div className="curve-card">
+          <p className="text-base leading-relaxed">
+            Your Revenue Leak Report is complete. Your action plan is being prepared by the Curve team and will be available shortly.
+          </p>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <Link
+              to="/report"
+              className="flex items-center gap-3 p-4 rounded-lg border border-accent/30 bg-accent-soft hover:bg-accent-soft/80 transition-colors"
+            >
+              <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">Revenue Leak Report</p>
+                <p className="text-xs text-muted-foreground">Ready · view now</p>
+              </div>
+            </Link>
+            <div className="flex items-center gap-3 p-4 rounded-lg border border-border bg-secondary/30">
+              <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <div>
+                <p className="text-sm font-medium">90-Day Action Plan</p>
+                <p className="text-xs text-muted-foreground">Pending — Curve team review</p>
+              </div>
+            </div>
+          </div>
+        </div>
       ) : (
-        <TaskList tasks={tasks} scores={scores} onSelect={setSelected} />
-      )}
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <StatCard icon={<CheckCircle2 className="h-4 w-4 text-accent" />} label="Tasks This Week" value={stats.completedThisWeek} />
+            <StatCard icon={<ListChecks className="h-4 w-4" />} label="Open Tasks" value={stats.open} />
+            <StatCard
+              icon={<AlertCircle className={`h-4 w-4 ${stats.overdue > 0 ? "text-red-600" : "text-accent"}`} />}
+              label="Overdue Tasks"
+              value={stats.overdue}
+              valueClass={stats.overdue > 0 ? "text-red-600" : ""}
+            />
+            <StatCard
+              icon={<Calendar className="h-4 w-4" />}
+              label="Next Due"
+              value={stats.upcoming ? formatDate(stats.upcoming.due_date!) : "—"}
+              subtitle={stats.upcoming?.title}
+              valueClass="text-base font-medium"
+            />
+          </div>
 
-      <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
+          {loading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : (
+            <TaskList tasks={tasks} scores={scores} onSelect={setSelected} />
+          )}
+
+          <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
+        </>
+      )}
 
       <div className="mt-10 pt-6 border-t border-border text-sm text-muted-foreground">
         Need to review your numbers? <Link to="/report" className="text-accent hover:underline">View Revenue Leak Report →</Link>
