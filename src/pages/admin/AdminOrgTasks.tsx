@@ -187,16 +187,17 @@ export default function AdminOrgTasks() {
         )
       )}
 
-          {/* Full-width Activate Plan button at bottom for review mode */}
-          <div className="mt-8 pt-6 border-t">
-            <Button
-              size="lg"
-              className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-              onClick={() => setConfirmOpen(true)}
-              disabled={activating}
-            >
-              {activating ? "Activating…" : `Activate Plan for ${orgName}`}
-            </Button>
+      {/* Full-width Activate Plan button at bottom for review mode */}
+      {isReviewMode && (
+        <div className="mt-8 pt-6 border-t">
+          <Button
+            size="lg"
+            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+            onClick={() => setConfirmOpen(true)}
+            disabled={activating}
+          >
+            {activating ? "Activating…" : `Activate Plan for ${orgName}`}
+          </Button>
           <p className="text-xs text-center text-muted-foreground mt-2">
             {draftCount} task{draftCount === 1 ? "" : "s"} will become visible to {orgName} immediately
           </p>
