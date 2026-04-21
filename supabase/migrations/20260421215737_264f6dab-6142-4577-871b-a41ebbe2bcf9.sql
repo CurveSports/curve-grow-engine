@@ -1,0 +1,20 @@
+INSERT INTO public.task_templates (title, description, engine, task_type, suggested_days_to_complete, is_system_template)
+VALUES
+  ('Audit affiliate fee agreements',
+   'Review all current affiliate agreements and document the per-player fee each affiliate is paying. Identify any orgs being charged below market rate of $100–$150 per player.',
+   'Affiliate'::public.task_engine, 'Strategy'::public.task_type, 7, true),
+  ('Build standardized affiliate agreement template',
+   'Create a standard affiliate agreement that covers fee structure, apparel requirements, brand standards, communication expectations, and annual renewal terms.',
+   'Affiliate'::public.task_engine, 'Execute'::public.task_type, 21, true),
+  ('Build affiliate apparel program',
+   'Define the apparel margin structure for affiliates. Establish vendor relationships, markup rates, and how affiliate apparel orders are processed and fulfilled.',
+   'Affiliate'::public.task_engine, 'Execute'::public.task_type, 30, true),
+  ('Identify new affiliate prospects',
+   'Build a list of 3–5 high-quality organizations in new or underserved markets that would be strong affiliate candidates. Define your ideal affiliate profile — player volume, market, coaching quality, brand alignment.',
+   'Affiliate'::public.task_engine, 'Strategy'::public.task_type, 14, true),
+  ('Launch affiliate outreach campaign',
+   'Begin conversations with top affiliate prospects. Use your standardized agreement as the foundation. Set a goal of signing at least one new affiliate within 60 days.',
+   'Affiliate'::public.task_engine, 'Execute'::public.task_type, 30, true),
+  ('Track affiliate revenue quarterly',
+   'Calculate total affiliate fee revenue and apparel revenue per quarter. Track against the $100–$150 per player benchmark and monitor growth in affiliate count and player volume.',
+   'Affiliate'::public.task_engine, 'Track'::public.task_type, 90, true);
