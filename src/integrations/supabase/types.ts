@@ -36,12 +36,21 @@ export type Database = {
           estimated_returning_players: number | null
           event_opportunity_high: number | null
           event_opportunity_low: number | null
+          event_revenue_mature_high: number | null
+          event_revenue_mature_low: number | null
           event_score: number | null
+          facility_at_benchmark: boolean | null
+          facility_opportunity_high: number | null
+          facility_opportunity_low: number | null
+          facility_revenue_benchmark: number | null
+          facility_revenue_gap: number | null
           facility_revenue_pct: number | null
+          facility_score: number | null
           high_dues_concentration: boolean | null
           high_sponsorship_dependency: boolean | null
           hs_player_pct: number | null
           id: string
+          lessons_revenue_org: number | null
           market_multiplier: number | null
           monetization_tier:
             | Database["public"]["Enums"]["monetization_tier"]
@@ -90,12 +99,21 @@ export type Database = {
           estimated_returning_players?: number | null
           event_opportunity_high?: number | null
           event_opportunity_low?: number | null
+          event_revenue_mature_high?: number | null
+          event_revenue_mature_low?: number | null
           event_score?: number | null
+          facility_at_benchmark?: boolean | null
+          facility_opportunity_high?: number | null
+          facility_opportunity_low?: number | null
+          facility_revenue_benchmark?: number | null
+          facility_revenue_gap?: number | null
           facility_revenue_pct?: number | null
+          facility_score?: number | null
           high_dues_concentration?: boolean | null
           high_sponsorship_dependency?: boolean | null
           hs_player_pct?: number | null
           id?: string
+          lessons_revenue_org?: number | null
           market_multiplier?: number | null
           monetization_tier?:
             | Database["public"]["Enums"]["monetization_tier"]
@@ -144,12 +162,21 @@ export type Database = {
           estimated_returning_players?: number | null
           event_opportunity_high?: number | null
           event_opportunity_low?: number | null
+          event_revenue_mature_high?: number | null
+          event_revenue_mature_low?: number | null
           event_score?: number | null
+          facility_at_benchmark?: boolean | null
+          facility_opportunity_high?: number | null
+          facility_opportunity_low?: number | null
+          facility_revenue_benchmark?: number | null
+          facility_revenue_gap?: number | null
           facility_revenue_pct?: number | null
+          facility_score?: number | null
           high_dues_concentration?: boolean | null
           high_sponsorship_dependency?: boolean | null
           hs_player_pct?: number | null
           id?: string
+          lessons_revenue_org?: number | null
           market_multiplier?: number | null
           monetization_tier?:
             | Database["public"]["Enums"]["monetization_tier"]
@@ -233,6 +260,7 @@ export type Database = {
       }
       organization_intake: {
         Row: {
+          annual_facility_rental_revenue: number | null
           apparel_margin: string | null
           apparel_model: string | null
           apparel_revenue: number | null
@@ -246,15 +274,20 @@ export type Database = {
           coach_alignment: string | null
           coaching_structure: string | null
           current_growth_trend: string | null
+          data_days_revenue: number | null
           demand_for_organization: string | null
           dues_inclusions: string[] | null
           email: string | null
+          event_types_offered: string[] | null
           events_per_year: number | null
           facility_rental_revenue: number | null
           hs_players: number | null
           id: string
           knows_profit_margin: string | null
+          lessons_capture_pct: number | null
           lessons_revenue: number | null
+          lessons_revenue_gross: number | null
+          lessons_revenue_model: string | null
           local_market_competition: string | null
           market_strategy: string | null
           market_type: string | null
@@ -265,6 +298,7 @@ export type Database = {
           organization_focus: string | null
           organization_name: string | null
           other_addon_revenue: number | null
+          other_events_revenue: number | null
           parent_communication: string[] | null
           phone: string | null
           player_commitment_level: string | null
@@ -274,6 +308,7 @@ export type Database = {
           pricing_approach: string | null
           primary_contact_name: string | null
           profit_margin_range: string | null
+          recruiting_events_revenue: number | null
           retention_pct: number | null
           runs_own_events: string | null
           seasons_offered: string[] | null
@@ -288,12 +323,14 @@ export type Database = {
           total_players: number | null
           total_sponsorship_revenue: number | null
           total_teams: number | null
+          tournaments_revenue: number | null
           typical_player_participation: string | null
           updated_at: string
           years_in_operation: string | null
           youth_players: number | null
         }
         Insert: {
+          annual_facility_rental_revenue?: number | null
           apparel_margin?: string | null
           apparel_model?: string | null
           apparel_revenue?: number | null
@@ -307,15 +344,20 @@ export type Database = {
           coach_alignment?: string | null
           coaching_structure?: string | null
           current_growth_trend?: string | null
+          data_days_revenue?: number | null
           demand_for_organization?: string | null
           dues_inclusions?: string[] | null
           email?: string | null
+          event_types_offered?: string[] | null
           events_per_year?: number | null
           facility_rental_revenue?: number | null
           hs_players?: number | null
           id?: string
           knows_profit_margin?: string | null
+          lessons_capture_pct?: number | null
           lessons_revenue?: number | null
+          lessons_revenue_gross?: number | null
+          lessons_revenue_model?: string | null
           local_market_competition?: string | null
           market_strategy?: string | null
           market_type?: string | null
@@ -326,6 +368,7 @@ export type Database = {
           organization_focus?: string | null
           organization_name?: string | null
           other_addon_revenue?: number | null
+          other_events_revenue?: number | null
           parent_communication?: string[] | null
           phone?: string | null
           player_commitment_level?: string | null
@@ -335,6 +378,7 @@ export type Database = {
           pricing_approach?: string | null
           primary_contact_name?: string | null
           profit_margin_range?: string | null
+          recruiting_events_revenue?: number | null
           retention_pct?: number | null
           runs_own_events?: string | null
           seasons_offered?: string[] | null
@@ -349,12 +393,14 @@ export type Database = {
           total_players?: number | null
           total_sponsorship_revenue?: number | null
           total_teams?: number | null
+          tournaments_revenue?: number | null
           typical_player_participation?: string | null
           updated_at?: string
           years_in_operation?: string | null
           youth_players?: number | null
         }
         Update: {
+          annual_facility_rental_revenue?: number | null
           apparel_margin?: string | null
           apparel_model?: string | null
           apparel_revenue?: number | null
@@ -368,15 +414,20 @@ export type Database = {
           coach_alignment?: string | null
           coaching_structure?: string | null
           current_growth_trend?: string | null
+          data_days_revenue?: number | null
           demand_for_organization?: string | null
           dues_inclusions?: string[] | null
           email?: string | null
+          event_types_offered?: string[] | null
           events_per_year?: number | null
           facility_rental_revenue?: number | null
           hs_players?: number | null
           id?: string
           knows_profit_margin?: string | null
+          lessons_capture_pct?: number | null
           lessons_revenue?: number | null
+          lessons_revenue_gross?: number | null
+          lessons_revenue_model?: string | null
           local_market_competition?: string | null
           market_strategy?: string | null
           market_type?: string | null
@@ -387,6 +438,7 @@ export type Database = {
           organization_focus?: string | null
           organization_name?: string | null
           other_addon_revenue?: number | null
+          other_events_revenue?: number | null
           parent_communication?: string[] | null
           phone?: string | null
           player_commitment_level?: string | null
@@ -396,6 +448,7 @@ export type Database = {
           pricing_approach?: string | null
           primary_contact_name?: string | null
           profit_margin_range?: string | null
+          recruiting_events_revenue?: number | null
           retention_pct?: number | null
           runs_own_events?: string | null
           seasons_offered?: string[] | null
@@ -410,6 +463,7 @@ export type Database = {
           total_players?: number | null
           total_sponsorship_revenue?: number | null
           total_teams?: number | null
+          tournaments_revenue?: number | null
           typical_player_participation?: string | null
           updated_at?: string
           years_in_operation?: string | null
