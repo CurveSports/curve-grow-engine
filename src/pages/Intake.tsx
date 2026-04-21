@@ -79,6 +79,182 @@ function SubsectionHeading({ title }: { title: string }) {
   );
 }
 
+function DuesBlock({ form, set }: { form: Form; set: (k: string, v: any) => void }) {
+  const isYearRound = Array.isArray(form.seasons_offered) && form.seasons_offered.includes("Year-round");
+  // Auto-pin to Monthly Membership when year-round
+  useEffect(() => {
+    if (isYearRound && form.dues_model !== "Monthly Membership") {
+      set("dues_model", "Monthly Membership");
+    }
+  }, [isYearRound]);
+
+  const model = isYearRound ? "Monthly Membership" : form.dues_model;
+
+  return (
+    <>
+      {!isYearRound && (
+        <PillSelectField
+          label="How do you primarily structure player fees?"
+          value={form.dues_model}
+          onChange={(v) => set("dues_model", v)}
+          options={DUES_MODELS}
+        />
+      )}
+
+      {model === "Per Season" && (
+        <div className="space-y-6 rounded-lg border border-border bg-secondary/30 p-5">
+          <div>
+            <h3 className="font-display text-base font-semibold">Youth Player Seasons</h3>
+            <p className="text-xs text-muted-foreground mt-1">Youth players typically participate in Spring, Summer, and/or Fall seasons.</p>
+          </div>
+
+          <div className="space-y-4 rounded-md bg-background p-4 border border-border">
+            <p className="font-medium text-sm">Spring Season <span className="text-muted-foreground font-normal">(Youth only)</span></p>
+            <NumberField label="Approximate Youth players this season" hint="Estimate is fine" value={form.spring_youth_players} onChange={(v) => set("spring_youth_players", v)} min={0} />
+            <NumberField label="Youth player fee this season" value={form.spring_youth_fee} onChange={(v) => set("spring_youth_fee", v)} min={0} currency />
+          </div>
+
+          <div className="space-y-4 rounded-md bg-background p-4 border border-border">
+            <p className="font-medium text-sm">Summer Season</p>
+            <NumberField label="Approximate HS players this season" value={form.summer_hs_players} onChange={(v) => set("summer_hs_players", v)} min={0} />
+            <NumberField label="HS player fee this season" value={form.summer_hs_fee} onChange={(v) => set("summer_hs_fee", v)} min={0} currency />
+            <NumberField label="Approximate Youth players this season" value={form.summer_youth_players} onChange={(v) => set("summer_youth_players", v)} min={0} />
+            <NumberField label="Youth player fee this season" value={form.summer_youth_fee} onChange={(v) => set("summer_youth_fee", v)} min={0} currency />
+          </div>
+
+          <div className="space-y-4 rounded-md bg-background p-4 border border-border">
+            <p className="font-medium text-sm">Fall Season</p>
+            <NumberField label="Approximate HS players this season" value={form.fall_hs_players} onChange={(v) => set("fall_hs_players", v)} min={0} />
+            <NumberField label="HS player fee this season" value={form.fall_hs_fee} onChange={(v) => set("fall_hs_fee", v)} min={0} currency />
+            <NumberField label="Approximate Youth players this season" value={form.fall_youth_players} onChange={(v) => set("fall_youth_players", v)} min={0} />
+            <NumberField label="Youth player fee this season" value={form.fall_youth_fee} onChange={(v) => set("fall_youth_fee", v)} min={0} currency />
+          </div>
+
+          <p className="text-xs text-muted-foreground">HS players typically participate in Summer and Fall seasons only. Spring is excluded for HS as most play school ball.</p>
+        </div>
+      )}
+
+      {model === "Monthly Membership" && (
+        <div className="space-y-5 rounded-lg border border-border bg-secondary/30 p-5">
+          <NumberField label="Monthly membership fee — HS players" hint="The recurring monthly fee families pay, not a per-season or annual fee" value={form.monthly_hs_fee} onChange={(v) => set("monthly_hs_fee", v)} min={0} currency />
+          <NumberField label="Monthly membership fee — Youth players" value={form.monthly_youth_fee} onChange={(v) => set("monthly_youth_fee", v)} min={0} currency />
+          <PillSelectField label="Average months active per year" value={form.avg_months_active ? String(form.avg_months_active) : ""} onChange={(v) => set("avg_months_active", Number(v))} options={MONTHS_ACTIVE} />
+          <PillSelectField label="How do you handle tournament and event fees?" value={form.tournament_fee_structure} onChange={(v) => set("tournament_fee_structure", v)} options={TOURNAMENT_FEE_STRUCTURES} />
+
+          {form.tournament_fee_structure === "Standard fee per tournament" && (
+            <>
+              <PillSelectField label="Average number of tournaments per HS player per year" value={form.tournaments_per_hs_player} onChange={(v) => set("tournaments_per_hs_player", v)} options={TOURNAMENTS_PER_PLAYER} />
+              <PillSelectField label="Average number of tournaments per Youth player per year" value={form.tournaments_per_youth_player} onChange={(v) => set("tournaments_per_youth_player", v)} options={TOURNAMENTS_PER_PLAYER} />
+              <NumberField label="Per tournament cost to the player/family" value={form.tournament_fee_per_player} onChange={(v) => set("tournament_fee_per_player", v)} min={0} currency />
+            </>
+          )}
+          {form.tournament_fee_structure === "À la carte — players register and pay per event" && (
+            <>
+              <NumberField label="Estimated average annual tournament and event spend per HS player" hint="This is separate from events your org hosts — it covers what families pay to participate in external tournaments through your organization" value={form.alacarte_annual_hs_spend} onChange={(v) => set("alacarte_annual_hs_spend", v)} min={0} currency />
+              <NumberField label="Estimated average annual tournament and event spend per Youth player" value={form.alacarte_annual_youth_spend} onChange={(v) => set("alacarte_annual_youth_spend", v)} min={0} currency />
+            </>
+          )}
+        </div>
+      )}
+
+      {model === "Flat Annual Fee" && (
+        <div className="space-y-5 rounded-lg border border-border bg-secondary/30 p-5">
+          <NumberField label="Annual HS Player Fee" value={form.flat_annual_hs_fee} onChange={(v) => set("flat_annual_hs_fee", v)} min={0} currency />
+          <NumberField label="Annual Youth Player Fee" value={form.flat_annual_youth_fee} onChange={(v) => set("flat_annual_youth_fee", v)} min={0} currency />
+        </div>
+      )}
+
+      {model === "Mixed" && (
+        <div className="space-y-5 rounded-lg border border-border bg-secondary/30 p-5">
+          <NumberField label="Blended annual fee per HS player" hint="Include all fees — seasonal, monthly, tournament, and any other recurring charges" value={form.mixed_annual_hs_fee} onChange={(v) => set("mixed_annual_hs_fee", v)} min={0} currency />
+          <NumberField label="Blended annual fee per Youth player" value={form.mixed_annual_youth_fee} onChange={(v) => set("mixed_annual_youth_fee", v)} min={0} currency />
+        </div>
+      )}
+    </>
+  );
+}
+
+// Compute the live revenue total preview (mirrors edge function dues logic)
+function computeDuesPreview(form: Form): number {
+  const hs = Number(form.hs_players) || 0;
+  const youth = Number(form.youth_players) || 0;
+  const isYearRound = Array.isArray(form.seasons_offered) && form.seasons_offered.includes("Year-round");
+  const model = isYearRound ? "Monthly Membership" : form.dues_model;
+
+  if (model === "Per Season") {
+    const n = (k: string) => Number(form[k]) || 0;
+    return n("spring_youth_players") * n("spring_youth_fee")
+      + n("summer_hs_players") * n("summer_hs_fee")
+      + n("summer_youth_players") * n("summer_youth_fee")
+      + n("fall_hs_players") * n("fall_hs_fee")
+      + n("fall_youth_players") * n("fall_youth_fee");
+  }
+  if (model === "Monthly Membership") {
+    const months = Number(form.avg_months_active) || 12;
+    const mHs = Number(form.monthly_hs_fee) || 0;
+    const mY = Number(form.monthly_youth_fee) || 0;
+    let tHs = 0, tY = 0;
+    if (form.tournament_fee_structure === "Standard fee per tournament") {
+      const fee = Number(form.tournament_fee_per_player) || 0;
+      const mp: Record<string, number> = { "1–2":1.5,"1-2":1.5,"3–4":3.5,"3-4":3.5,"5–6":5.5,"5-6":5.5,"7–8":7.5,"7-8":7.5,"8+":9 };
+      tHs = (mp[form.tournaments_per_hs_player] ?? 0) * fee;
+      tY = (mp[form.tournaments_per_youth_player] ?? 0) * fee;
+    } else if (form.tournament_fee_structure === "À la carte — players register and pay per event") {
+      tHs = Number(form.alacarte_annual_hs_spend) || 0;
+      tY = Number(form.alacarte_annual_youth_spend) || 0;
+    }
+    return hs * (mHs * months + tHs) + youth * (mY * months + tY);
+  }
+  if (model === "Flat Annual Fee") {
+    return hs * (Number(form.flat_annual_hs_fee) || 0) + youth * (Number(form.flat_annual_youth_fee) || 0);
+  }
+  if (model === "Mixed") {
+    return hs * (Number(form.mixed_annual_hs_fee) || 0) + youth * (Number(form.mixed_annual_youth_fee) || 0);
+  }
+  return 0;
+}
+
+function LiveRevenueTotal({ form, isFacility }: { form: Form; isFacility: boolean }) {
+  const dues = computeDuesPreview(form);
+  const sponsor = Number(form.total_sponsorship_revenue) || 0;
+  const eventsList = ["tournaments_revenue","camps_revenue","clinics_revenue","showcase_revenue","recruiting_events_revenue","data_days_revenue","other_events_revenue"];
+  const events = eventsList.reduce((s, k) => s + (Number(form[k]) || 0), 0);
+  const lessons = Number(form.lessons_revenue_gross) || 0;
+  const facility = isFacility ? Number(form.annual_facility_rental_revenue) || 0 : 0;
+  const other = Number(form.other_addon_revenue) || 0;
+  const total = dues + sponsor + events + lessons + facility + other;
+
+  const Row = ({ label, value, show = true }: { label: string; value: number; show?: boolean }) =>
+    show ? (
+      <div className="flex justify-between text-sm tabular-nums">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium">{formatCurrency(value)}</span>
+      </div>
+    ) : null;
+
+  return (
+    <div className="sticky bottom-4 rounded-lg border-2 border-accent bg-background shadow-lg p-5 space-y-2">
+      <p className="curve-eyebrow mb-2">Your calculated total revenue</p>
+      <Row label="Dues" value={dues} show={dues > 0} />
+      <Row label="Sponsorship" value={sponsor} show={sponsor > 0 || form.total_sponsorship_revenue !== ""} />
+      <Row label="Events" value={events} show={events > 0} />
+      <Row label="Lessons" value={lessons} show={lessons > 0} />
+      <Row label="Facility Rental" value={facility} show={isFacility} />
+      <Row label="Other" value={other} show={other > 0} />
+      <div className="border-t border-border pt-2 mt-2 flex justify-between font-display font-semibold tabular-nums">
+        <span>Total</span>
+        <span>{formatCurrency(total)}</span>
+      </div>
+    </div>
+  );
+}
+  return (
+    <div className="border-l-2 border-accent pl-4 py-1">
+      <h2 className="font-display text-xl font-bold tracking-tight">{title}</h2>
+    </div>
+  );
+}
+
 function StepBar({ step, total }: { step: number; total: number }) {
   return (
     <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}>
