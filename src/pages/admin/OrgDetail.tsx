@@ -11,6 +11,8 @@ import { formatCurrency } from "@/lib/format";
 import { ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
+import NotesTab from "@/components/admin/NotesTab";
+import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
