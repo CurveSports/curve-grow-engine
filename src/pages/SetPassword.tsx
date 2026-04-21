@@ -66,7 +66,9 @@ export default function SetPassword() {
               <Label htmlFor="password" className="text-sm font-medium">New password</Label>
               <Input id="password" type="password" required value={password}
                 onChange={(e) => setPassword(e.target.value)} className="mt-2 h-12" />
-              <p className="text-xs text-muted-foreground mt-2">Minimum 8 characters.</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Must include: 8+ characters, 1 uppercase letter, 1 special character (!@#$%^&*)
+              </p>
             </div>
             <div>
               <Label htmlFor="confirm" className="text-sm font-medium">Confirm password</Label>
