@@ -103,11 +103,15 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
     return "bg-muted text-muted-foreground border-transparent";
   };
 
+  const Wrap = ({ children }: { children: any }) => bare ? <>{children}</> : <AppShell>{children}</AppShell>;
   return (
-    <AppShell>
-      <div className="mb-2">
-        <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations</Link>
-      </div>
+    <Wrap>
+      {!bare && (
+        <div className="mb-2">
+          <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations</Link>
+        </div>
+      )}
+      {!bare && (
       <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
         <div>
           <p className="curve-eyebrow mb-2">{isReviewMode ? "Plan Review" : "Action Plan"}</p>
