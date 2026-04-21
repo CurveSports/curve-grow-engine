@@ -22,17 +22,37 @@ export default function Team() {
   const [invites, setInvites] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>([]);
 
+  const [primaryUserId, setPrimaryUserId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
+
   const load = async () => {
     if (!profile?.org_id) return;
-    const [{ data: inv }, { data: mem }] = await Promise.all([
+    const [{ data: inv }, { data: mem }, { data: org }] = await Promise.all([
       supabase.from("invitations").select("*").eq("org_id", profile.org_id).order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, email, full_name").eq("org_id", profile.org_id),
+      supabase.from("organizations").select("primary_user_id").eq("id", profile.org_id).maybeSingle(),
     ]);
     setInvites(inv ?? []);
     setMembers(mem ?? []);
+    setPrimaryUserId(org?.primary_user_id ?? null);
   };
 
   useEffect(() => { load(); }, [profile?.org_id]);
+
+  const removeMember = async (uid: string) => {
+    setRemovingId(uid);
+    try {
+      const { error } = await supabase.functions.invoke("delete-user", { body: { user_id: uid } });
+      if (error) throw error;
+      toast.success("Member removed");
+      load();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to remove member");
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const invite = async (e: React.FormEvent) => {
     e.preventDefault();
