@@ -12,6 +12,7 @@ type Row = {
   total: number;
   completed: number;
   overdue: number;
+  draft: number;
   last_activity: string | null;
   by_engine: Record<string, { total: number; completed: number }>;
   plan_activated_at: string | null;
@@ -32,7 +33,7 @@ export default function AdminTasks() {
     (async () => {
       const [{ data: orgs }, { data: tasks }, { data: metrics }] = await Promise.all([
         supabase.from("organizations").select("id, name, plan_activated_at"),
-        supabase.from("org_tasks").select("org_id, engine, status, last_activity_at"),
+        supabase.from("org_tasks").select("org_id, engine, status, last_activity_at, plan_status"),
         supabase.from("derived_metrics").select("org_id, monetization_tier"),
       ]);
 
@@ -56,6 +57,7 @@ export default function AdminTasks() {
           total: list.length,
           completed: list.filter((t: any) => t.status === "completed").length,
           overdue: list.filter((t: any) => t.status === "overdue").length,
+          draft: list.filter((t: any) => t.plan_status === "draft").length,
           last_activity: last,
           by_engine,
           plan_activated_at: o.plan_activated_at,
@@ -85,14 +87,21 @@ export default function AdminTasks() {
           <tbody className="divide-y divide-border">
             {rows.map(o => {
               const pct = o.total > 0 ? Math.round((o.completed / o.total) * 100) : 0;
+              const needsReview = !o.plan_activated_at && o.draft > 0;
               return (
                 <tr key={o.id} className="hover:bg-secondary/40 transition-colors">
                   <td className="px-5 py-4">
-                    {o.plan_activated_at ? (
+                    <div className="flex items-center gap-2 flex-wrap">
                       <Link to={`/admin/org/${o.id}/tasks`} className="font-medium hover:text-accent transition-colors">{o.name}</Link>
-                    ) : (
-                      <span className="font-medium text-muted-foreground">{o.name} <span className="text-xs">(plan not activated)</span></span>
-                    )}
+                      {needsReview && (
+                        <Link to={`/admin/org/${o.id}/tasks`} className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors font-medium">
+                          Review Plan · {o.draft}
+                        </Link>
+                      )}
+                      {!o.plan_activated_at && o.draft === 0 && (
+                        <span className="text-xs text-muted-foreground">(awaiting intake)</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-4 text-xs">{o.tier ?? "—"}</td>
                   <td className="px-5 py-4 min-w-[180px]">

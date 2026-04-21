@@ -40,6 +40,8 @@ export const ENGINE_SCORE_FIELD: Record<string, string> = {
   Facility: "facility_score",
 };
 
+export type PlanStatus = "draft" | "active";
+
 export type OrgTask = {
   id: string;
   org_id: string;
@@ -50,6 +52,7 @@ export type OrgTask = {
   task_type: TaskType;
   status: TaskStatus;
   priority: TaskPriority;
+  plan_status: PlanStatus;
   suggested_due_date: string | null;
   due_date: string | null;
   assigned_by: string | null;
