@@ -274,9 +274,7 @@ export default function Intake() {
           {step === 2 && (
             <>
               <SubsectionHeading title="Dues & top-line revenue" />
-              <NumberField label="Estimated Total Annual Revenue — we will verify this against your individual revenue entries" value={form.total_annual_revenue} onChange={(v) => set("total_annual_revenue", v)} min={0} currency />
-              <NumberField label="Average HS Player Fee per year" value={form.avg_hs_player_fee} onChange={(v) => set("avg_hs_player_fee", v)} min={0} currency />
-              <NumberField label="Average Youth Player Fee per year" value={form.avg_youth_player_fee} onChange={(v) => set("avg_youth_player_fee", v)} min={0} currency />
+              <DuesBlock form={form} set={set} />
               <MultiCheckField label="What is included in dues" values={form.dues_inclusions} onChange={(v) => set("dues_inclusions", v)} options={DUES_INCLUSIONS} />
               <SelectField label="Do you offer tiered or bundled packages" value={form.tiered_packages} onChange={(v) => set("tiered_packages", v)} options={TIERED} />
               <SelectField label="Where is your price point relative to your local market" value={form.price_point} onChange={(v) => set("price_point", v)} options={PRICE_POINT} />
