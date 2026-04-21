@@ -91,6 +91,11 @@ const NEXT_STEPS: Record<string, string[]> = {
     "Audit your current facility schedule and identify unused blocks — mornings, weekday afternoons, and off-season windows are typically the highest opportunity.",
     "Build a rental rate card for cage time, field time, and full facility use and begin outreach to local high schools, rec leagues, and other travel clubs.",
   ],
+  Affiliate: [
+    "Audit current affiliate fee agreements and identify any orgs being charged below the $100–$150 per player market rate.",
+    "Build a standardized affiliate agreement template that includes fee structure, apparel requirements, brand standards, and annual renewal terms.",
+    "Identify 3–5 high-quality organizations in new markets that would be strong affiliate candidates and begin conversations.",
+  ],
 };
 
 function formatCurrency(n: number) {
