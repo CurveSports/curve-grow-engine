@@ -525,6 +525,10 @@ function calculate(intake: any) {
     order.push("Facility");
     scoreMap["Facility"] = facility_score;
   }
+  if (affiliate_score !== null) {
+    order.push("Affiliate");
+    scoreMap["Affiliate"] = affiliate_score;
+  }
   let minScore = 11;
   let priority_engine = order[0];
   for (const k of order) {
@@ -550,6 +554,8 @@ function calculate(intake: any) {
     diagnosis = "Retention is the multiplier on everything else you build. With a retention rate below average, every dollar you invest in new player acquisition is partially offset by churn. Strengthening the family experience and re-enrollment systems should be the first priority.";
   } else if (addon_score <= 3 && pricing_score >= 6 && sponsorship_score >= 5) {
     diagnosis = `Your core revenue engines are performing well. The primary gap is in add-on programming — camps, clinics, lessons, and showcases — where organizations your size typically capture an additional ${formatCurrency(addon_opportunity_low)}–${formatCurrency(addon_opportunity_high)} annually.`;
+  } else if (affiliate_score !== null && affiliate_score <= 4) {
+    diagnosis = `Your affiliate program is an underutilized revenue engine. At $100–$150 per player in affiliation fees plus apparel margin, a well-structured affiliate network of ${number_of_affiliates} organizations has the potential to generate ${formatCurrency(affiliate_fee_opportunity_low)}–${formatCurrency(affiliate_fee_opportunity_high)} in additional annual fee revenue alone — before apparel margin is factored in.`;
   } else if (total_engine_score >= 45) {
     diagnosis = "You're operating at a high level across most revenue categories. The focus at this stage is optimization and expansion — tightening the engines that score below 8 and layering in more sophisticated monetization strategies.";
   } else {
@@ -589,6 +595,8 @@ function calculate(intake: any) {
     revenue_protected_per_pct,
     facility_revenue_benchmark, facility_revenue_gap, facility_at_benchmark,
     facility_opportunity_low, facility_opportunity_high, facility_score,
+    affiliate_fee_revenue, affiliate_total_revenue, affiliate_revenue_per_affiliate,
+    affiliate_score, affiliate_fee_opportunity_low, affiliate_fee_opportunity_high,
     lessons_revenue_org,
     total_opportunity_low, total_opportunity_high,
     pricing_score, sponsorship_score, apparel_score, event_score, addon_score, retention_score,
