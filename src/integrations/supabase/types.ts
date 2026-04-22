@@ -447,6 +447,9 @@ export type Database = {
       }
       org_projects: {
         Row: {
+          awaiting_completion_approval: boolean
+          completion_approved_at: string | null
+          completion_approved_by: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -459,9 +462,13 @@ export type Database = {
           released_at: string | null
           released_by: string | null
           status: Database["public"]["Enums"]["org_project_status"]
+          suggested_next_project_id: string | null
           updated_at: string
         }
         Insert: {
+          awaiting_completion_approval?: boolean
+          completion_approved_at?: string | null
+          completion_approved_by?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -474,9 +481,13 @@ export type Database = {
           released_at?: string | null
           released_by?: string | null
           status?: Database["public"]["Enums"]["org_project_status"]
+          suggested_next_project_id?: string | null
           updated_at?: string
         }
         Update: {
+          awaiting_completion_approval?: boolean
+          completion_approved_at?: string | null
+          completion_approved_by?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -489,6 +500,7 @@ export type Database = {
           released_at?: string | null
           released_by?: string | null
           status?: Database["public"]["Enums"]["org_project_status"]
+          suggested_next_project_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -497,6 +509,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_projects_suggested_next_project_id_fkey"
+            columns: ["suggested_next_project_id"]
+            isOneToOne: false
+            referencedRelation: "org_projects"
             referencedColumns: ["id"]
           },
         ]
@@ -961,9 +980,12 @@ export type Database = {
       }
       organizations: {
         Row: {
+          active_project_count: number
           city_state: string | null
+          completed_project_count: number
           contact_name: string | null
           created_at: string
+          draft_project_count: number
           email: string | null
           id: string
           last_activity_at: string
@@ -975,9 +997,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_project_count?: number
           city_state?: string | null
+          completed_project_count?: number
           contact_name?: string | null
           created_at?: string
+          draft_project_count?: number
           email?: string | null
           id?: string
           last_activity_at?: string
@@ -989,9 +1014,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_project_count?: number
           city_state?: string | null
+          completed_project_count?: number
           contact_name?: string | null
           created_at?: string
+          draft_project_count?: number
           email?: string | null
           id?: string
           last_activity_at?: string
@@ -1250,6 +1278,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      recompute_org_project_counts: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "org_user"
@@ -1266,6 +1298,10 @@ export type Database = {
         | "task_overdue"
         | "no_activity_digest"
         | "high_risk_alert"
+        | "project_released"
+        | "project_completion_pending"
+        | "project_completed"
+        | "next_project_suggested"
       org_note_tag:
         | "internal_planning"
         | "kickoff"
@@ -1282,6 +1318,10 @@ export type Database = {
         | "due_date_changed"
         | "reassigned"
         | "completed"
+        | "assigned_to_project"
+        | "removed_from_project"
+        | "project_released"
+        | "project_completed"
       task_engine:
         | "Pricing"
         | "Sponsorship"
@@ -1437,6 +1477,10 @@ export const Constants = {
         "task_overdue",
         "no_activity_digest",
         "high_risk_alert",
+        "project_released",
+        "project_completion_pending",
+        "project_completed",
+        "next_project_suggested",
       ],
       org_note_tag: [
         "internal_planning",
@@ -1455,6 +1499,10 @@ export const Constants = {
         "due_date_changed",
         "reassigned",
         "completed",
+        "assigned_to_project",
+        "removed_from_project",
+        "project_released",
+        "project_completed",
       ],
       task_engine: [
         "Pricing",
