@@ -13,6 +13,7 @@ import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard,
 import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
+import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
