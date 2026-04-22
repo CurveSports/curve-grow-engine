@@ -58,23 +58,21 @@ function buildContext(intake: any, metrics: any): WalletContext {
 }
 
 function defaultsFrom(ctx: WalletContext): WalletInputs {
-  // Compute current capture % per stream as default
-  const HIGH = 20000;
-  const APPAREL = 600;
-  const ADDON = 1200;
   const FACILITY = 2400;
   return {
-    duesCapturePct: ctx.totalPlayers > 0
-      ? Math.min(100, (ctx.currentDues / (HIGH * ctx.totalPlayers)) * 100)
-      : 0,
+    duesIncreasePct: 0, // start at no increase; user dials in
     numSponsors: ctx.currentSponsors,
     eventRevPerPlayer: ctx.totalPlayers > 0 ? ctx.currentEvents / ctx.totalPlayers : 0,
     apparelCapturePct: ctx.totalPlayers > 0
-      ? Math.min(60, (ctx.currentApparelMargin / (APPAREL * ctx.totalPlayers)) * 100)
+      ? Math.min(100, (ctx.currentApparelMargin / (APPAREL_PACKAGE_DEFAULT * ctx.totalPlayers)) * 100)
       : 0,
+    apparelPackageAmount: APPAREL_PACKAGE_DEFAULT,
     addonAdoptionPct: ctx.totalPlayers > 0
-      ? Math.min(30, (ctx.currentAddOns / (ADDON * ctx.totalPlayers)) * 100)
+      ? Math.min(50, (ctx.currentAddOns / (ADDON_PACKAGE_DEFAULT * ctx.totalPlayers)) * 100)
       : 0,
+    addonPackageAmount: ADDON_PACKAGE_DEFAULT,
+    travelCapturePct: 0,
+    travelSpendPerFamily: TRAVEL_SPEND_DEFAULT,
     facilityCapturePct: ctx.totalPlayers > 0 && ctx.hasFacility
       ? Math.min(100, (ctx.currentFacility / (FACILITY * ctx.totalPlayers)) * 100)
       : 0,
