@@ -5,32 +5,34 @@ import AppShell from "@/components/AppShell";
 import TaskList from "@/components/tasks/TaskList";
 import TaskDetailPanel from "@/components/tasks/TaskDetailPanel";
 import { useAuth } from "@/hooks/useAuth";
-import { OrgTask, ENGINE_SCORE_FIELD, ENGINES } from "@/lib/tasks";
+import { OrgTask, ENGINE_SCORE_FIELD } from "@/lib/tasks";
+import { OrgProject, buildProjectWithTasks } from "@/lib/projects";
 import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Filter, Lock, ListChecks } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Lock, ListChecks, ChevronDown, ChevronRight, FolderKanban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Plan() {
   const { profile } = useAuth();
   const [tasks, setTasks] = useState<OrgTask[]>([]);
+  const [projects, setProjects] = useState<OrgProject[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [planActivated, setPlanActivated] = useState<string | null>(null);
   const [selected, setSelected] = useState<OrgTask | null>(null);
   const [loading, setLoading] = useState(true);
-  const [engineFilter, setEngineFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [thisWeekOnly, setThisWeekOnly] = useState(false);
+  const [completedOpen, setCompletedOpen] = useState(false);
 
   const load = async () => {
     if (!profile?.org_id) return;
-    const [{ data: t }, { data: m }, { data: o }] = await Promise.all([
+    const [{ data: t }, { data: m }, { data: o }, { data: p }] = await Promise.all([
       supabase.from("org_tasks").select("*").eq("org_id", profile.org_id).order("priority").order("due_date"),
       supabase.from("derived_metrics").select("*").eq("org_id", profile.org_id).maybeSingle(),
       supabase.from("organizations").select("plan_activated_at").eq("id", profile.org_id).maybeSingle(),
+      supabase.from("org_projects").select("*").eq("org_id", profile.org_id).order("display_order"),
     ]);
     setTasks((t as OrgTask[]) ?? []);
+    setProjects((p as OrgProject[]) ?? []);
     if (m) {
       const s: Record<string, number | null> = {};
       for (const [eng, field] of Object.entries(ENGINE_SCORE_FIELD)) s[eng] = (m as any)[field];
@@ -42,40 +44,27 @@ export default function Plan() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [profile?.org_id]);
 
-  const filtered = useMemo(() => {
-    const sevenAhead = Date.now() + 7 * 24 * 60 * 60 * 1000;
-    return tasks.filter(t => {
-      if (engineFilter !== "all" && t.engine !== engineFilter) return false;
-      if (statusFilter !== "all" && t.status !== statusFilter) return false;
-      if (thisWeekOnly) {
-        if (!t.due_date) return false;
-        if (new Date(t.due_date).getTime() > sevenAhead) return false;
-        if (t.status === "completed") return false;
-      }
-      return true;
-    });
-  }, [tasks, engineFilter, statusFilter, thisWeekOnly]);
+  const activeProjects = useMemo(
+    () => projects.filter((p) => p.status === "active").map((p) => buildProjectWithTasks(p, tasks)),
+    [projects, tasks],
+  );
+  const completedProjects = useMemo(
+    () => projects.filter((p) => p.status === "completed").map((p) => buildProjectWithTasks(p, tasks)),
+    [projects, tasks],
+  );
+  const hasDrafts = projects.some((p) => p.status === "draft");
 
-  // Derive "projects" by engine for tabs
-  const projects = useMemo(() => {
-    const out: { engine: string; total: number; complete: number }[] = [];
-    for (const e of ENGINES) {
-      const list = tasks.filter(t => t.engine === e);
-      if (list.length === 0) continue;
-      out.push({ engine: e, total: list.length, complete: list.filter(t => t.status === "completed").length });
-    }
-    return out;
-  }, [tasks]);
+  // Tasks with no project assignment, but visible (active plan_status)
+  const orphanTasks = useMemo(
+    () => tasks.filter((t) => !(t as any).project_id && t.plan_status === "active"),
+    [tasks],
+  );
 
   if (loading) {
-    return (
-      <AppShell title="Action Plan">
-        <PlanSkeleton />
-      </AppShell>
-    );
+    return <AppShell title="Action Plan"><PlanSkeleton /></AppShell>;
   }
 
-  if (!planActivated) {
+  if (!planActivated && activeProjects.length === 0 && orphanTasks.length === 0) {
     return (
       <AppShell title="Action Plan">
         <EmptyState
@@ -88,106 +77,87 @@ export default function Plan() {
     );
   }
 
-  if (tasks.length === 0) {
-    return (
-      <AppShell title="Action Plan">
-        <EmptyState
-          icon={<ListChecks className="h-10 w-10 text-muted-foreground" />}
-          title="No tasks yet"
-          description="Once tasks are added to your plan they'll appear here."
-        />
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell title="Action Plan">
       <div className="mb-6">
         <p className="curve-eyebrow mb-2">90-Day Plan</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Action Plan</h1>
-        <p className="text-sm text-muted-foreground mt-1">Activated {formatDate(planActivated)}</p>
+        {planActivated && <p className="text-sm text-muted-foreground mt-1">Activated {formatDate(planActivated)}</p>}
       </div>
 
-      {/* Project tabs (derived from engines) */}
-      <div className="flex flex-wrap gap-2 mb-6 -mx-1 px-1 overflow-x-auto">
-        <ProjectTab
-          active={engineFilter === "all"}
-          onClick={() => setEngineFilter("all")}
-          label="All Tasks"
-          complete={tasks.filter(t => t.status === "completed").length}
-          total={tasks.length}
-        />
-        {projects.map(p => (
-          <ProjectTab
-            key={p.engine}
-            active={engineFilter === p.engine}
-            onClick={() => setEngineFilter(p.engine)}
-            label={p.engine}
-            complete={p.complete}
-            total={p.total}
+      {/* Active project sections */}
+      <div className="space-y-6">
+        {activeProjects.length === 0 && orphanTasks.length === 0 && (
+          <EmptyState
+            icon={<ListChecks className="h-10 w-10 text-muted-foreground" />}
+            title="No active projects yet"
+            description="Your Curve team is preparing your next project."
           />
+        )}
+
+        {activeProjects.map((p) => (
+          <div key={p.id} className="curve-card p-0 overflow-hidden">
+            <div className="px-5 py-4 border-b border-border bg-secondary/30">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-display font-semibold text-lg">{p.name}</h3>
+                <span className="text-xs text-muted-foreground tabular-nums">{p.taskComplete}/{p.taskTotal} complete</span>
+              </div>
+              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-accent transition-all" style={{ width: `${p.progressPct}%` }} />
+              </div>
+            </div>
+            {p.tasks.length === 0 ? (
+              <p className="p-5 text-sm text-muted-foreground">No tasks in this project yet.</p>
+            ) : (
+              <TaskList tasks={p.tasks} scores={scores} onSelect={setSelected} />
+            )}
+          </div>
         ))}
-        {/* Coming-soon locked project example */}
-        <div className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/50 text-muted-foreground text-sm cursor-not-allowed border border-dashed border-border">
-          <Lock className="h-3.5 w-3.5" /> Sponsorship Pipeline · Coming soon
-        </div>
-      </div>
 
-      {/* Filter bar */}
-      <div className="curve-card mb-6 flex flex-wrap items-center gap-3">
-        <Filter className="h-4 w-4 text-muted-foreground" />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="not_started">Not started</SelectItem>
-            <SelectItem value="in_progress">In progress</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="overdue">Overdue</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button
-          variant={thisWeekOnly ? "default" : "outline"}
-          size="sm"
-          onClick={() => setThisWeekOnly(v => !v)}
-          className={cn("h-9", thisWeekOnly && "bg-warning text-warning-foreground hover:bg-warning/90")}
-        >
-          This Week
-        </Button>
-        <span className="text-xs text-muted-foreground ml-auto tabular-nums">{filtered.length} task{filtered.length === 1 ? "" : "s"}</span>
-      </div>
+        {orphanTasks.length > 0 && (
+          <div className="curve-card p-0 overflow-hidden">
+            <div className="px-5 py-4 border-b border-border bg-secondary/30">
+              <h3 className="font-display font-semibold text-lg">Other Tasks</h3>
+            </div>
+            <TaskList tasks={orphanTasks} scores={scores} onSelect={setSelected} />
+          </div>
+        )}
 
-      {filtered.length === 0 ? (
-        <EmptyState
-          icon={<Filter className="h-10 w-10 text-muted-foreground" />}
-          title="No tasks match your filters"
-          description="Try clearing filters or selecting a different project."
-        />
-      ) : (
-        <TaskList tasks={filtered} scores={scores} onSelect={setSelected} />
-      )}
+        {/* Completed projects (collapsed) */}
+        {completedProjects.length > 0 && (
+          <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
+            <CollapsibleTrigger className="w-full curve-card flex items-center justify-between hover:border-accent/50 transition-colors">
+              <span className="font-medium text-sm">Completed Projects ({completedProjects.length})</span>
+              {completedOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 mt-3">
+              {completedProjects.map((p) => (
+                <div key={p.id} className="curve-card opacity-80">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium">{p.name}</h4>
+                    <span className="text-xs text-accent">Completed {p.completion_approved_at ? formatDate(p.completion_approved_at) : ""}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{p.taskComplete} of {p.taskTotal} tasks completed</p>
+                </div>
+              ))}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
+
+        {/* More coming soon teaser */}
+        {hasDrafts && (
+          <div className="curve-card border-dashed text-center py-8 bg-secondary/30">
+            <Lock className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+            <p className="font-medium text-sm">More Coming Soon</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+              Your Curve team is preparing your next project. Stay focused on your current priorities.
+            </p>
+          </div>
+        )}
+      </div>
 
       <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
     </AppShell>
-  );
-}
-
-function ProjectTab({ active, onClick, label, complete, total }: { active: boolean; onClick: () => void; label: string; complete: number; total: number }) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-all whitespace-nowrap",
-        active
-          ? "bg-accent text-accent-foreground border-accent"
-          : "bg-card text-foreground border-border hover:border-accent",
-      )}
-    >
-      <span>{label}</span>
-      <span className={cn("text-xs tabular-nums px-1.5 py-0.5 rounded", active ? "bg-white/20" : "bg-secondary text-muted-foreground")}>
-        {complete}/{total}
-      </span>
-    </button>
   );
 }
 
@@ -207,12 +177,7 @@ function PlanSkeleton() {
     <div className="space-y-4">
       <div className="curve-skeleton h-8 w-48 rounded" />
       <div className="curve-skeleton h-4 w-80 rounded" />
-      <div className="grid grid-cols-3 gap-3 mt-6">
-        <div className="curve-skeleton h-12 rounded-lg" />
-        <div className="curve-skeleton h-12 rounded-lg" />
-        <div className="curve-skeleton h-12 rounded-lg" />
-      </div>
-      <div className="curve-skeleton h-64 rounded-xl mt-6" />
+      <div className="curve-shimmer h-64 rounded-xl mt-6" />
     </div>
   );
 }
