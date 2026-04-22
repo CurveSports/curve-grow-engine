@@ -356,11 +356,14 @@ function MetricCard({ label, value, suffix, children, accent }: { label: string;
   );
 }
 
-function DimensionCard({ label, score }: { label: string; score: number | null }) {
+function DimensionCard({ label, score, explain }: { label: string; score: number | null; explain?: import("@/components/admin/ExplainDrawer").ExplainContent }) {
   const pct = score ? (score / 10) * 100 : 0;
   return (
     <div className="curve-card">
-      <p className="curve-eyebrow">{label}</p>
+      <div className="flex items-center gap-1.5">
+        <p className="curve-eyebrow">{label}</p>
+        {explain && <ExplainButton content={explain} />}
+      </div>
       <p className="font-display text-2xl font-semibold mt-2 tabular-nums" style={{ color: "#8B5CF6" }}>
         {score ?? "—"}<span className="text-muted-foreground text-base font-normal">/10</span>
       </p>
