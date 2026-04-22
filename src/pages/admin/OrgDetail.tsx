@@ -47,9 +47,11 @@ export default function OrgDetail() {
   const [orgName, setOrgName] = useState("Organization");
   const [bannerKey, setBannerKey] = useState(0);
 
-  const setTab = (t: Tab) => {
+  const setTab = (t: Tab, engine?: string) => {
     const next = new URLSearchParams(params);
     next.set("tab", t);
+    if (engine) next.set("engine", engine);
+    else next.delete("engine");
     setParams(next, { replace: true });
   };
 
@@ -105,7 +107,7 @@ export default function OrgDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
-            <OverviewTab orgId={orgId!} onJumpToPlan={() => setTab("plan")} onJumpToReport={() => setTab("report")} />
+            <OverviewTab orgId={orgId!} onJumpToPlan={(engine?: string) => setTab("plan", engine)} onJumpToReport={() => setTab("report")} />
           </TabsContent>
           <TabsContent value="report" className="mt-6">
             <Report bare orgIdProp={orgId} />
@@ -239,7 +241,7 @@ function RecalcMetricsButton({ orgId }: { orgId: string }) {
 
 /* ─────────────────────────  OVERVIEW  ───────────────────────── */
 
-function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; onJumpToPlan: () => void; onJumpToReport: () => void }) {
+function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; onJumpToPlan: (engine?: string) => void; onJumpToReport: () => void }) {
   const [metrics, setMetrics] = useState<any>(null);
   const [intake, setIntake] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -334,7 +336,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
             score={platformScore}
             done={platformDone}
             total={platformTotal}
-            onJump={onJumpToPlan}
+            onJump={() => onJumpToPlan("Platform")}
           />
           <UniversalEngineCard
             label="Marketing Foundation"
@@ -342,7 +344,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
             score={marketingScore}
             done={marketingDone}
             total={marketingTotal}
-            onJump={onJumpToPlan}
+            onJump={() => onJumpToPlan("Marketing")}
           />
         </div>
       </div>
@@ -390,7 +392,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
                   <div className="flex items-baseline justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={onJumpToPlan}
+                        onClick={() => onJumpToPlan()}
                         className="text-sm font-medium hover:text-accent transition-colors"
                       >
                         {e.name}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import TaskList from "@/components/tasks/TaskList";
@@ -56,6 +56,18 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
+
+  const [searchParams] = useSearchParams();
+  const engineParam = searchParams.get("engine");
+  useEffect(() => {
+    if (loading || !engineParam) return;
+    const el = document.getElementById(`engine-${engineParam}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-2", "ring-accent");
+      setTimeout(() => el.classList.remove("ring-2", "ring-accent"), 2000);
+    }
+  }, [loading, engineParam, tasks]);
 
   const draftCount = useMemo(() => tasks.filter(t => t.plan_status === "draft").length, [tasks]);
 
