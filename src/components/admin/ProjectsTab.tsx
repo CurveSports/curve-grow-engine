@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ChevronDown, ChevronRight, CheckCircle2, Lock, Sparkles, Pencil, PlayCircle } from "lucide-react";
-import { ENGINES, type OrgTask } from "@/lib/tasks";
+import { Plus, ChevronDown, ChevronRight, CheckCircle2, Lock, Sparkles, Pencil, PlayCircle, X, BookmarkPlus } from "lucide-react";
+import { ENGINES, TASK_SOURCE_LABEL, TASK_SOURCE_STYLE, type OrgTask } from "@/lib/tasks";
+import TaskLibraryPicker from "@/components/admin/TaskLibraryPicker";
 import {
   PROJECT_NAME_SUGGESTIONS,
   PROJECT_STATUS_LABEL,
