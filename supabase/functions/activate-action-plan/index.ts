@@ -120,50 +120,39 @@ Deno.serve(async (req) => {
       return json({ success: true, mode: "topup", added: inserted_count });
     }
 
-    // ACTIVATE: flip remaining drafts to active and stamp plan_activated_at
-    const { data: flipped, error: flipErr } = await admin
-      .from("org_tasks")
-      .update({ plan_status: "active", last_activity_at: new Date().toISOString() })
-      .eq("org_id", org_id)
-      .eq("plan_status", "draft")
-      .select("id");
-    if (flipErr) return json({ error: flipErr.message }, 500);
-
+    // APPROVE: stamp plan_activated_at as the admin's "recommendation approved"
+    // signal. Tasks remain at plan_status='draft' and only become visible to
+    // org users when an admin releases a project containing them.
     const activated_at = new Date().toISOString();
     if (!org.plan_activated_at) {
       await admin.from("organizations").update({ plan_activated_at: activated_at }).eq("id", org_id);
     }
 
-    // Notify org users
-    if (RESEND_API_KEY) {
-      const { data: profs } = await admin.from("profiles").select("email").eq("org_id", org_id);
-      const recipients = (profs ?? []).map((p: any) => p.email).filter(Boolean);
-      if (recipients.length > 0) {
-        const subject = "Your 90-Day Action Plan is ready";
-        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
-          <h2 style="color:#0f5132;">Your 90-Day Action Plan is ready</h2>
-          <p>The Curve team has finished reviewing your Revenue Leak Report and your action plan is now available. Log in to view your priorities and get started.</p>
-          <p style="margin-top:24px;"><a href="${APP_URL}/dashboard" style="background:#0f5132;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Open your Action Plan →</a></p>
-        </div>`;
-        try {
-          await fetch("https://api.resend.com/emails", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
-            body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html }),
-          });
-        } catch (e) {
-          console.error("activation email error", e);
-        }
-      }
-    }
+    // Count drafts so the admin sees how many tasks are now ready to organize
+    // into projects. We do NOT flip plan_status here and we do NOT email org
+    // users — release happens at the project level.
+    const { data: draftRows } = await admin
+      .from("org_tasks")
+      .select("id")
+      .eq("org_id", org_id)
+      .eq("plan_status", "draft");
+    const draft_count = draftRows?.length ?? 0;
 
     return json({
       success: true,
-      mode: "activate",
+      mode: "approve",
       tasks_added: inserted_count,
-      tasks_activated: flipped?.length ?? 0,
+      draft_count,
       plan_activated_at: org.plan_activated_at ?? activated_at,
     });
+  } catch (e: any) {
+    return json({ error: e.message ?? "unknown error" }, 500);
+  }
+});
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }
