@@ -33,11 +33,14 @@ const COMPLEXITY_STYLES: Record<string, string> = {
   Complex: "bg-destructive/10 text-destructive border-destructive/30",
 };
 
-function RiskCard({ label, value, copy }: { label: string; value: Severity | null; copy: Record<Severity, string> }) {
+function RiskCard({ label, value, copy, explain }: { label: string; value: Severity | null; copy: Record<Severity, string>; explain?: ExplainContent }) {
   const v = (value ?? "Medium") as Severity;
   return (
     <div className="curve-card">
-      <p className="curve-eyebrow mb-3">{label}</p>
+      <div className="flex items-center gap-1.5 mb-3">
+        <p className="curve-eyebrow">{label}</p>
+        {explain && <ExplainButton content={explain} />}
+      </div>
       <span className={cn("inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border", RISK_STYLES[v])}>
         {value ?? "—"}
       </span>
@@ -46,6 +49,13 @@ function RiskCard({ label, value, copy }: { label: string; value: Severity | nul
   );
 }
 
+export type RiskExplains = {
+  execution?: ExplainContent;
+  market?: ExplainContent;
+  retention?: ExplainContent;
+  complexity?: ExplainContent;
+};
+
 export function RiskAssessmentSection({
   executionRisk,
   marketRisk,
@@ -53,6 +63,7 @@ export function RiskAssessmentSection({
   engagementComplexity,
   engagementRecommendation,
   pricingStrategyNote,
+  explains,
 }: {
   executionRisk: Severity | null;
   marketRisk: Severity | null;
@@ -60,6 +71,7 @@ export function RiskAssessmentSection({
   engagementComplexity: string | null;
   engagementRecommendation: string | null;
   pricingStrategyNote: string | null;
+  explains?: RiskExplains;
 }) {
   return (
     <div className="space-y-4">
@@ -69,14 +81,17 @@ export function RiskAssessmentSection({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <RiskCard label="Execution Risk" value={executionRisk} copy={EXECUTION_COPY} />
-        <RiskCard label="Market Risk" value={marketRisk} copy={MARKET_COPY} />
-        <RiskCard label="Retention Risk" value={retentionRisk} copy={RETENTION_COPY} />
+        <RiskCard label="Execution Risk" value={executionRisk} copy={EXECUTION_COPY} explain={explains?.execution} />
+        <RiskCard label="Market Risk" value={marketRisk} copy={MARKET_COPY} explain={explains?.market} />
+        <RiskCard label="Retention Risk" value={retentionRisk} copy={RETENTION_COPY} explain={explains?.retention} />
       </div>
 
       {engagementComplexity && (
         <div className="curve-card">
-          <p className="curve-eyebrow mb-3">Engagement Complexity</p>
+          <div className="flex items-center gap-1.5 mb-3">
+            <p className="curve-eyebrow">Engagement Complexity</p>
+            {explains?.complexity && <ExplainButton content={explains.complexity} />}
+          </div>
           <span className={cn("inline-flex items-center px-3 py-1.5 rounded-full text-sm font-semibold border", COMPLEXITY_STYLES[engagementComplexity] ?? "bg-secondary")}>
             {engagementComplexity}
           </span>
