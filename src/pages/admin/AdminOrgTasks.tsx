@@ -25,6 +25,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [tasks, setTasks] = useState<OrgTask[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
+  const [projects, setProjects] = useState<OrgProject[]>([]);
   const [selected, setSelected] = useState<OrgTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
