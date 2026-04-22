@@ -10,13 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD, STATUS_LABEL, STATUS_STYLE, PRIORITY_STYLE, type TaskStatus } from "@/lib/tasks";
+import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import type { OrgProject } from "@/lib/projects";
-import { PROJECT_STATUS_LABEL } from "@/lib/projects";
 import AdminTasksByProject from "@/components/admin/AdminTasksByProject";
-import OwnerPill from "@/components/tasks/OwnerPill";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, RefreshCw, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
@@ -59,25 +57,18 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  // Legacy support: if URL still has ?engine=, scroll to that engine block within the project view.
   const engineParam = searchParams.get("engine");
-  const clearEngineFocus = () => {
-    const next = new URLSearchParams(searchParams);
-    next.delete("engine");
-    setSearchParams(next, { replace: true });
-  };
-
-  // Tasks for engine focus view (all tasks for that engine across projects + unassigned)
-  const engineTasks = useMemo(
-    () => (engineParam ? tasks.filter((t) => t.engine === engineParam) : []),
-    [tasks, engineParam]
-  );
-  const engineTasksByStatus = useMemo(() => {
-    const out: Record<TaskStatus, OrgTask[]> = { not_started: [], in_progress: [], completed: [], overdue: [] };
-    for (const t of engineTasks) out[t.status as TaskStatus]?.push(t);
-    return out;
-  }, [engineTasks]);
-  const projectsById = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p])), [projects]);
+  useEffect(() => {
+    if (loading || !engineParam) return;
+    const el = document.getElementById(`engine-${engineParam}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-2", "ring-accent");
+      setTimeout(() => el.classList.remove("ring-2", "ring-accent"), 2000);
+    }
+  }, [loading, engineParam, tasks]);
 
   const draftCount = useMemo(() => tasks.filter(t => t.plan_status === "draft").length, [tasks]);
 
@@ -210,17 +201,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
         </>
       )}
 
-      {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : engineParam && !isReviewMode && projects.length > 0 ? (
-        <EngineFocusView
-          engine={engineParam}
-          tasks={engineTasks}
-          tasksByStatus={engineTasksByStatus}
-          score={scores[engineParam] ?? null}
-          projectsById={projectsById}
-          onSelect={setSelected}
-          onClear={clearEngineFocus}
-        />
-      ) : (
+      {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
         tasks.length === 0 ? (
           <div className="curve-card text-center py-16">
             <p className="text-muted-foreground mb-4">{planActivatedAt ? "No tasks yet — add one to get started." : "No tasks yet. They'll be auto-generated when this org completes intake."}</p>
@@ -343,109 +324,6 @@ function AddTaskForm({ orgId, templates, planActive, onSaved }: { orgId: string;
         <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
       </div>
       <Button onClick={save} disabled={busy}>Add task</Button>
-    </div>
-  );
-}
-
-/* ─── Engine focus view: flat, status-grouped tasks for a single engine ─── */
-const STATUS_ORDER: TaskStatus[] = ["overdue", "in_progress", "not_started", "completed"];
-
-function EngineFocusView({
-  engine,
-  tasks,
-  tasksByStatus,
-  score,
-  projectsById,
-  onSelect,
-  onClear,
-}: {
-  engine: string;
-  tasks: OrgTask[];
-  tasksByStatus: Record<TaskStatus, OrgTask[]>;
-  score: number | null;
-  projectsById: Record<string, OrgProject>;
-  onSelect: (t: OrgTask) => void;
-  onClear: () => void;
-}) {
-  const total = tasks.length;
-  const completed = tasksByStatus.completed.length;
-  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
-
-  return (
-    <div className="space-y-4">
-      <div className="curve-card flex items-center justify-between gap-4 flex-wrap">
-        <div>
-          <p className="curve-eyebrow mb-1">Engine focus</p>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h2 className="font-display text-xl font-semibold">{engine}</h2>
-            {score !== null && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-background border border-border tabular-nums">
-                Score {score}/10
-              </span>
-            )}
-            <span className="text-xs text-muted-foreground tabular-nums">
-              {completed}/{total} complete · {pct}%
-            </span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            All {engine} tasks across every project, grouped by completion stage.
-          </p>
-        </div>
-        <Button variant="outline" size="sm" onClick={onClear}>
-          <X className="h-3.5 w-3.5 mr-1" /> Clear filter
-        </Button>
-      </div>
-
-      {total === 0 ? (
-        <div className="curve-card text-sm text-muted-foreground text-center py-10">
-          No {engine} tasks yet.
-        </div>
-      ) : (
-        STATUS_ORDER.map((status) => {
-          const list = tasksByStatus[status];
-          if (!list || list.length === 0) return null;
-          return (
-            <div key={status} className="curve-card p-0 overflow-hidden">
-              <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_STYLE[status]}`}>
-                    {STATUS_LABEL[status]}
-                  </span>
-                  <span className="text-xs text-muted-foreground tabular-nums">{list.length}</span>
-                </div>
-              </div>
-              <ul className="divide-y divide-border">
-                {list.map((t) => {
-                  const proj = t.project_id ? projectsById[t.project_id] : null;
-                  return (
-                    <li key={t.id}>
-                      <button
-                        onClick={() => onSelect(t)}
-                        className="w-full text-left px-5 py-3 hover:bg-secondary/40 transition-colors flex items-center gap-3"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${status === "completed" ? "line-through text-muted-foreground" : ""}`}>
-                            {t.title}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {t.task_type}
-                            {t.due_date ? ` · Due ${formatDate(t.due_date)}` : ""}
-                            {proj
-                              ? ` · ${proj.name} (${PROJECT_STATUS_LABEL[proj.status]})`
-                              : " · Unassigned"}
-                          </p>
-                        </div>
-                        <OwnerPill owner={t.owner_type} size="xs" />
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[t.priority]}`}>{t.priority}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          );
-        })
-      )}
     </div>
   );
 }
