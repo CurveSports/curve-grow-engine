@@ -142,6 +142,35 @@ export function Slide1Snapshot({ orgName, metrics, intake }: { orgName: string; 
         <Signal label="Multiple Brands" value={multiBrand ? `Yes (${intake?.number_of_brands ?? "?"})` : "No"} />
         <Signal label="Affiliates" value={hasAffiliates ? `Yes (${intake?.number_of_affiliates ?? "?"})` : "No"} />
       </div>
+
+      {/* Row 6 — tier progression */}
+      {metrics?.next_tier && (
+        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div>
+            <p className="text-[10px] uppercase text-white/50">Current Tier</p>
+            {tier && <Pill hex={TIER_COLOR[tier] ?? "#94a3b8"}>{tier}</Pill>}
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-white/50">Next Tier</p>
+            <div className="flex items-center gap-2 mt-0.5">
+              <Pill hex={TIER_COLOR[metrics.next_tier] ?? "#f59e0b"}>{metrics.next_tier}</Pill>
+              <span className="text-white/70 tabular-nums">{metrics.points_to_next_tier} pts away</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-white/50">Fastest Path</p>
+            <p className="text-sm font-semibold mt-0.5">
+              {((metrics.fastest_path_engines as any[] | null) ?? []).slice(0, 2).map((e: any) => e.engine).join(", ") || "—"}
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] uppercase text-white/50">Project Aligned</p>
+            <p className="text-sm font-semibold mt-0.5" style={{ color: metrics.project_aligned_with_fastest_path ? "#10b981" : "#f59e0b" }}>
+              {metrics.project_aligned_with_fastest_path ? "Yes ✓" : "No ✗"}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
