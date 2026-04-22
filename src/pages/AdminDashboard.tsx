@@ -244,14 +244,18 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          <div className="mt-12">
-            <h2 className="font-display text-lg font-semibold mb-4">Recent Activity</h2>
+          <details className="mt-12 group">
+            <summary className="flex items-center justify-between cursor-pointer list-none mb-4">
+              <h2 className="font-display text-lg font-semibold">Recent Activity</h2>
+              <span className="text-xs text-muted-foreground group-open:hidden">Show</span>
+              <span className="text-xs text-muted-foreground hidden group-open:inline">Hide</span>
+            </summary>
             <div className="curve-card divide-y divide-border p-0 overflow-hidden">
               {activity.length === 0 ? (
                 <p className="p-6 text-sm text-muted-foreground">No recent activity.</p>
               ) : activity.map((a) => <ActivityRow key={a.id} a={a} />)}
             </div>
-          </div>
+          </details>
         </TabsContent>
 
         <TabsContent value="tasks"><AdminTasks /></TabsContent>
