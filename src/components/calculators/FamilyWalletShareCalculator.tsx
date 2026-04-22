@@ -28,6 +28,8 @@ interface Props {
 
 function buildContext(intake: any, metrics: any): WalletContext {
   const totalPlayers = num(intake?.total_players);
+  const hsPlayers = num(intake?.hs_players);
+  const youthPlayers = num(intake?.youth_players);
   const currentSponsors = num(intake?.number_of_sponsors);
   const currentSponsorship = num(intake?.total_sponsorship_revenue);
   const events = num(intake?.camps_revenue) + num(intake?.clinics_revenue) + num(intake?.tournaments_revenue) +
@@ -54,7 +56,10 @@ function buildContext(intake: any, metrics: any): WalletContext {
     currentFacility: facility,
     hasFacility,
     fmvPerSponsorMid: fmvMid,
-  };
+    // pass through for hotel calc (typed loosely on WalletContext)
+    hsPlayers,
+    youthPlayers,
+  } as WalletContext;
 }
 
 function defaultsFrom(ctx: WalletContext): WalletInputs {
