@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { ENGINES, type Engine } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
-import { Calendar, AlertCircle, Clock, ChevronRight, Building2 } from "lucide-react";
+import { Calendar, AlertCircle, Clock, ChevronRight, Building2, ChevronDown, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type TaskRow = {
   id: string;
@@ -24,6 +25,16 @@ export default function AdminTasksThisWeek() {
   const [tasks, setTasks] = useState<TaskRow[]>([]);
   const [orgs, setOrgs] = useState<Record<string, OrgInfo>>({});
   const [loading, setLoading] = useState(true);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  const [search, setSearch] = useState("");
+
+  const toggle = (id: string) => setCollapsed((s) => ({ ...s, [id]: !s[id] }));
+  const collapseAll = () => {
+    const next: Record<string, boolean> = {};
+    Object.keys(orgs).forEach((id) => (next[id] = true));
+    setCollapsed(next);
+  };
+  const expandAll = () => setCollapsed({});
 
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const weekAhead = useMemo(
