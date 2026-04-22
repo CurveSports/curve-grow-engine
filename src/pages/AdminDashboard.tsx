@@ -168,6 +168,33 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* Engagement Health Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <StatCard
+          icon={<AlertTriangle className={cn("h-4 w-4", stats.complexCount > 0 ? "text-destructive" : "text-accent")} />}
+          label="Complex Engagements"
+          value={loading ? "—" : stats.complexCount}
+          valueClass={stats.complexCount > 0 ? "text-destructive" : "text-accent"}
+          subtitle="Require foundational work before revenue activation"
+        />
+        <Link to="/admin?filter=high-alert" className="block">
+          <StatCard
+            icon={<ShieldAlert className={cn("h-4 w-4", stats.highAlertCount > 0 ? "text-destructive" : "text-accent")} />}
+            label="High Risk Alerts"
+            value={loading ? "—" : stats.highAlertCount}
+            valueClass={stats.highAlertCount > 0 ? "text-destructive" : "text-accent"}
+            subtitle="Click to view orgs needing immediate attention"
+          />
+        </Link>
+        <StatCard
+          icon={<FileWarning className={cn("h-4 w-4", stats.reviewCount > 0 ? "text-warning" : "text-accent")} />}
+          label="Revenue Review Needed"
+          value={loading ? "—" : stats.reviewCount}
+          valueClass={stats.reviewCount > 0 ? "text-warning" : "text-accent"}
+          subtitle="Intake data flagged for verification"
+        />
+      </div>
+
       <Tabs defaultValue="orgs">
         <TabsList className="mb-6">
           <TabsTrigger value="orgs">Organizations</TabsTrigger>
