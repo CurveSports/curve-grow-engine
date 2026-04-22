@@ -246,6 +246,12 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
 
   const fallbackHealth = engineScores.slice(0, 4).reduce((s, e) => s + e.score, 0);
   const overallHealth = (metrics as any).overall_health_score ?? fallbackHealth;
+  const platformScore = (metrics as any).platform_score ?? null;
+  const platformDone = (metrics as any).platform_tasks_complete ?? 0;
+  const platformTotal = (metrics as any).platform_tasks_total ?? 0;
+  const marketingScore = (metrics as any).marketing_score ?? null;
+  const marketingDone = (metrics as any).marketing_tasks_complete ?? 0;
+  const marketingTotal = (metrics as any).marketing_tasks_total ?? 0;
   const opsHealth = (metrics as any).operations_health_score ?? null;
   const marketHealth = (metrics as any).market_position_health_score ?? null;
   const programHealth = (metrics as any).program_health_score ?? null;
@@ -279,6 +285,29 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
           <DimensionCard label="Strategic Clarity" score={strategicHealth} explain={strategicClarityExplain(intake ?? {}, metrics)} />
         </div>
       )}
+
+      {/* Platform & Marketing universal engines */}
+      <div>
+        <p className="curve-eyebrow mb-3">Platform & Marketing</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UniversalEngineCard
+            label="Curve Sports Platform"
+            subtitle="Platform setup and partner activation"
+            score={platformScore}
+            done={platformDone}
+            total={platformTotal}
+            onJump={onJumpToPlan}
+          />
+          <UniversalEngineCard
+            label="Marketing Foundation"
+            subtitle="Brand, website, and content systems"
+            score={marketingScore}
+            done={marketingDone}
+            total={marketingTotal}
+            onJump={onJumpToPlan}
+          />
+        </div>
+      </div>
 
       {/* Tier ladder */}
       {(metrics as any)?.monetization_tier && (
@@ -384,6 +413,53 @@ function MetricCard({ label, value, suffix, children, accent }: { label: string;
         {value}{suffix && <span className="text-muted-foreground text-base font-normal">{suffix}</span>}
       </p>
       {children}
+    </div>
+  );
+}
+
+function UniversalEngineCard({
+  label, subtitle, score, done, total, onJump,
+}: {
+  label: string; subtitle: string; score: number | null; done: number; total: number; onJump: () => void;
+}) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const tone =
+    score === null || total === 0 ? "muted" :
+    score >= 7 ? "accent" :
+    score >= 4 ? "warning" : "destructive";
+  const toneText =
+    tone === "accent" ? "text-accent" :
+    tone === "warning" ? "text-warning" :
+    tone === "destructive" ? "text-destructive" : "text-muted-foreground";
+  const toneBar =
+    tone === "accent" ? "bg-accent" :
+    tone === "warning" ? "bg-warning" :
+    tone === "destructive" ? "bg-destructive" : "bg-muted-foreground/40";
+  return (
+    <div className="curve-card flex flex-col">
+      <div className="flex items-baseline justify-between gap-3 mb-1">
+        <p className="font-display text-base font-semibold">{label}</p>
+        <span className={cn("text-sm font-semibold tabular-nums", toneText)}>
+          {score ?? "—"}<span className="text-muted-foreground font-normal">/10</span>
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="text-sm tabular-nums">
+          <span className="font-semibold">{done}</span>
+          <span className="text-muted-foreground"> / {total} tasks complete</span>
+        </span>
+        <span className="text-xs text-muted-foreground tabular-nums">{pct}%</span>
+      </div>
+      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+        <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+      </div>
+      <button
+        onClick={onJump}
+        className="text-xs text-accent hover:underline mt-3 self-start"
+      >
+        View tasks →
+      </button>
     </div>
   );
 }
