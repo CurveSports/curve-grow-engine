@@ -1,4 +1,5 @@
 // Lovable AI-powered communication drafting endpoint
+// Round 6B: structured inputs + DSF/Direct outreach tracks
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -13,16 +14,18 @@ const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY")!;
 type DraftBody = {
   orgId: string;
   communicationType: string;
-  prompt: string;
+  prompt: string;             // pre-built user prompt from structured inputs
   tone: string;
   format: string;
+  // "dsf" | "direct" | undefined (only meaningful for sponsor outreach)
+  outreachTrack?: "dsf" | "direct";
+  isAffiliateDeck?: boolean;  // multi-section document mode
   personalization?: {
     recipient?: string;
-    playerName?: string;
     eventOrDate?: string;
     additionalContext?: string;
   };
-  log?: boolean; // log this generation
+  log?: boolean;
 };
 
 type RefineBody = {
@@ -34,62 +37,47 @@ type RefineBody = {
   format: string;
 };
 
-function buildSystemPrompt(intake: any, metrics: any, body: DraftBody, orgName: string): string {
-  const p = body.personalization ?? {};
-  const personalLines = [
-    p.recipient ? `Recipient: ${p.recipient}` : null,
-    p.playerName ? `Specific player: ${p.playerName}` : null,
-    p.eventOrDate ? `Specific event/date: ${p.eventOrDate}` : null,
-    p.additionalContext ? `Additional context: ${p.additionalContext}` : null,
-  ].filter(Boolean).join("\n");
+function formatGuidance(format: string): string {
+  switch (format) {
+    case "Email":
+      return 'Include a subject line at the top labeled "Subject:".';
+    case "Text message":
+      return "Keep under 160 words. No subject line. Conversational but professional.";
+    case "Social post":
+      return "Keep under 280 characters for short platforms or under 150 words for longer ones. Engaging and on-brand.";
+    case "In-person script":
+      return "Format as bullet-point talking points with natural transition phrases. Not prose.";
+    default:
+      return "";
+  }
+}
 
-  const totalPlayers = intake?.total_players ?? 0;
-  const hsPlayers = intake?.hs_players ?? 0;
-  const youthPlayers = intake?.youth_players ?? 0;
+function buildOrgSystemPrompt(intake: any, metrics: any, body: DraftBody, orgName: string): string {
   const cityState = intake?.city_state ?? "—";
   const marketType = intake?.market_type ?? "—";
   const orgType = intake?.org_type ?? "—";
+  const totalPlayers = intake?.total_players ?? 0;
+  const hsPlayers = intake?.hs_players ?? 0;
+  const youthPlayers = intake?.youth_players ?? 0;
   const tier = metrics?.monetization_tier ?? "—";
-  const priorityEngine = metrics?.priority_engine ?? "—";
-  const retention = intake?.retention_pct ?? "—";
   const marketStrategy = intake?.market_strategy ?? "—";
   const hasAffiliates = intake?.has_affiliates === true;
   const numberOfAffiliates = intake?.number_of_affiliates ?? 0;
   const operatesMultipleBrands = intake?.operates_multiple_brands === true;
   const brandDescriptions = intake?.brand_descriptions ?? "";
 
-  const isDeck = body.communicationType.toLowerCase().includes("affiliate sales deck");
+  const isDeck = body.isAffiliateDeck === true;
 
-  const formatGuidance = (() => {
-    switch (body.format) {
-      case "Email":
-        return 'Include a subject line at the top labeled "Subject:".';
-      case "Text message":
-        return "Keep under 160 words. No subject line. Conversational but professional.";
-      case "Social post":
-        return "Keep under 280 characters for short platforms or under 150 words for longer ones. Engaging and on-brand.";
-      case "In-person script":
-        return "Format as talking points, not prose. Use bullet points. Include natural transition phrases.";
-      default:
-        return "";
-    }
-  })();
-
-  return `You are a professional communications assistant for ${orgName}, a travel baseball organization.
+  return `You are a professional communications assistant for ${orgName}, a travel baseball organization based in ${cityState}.
 
 Organization context:
-- Location: ${cityState}
 - Market type: ${marketType}
 - Organization type: ${orgType}
 - Total players: ${totalPlayers} (${hsPlayers} HS, ${youthPlayers} Youth)
 - Monetization tier: ${tier}
-- Priority revenue engine: ${priorityEngine}
-- Retention rate: ${retention}%
 - Growth stage: ${marketStrategy}
-${hasAffiliates ? `- Affiliate organizations: ${numberOfAffiliates}` : ""}
-${operatesMultipleBrands ? `- Operates multiple brands: ${brandDescriptions}` : ""}
-
-${personalLines ? `Additional context provided:\n${personalLines}\n` : ""}
+${hasAffiliates ? `- Affiliate network: ${numberOfAffiliates} affiliates` : ""}
+${operatesMultipleBrands ? `- Multiple brands: ${brandDescriptions}` : ""}
 
 Voice and tone requirements:
 - Clear over clever
@@ -97,22 +85,22 @@ Voice and tone requirements:
 - Confident over apologetic
 - Professional but approachable
 - Direct, not robotic
-- Use short sections and spacing
-- Use bullet points when appropriate
+- Short sections and spacing
+- Bullet points when appropriate
 - Avoid long paragraphs
 - Never emotional or reactive
 - Never defensive
-- Be specific, not generic
+- Specific not generic
 - Set clear expectations
 
 Tone modifier: ${body.tone}
 Format: ${body.format}
-${formatGuidance}
+${formatGuidance(body.format)}
 
 ${
   isDeck
-    ? `This is a multi-section sales document, not a single message.
-Generate the following sections with clear markdown headers (##):
+    ? `This is a multi-section sales document, NOT a single message.
+Use clear markdown headers (##) for each of these six sections in order:
 1. About ${orgName}
 2. The Affiliate Opportunity
 3. What's Included
@@ -121,10 +109,50 @@ Generate the following sections with clear markdown headers (##):
 6. Next Steps
 
 Make it compelling, specific to ${orgName}'s profile, and professional enough to send to a serious prospect.`
-    : `Generate a single ${body.communicationType.toLowerCase()} that achieves the org's goal. Keep it concise and actionable.`
+    : ""
 }
 
-Return only the draft itself — no preamble, no explanation, no meta-commentary.`;
+Only return the finished communication. No preamble, no explanation, no meta-commentary.`;
+}
+
+function buildDsfSystemPrompt(intake: any, body: DraftBody, orgName: string): string {
+  const cityState = intake?.city_state ?? "—";
+  const totalPlayers = intake?.total_players ?? 0;
+
+  return `You are drafting a communication on behalf of the Diamond Sports Foundation (DSF), the 501(c)3 nonprofit arm of Curve Sports.
+
+DSF Mission:
+Transforming lives, leveling the playing field, reshaping the future. DSF provides diamond sport scholarships for talented student-athletes and addresses the issue of access and diversity in youth sports by funding the training, coaching, and development of talented student-athletes who cannot afford the pay-to-play model.
+
+This communication is being sent by an Assistant Director at the Diamond Sports Foundation on behalf of ${orgName}, one of the organizations DSF supports.
+
+Organization being represented: ${orgName}
+Location: ${cityState}
+Players in program: ${totalPlayers}
+
+Key points to incorporate naturally where relevant:
+- DSF is a registered 501(c)3 nonprofit
+- Sponsorships through DSF are tax-deductible charitable contributions
+- The sponsor is not just supporting a baseball club — they are funding access and opportunity for student-athletes who could not otherwise afford to play
+- DSF connects local businesses to meaningful community impact through youth sports
+
+Voice and tone:
+- Professional and mission-driven
+- Warm but not salesy
+- Lead with community impact, follow with business value
+- Specific to the business being contacted
+- Clear call to action
+
+Tone modifier: ${body.tone}
+Format: ${body.format}
+${formatGuidance(body.format)}
+
+End the communication with:
+[SIGNATURE]
+
+(The sender will replace this with their own signature block before sending.)
+
+Only return the finished communication. No preamble, no explanation, no meta-commentary.`;
 }
 
 async function callLovableAI(systemPrompt: string, userPrompt: string): Promise<{ ok: boolean; status: number; text: string }> {
@@ -179,6 +207,7 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+    // ── Refine ──
     if (isRefine) {
       const body = (await req.json()) as RefineBody;
       if (!body.orgId || !body.originalDraft || !body.refinementRequest) {
@@ -187,7 +216,7 @@ Deno.serve(async (req) => {
         });
       }
       const refinementSystem = `You are a professional communications assistant. Rewrite the draft incorporating the user's requested change while maintaining the same voice, tone (${body.tone}), format (${body.format}), and organizational context. Only return the revised draft — no explanation or preamble.`;
-      const refinementUser = `Here is the original draft:\n\n${body.originalDraft}\n\nThe user wants the following change:\n${body.refinementRequest}\n\nRewrite the draft.`;
+      const refinementUser = `Here is the original draft:\n\n${body.originalDraft}\n\nThe user wants this change:\n${body.refinementRequest}\n\nRewrite incorporating this change. Return only the revised draft.`;
       const result = await callLovableAI(refinementSystem, refinementUser);
 
       if (!result.ok) {
@@ -211,7 +240,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // ── Draft generation ──
+    // ── Draft ──
     const body = (await req.json()) as DraftBody;
     if (!body.orgId || !body.communicationType) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
@@ -219,7 +248,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Load org context with service role (we already verified user above; access checks happen via UI/RLS)
     const [{ data: org }, { data: intake }, { data: metrics }, { data: profile }, { data: rolesData }] = await Promise.all([
       admin.from("organizations").select("name").eq("id", body.orgId).maybeSingle(),
       admin.from("organization_intake").select("*").eq("org_id", body.orgId).maybeSingle(),
@@ -237,7 +265,13 @@ Deno.serve(async (req) => {
     }
 
     const orgName = org?.name ?? "your organization";
-    const systemPrompt = buildSystemPrompt(intake, metrics, body, orgName);
+
+    // Pick voice based on outreach track
+    const useDsf = body.outreachTrack === "dsf";
+    const systemPrompt = useDsf
+      ? buildDsfSystemPrompt(intake, body, orgName)
+      : buildOrgSystemPrompt(intake, metrics, body, orgName);
+
     const userPrompt = body.prompt?.trim() || `Please draft a ${body.communicationType}.`;
 
     const result = await callLovableAI(systemPrompt, userPrompt);
@@ -259,7 +293,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Log metadata
     if (body.log !== false) {
       await admin.from("org_communication_log").insert({
         org_id: body.orgId,
@@ -269,6 +302,7 @@ Deno.serve(async (req) => {
         tone: body.tone,
         format: body.format,
         prompt_text: userPrompt.slice(0, 2000),
+        outreach_track: body.outreachTrack ?? null,
       });
     }
 

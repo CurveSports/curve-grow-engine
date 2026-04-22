@@ -14,6 +14,7 @@ type LogRow = {
   prompt_text: string | null;
   generated_by: string;
   generated_on_behalf_of_org: boolean;
+  outreach_track: string | null;
   drafter_email?: string | null;
 };
 
@@ -82,6 +83,7 @@ export default function CommunicationsLogTab({ orgId }: { orgId: string }) {
               <tr>
                 <th className="text-left px-4 py-2 font-medium">Date</th>
                 <th className="text-left px-4 py-2 font-medium">Type</th>
+                <th className="text-left px-4 py-2 font-medium">Track</th>
                 <th className="text-left px-4 py-2 font-medium">Tone</th>
                 <th className="text-left px-4 py-2 font-medium">Format</th>
                 <th className="text-left px-4 py-2 font-medium">Drafted By</th>
@@ -98,6 +100,15 @@ export default function CommunicationsLogTab({ orgId }: { orgId: string }) {
                         {new Date(r.generated_at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
                       </td>
                       <td className="px-4 py-3">{r.communication_type}</td>
+                      <td className="px-4 py-3">
+                        {r.outreach_track === "dsf" ? (
+                          <span className="rounded-full bg-warning-soft text-warning px-2 py-0.5 text-[10px] font-semibold">DSF</span>
+                        ) : r.outreach_track === "direct" ? (
+                          <span className="rounded-full bg-info-soft text-info px-2 py-0.5 text-[10px] font-semibold">Direct</span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </td>
                       <td className="px-4 py-3">
                         {r.tone && <span className="rounded-full bg-secondary px-2 py-0.5 text-xs">{r.tone}</span>}
                       </td>
@@ -138,7 +149,7 @@ export default function CommunicationsLogTab({ orgId }: { orgId: string }) {
                     </tr>
                     {isOpen && r.prompt_text && (
                       <tr key={r.id + "-exp"} className="bg-secondary/30">
-                        <td colSpan={6} className="px-4 py-3">
+                        <td colSpan={7} className="px-4 py-3">
                           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Full prompt</p>
                           <p className="text-sm whitespace-pre-wrap">{r.prompt_text}</p>
                         </td>
