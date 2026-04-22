@@ -30,12 +30,25 @@ export default function OrgDetail() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const tab = (params.get("tab") as Tab) || "overview";
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
 
   const setTab = (t: Tab) => {
     const next = new URLSearchParams(params);
     next.set("tab", t);
     setParams(next, { replace: true });
   };
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("derived_metrics")
+        .select("admin_alerts")
+        .eq("org_id", orgId!)
+        .maybeSingle();
+      const raw = (data?.admin_alerts as any) ?? [];
+      setAlerts(Array.isArray(raw) ? raw : []);
+    })();
+  }, [orgId]);
 
   return (
     <AppShell title="Organization">
@@ -44,6 +57,8 @@ export default function OrgDetail() {
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations
         </Link>
       </div>
+
+      <AdminAlertsBanner alerts={alerts} />
 
       <OrgHeader orgId={orgId!} onActivate={() => setTab("plan")} onAddNote={() => setTab("notes")} onAddTask={() => setTab("plan")} />
 
