@@ -373,3 +373,148 @@ function StreamRow({
     </div>
   );
 }
+
+interface HotelSpendRowProps {
+  hsPlayers: number;
+  youthPlayers: number;
+  hsTournaments: number;
+  hsNights: number;
+  youthTournaments: number;
+  youthNights: number;
+  roomNightCost: number;
+  hsHotelSpend: number;
+  youthHotelSpend: number;
+  totalHotelSpend: number;
+  engineCashBack: number;
+  onChange: (patch: Partial<WalletInputs>) => void;
+}
+function HotelSpendRow({
+  hsPlayers, youthPlayers,
+  hsTournaments, hsNights, youthTournaments, youthNights, roomNightCost,
+  hsHotelSpend, youthHotelSpend, totalHotelSpend, engineCashBack,
+  onChange,
+}: HotelSpendRowProps) {
+  const pct = (ENGINE_CASHBACK_RATE * 100).toFixed(0);
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Hotel Spend (Travel)</p>
+          <p className="text-xs text-muted-foreground">
+            Total org spend on hotels for tournament travel
+          </p>
+        </div>
+        <p className="text-sm font-semibold text-accent tabular-nums">
+          → {fmt(totalHotelSpend)} hotel spend
+        </p>
+      </div>
+
+      {/* Shared room-night cost */}
+      <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-border/60">
+        <label className="text-xs text-muted-foreground">Avg room-night cost</label>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground">$</span>
+          <Input
+            type="number"
+            value={roomNightCost}
+            min={50}
+            max={600}
+            step={10}
+            onChange={(e) => onChange({ avgRoomNightCost: num(e.target.value, roomNightCost) })}
+            className="h-7 w-24 text-xs tabular-nums"
+          />
+        </div>
+      </div>
+
+      {/* HS row */}
+      <div className="mb-3">
+        <div className="flex items-baseline justify-between mb-1.5">
+          <p className="text-xs font-semibold text-foreground">High School ({hsPlayers} players)</p>
+          <p className="text-xs font-semibold text-accent tabular-nums">{fmt(hsHotelSpend)}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            label="Tournaments / yr"
+            value={hsTournaments}
+            min={0} max={30} step={1}
+            onChange={(v) => onChange({ hsTournamentsAttending: v })}
+          />
+          <NumberField
+            label="Nights / tournament"
+            value={hsNights}
+            min={0} max={7} step={1}
+            onChange={(v) => onChange({ hsNightsPerTournament: v })}
+          />
+        </div>
+      </div>
+
+      {/* Youth row */}
+      <div>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <p className="text-xs font-semibold text-foreground">Youth ({youthPlayers} players)</p>
+          <p className="text-xs font-semibold text-accent tabular-nums">{fmt(youthHotelSpend)}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            label="Tournaments / yr"
+            value={youthTournaments}
+            min={0} max={30} step={1}
+            onChange={(v) => onChange({ youthTournamentsAttending: v })}
+          />
+          <NumberField
+            label="Nights / tournament"
+            value={youthNights}
+            min={0} max={7} step={1}
+            onChange={(v) => onChange({ youthNightsPerTournament: v })}
+          />
+        </div>
+      </div>
+
+      {/* Engine cash back highlight */}
+      <div className="mt-3 rounded-md border-l-4 border-accent bg-accent-soft p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-accent mb-1">
+          Curve Allegiance Member Benefit
+        </p>
+        <p className="text-xs text-foreground leading-snug">
+          Members earn <strong>{pct}% cash back</strong> on all hotel bookings through{" "}
+          <strong>Engine</strong>, our hotel concierge partner.
+        </p>
+        <div className="flex items-baseline justify-between mt-2">
+          <span className="text-xs text-muted-foreground">
+            {fmt(totalHotelSpend)} × {pct}%
+          </span>
+          <span className="font-display text-base font-semibold text-accent tabular-nums">
+            +{fmt(engineCashBack)} <span className="text-xs font-normal text-muted-foreground">/yr cash back</span>
+          </span>
+        </div>
+      </div>
+
+      <p className="mt-2 text-[11px] leading-snug text-muted-foreground/90 italic">
+        ⓘ Hotel spend = tournaments × nights × room-night cost × players, calculated separately for HS and Youth. Hotel spend itself is family money — only the {pct}% Engine cash back flows back to your organization.
+      </p>
+    </div>
+  );
+}
+
+interface NumberFieldProps {
+  label: string;
+  value: number;
+  min: number; max: number; step: number;
+  onChange: (v: number) => void;
+}
+function NumberField({ label, value, min, max, step, onChange }: NumberFieldProps) {
+  return (
+    <div>
+      <label className="block text-[11px] text-muted-foreground mb-1">{label}</label>
+      <Input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(e) => onChange(num(e.target.value, value))}
+        className="h-8 text-sm tabular-nums"
+      />
+    </div>
+  );
+}
