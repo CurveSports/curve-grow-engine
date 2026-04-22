@@ -9,7 +9,7 @@ import AdminUsers from "@/pages/admin/AdminUsers";
 import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
-  CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus,
+  CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -116,7 +116,10 @@ export default function AdminDashboard() {
     const tierCounts: Record<string, number> = {};
     orgs.forEach(o => { if (o.tier) tierCounts[o.tier] = (tierCounts[o.tier] ?? 0) + 1; });
     const topTier = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
-    return { total: orgs.length, active, opp_low, opp_high, due, overdue, completed, topTier };
+    const complexCount = orgs.filter(o => o.engagement_complexity === "Complex").length;
+    const highAlertCount = orgs.filter(o => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high")).length;
+    const reviewCount = orgs.filter(o => o.revenue_needs_review === true).length;
+    return { total: orgs.length, active, opp_low, opp_high, due, overdue, completed, topTier, complexCount, highAlertCount, reviewCount };
   }, [orgs]);
 
   return (
@@ -162,6 +165,33 @@ export default function AdminDashboard() {
           label="Avg Monetization Tier"
           value={loading ? "—" : stats.topTier}
           subtitle="Most common across portfolio"
+        />
+      </div>
+
+      {/* Engagement Health Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <StatCard
+          icon={<AlertTriangle className={cn("h-4 w-4", stats.complexCount > 0 ? "text-destructive" : "text-accent")} />}
+          label="Complex Engagements"
+          value={loading ? "—" : stats.complexCount}
+          valueClass={stats.complexCount > 0 ? "text-destructive" : "text-accent"}
+          subtitle="Require foundational work before revenue activation"
+        />
+        <Link to="/admin?filter=high-alert" className="block">
+          <StatCard
+            icon={<ShieldAlert className={cn("h-4 w-4", stats.highAlertCount > 0 ? "text-destructive" : "text-accent")} />}
+            label="High Risk Alerts"
+            value={loading ? "—" : stats.highAlertCount}
+            valueClass={stats.highAlertCount > 0 ? "text-destructive" : "text-accent"}
+            subtitle="Click to view orgs needing immediate attention"
+          />
+        </Link>
+        <StatCard
+          icon={<FileWarning className={cn("h-4 w-4", stats.reviewCount > 0 ? "text-warning" : "text-accent")} />}
+          label="Revenue Review Needed"
+          value={loading ? "—" : stats.reviewCount}
+          valueClass={stats.reviewCount > 0 ? "text-warning" : "text-accent"}
+          subtitle="Intake data flagged for verification"
         />
       </div>
 
@@ -255,8 +285,24 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
     ? Math.floor((Date.now() - new Date(org.last_activity_at).getTime()) / 86400000)
     : null;
 
+  const highAlerts = (org.admin_alerts ?? []).filter((a: any) => a?.severity === "high");
+  const complexity = org.engagement_complexity;
+  const complexityClass =
+    complexity === "Straightforward" ? "bg-accent-soft text-accent border-accent/30" :
+    complexity === "Moderate" ? "bg-warning-soft text-warning border-warning/30" :
+    complexity === "Complex" ? "bg-destructive/10 text-destructive border-destructive/30" :
+    "bg-secondary text-muted-foreground border-border";
+
   return (
-    <Link to={`/admin/org/${org.id}`} className="block curve-card-interactive group">
+    <Link to={`/admin/org/${org.id}`} className="block curve-card-interactive group relative">
+      {highAlerts.length > 0 && (
+        <span
+          title={`This org has ${highAlerts.length} high-priority alert${highAlerts.length === 1 ? "" : "s"}`}
+          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center shadow-md ring-2 ring-background z-10"
+        >
+          !
+        </span>
+      )}
       <div className="flex items-start justify-between gap-2 mb-4">
         <h3 className="font-display font-semibold text-[18px] leading-tight group-hover:text-accent transition-colors">{org.name}</h3>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -313,13 +359,21 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
             </>
           )}
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#8B5CF6" }} />
               Health: <span className="font-semibold" style={{ color: "#8B5CF6" }}>{org.overall_health_score ?? "—"}/40</span>
             </span>
             <span>{daysAgo !== null ? `Active ${daysAgo}d ago` : "No activity"}</span>
           </div>
+          {complexity && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Complexity:</span>
+              <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", complexityClass)}>
+                {complexity}
+              </span>
+            </div>
+          )}
           {org.revenue_needs_review && (
             <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-warning bg-warning-soft px-2 py-1 rounded">
               <Sparkles className="h-3 w-3" /> Revenue review flagged
