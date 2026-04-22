@@ -129,10 +129,17 @@ export default function AdminTasksByProject({ projects, tasks, scores, orgId, on
             return engineOrder.map((engine) => {
               const list = grouped[engine];
               const score = scores?.[engine];
+              const key = `engine:${engine}`;
+              const isCollapsed = collapsed[key];
               return (
                 <div key={engine} className="curve-card p-0 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30">
+                  <button
+                    type="button"
+                    onClick={() => toggle(key)}
+                    className="w-full px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30 hover:bg-secondary/50 transition text-left"
+                  >
                     <div className="flex items-center gap-3">
+                      {isCollapsed ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                       <h3 className="font-display font-semibold">{engine}</h3>
                       {score !== null && score !== undefined && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-background border border-border tabular-nums">
@@ -141,7 +148,8 @@ export default function AdminTasksByProject({ projects, tasks, scores, orgId, on
                       )}
                     </div>
                     <span className="text-xs text-muted-foreground tabular-nums">{list.length} unassigned</span>
-                  </div>
+                  </button>
+                  {!isCollapsed && (
                   <div className="divide-y divide-border">
                     {list.map((t) => (
                       <div key={t.id} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/30">
@@ -180,6 +188,7 @@ export default function AdminTasksByProject({ projects, tasks, scores, orgId, on
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               );
             });
