@@ -7,7 +7,7 @@ import { ImpactStat } from "./ImpactStat";
 import { ShareModal } from "./ShareModal";
 import {
   calcWallet, num,
-  APPAREL_PACKAGE_DEFAULT, ADDON_PACKAGE_DEFAULT, TRAVEL_SPEND_DEFAULT,
+  APPAREL_PACKAGE_DEFAULT, ADDON_PACKAGE_DEFAULT, AVG_ROOM_NIGHT_DEFAULT, ENGINE_CASHBACK_RATE,
   type WalletContext, type WalletInputs,
 } from "@/lib/calculators";
 import { saveScenario, type ScenarioLabel } from "./scenarioStore";
@@ -28,6 +28,8 @@ interface Props {
 
 function buildContext(intake: any, metrics: any): WalletContext {
   const totalPlayers = num(intake?.total_players);
+  const hsPlayers = num(intake?.hs_players);
+  const youthPlayers = num(intake?.youth_players);
   const currentSponsors = num(intake?.number_of_sponsors);
   const currentSponsorship = num(intake?.total_sponsorship_revenue);
   const events = num(intake?.camps_revenue) + num(intake?.clinics_revenue) + num(intake?.tournaments_revenue) +
@@ -54,13 +56,16 @@ function buildContext(intake: any, metrics: any): WalletContext {
     currentFacility: facility,
     hasFacility,
     fmvPerSponsorMid: fmvMid,
-  };
+    // pass through for hotel calc (typed loosely on WalletContext)
+    hsPlayers,
+    youthPlayers,
+  } as WalletContext;
 }
 
 function defaultsFrom(ctx: WalletContext): WalletInputs {
   const FACILITY = 2400;
   return {
-    duesIncreasePct: 0, // start at no increase; user dials in
+    duesIncreasePct: 0,
     numSponsors: ctx.currentSponsors,
     eventRevPerPlayer: ctx.totalPlayers > 0 ? ctx.currentEvents / ctx.totalPlayers : 0,
     apparelCapturePct: ctx.totalPlayers > 0
@@ -71,8 +76,11 @@ function defaultsFrom(ctx: WalletContext): WalletInputs {
       ? Math.min(50, (ctx.currentAddOns / (ADDON_PACKAGE_DEFAULT * ctx.totalPlayers)) * 100)
       : 0,
     addonPackageAmount: ADDON_PACKAGE_DEFAULT,
-    travelCapturePct: 0,
-    travelSpendPerFamily: TRAVEL_SPEND_DEFAULT,
+    hsTournamentsAttending: 8,
+    hsNightsPerTournament: 2,
+    youthTournamentsAttending: 6,
+    youthNightsPerTournament: 2,
+    avgRoomNightCost: AVG_ROOM_NIGHT_DEFAULT,
     facilityCapturePct: ctx.totalPlayers > 0 && ctx.hasFacility
       ? Math.min(100, (ctx.currentFacility / (FACILITY * ctx.totalPlayers)) * 100)
       : 0,
@@ -206,23 +214,21 @@ export function FamilyWalletShareCalculator({
               onPackageChange={(v) => setInputs({ ...inputs, addonPackageAmount: v })}
               assumption="Default $100/mo ($1,200/yr) per adopting family — covers lessons, skills training, or recovery packages. Adjust to match your actual offering."
             />
-            <StreamRow
-              label="Travel / Outside Spend Capture"
-              current="$0"
-              currentSub={`Families spend ~${fmt(inputs.travelSpendPerFamily)}/yr on outside travel & dining`}
-              value={inputs.travelCapturePct}
-              min={0} max={40} step={1} suffix="%"
-              sliderLabel="Redirected to your org"
-              onChange={(v) => setInputs({ ...inputs, travelCapturePct: v })}
-              projected={fmt(out.newTravel)}
-              packageLabel="Outside spend $/family"
-              packageValue={inputs.travelSpendPerFamily}
-              onPackageChange={(v) => setInputs({ ...inputs, travelSpendPerFamily: v })}
-              packageMin={5000}
-              packageMax={7000}
-              packageStep={250}
-              assumption="Assumes $5K–$7K of family spend currently flows to outside hotels, restaurants, and travel. Capture via block hotel rates, on-site concessions, or team travel packages where you keep margin."
+            <HotelSpendRow
+              hsPlayers={num((ctx as any).hsPlayers)}
+              youthPlayers={num((ctx as any).youthPlayers)}
+              hsTournaments={inputs.hsTournamentsAttending}
+              hsNights={inputs.hsNightsPerTournament}
+              youthTournaments={inputs.youthTournamentsAttending}
+              youthNights={inputs.youthNightsPerTournament}
+              roomNightCost={inputs.avgRoomNightCost}
+              hsHotelSpend={out.hsHotelSpend}
+              youthHotelSpend={out.youthHotelSpend}
+              totalHotelSpend={out.totalHotelSpend}
+              engineCashBack={out.engineCashBack}
+              onChange={(patch) => setInputs({ ...inputs, ...patch })}
             />
+
             {ctx.hasFacility && (
               <StreamRow
                 label="Facility"
@@ -364,6 +370,151 @@ function StreamRow({
           ⓘ {assumption}
         </p>
       )}
+    </div>
+  );
+}
+
+interface HotelSpendRowProps {
+  hsPlayers: number;
+  youthPlayers: number;
+  hsTournaments: number;
+  hsNights: number;
+  youthTournaments: number;
+  youthNights: number;
+  roomNightCost: number;
+  hsHotelSpend: number;
+  youthHotelSpend: number;
+  totalHotelSpend: number;
+  engineCashBack: number;
+  onChange: (patch: Partial<WalletInputs>) => void;
+}
+function HotelSpendRow({
+  hsPlayers, youthPlayers,
+  hsTournaments, hsNights, youthTournaments, youthNights, roomNightCost,
+  hsHotelSpend, youthHotelSpend, totalHotelSpend, engineCashBack,
+  onChange,
+}: HotelSpendRowProps) {
+  const pct = (ENGINE_CASHBACK_RATE * 100).toFixed(0);
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Hotel Spend (Travel)</p>
+          <p className="text-xs text-muted-foreground">
+            Total org spend on hotels for tournament travel
+          </p>
+        </div>
+        <p className="text-sm font-semibold text-accent tabular-nums">
+          → {fmt(totalHotelSpend)} hotel spend
+        </p>
+      </div>
+
+      {/* Shared room-night cost */}
+      <div className="flex items-center justify-between gap-3 mb-3 pb-3 border-b border-border/60">
+        <label className="text-xs text-muted-foreground">Avg room-night cost</label>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-muted-foreground">$</span>
+          <Input
+            type="number"
+            value={roomNightCost}
+            min={50}
+            max={600}
+            step={10}
+            onChange={(e) => onChange({ avgRoomNightCost: num(e.target.value, roomNightCost) })}
+            className="h-7 w-24 text-xs tabular-nums"
+          />
+        </div>
+      </div>
+
+      {/* HS row */}
+      <div className="mb-3">
+        <div className="flex items-baseline justify-between mb-1.5">
+          <p className="text-xs font-semibold text-foreground">High School ({hsPlayers} players)</p>
+          <p className="text-xs font-semibold text-accent tabular-nums">{fmt(hsHotelSpend)}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            label="Tournaments / yr"
+            value={hsTournaments}
+            min={0} max={30} step={1}
+            onChange={(v) => onChange({ hsTournamentsAttending: v })}
+          />
+          <NumberField
+            label="Nights / tournament"
+            value={hsNights}
+            min={0} max={7} step={1}
+            onChange={(v) => onChange({ hsNightsPerTournament: v })}
+          />
+        </div>
+      </div>
+
+      {/* Youth row */}
+      <div>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <p className="text-xs font-semibold text-foreground">Youth ({youthPlayers} players)</p>
+          <p className="text-xs font-semibold text-accent tabular-nums">{fmt(youthHotelSpend)}</p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField
+            label="Tournaments / yr"
+            value={youthTournaments}
+            min={0} max={30} step={1}
+            onChange={(v) => onChange({ youthTournamentsAttending: v })}
+          />
+          <NumberField
+            label="Nights / tournament"
+            value={youthNights}
+            min={0} max={7} step={1}
+            onChange={(v) => onChange({ youthNightsPerTournament: v })}
+          />
+        </div>
+      </div>
+
+      {/* Engine cash back highlight */}
+      <div className="mt-3 rounded-md border-l-4 border-accent bg-accent-soft p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-accent mb-1">
+          Curve Allegiance Member Benefit
+        </p>
+        <p className="text-xs text-foreground leading-snug">
+          Members earn <strong>{pct}% cash back</strong> on all hotel bookings through{" "}
+          <strong>Engine</strong>, our hotel concierge partner.
+        </p>
+        <div className="flex items-baseline justify-between mt-2">
+          <span className="text-xs text-muted-foreground">
+            {fmt(totalHotelSpend)} × {pct}%
+          </span>
+          <span className="font-display text-base font-semibold text-accent tabular-nums">
+            +{fmt(engineCashBack)} <span className="text-xs font-normal text-muted-foreground">/yr cash back</span>
+          </span>
+        </div>
+      </div>
+
+      <p className="mt-2 text-[11px] leading-snug text-muted-foreground/90 italic">
+        ⓘ Hotel spend = tournaments × nights × room-night cost × players, calculated separately for HS and Youth. Hotel spend itself is family money — only the {pct}% Engine cash back flows back to your organization.
+      </p>
+    </div>
+  );
+}
+
+interface NumberFieldProps {
+  label: string;
+  value: number;
+  min: number; max: number; step: number;
+  onChange: (v: number) => void;
+}
+function NumberField({ label, value, min, max, step, onChange }: NumberFieldProps) {
+  return (
+    <div>
+      <label className="block text-[11px] text-muted-foreground mb-1">{label}</label>
+      <Input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(e) => onChange(num(e.target.value, value))}
+        className="h-8 text-sm tabular-nums"
+      />
     </div>
   );
 }

@@ -150,8 +150,12 @@ export interface WalletInputs {
   apparelPackageAmount: number;  // $/family, default $600
   addonAdoptionPct: number;      // 0-50
   addonPackageAmount: number;    // $/family/year, default $1,200 ($100/mo)
-  travelCapturePct: number;      // 0-40, % of outside travel spend redirected to org
-  travelSpendPerFamily: number;  // $5,000-$7,000, default $6,000
+  // Hotel spend inputs (HS + Youth)
+  hsTournamentsAttending: number;       // tournaments per HS player per year
+  hsNightsPerTournament: number;        // avg hotel nights per tournament
+  youthTournamentsAttending: number;    // tournaments per youth player per year
+  youthNightsPerTournament: number;     // avg hotel nights per tournament
+  avgRoomNightCost: number;             // $/night, default $200
   facilityCapturePct: number;    // 0-100 of $2,400/player benchmark
 }
 
@@ -174,11 +178,16 @@ const FAMILY_WALLET_HIGH_PER_PLAYER = 20000;
 const FACILITY_PER_PLAYER_BENCHMARK = 2400;
 export const APPAREL_PACKAGE_DEFAULT = 600;
 export const ADDON_PACKAGE_DEFAULT = 1200; // $100/mo × 12
-export const TRAVEL_SPEND_DEFAULT = 6000;  // midpoint of $5K-$7K outside travel/restaurant spend
+export const AVG_ROOM_NIGHT_DEFAULT = 200; // $/night
+export const ENGINE_CASHBACK_RATE = 0.03;  // 3% Curve Allegiance / Engine cash back
 
 export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
   const lowWallet = FAMILY_WALLET_LOW_PER_PLAYER * ctx.totalPlayers;
   const highWallet = FAMILY_WALLET_HIGH_PER_PLAYER * ctx.totalPlayers;
+
+  // Player split for hotel calc (passed via context)
+  const hsPlayers = Math.max(0, Math.round((ctx as any).hsPlayers ?? 0));
+  const youthPlayers = Math.max(0, Math.round((ctx as any).youthPlayers ?? 0));
 
   // Dues: apply % increase to current dues revenue
   const newDues = ctx.currentDues * (1 + inputs.duesIncreasePct / 100);
@@ -186,13 +195,21 @@ export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
   const newEvents = inputs.eventRevPerPlayer * ctx.totalPlayers;
   const newApparel = (inputs.apparelCapturePct / 100) * inputs.apparelPackageAmount * ctx.totalPlayers;
   const newAddOns = (inputs.addonAdoptionPct / 100) * inputs.addonPackageAmount * ctx.totalPlayers;
-  const newTravel = (inputs.travelCapturePct / 100) * inputs.travelSpendPerFamily * ctx.totalPlayers;
+
+  // Hotel spend (informational — not org revenue). Cash back IS org revenue.
+  const hsHotelSpend =
+    inputs.hsTournamentsAttending * inputs.hsNightsPerTournament * inputs.avgRoomNightCost * hsPlayers;
+  const youthHotelSpend =
+    inputs.youthTournamentsAttending * inputs.youthNightsPerTournament * inputs.avgRoomNightCost * youthPlayers;
+  const totalHotelSpend = hsHotelSpend + youthHotelSpend;
+  const engineCashBack = totalHotelSpend * ENGINE_CASHBACK_RATE;
+
   const newFacility = ctx.hasFacility
     ? (inputs.facilityCapturePct / 100) * FACILITY_PER_PLAYER_BENCHMARK * ctx.totalPlayers
     : 0;
 
   const projectedTotal =
-    newDues + newSponsorship + newEvents + newApparel + newAddOns + newTravel + newFacility;
+    newDues + newSponsorship + newEvents + newApparel + newAddOns + engineCashBack + newFacility;
   const currentTotal =
     ctx.currentDues +
     ctx.currentSponsorship +
@@ -214,7 +231,10 @@ export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
     newEvents,
     newApparel,
     newAddOns,
-    newTravel,
+    hsHotelSpend,
+    youthHotelSpend,
+    totalHotelSpend,
+    engineCashBack,
     newFacility,
     projectedTotal,
     currentTotal,
