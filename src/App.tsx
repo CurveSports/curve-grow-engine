@@ -16,6 +16,7 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import AdminInvite from "@/pages/AdminInvite";
 import AdminOrgTasks from "@/pages/admin/AdminOrgTasks";
 import AdminTasksPage from "@/pages/admin/AdminTasksPage";
+import AdminTasksThisWeek from "@/pages/admin/AdminTasksThisWeek";
 import OrgDetail from "@/pages/admin/OrgDetail";
 import AdminEngineFocus from "@/pages/admin/AdminEngineFocus";
 import AdminHealthReports from "@/pages/admin/AdminHealthReports";
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/admin/communications" element={<ProtectedRoute role="admin"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin"><AdminTasksPage /></ProtectedRoute>} />
+            <Route path="/admin/tasks-this-week" element={<ProtectedRoute role="admin"><AdminTasksThisWeek /></ProtectedRoute>} />
             <Route path="/admin/health" element={<ProtectedRoute role="admin"><AdminHealthReports /></ProtectedRoute>} />
             <Route path="/admin/presentations" element={<ProtectedRoute role="admin"><AdminPresentations /></ProtectedRoute>} />
             <Route path="/admin/templates" element={<ProtectedRoute role="admin"><AdminTemplates /></ProtectedRoute>} />

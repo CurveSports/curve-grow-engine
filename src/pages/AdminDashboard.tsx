@@ -176,16 +176,18 @@ export default function AdminDashboard() {
           valueClass="text-base lg:text-lg"
           subtitle="Across all client orgs"
         />
-        <StatCard
-          icon={<ListChecks className={cn("h-4 w-4", stats.overdue > 0 ? "text-destructive" : "text-warning")} />}
-          label="Tasks This Week"
-          value={loading ? "—" : `${stats.due} due`}
-          subtitle={`${stats.completed} completed${stats.overdue > 0 ? ` · ${stats.overdue} overdue` : ""}`}
-          valueClass={stats.overdue > 0 ? "text-destructive" : ""}
-          extra={awaitingTotal > 0 ? (
-            <p className="text-xs text-accent font-semibold mt-1.5">{awaitingTotal} project{awaitingTotal === 1 ? "" : "s"} awaiting completion approval</p>
-          ) : undefined}
-        />
+        <Link to="/admin/tasks-this-week" className="block">
+          <StatCard
+            icon={<ListChecks className={cn("h-4 w-4", stats.overdue > 0 ? "text-destructive" : "text-warning")} />}
+            label="Tasks This Week"
+            value={loading ? "—" : `${stats.due} due`}
+            subtitle={`${stats.completed} completed${stats.overdue > 0 ? ` · ${stats.overdue} overdue` : ""}`}
+            valueClass={stats.overdue > 0 ? "text-destructive" : ""}
+            extra={awaitingTotal > 0 ? (
+              <p className="text-xs text-accent font-semibold mt-1.5">{awaitingTotal} project{awaitingTotal === 1 ? "" : "s"} awaiting completion approval</p>
+            ) : undefined}
+          />
+        </Link>
         <StatCard
           icon={<Trophy className="h-4 w-4 text-health" />}
           label="Avg Monetization Tier"
