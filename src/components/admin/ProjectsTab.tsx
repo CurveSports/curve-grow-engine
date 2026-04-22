@@ -223,20 +223,70 @@ function EmptyColumn({ label }: { label: string }) {
 
 function ProjectCard({
   project,
+  orgId,
   expanded,
   onToggle,
   onEdit,
   onRelease,
   onComplete,
+  onChanged,
 }: {
   project: ProjectWithTasks;
+  orgId: string;
   expanded: boolean;
   onToggle: () => void;
   onEdit?: () => void;
   onRelease?: () => void;
   onComplete?: () => void;
+  onChanged: () => void;
 }) {
   const engineLabel = project.engine ?? "Cross-Engine";
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const canCurate = project.status !== "completed";
+
+  // Source breakdown summary
+  const counts = useMemo(() => {
+    const c = { system: 0, library: 0, custom: 0 };
+    for (const t of project.tasks) {
+      const src = ((t as any).source ?? "system") as keyof typeof c;
+      if (src in c) c[src]++;
+    }
+    return c;
+  }, [project.tasks]);
+
+  const removeTask = async (taskId: string, taskTitle: string) => {
+    if (!confirm(`Remove "${taskTitle}" from this project?`)) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    // For draft projects, fully delete the task. For active, just unassign so history is preserved.
+    if (project.status === "draft") {
+      const { error } = await supabase.from("org_tasks").delete().eq("id", taskId);
+      if (error) { toast.error(error.message); return; }
+    } else {
+      const { error } = await supabase.from("org_tasks").update({ project_id: null }).eq("id", taskId);
+      if (error) { toast.error(error.message); return; }
+      await supabase.from("task_activity_log").insert({
+        task_id: taskId, org_id: orgId, action: "removed_from_project" as const,
+        performed_by: user?.id ?? null, old_value: project.name,
+      });
+    }
+    toast.success("Task removed");
+    onChanged();
+  };
+
+  const saveToLibrary = async (task: OrgTask) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from("task_templates").insert({
+      title: task.title,
+      description: task.description,
+      engine: task.engine,
+      task_type: task.task_type,
+      suggested_days_to_complete: 30,
+      is_system_template: false,
+      created_by: user?.id ?? null,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Saved to Task Library as Custom");
+  };
 
   return (
     <div className={cn(
@@ -305,25 +355,100 @@ function ProjectCard({
       </div>
 
       {expanded && (
-        <div className="pt-2 border-t border-border space-y-1.5">
+        <div className="pt-2 border-t border-border space-y-2.5">
+          {/* Source breakdown summary */}
+          {project.taskTotal > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+              <span className="text-muted-foreground">Source mix:</span>
+              {counts.system > 0 && (
+                <span className={cn("px-1.5 py-0.5 rounded-full border", TASK_SOURCE_STYLE.system)}>
+                  {counts.system} {TASK_SOURCE_LABEL.system}
+                </span>
+              )}
+              {counts.library > 0 && (
+                <span className={cn("px-1.5 py-0.5 rounded-full border", TASK_SOURCE_STYLE.library)}>
+                  {counts.library} {TASK_SOURCE_LABEL.library}
+                </span>
+              )}
+              {counts.custom > 0 && (
+                <span className={cn("px-1.5 py-0.5 rounded-full border", TASK_SOURCE_STYLE.custom)}>
+                  {counts.custom} {TASK_SOURCE_LABEL.custom}
+                </span>
+              )}
+            </div>
+          )}
+
           {project.tasks.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-2">No tasks assigned.</p>
+            <p className="text-xs text-muted-foreground py-2">No tasks in this project yet.</p>
           ) : (
             <ul className="space-y-1.5">
-              {project.tasks.map((t) => (
-                <li key={t.id} className="text-xs flex items-center gap-2">
-                  <span className={cn(
-                    "h-1.5 w-1.5 rounded-full flex-shrink-0",
-                    t.status === "completed" ? "bg-accent" : t.status === "overdue" ? "bg-destructive" : "bg-neutral",
-                  )} />
-                  <span className="flex-1 truncate">{t.title}</span>
-                  <span className="text-muted-foreground text-[10px]">{t.engine}</span>
-                  {t.due_date && <span className="text-muted-foreground text-[10px]">{formatDate(t.due_date)}</span>}
-                </li>
-              ))}
+              {project.tasks.map((t) => {
+                const source = ((t as any).source ?? "system") as keyof typeof TASK_SOURCE_LABEL;
+                return (
+                  <li key={t.id} className="text-xs flex items-start gap-2 group">
+                    <span className={cn(
+                      "h-1.5 w-1.5 rounded-full flex-shrink-0 mt-1.5",
+                      t.status === "completed" ? "bg-accent" : t.status === "overdue" ? "bg-destructive" : "bg-neutral",
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="truncate">{t.title}</span>
+                        <span className={cn("px-1.5 py-0.5 rounded-full text-[9px] border", TASK_SOURCE_STYLE[source])}>
+                          {TASK_SOURCE_LABEL[source]}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mt-0.5">
+                        {t.engine}{t.due_date ? ` · ${formatDate(t.due_date)}` : ""}
+                      </div>
+                    </div>
+                    {canCurate && (
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5">
+                        {source === "custom" && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); saveToLibrary(t); }}
+                            title="Save to Task Library"
+                            className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-accent"
+                          >
+                            <BookmarkPlus className="h-3 w-3" />
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); removeTask(t.id, t.title); }}
+                          title={project.status === "draft" ? "Delete task" : "Remove from project"}
+                          className="p-1 rounded hover:bg-secondary text-muted-foreground hover:text-destructive"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           )}
+
+          {canCurate && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={(e) => { e.stopPropagation(); setPickerOpen(true); }}
+              className="w-full h-8 text-xs border-dashed"
+            >
+              <Plus className="h-3 w-3 mr-1" /> Add Task
+            </Button>
+          )}
         </div>
+      )}
+
+      {pickerOpen && (
+        <TaskLibraryPicker
+          orgId={orgId}
+          projectId={project.id}
+          projectName={project.name}
+          existingTemplateIds={project.tasks.map((t) => t.template_id).filter((x): x is string => !!x)}
+          onClose={() => setPickerOpen(false)}
+          onAdded={onChanged}
+        />
       )}
     </div>
   );
