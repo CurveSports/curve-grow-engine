@@ -241,6 +241,19 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </div>
       )}
 
+      {/* Round 2: Risk Assessment + Engagement Complexity + Pricing context */}
+      <RiskAssessmentSection
+        executionRisk={(metrics as any).execution_risk ?? null}
+        marketRisk={(metrics as any).market_risk ?? null}
+        retentionRisk={(metrics as any).retention_risk ?? null}
+        engagementComplexity={(metrics as any).engagement_complexity ?? null}
+        engagementRecommendation={(metrics as any).engagement_approach_recommendation ?? null}
+        pricingStrategyNote={(metrics as any).pricing_strategy_note ?? null}
+      />
+
+      {/* Round 2: Monetization tier key */}
+      <MonetizationTierGuide currentTier={(metrics as any).monetization_tier ?? null} />
+
       {/* Row 2: This week's focus (admin-editable) */}
       <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
 
