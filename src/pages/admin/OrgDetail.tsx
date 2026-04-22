@@ -47,9 +47,11 @@ export default function OrgDetail() {
   const [orgName, setOrgName] = useState("Organization");
   const [bannerKey, setBannerKey] = useState(0);
 
-  const setTab = (t: Tab) => {
+  const setTab = (t: Tab, engine?: string) => {
     const next = new URLSearchParams(params);
     next.set("tab", t);
+    if (engine) next.set("engine", engine);
+    else next.delete("engine");
     setParams(next, { replace: true });
   };
 
