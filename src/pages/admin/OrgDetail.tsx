@@ -246,6 +246,12 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
 
   const fallbackHealth = engineScores.slice(0, 4).reduce((s, e) => s + e.score, 0);
   const overallHealth = (metrics as any).overall_health_score ?? fallbackHealth;
+  const platformScore = (metrics as any).platform_score ?? null;
+  const platformDone = (metrics as any).platform_tasks_complete ?? 0;
+  const platformTotal = (metrics as any).platform_tasks_total ?? 0;
+  const marketingScore = (metrics as any).marketing_score ?? null;
+  const marketingDone = (metrics as any).marketing_tasks_complete ?? 0;
+  const marketingTotal = (metrics as any).marketing_tasks_total ?? 0;
   const opsHealth = (metrics as any).operations_health_score ?? null;
   const marketHealth = (metrics as any).market_position_health_score ?? null;
   const programHealth = (metrics as any).program_health_score ?? null;
