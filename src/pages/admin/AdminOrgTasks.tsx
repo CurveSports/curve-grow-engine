@@ -11,6 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD } from "@/lib/tasks";
+import type { OrgProject } from "@/lib/projects";
+import AdminTasksByProject from "@/components/admin/AdminTasksByProject";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/format";
@@ -23,6 +25,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [tasks, setTasks] = useState<OrgTask[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
+  const [projects, setProjects] = useState<OrgProject[]>([]);
   const [selected, setSelected] = useState<OrgTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
@@ -32,16 +35,18 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   const load = async () => {
     if (!orgId) return;
-    const [{ data: org }, { data: t }, { data: m }, { data: tpl }] = await Promise.all([
+    const [{ data: org }, { data: t }, { data: m }, { data: tpl }, { data: pj }] = await Promise.all([
       supabase.from("organizations").select("name, plan_activated_at").eq("id", orgId).maybeSingle(),
       supabase.from("org_tasks").select("*").eq("org_id", orgId).order("priority").order("due_date"),
       supabase.from("derived_metrics").select("*").eq("org_id", orgId).maybeSingle(),
       supabase.from("task_templates").select("*").order("engine"),
+      supabase.from("org_projects").select("*").eq("org_id", orgId).order("display_order").order("created_at"),
     ]);
     setOrgName((org as any)?.name ?? "");
     setPlanActivatedAt((org as any)?.plan_activated_at ?? null);
     setTasks((t as OrgTask[]) ?? []);
     setTemplates((tpl as TaskTemplate[]) ?? []);
+    setProjects((pj as OrgProject[]) ?? []);
     if (m) {
       const s: Record<string, number | null> = {};
       for (const [eng, field] of Object.entries(ENGINE_SCORE_FIELD)) s[eng] = (m as any)[field];
@@ -188,8 +193,17 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           <div className="curve-card text-center py-16">
             <p className="text-muted-foreground mb-4">{planActivatedAt ? "No tasks yet — add one to get started." : "No tasks yet. They'll be auto-generated when this org completes intake."}</p>
           </div>
-        ) : (
+        ) : (isReviewMode || projects.length === 0) ? (
           <TaskList tasks={tasks} scores={scores} onSelect={setSelected} showPlanStatus />
+        ) : (
+          <AdminTasksByProject
+            projects={projects}
+            tasks={tasks}
+            scores={scores}
+            orgId={orgId!}
+            onSelect={setSelected}
+            onChanged={load}
+          />
         )
       )}
 
