@@ -47,6 +47,8 @@ type OrgRow = {
   draft_project_count: number;
   completed_project_count: number;
   awaiting_project_name: string | null;
+  next_tier: string | null;
+  points_to_next_tier: number | null;
 };
 
 type Density = "compact" | "standard" | "detailed";
@@ -66,7 +68,7 @@ export default function AdminDashboard() {
       const [orgsRes, tasksRes, activityRes, awaitingProjectsRes] = await Promise.all([
         supabase
           .from("organizations")
-          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts)"),
+          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier)"),
         supabase.from("org_tasks").select("org_id, status, due_date, completed_at, last_activity_at"),
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
         supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
@@ -114,6 +116,8 @@ export default function AdminDashboard() {
           draft_project_count: o.draft_project_count ?? 0,
           completed_project_count: o.completed_project_count ?? 0,
           awaiting_project_name: awaitingByOrg.get(o.id) ?? null,
+          next_tier: metrics?.next_tier ?? null,
+          points_to_next_tier: metrics?.points_to_next_tier ?? null,
         };
       });
       setOrgs(r);
@@ -337,6 +341,11 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
           {org.tier && (
             <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", TIER_STYLES[org.tier] ?? "bg-secondary")}>
               {org.tier}
+            </span>
+          )}
+          {org.next_tier && org.points_to_next_tier !== null && (
+            <span className="text-[10px] text-warning font-semibold tabular-nums">
+              {org.points_to_next_tier} pts to {org.next_tier}
             </span>
           )}
           <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", planClass)}>

@@ -916,6 +916,90 @@ function escape(s: string): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+const TIER_DESCRIPTIONS_ORG: Record<string, string> = {
+  Foundational: "You're building the foundation of a stronger business. Every system you put in place now multiplies your results later.",
+  Emerging: "You've built something real. Revenue is coming from more than one place and the systems are starting to take shape.",
+  Growth: "Your program is strong and your business is growing. Multiple revenue engines are working.",
+  Advanced: "You're running a sophisticated operation. Most engines are performing well and your revenue per player reflects the quality of your program.",
+  Elite: "Best in class. You've built what most clubs only dream about — a fully optimized revenue operation.",
+};
+
+async function notifyTierAdvancement(
+  admin: any,
+  org: { id: string; name: string },
+  payload: {
+    previous_tier: string; new_tier: string;
+    previous_score: number; new_score: number;
+    next_tier: string | null;
+    fastest_path_engines: { engine: string; current_score: number; target_score: number; points_available: number }[];
+  },
+) {
+  const diff = payload.new_score - payload.previous_score;
+  const fastestList = payload.fastest_path_engines.map((e) => e.engine).join(", ");
+  const desc = TIER_DESCRIPTIONS_ORG[payload.new_tier] ?? "";
+
+  // Log notifications
+  try {
+    await admin.from("notification_log").insert([
+      { org_id: org.id, notification_type: "tier_advancement", recipient_role: "org_all", task_ids: [payload.new_tier] },
+      { org_id: org.id, notification_type: "tier_advancement", recipient_role: "admin", task_ids: [payload.new_tier] },
+    ]);
+  } catch (e) { console.error("tier advancement log error", e); }
+
+  if (!RESEND_API_KEY) return;
+
+  // Org users
+  try {
+    const { data: orgProfiles } = await admin.from("profiles").select("email").eq("org_id", org.id);
+    const orgEmails = (orgProfiles ?? []).map((p: any) => p.email).filter(Boolean);
+    if (orgEmails.length > 0) {
+      const url = `${APP_URL}/report`;
+      const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:#15803d;">🎉 You've reached ${escape(payload.new_tier)} tier</h2>
+        <p>Congratulations — your hard work is paying off.</p>
+        <p><strong>${escape(org.name)}</strong> has advanced from <strong>${escape(payload.previous_tier)}</strong> to <strong>${escape(payload.new_tier)}</strong> tier with a score of <strong>${payload.new_score}/60</strong>.</p>
+        <p style="color:#475569;">${escape(desc)}</p>
+        ${payload.next_tier ? `<p><strong>Your fastest path to ${escape(payload.next_tier)}:</strong><br/>${escape(fastestList)}</p>` : ""}
+        <p style="margin-top:24px;"><a href="${url}" style="background:#15803d;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">See your tier ladder →</a></p>
+      </div>`;
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+        body: JSON.stringify({ from: FROM_EMAIL, to: orgEmails, subject: `🎉 You've reached ${payload.new_tier} tier — ${org.name}`, html }),
+      });
+    }
+  } catch (e) { console.error("tier advancement org email failed", e); }
+
+  // Admins
+  try {
+    const { data: adminRoles } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+    const userIds = (adminRoles ?? []).map((r: any) => r.user_id);
+    if (userIds.length > 0) {
+      const { data: profs } = await admin.from("profiles").select("email").in("user_id", userIds);
+      const adminEmails = (profs ?? []).map((p: any) => p.email).filter(Boolean);
+      if (adminEmails.length > 0) {
+        const url = `${APP_URL}/admin/org/${org.id}`;
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+          <h2 style="color:#0f5132;">⬆️ Tier advancement — ${escape(org.name)} reached ${escape(payload.new_tier)}</h2>
+          <p><strong>${escape(org.name)}</strong> has advanced from <strong>${escape(payload.previous_tier)}</strong> to <strong>${escape(payload.new_tier)}</strong> tier.</p>
+          <table style="border-collapse:collapse;margin:16px 0;">
+            <tr><td style="padding:6px 12px;color:#666;">Previous score</td><td style="padding:6px 12px;"><strong>${payload.previous_score}/60</strong></td></tr>
+            <tr><td style="padding:6px 12px;color:#666;">New score</td><td style="padding:6px 12px;"><strong>${payload.new_score}/60</strong></td></tr>
+            <tr><td style="padding:6px 12px;color:#666;">Points gained</td><td style="padding:6px 12px;"><strong>+${diff}</strong></td></tr>
+          </table>
+          <p>This is a great moment to celebrate with the client and discuss what comes next.</p>
+          <p style="margin-top:24px;"><a href="${url}" style="background:#0f5132;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Open org →</a></p>
+        </div>`;
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+          body: JSON.stringify({ from: FROM_EMAIL, to: adminEmails, subject: `⬆️ Tier advancement — ${org.name} reached ${payload.new_tier}`, html }),
+        });
+      }
+    }
+  } catch (e) { console.error("tier advancement admin email failed", e); }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
@@ -986,10 +1070,98 @@ Deno.serve(async (req) => {
 
     const metrics = calculate(intakeRow);
 
+    // ===== TIER LADDER (post-scoring) =====
+    const TIER_THRESHOLDS: Record<string, number> = {
+      Emerging: 21, Growth: 33, Advanced: 45, Elite: 53,
+    };
+    const TIER_NEXT: Record<string, string | null> = {
+      Foundational: "Emerging", Emerging: "Growth", Growth: "Advanced",
+      Advanced: "Elite", Elite: null,
+    };
+    const next_tier = TIER_NEXT[metrics.monetization_tier] ?? null;
+    const next_tier_threshold = next_tier ? TIER_THRESHOLDS[next_tier] : null;
+    const points_to_next_tier = next_tier_threshold !== null
+      ? Math.max(0, next_tier_threshold - metrics.total_engine_score) : null;
+
+    // Fastest path: top 3 engines with biggest gap to 7
+    const engineList: { engine: string; current_score: number }[] = [
+      { engine: "Pricing", current_score: metrics.pricing_score },
+      { engine: "Sponsorship", current_score: metrics.sponsorship_score },
+      { engine: "Apparel", current_score: metrics.apparel_score },
+      { engine: "Events", current_score: metrics.event_score },
+      { engine: "Add-Ons", current_score: metrics.addon_score },
+      { engine: "Retention", current_score: metrics.retention_score },
+    ];
+    if (metrics.facility_score !== null && metrics.facility_score !== undefined) {
+      engineList.push({ engine: "Facility", current_score: metrics.facility_score });
+    }
+    if (metrics.affiliate_score !== null && metrics.affiliate_score !== undefined) {
+      engineList.push({ engine: "Affiliate", current_score: metrics.affiliate_score });
+    }
+    const fastest_path_engines = engineList
+      .map((e) => ({
+        engine: e.engine,
+        current_score: e.current_score,
+        target_score: 7,
+        points_available: Math.max(0, 7 - e.current_score),
+      }))
+      .sort((a, b) => b.points_available - a.points_available)
+      .slice(0, 3);
+    const fastest_path_total_points = fastest_path_engines.reduce((s, e) => s + e.points_available, 0);
+    const can_reach_next_tier = points_to_next_tier !== null
+      ? fastest_path_total_points >= points_to_next_tier : null;
+
+    // Active project alignment
+    const { data: activeProjects } = await supabase
+      .from("org_projects").select("engine").eq("org_id", org_id).eq("status", "active");
+    const active_project_engines = Array.from(new Set(
+      ((activeProjects ?? []) as any[]).map((p) => p.engine).filter(Boolean),
+    ));
+    const fastestEngineSet = new Set(fastest_path_engines.map((e) => e.engine));
+    const project_aligned_with_fastest_path = active_project_engines.some((e) => fastestEngineSet.has(e));
+
+    const tierLadderFields = {
+      next_tier, next_tier_threshold, points_to_next_tier,
+      fastest_path_engines, fastest_path_total_points, can_reach_next_tier,
+      active_project_engines, project_aligned_with_fastest_path,
+    };
+
+    // ===== TIER ADVANCEMENT TRACKING =====
+    const { data: prevMetrics } = await supabase
+      .from("derived_metrics")
+      .select("monetization_tier, total_engine_score")
+      .eq("org_id", org_id).maybeSingle();
+    const prevTier = prevMetrics?.monetization_tier ?? null;
+    const prevScore = prevMetrics?.total_engine_score ?? null;
+    const TIER_ORDER = ["Foundational", "Emerging", "Growth", "Advanced", "Elite"];
+    const tierAdvanced = prevTier && prevTier !== metrics.monetization_tier
+      && TIER_ORDER.indexOf(metrics.monetization_tier) > TIER_ORDER.indexOf(prevTier);
+
     const { error: metErr } = await supabase
       .from("derived_metrics")
-      .upsert({ org_id, ...metrics }, { onConflict: "org_id" });
+      .upsert({ org_id, ...metrics, ...tierLadderFields }, { onConflict: "org_id" });
     if (metErr) throw metErr;
+
+    // Record tier history when tier changes (in either direction; flag advancement only for notifications)
+    if (prevTier && prevTier !== metrics.monetization_tier) {
+      try {
+        await supabase.from("org_tier_history").insert({
+          org_id,
+          previous_tier: prevTier,
+          new_tier: metrics.monetization_tier,
+          previous_score: prevScore,
+          new_score: metrics.total_engine_score,
+        });
+      } catch (e) { console.error("tier history insert failed", e); }
+    } else if (!prevTier) {
+      // first calculation — seed history with starting tier
+      try {
+        await supabase.from("org_tier_history").insert({
+          org_id, previous_tier: null, new_tier: metrics.monetization_tier,
+          previous_score: null, new_score: metrics.total_engine_score,
+        });
+      } catch (e) { console.error("tier history seed failed", e); }
+    }
 
     // Auto-generate draft tasks (only if none exist yet) and notify admins
     const isFacilityOrg = !!intake?.org_type && FACILITY_ORG_TYPES.has(intake.org_type);
@@ -1001,6 +1173,15 @@ Deno.serve(async (req) => {
         if (tasksGenerated > 0) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
         // Round 2: high-risk alert (always check after intake)
         await notifyAdminsHighRisk(supabase, org as any, metrics);
+        // Tier advancement
+        if (tierAdvanced) {
+          await notifyTierAdvancement(
+            supabase, org as any,
+            { previous_tier: prevTier!, new_tier: metrics.monetization_tier,
+              previous_score: prevScore!, new_score: metrics.total_engine_score,
+              next_tier, fastest_path_engines },
+          );
+        }
       }
     } catch (e) {
       console.error("draft task generation failed (non-fatal)", e);

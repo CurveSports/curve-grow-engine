@@ -7,7 +7,40 @@ import AppShell from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPct, formatDate } from "@/lib/format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, Check, Download } from "lucide-react";
+import { Info, Check, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { TierLadder, TierAdvancementBanner, useTierAdvancement } from "@/components/TierLadder";
+import { formatDate as fmtDate } from "@/lib/format";
+
+function TierProgressionSection({ orgId, metrics }: { orgId: string; metrics: any }) {
+  const storageKey = `tier-ladder-collapsed:${orgId}`;
+  const [collapsed, setCollapsed] = useState<boolean>(() => localStorage.getItem(storageKey) === "1");
+  const advanced = useTierAdvancement(orgId);
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem(storageKey, next ? "1" : "0");
+  };
+  return (
+    <section id="tier-progression" className="scroll-mt-24">
+      {advanced && <TierAdvancementBanner orgId={orgId} currentTier={advanced.to} />}
+      <button onClick={toggle} className="w-full flex items-center justify-between mb-4 group">
+        <div className="text-left">
+          <h2 className="curve-eyebrow">Your Tier Progression</h2>
+          <p className="text-sm text-muted-foreground mt-1">Track your progress and see exactly what it takes to reach the next level.</p>
+        </div>
+        {collapsed ? <ChevronDown className="h-5 w-5 text-muted-foreground group-hover:text-foreground" /> : <ChevronUp className="h-5 w-5 text-muted-foreground group-hover:text-foreground" />}
+      </button>
+      {!collapsed && (
+        <>
+          <TierLadder metrics={metrics} orgId={orgId} variant="org" />
+          <p className="text-xs text-muted-foreground mt-4 text-center">
+            Last updated: {fmtDate(metrics.calculated_at)} · Complete a new assessment to update your scores.
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
@@ -477,6 +510,11 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
             ))}
           </p>
         </section>
+
+        <SectionDivider />
+
+        {/* Tier Progression Ladder */}
+        <TierProgressionSection orgId={orgId!} metrics={data} />
 
         <SectionDivider />
 

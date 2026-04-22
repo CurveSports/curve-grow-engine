@@ -24,6 +24,7 @@ import {
   executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
   engineScoreExplain,
 } from "@/components/admin/explainContent";
+import { TierLadder } from "@/components/TierLadder";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
@@ -268,6 +269,14 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
           <DimensionCard label="Market Position" score={marketHealth} explain={marketPositionExplain(intake ?? {}, metrics)} />
           <DimensionCard label="Program Health" score={programHealth} explain={programHealthExplain(intake ?? {}, metrics)} />
           <DimensionCard label="Strategic Clarity" score={strategicHealth} explain={strategicClarityExplain(intake ?? {}, metrics)} />
+        </div>
+      )}
+
+      {/* Tier ladder */}
+      {(metrics as any)?.monetization_tier && (
+        <div className="curve-card">
+          <p className="curve-eyebrow mb-4">Tier Progression</p>
+          <TierLadder metrics={metrics} orgId={orgId} variant="admin" />
         </div>
       )}
 

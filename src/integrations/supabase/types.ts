@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       derived_metrics: {
         Row: {
+          active_project_engines: Json | null
           add_on_revenue: number | null
           add_on_revenue_per_player: number | null
           addon_opportunity_high: number | null
@@ -39,6 +40,7 @@ export type Database = {
           blended_annual_fee_overall: number | null
           calculated_at: string
           calculated_total_revenue: number | null
+          can_reach_next_tier: boolean | null
           diagnosis_text: string | null
           dues_revenue: number | null
           dues_revenue_pct: number | null
@@ -58,6 +60,8 @@ export type Database = {
           facility_revenue_gap: number | null
           facility_revenue_pct: number | null
           facility_score: number | null
+          fastest_path_engines: Json | null
+          fastest_path_total_points: number | null
           fmv_per_sponsor_high: number | null
           fmv_per_sponsor_low: number | null
           growth_opportunity_direction: string | null
@@ -76,11 +80,14 @@ export type Database = {
             | Database["public"]["Enums"]["monetization_tier"]
             | null
           next_steps: Json | null
+          next_tier: string | null
+          next_tier_threshold: number | null
           non_dues_revenue: number | null
           non_dues_revenue_per_player: number | null
           operations_health_score: number | null
           org_id: string
           overall_health_score: number | null
+          points_to_next_tier: number | null
           pricing_benchmark_hs_high: number | null
           pricing_benchmark_hs_low: number | null
           pricing_benchmark_youth_high: number | null
@@ -91,6 +98,7 @@ export type Database = {
           pricing_strategy_note: string | null
           priority_engine: string | null
           program_health_score: number | null
+          project_aligned_with_fastest_path: boolean | null
           retention_health: string | null
           retention_opportunity_high: number | null
           retention_opportunity_low: number | null
@@ -117,6 +125,7 @@ export type Database = {
           youth_fee_vs_market: string | null
         }
         Insert: {
+          active_project_engines?: Json | null
           add_on_revenue?: number | null
           add_on_revenue_per_player?: number | null
           addon_opportunity_high?: number | null
@@ -140,6 +149,7 @@ export type Database = {
           blended_annual_fee_overall?: number | null
           calculated_at?: string
           calculated_total_revenue?: number | null
+          can_reach_next_tier?: boolean | null
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
@@ -159,6 +169,8 @@ export type Database = {
           facility_revenue_gap?: number | null
           facility_revenue_pct?: number | null
           facility_score?: number | null
+          fastest_path_engines?: Json | null
+          fastest_path_total_points?: number | null
           fmv_per_sponsor_high?: number | null
           fmv_per_sponsor_low?: number | null
           growth_opportunity_direction?: string | null
@@ -177,11 +189,14 @@ export type Database = {
             | Database["public"]["Enums"]["monetization_tier"]
             | null
           next_steps?: Json | null
+          next_tier?: string | null
+          next_tier_threshold?: number | null
           non_dues_revenue?: number | null
           non_dues_revenue_per_player?: number | null
           operations_health_score?: number | null
           org_id: string
           overall_health_score?: number | null
+          points_to_next_tier?: number | null
           pricing_benchmark_hs_high?: number | null
           pricing_benchmark_hs_low?: number | null
           pricing_benchmark_youth_high?: number | null
@@ -192,6 +207,7 @@ export type Database = {
           pricing_strategy_note?: string | null
           priority_engine?: string | null
           program_health_score?: number | null
+          project_aligned_with_fastest_path?: boolean | null
           retention_health?: string | null
           retention_opportunity_high?: number | null
           retention_opportunity_low?: number | null
@@ -218,6 +234,7 @@ export type Database = {
           youth_fee_vs_market?: string | null
         }
         Update: {
+          active_project_engines?: Json | null
           add_on_revenue?: number | null
           add_on_revenue_per_player?: number | null
           addon_opportunity_high?: number | null
@@ -241,6 +258,7 @@ export type Database = {
           blended_annual_fee_overall?: number | null
           calculated_at?: string
           calculated_total_revenue?: number | null
+          can_reach_next_tier?: boolean | null
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
@@ -260,6 +278,8 @@ export type Database = {
           facility_revenue_gap?: number | null
           facility_revenue_pct?: number | null
           facility_score?: number | null
+          fastest_path_engines?: Json | null
+          fastest_path_total_points?: number | null
           fmv_per_sponsor_high?: number | null
           fmv_per_sponsor_low?: number | null
           growth_opportunity_direction?: string | null
@@ -278,11 +298,14 @@ export type Database = {
             | Database["public"]["Enums"]["monetization_tier"]
             | null
           next_steps?: Json | null
+          next_tier?: string | null
+          next_tier_threshold?: number | null
           non_dues_revenue?: number | null
           non_dues_revenue_per_player?: number | null
           operations_health_score?: number | null
           org_id?: string
           overall_health_score?: number | null
+          points_to_next_tier?: number | null
           pricing_benchmark_hs_high?: number | null
           pricing_benchmark_hs_low?: number | null
           pricing_benchmark_youth_high?: number | null
@@ -293,6 +316,7 @@ export type Database = {
           pricing_strategy_note?: string | null
           priority_engine?: string | null
           program_health_score?: number | null
+          project_aligned_with_fastest_path?: boolean | null
           retention_health?: string | null
           retention_opportunity_high?: number | null
           retention_opportunity_low?: number | null
@@ -689,6 +713,54 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_tier_history: {
+        Row: {
+          changed_at: string
+          id: string
+          intake_submission_id: string | null
+          new_score: number | null
+          new_tier: string
+          org_id: string
+          previous_score: number | null
+          previous_tier: string | null
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          intake_submission_id?: string | null
+          new_score?: number | null
+          new_tier: string
+          org_id: string
+          previous_score?: number | null
+          previous_tier?: string | null
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          intake_submission_id?: string | null
+          new_score?: number | null
+          new_tier?: string
+          org_id?: string
+          previous_score?: number | null
+          previous_tier?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_tier_history_intake_submission_id_fkey"
+            columns: ["intake_submission_id"]
+            isOneToOne: false
+            referencedRelation: "organization_intake"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_tier_history_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1391,6 +1463,7 @@ export type Database = {
         | "project_completed"
         | "next_project_suggested"
         | "calculator_share"
+        | "tier_advancement"
       org_note_tag:
         | "internal_planning"
         | "kickoff"
@@ -1571,6 +1644,7 @@ export const Constants = {
         "project_completed",
         "next_project_suggested",
         "calculator_share",
+        "tier_advancement",
       ],
       org_note_tag: [
         "internal_planning",
