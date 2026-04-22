@@ -107,7 +107,7 @@ export default function OrgDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
-            <OverviewTab orgId={orgId!} onJumpToPlan={() => setTab("plan")} onJumpToReport={() => setTab("report")} />
+            <OverviewTab orgId={orgId!} onJumpToPlan={(engine?: string) => setTab("plan", engine)} onJumpToReport={() => setTab("report")} />
           </TabsContent>
           <TabsContent value="report" className="mt-6">
             <Report bare orgIdProp={orgId} />
