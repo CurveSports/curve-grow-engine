@@ -96,6 +96,8 @@ export default function AdminDashboard() {
           task_total: tk.total, task_complete: tk.complete, task_due_week: tk.due_week, task_overdue: tk.overdue,
           last_activity_at: tk.last,
           overall_health_score: metrics?.overall_health_score ?? null,
+          engagement_complexity: metrics?.engagement_complexity ?? null,
+          admin_alerts: Array.isArray(metrics?.admin_alerts) ? metrics.admin_alerts : [],
         };
       });
       setOrgs(r);
