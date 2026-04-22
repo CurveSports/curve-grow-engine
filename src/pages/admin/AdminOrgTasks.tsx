@@ -193,8 +193,17 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           <div className="curve-card text-center py-16">
             <p className="text-muted-foreground mb-4">{planActivatedAt ? "No tasks yet — add one to get started." : "No tasks yet. They'll be auto-generated when this org completes intake."}</p>
           </div>
-        ) : (
+        ) : (isReviewMode || projects.length === 0) ? (
           <TaskList tasks={tasks} scores={scores} onSelect={setSelected} showPlanStatus />
+        ) : (
+          <AdminTasksByProject
+            projects={projects}
+            tasks={tasks}
+            scores={scores}
+            orgId={orgId!}
+            onSelect={setSelected}
+            onChanged={load}
+          />
         )
       )}
 
