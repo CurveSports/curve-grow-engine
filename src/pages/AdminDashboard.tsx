@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminTasks from "@/pages/admin/AdminTasks";
+
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
@@ -226,7 +226,6 @@ export default function AdminDashboard() {
       <Tabs defaultValue="orgs">
         <TabsList className="mb-6">
           <TabsTrigger value="orgs">Organizations</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
@@ -266,7 +265,6 @@ export default function AdminDashboard() {
           </details>
         </TabsContent>
 
-        <TabsContent value="tasks"><AdminTasks /></TabsContent>
         <TabsContent value="projects"><AdminProjectsCrossOrg /></TabsContent>
         <TabsContent value="users"><AdminUsers /></TabsContent>
       </Tabs>
