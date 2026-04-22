@@ -417,6 +417,53 @@ function MetricCard({ label, value, suffix, children, accent }: { label: string;
   );
 }
 
+function UniversalEngineCard({
+  label, subtitle, score, done, total, onJump,
+}: {
+  label: string; subtitle: string; score: number | null; done: number; total: number; onJump: () => void;
+}) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const tone =
+    score === null || total === 0 ? "muted" :
+    score >= 7 ? "accent" :
+    score >= 4 ? "warning" : "destructive";
+  const toneText =
+    tone === "accent" ? "text-accent" :
+    tone === "warning" ? "text-warning" :
+    tone === "destructive" ? "text-destructive" : "text-muted-foreground";
+  const toneBar =
+    tone === "accent" ? "bg-accent" :
+    tone === "warning" ? "bg-warning" :
+    tone === "destructive" ? "bg-destructive" : "bg-muted-foreground/40";
+  return (
+    <div className="curve-card flex flex-col">
+      <div className="flex items-baseline justify-between gap-3 mb-1">
+        <p className="font-display text-base font-semibold">{label}</p>
+        <span className={cn("text-sm font-semibold tabular-nums", toneText)}>
+          {score ?? "—"}<span className="text-muted-foreground font-normal">/10</span>
+        </span>
+      </div>
+      <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <span className="text-sm tabular-nums">
+          <span className="font-semibold">{done}</span>
+          <span className="text-muted-foreground"> / {total} tasks complete</span>
+        </span>
+        <span className="text-xs text-muted-foreground tabular-nums">{pct}%</span>
+      </div>
+      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+        <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+      </div>
+      <button
+        onClick={onJump}
+        className="text-xs text-accent hover:underline mt-3 self-start"
+      >
+        View tasks →
+      </button>
+    </div>
+  );
+}
+
 function DimensionCard({ label, score, explain }: { label: string; score: number | null; explain?: import("@/components/admin/ExplainDrawer").ExplainContent }) {
   const pct = score ? (score / 10) * 100 : 0;
   return (
