@@ -34,19 +34,15 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
   const clientType = clientMode === "kickoff" ? "client_kickoff" : "client_progress";
   const clientEdits = usePresentationEdits(orgId, clientType);
 
-  if (data.loading || internalEdits.loading || clientEdits.loading) {
-    return <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading presentation…</div>;
-  }
-  if (!data.metrics) {
-    return (
-      <div className="curve-card text-center py-16">
-        <p className="font-semibold">Intake not yet completed — presentations unavailable</p>
-        <p className="text-sm text-muted-foreground mt-2">Once the org submits intake and metrics are calculated, presentations will appear here.</p>
-      </div>
-    );
-  }
-
   const orgName = data.org?.name ?? "Organization";
+
+  const daysIn = data.org?.plan_activated_at
+    ? Math.floor((Date.now() - new Date(data.org.plan_activated_at).getTime()) / 86400000)
+    : null;
+
+  const showScoresKey = "__show_scores";
+  const showScores = clientEdits.get(4, showScoresKey, "true") === "true";
+  const setShowScores = (v: boolean) => clientEdits.save(4, showScoresKey, v ? "true" : "false");
 
   const internalSlides: SlideDef[] = useMemo(() => [
     { id: 1, name: "Intelligence Snapshot", render: () => <Slide1Snapshot orgName={orgName} metrics={data.metrics} intake={data.intake} /> },
@@ -58,14 +54,6 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
     { id: 7, name: "Notes & History", render: () => <Slide7Notes orgId={orgId} tasks={data.tasks} projects={data.projects} notes={data.notes} activity={data.activity} scenarios={data.scenarios} get={internalEdits.get} save={internalEdits.save} editing={editing} /> },
   ], [orgName, data, editing, internalEdits, orgId]);
 
-  const showScoresKey = "__show_scores";
-  const showScores = clientEdits.get(4, showScoresKey, "true") === "true";
-  const setShowScores = (v: boolean) => clientEdits.save(4, showScoresKey, v ? "true" : "false");
-
-  const daysIn = data.org?.plan_activated_at
-    ? Math.floor((Date.now() - new Date(data.org.plan_activated_at).getTime()) / 86400000)
-    : null;
-
   const clientSlides: SlideDef[] = useMemo(() => [
     { id: 1, name: "Your Organization", render: () => <KickoffSlide1 org={data.org} intake={data.intake} metrics={data.metrics} daysIn={clientMode === "progress" ? daysIn : null} /> },
     { id: 2, name: "Revenue Picture", render: () => <KickoffSlide2 metrics={data.metrics} intake={data.intake} /> },
@@ -74,6 +62,18 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
     { id: 5, name: "90-Day Plan", render: () => <KickoffSlide5 projects={data.projects} tasks={data.tasks} /> },
     { id: 6, name: "What Success Looks Like", render: () => <KickoffSlide6 metrics={data.metrics} intake={data.intake} /> },
   ], [data, clientMode, daysIn, showScores]);
+
+  if (data.loading || internalEdits.loading || clientEdits.loading) {
+    return <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading presentation…</div>;
+  }
+  if (!data.metrics) {
+    return (
+      <div className="curve-card text-center py-16">
+        <p className="font-semibold">Intake not yet completed — presentations unavailable</p>
+        <p className="text-sm text-muted-foreground mt-2">Once the org submits intake and metrics are calculated, presentations will appear here.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
