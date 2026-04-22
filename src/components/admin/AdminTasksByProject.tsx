@@ -188,6 +188,7 @@ export default function AdminTasksByProject({ projects, tasks, scores, orgId, on
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               );
             });
