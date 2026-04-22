@@ -392,7 +392,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
                   <div className="flex items-baseline justify-between mb-1">
                     <div className="flex items-center gap-1.5">
                       <button
-                        onClick={onJumpToPlan}
+                        onClick={() => onJumpToPlan()}
                         className="text-sm font-medium hover:text-accent transition-colors"
                       >
                         {e.name}
