@@ -7,15 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText } from "lucide-react";
-import { getCategoriesForOrg, findCard, type CommCard } from "@/lib/communicationCategories";
+import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle } from "lucide-react";
+import {
+  getCategoriesForOrg,
+  findCard,
+  buildUserPrompt,
+  validateCard,
+  visibleFields,
+  type CommCard,
+  type CommField,
+} from "@/lib/communicationCategories";
 
 type Personalization = {
   recipient: string;
-  playerName: string;
   eventOrDate: string;
   additionalContext: string;
 };
+
+type Track = "dsf" | "direct";
 
 const TONES = ["Professional", "Conversational", "Formal"] as const;
 const FORMATS = ["Email", "Text message", "Social post", "In-person script"] as const;
@@ -27,13 +36,10 @@ const REFINE_PILLS = [
 
 export default function Communications() {
   const { orgId: routeOrgId } = useParams<{ orgId?: string }>();
-  const navigate = useNavigate();
   const { profile, role, loading: authLoading } = useAuth();
 
-  // Resolve effective org id: admin uses route param; org user uses their profile org
   const effectiveOrgId = role === "admin" ? routeOrgId ?? null : profile?.org_id ?? null;
 
-  // Admin without an org id in URL → send to selector
   if (!authLoading && role === "admin" && !routeOrgId) {
     return <Navigate to="/admin/communications" replace />;
   }
@@ -72,23 +78,27 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
 
   // Selection / workspace state
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState("");
+  const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [tone, setTone] = useState<typeof TONES[number]>("Professional");
   const [format, setFormat] = useState<typeof FORMATS[number]>("Email");
   const [search, setSearch] = useState("");
+
+  // Track selector — admin defaults to DSF, org user to Direct
+  const [track, setTrack] = useState<Track>(isAdminContext ? "dsf" : "direct");
 
   const [generating, setGenerating] = useState(false);
   const [draft, setDraft] = useState<string | null>(null);
   const [refined, setRefined] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [missingKeys, setMissingKeys] = useState<string[]>([]);
 
   // Personalization
   const [personalOpen, setPersonalOpen] = useState(false);
   const [personal, setPersonal] = useState<Personalization>({
-    recipient: "", playerName: "", eventOrDate: "", additionalContext: "",
+    recipient: "", eventOrDate: "", additionalContext: "",
   });
-  const personalActive = !!(personal.recipient || personal.playerName || personal.eventOrDate || personal.additionalContext);
+  const personalActive = !!(personal.recipient || personal.eventOrDate || personal.additionalContext);
 
   // Refinement
   const [refining, setRefining] = useState(false);
@@ -103,21 +113,25 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
     return found?.card ?? null;
   }, [selectedCardId, categories]);
 
+  const isSponsorCard = !!(selectedCardId && selectedCardId.startsWith("sponsor_"));
+  const isAffiliateDeck = selectedCardId === "affiliate_sales_deck";
+
   function handleSelectCard(card: CommCard) {
     setSelectedCardId(card.id);
-    setPrompt(card.prompt);
+    setFieldValues({});
+    setMissingKeys([]);
     setDraft(null);
     setRefined(false);
     setError(null);
     setShowRefine(false);
     setRefineText("");
-    // mobile auto-scroll
     setTimeout(() => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }
 
   function startOver() {
     setSelectedCardId(null);
-    setPrompt("");
+    setFieldValues({});
+    setMissingKeys([]);
     setDraft(null);
     setRefined(false);
     setError(null);
@@ -127,6 +141,23 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
 
   async function generate() {
     if (!selectedCard) return;
+
+    const missing = validateCard(selectedCard, fieldValues);
+    if (missing.length > 0) {
+      setMissingKeys(missing);
+      setError("Please fill in the required fields above.");
+      return;
+    }
+    setMissingKeys([]);
+
+    // Build the actual user prompt from structured inputs
+    const promptText = buildUserPrompt(selectedCard, fieldValues, personalActive ? personal : undefined);
+
+    // Compose the displayed communication type for the log
+    const typeLabel = isSponsorCard
+      ? `${track === "dsf" ? "DSF" : "Direct"} ${selectedCard.label}`
+      : selectedCard.label;
+
     setGenerating(true);
     setError(null);
     setDraft(null);
@@ -135,10 +166,12 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
       const { data, error: fnErr } = await supabase.functions.invoke("draft-communication", {
         body: {
           orgId,
-          communicationType: selectedCard.label,
-          prompt,
+          communicationType: typeLabel,
+          prompt: promptText,
           tone,
           format,
+          outreachTrack: isSponsorCard ? track : undefined,
+          isAffiliateDeck,
           personalization: personalActive ? personal : undefined,
         },
       });
@@ -212,7 +245,7 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
       <div className="mb-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight">Communication Assistant</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Describe what you need and we'll draft it for you — informed by your organization, your families, and the Curve communication standards.
+          Draft professional communications for your organization — informed by your data and built to the Curve standard.
         </p>
       </div>
 
@@ -241,7 +274,7 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
               {personalActive && (
                 <span
                   className="ml-2 inline-flex items-center gap-1.5 rounded-full bg-accent-soft text-accent px-2 py-0.5 text-xs font-medium"
-                  title="Personalization active — your details are included in the draft"
+                  title="Personalization active"
                 >
                   <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Personalized
                 </span>
@@ -271,11 +304,6 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
                 onChange={(e) => setPersonal({ ...personal, recipient: e.target.value })}
               />
               <Input
-                placeholder="Specific player name (optional) — e.g. Jake Martinez"
-                value={personal.playerName}
-                onChange={(e) => setPersonal({ ...personal, playerName: e.target.value })}
-              />
-              <Input
                 placeholder="Specific event or date (optional) — e.g. Fall Showcase, October 15th"
                 value={personal.eventOrDate}
                 onChange={(e) => setPersonal({ ...personal, eventOrDate: e.target.value })}
@@ -284,6 +312,7 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
                 placeholder="Additional context (optional)"
                 value={personal.additionalContext}
                 onChange={(e) => setPersonal({ ...personal, additionalContext: e.target.value })}
+                className="md:col-span-2"
               />
             </div>
           </div>
@@ -306,6 +335,42 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
                 {cat.description && (
                   <p className="text-xs text-muted-foreground mb-2">{cat.description}</p>
                 )}
+
+                {/* Track selector for sponsor outreach */}
+                {cat.hasTrackSelector && (
+                  <div className="mb-3 flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setTrack("dsf")}
+                        className={cn(
+                          "flex-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                          track === "dsf"
+                            ? "border-warning bg-warning-soft text-warning"
+                            : "border-border bg-card text-foreground hover:border-warning/50",
+                        )}
+                      >
+                        DSF Outreach
+                      </button>
+                      <button
+                        onClick={() => setTrack("direct")}
+                        className={cn(
+                          "flex-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                          track === "direct"
+                            ? "border-info bg-info-soft text-info"
+                            : "border-border bg-card text-foreground hover:border-info/50",
+                        )}
+                      >
+                        Direct Org Outreach
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {track === "dsf"
+                        ? "Written from the Diamond Sports Foundation on behalf of your organization."
+                        : "Written from your organization directly — for sponsors you are pursuing independently."}
+                    </p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2">
                   {cat.cards.map((card) => {
                     const active = selectedCardId === card.id;
@@ -350,25 +415,36 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
             <div className="curve-card text-center py-16">
               <Sparkles className="h-10 w-10 text-accent mx-auto mb-3" />
               <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                Select a communication type to get started or describe what you need in your own words.
+                Select a communication type to get started.
               </p>
             </div>
           ) : draft === null ? (
             <div className="curve-card space-y-5">
+              {/* DSF amber note */}
+              {isSponsorCard && track === "dsf" && (
+                <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-foreground flex gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <p>
+                    These communications are written from the Diamond Sports Foundation on behalf of <strong>{orgName}</strong>. Add your signature block after copying — these will be sent by Owen Brittle or Dave Bultema, Assistant Directors at DSF.
+                  </p>
+                </div>
+              )}
+
               <div>
-                <label className="text-sm font-semibold mb-2 block">What would you like to say?</label>
-                <Textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder={selectedCard.id === "something_else"
-                    ? "Describe what you need and we'll draft it for you"
-                    : "Describe what you'd like the message to say…"}
-                  className="min-h-[140px]"
-                />
-                <p className="text-xs text-muted-foreground mt-1">{prompt.length} characters</p>
+                <h2 className="font-display text-lg font-semibold">{selectedCard.label}</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Fill in the details below to generate your draft.</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Structured input fields */}
+              <StructuredFieldRenderer
+                card={selectedCard}
+                values={fieldValues}
+                onChange={setFieldValues}
+                missingKeys={missingKeys}
+              />
+
+              {/* Settings row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-border">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Tone</p>
                   <div className="flex flex-wrap gap-2">
@@ -431,6 +507,14 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
                 </button>
                 <span className="text-xs text-muted-foreground">~{wordCount} words</span>
               </div>
+
+              {/* DSF reminder above draft */}
+              {isSponsorCard && track === "dsf" && (
+                <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-xs text-foreground flex gap-2">
+                  <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+                  <p>This draft is written from the Diamond Sports Foundation. Add your signature block before sending.</p>
+                </div>
+              )}
 
               <div className="curve-card relative">
                 {refined && (
@@ -517,5 +601,108 @@ function CommunicationsInner({ orgId, isAdminContext }: { orgId: string; isAdmin
         </div>
       </div>
     </AppShell>
+  );
+}
+
+// ── Structured field renderer ─────────────────────────────────────────────
+
+function StructuredFieldRenderer({
+  card,
+  values,
+  onChange,
+  missingKeys,
+}: {
+  card: CommCard;
+  values: Record<string, string>;
+  onChange: (next: Record<string, string>) => void;
+  missingKeys: string[];
+}) {
+  const fields = visibleFields(card, values);
+
+  function setField(key: string, val: string) {
+    onChange({ ...values, [key]: val });
+  }
+
+  return (
+    <div className="space-y-3">
+      {fields.map((f) => (
+        <FieldRow
+          key={f.key}
+          field={f}
+          value={values[f.key] || ""}
+          onChange={(v) => setField(f.key, v)}
+          missing={missingKeys.includes(f.key)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function FieldRow({
+  field, value, onChange, missing,
+}: {
+  field: CommField;
+  value: string;
+  onChange: (v: string) => void;
+  missing: boolean;
+}) {
+  const labelEl = (
+    <label className="text-xs font-semibold mb-1 block">
+      {field.label}
+      {field.required && <span className="text-warning ml-0.5">*</span>}
+    </label>
+  );
+  const errorClass = missing ? "border-warning ring-1 ring-warning/40" : "";
+
+  if (field.kind === "pill" && field.options) {
+    return (
+      <div>
+        {labelEl}
+        <div className={cn("flex flex-wrap gap-2", missing && "rounded-md p-1 ring-1 ring-warning/40")}>
+          {field.options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt)}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-medium border transition-colors",
+                value === opt
+                  ? "bg-accent text-accent-foreground border-accent"
+                  : "bg-card text-foreground border-border hover:border-accent/50",
+              )}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (field.kind === "textarea") {
+    return (
+      <div>
+        {labelEl}
+        <Textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.placeholder}
+          className={cn("min-h-[80px]", errorClass)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {labelEl}
+      <Input
+        type={field.kind === "date" ? "date" : "text"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={field.placeholder}
+        className={cn(errorClass)}
+      />
+    </div>
   );
 }
