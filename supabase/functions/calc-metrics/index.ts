@@ -635,6 +635,68 @@ function calculate(intake: any) {
     : hs_player_pct <= 0.30 ? "HS Program Expansion"
     : "Pipeline Optimization";
 
+  // ===== Round 2: Risk Assessment =====
+  const execution_risk = operations_health_score >= 7 ? "Low"
+    : operations_health_score >= 4 ? "Medium" : "High";
+  const market_risk = market_position_health_score >= 7 ? "Low"
+    : market_position_health_score >= 4 ? "Medium" : "High";
+  let retention_risk: string;
+  if (retention_score >= 7 && retention_pct >= 75) retention_risk = "Low";
+  else if (retention_score < 4 && retention_pct < 65) retention_risk = "High";
+  else retention_risk = "Medium";
+
+  // Engagement complexity (priority order: Complex > Straightforward > Moderate)
+  let engagement_complexity: string;
+  if (overall_health_score < 20 || execution_risk === "High" || market_risk === "High" || retention_risk === "High") {
+    engagement_complexity = "Complex";
+  } else if (overall_health_score > 30 && execution_risk === "Low" && market_risk === "Low" && retention_risk === "Low") {
+    engagement_complexity = "Straightforward";
+  } else {
+    engagement_complexity = "Moderate";
+  }
+
+  // Engagement approach recommendation
+  let engagement_approach_recommendation: string;
+  if (engagement_complexity === "Complex") {
+    engagement_approach_recommendation = `This organization requires foundational work before revenue strategies will stick. Begin with operations and coach alignment — inconsistent execution will undermine any revenue initiative. Expect a longer runway of 60–90 days before meaningful revenue moves are visible. Sequence: stabilize operations first, then activate ${priority_engine} as the first revenue engine.`;
+  } else if (engagement_complexity === "Moderate") {
+    engagement_approach_recommendation = `This organization has the foundation to execute but has meaningful gaps that need attention in parallel with revenue work. Run operations improvements and revenue activation simultaneously rather than sequentially. The ${priority_engine} engine is the highest-leverage starting point and can begin immediately while operational improvements are layered in.`;
+  } else {
+    engagement_approach_recommendation = `This organization is well-positioned to execute quickly. Strong operational foundation means revenue strategies can be activated immediately without foundational work first. Lead with ${priority_engine} as the primary focus and expect to see results within the first 30–45 days. Multiple engines can be activated in parallel given their execution capacity.`;
+  }
+
+  // Pricing strategy note
+  let pricing_strategy_note: string | null = null;
+  if (intake.local_market_competition === "Highly Competitive" && pricing_score <= 6) {
+    pricing_strategy_note = "High competition market — pricing increases must be paired with clear value differentiation. Lead with sponsorship and events before raising dues to build perceived value first.";
+  } else if (intake.local_market_competition === "Limited" && pricing_score <= 7) {
+    pricing_strategy_note = "Limited local competition provides pricing power. This org can likely support higher fees without significant family attrition — pricing is a near-term opportunity.";
+  } else if (intake.local_market_competition === "Moderate") {
+    pricing_strategy_note = "Moderate competition — standard pricing strategy applies. Focus on value packaging before rate increases.";
+  }
+
+  // Admin alerts
+  const admin_alerts: { type: string; severity: string; message: string }[] = [];
+  if (execution_risk === "High") {
+    admin_alerts.push({ type: "execution_risk", severity: "high", message: "Operations health is critically low. This org may struggle to execute recommendations. Prioritize coach alignment and communication standards before activating revenue strategies." });
+  }
+  if (market_risk === "High") {
+    admin_alerts.push({ type: "market_risk", severity: "high", message: "Market position is weak — low demand and/or high competition creates headwinds. Revenue strategies need to account for market constraints. Consider retention-first approach." });
+  }
+  if (retention_risk === "High") {
+    admin_alerts.push({ type: "retention_risk", severity: "high", message: "Retention is critically low. Every revenue gain is partially offset by churn. Retention plan must be activated immediately alongside any revenue initiatives." });
+  }
+  if (selection_leakage_flag) {
+    admin_alerts.push({ type: "selection_leakage", severity: "medium", message: "Org regularly cuts players with no alternative programming. Revenue is leaving the ecosystem. Developmental tier conversation recommended in kickoff." });
+  }
+  if (high_dues_concentration) {
+    admin_alerts.push({ type: "revenue_concentration", severity: "medium", message: "85%+ of revenue from player fees. Single revenue stream creates vulnerability. Diversification should be an early priority." });
+  }
+  // revenue_needs_review pulled from intake (set in serve handler before calculate)
+  if (intake.revenue_needs_review === true) {
+    admin_alerts.push({ type: "revenue_accuracy", severity: "medium", message: "Org flagged their revenue data as potentially inaccurate during intake. Verify financials before presenting opportunity numbers." });
+  }
+
   return {
     market_multiplier, revenue_benchmark, revenue_per_player, hs_player_pct,
     calculated_total_revenue,
