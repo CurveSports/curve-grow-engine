@@ -21,6 +21,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/tasks", label: "Portfolio Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
   { to: "/admin/templates", label: "Templates", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
+  { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
 ];
 const ADMIN_SOON: NavItem[] = [
   { label: "Sponsorship Pipeline", icon: TrendingUp, soon: true },
@@ -32,11 +33,11 @@ const ORG_PRIMARY: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
   { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
   { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
+  { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
 ];
 const ORG_SOON: NavItem[] = [
   { label: "Sponsorships", icon: Megaphone, soon: true },
   { label: "Communications", icon: Mail, soon: true },
-  { label: "Calculators", icon: Calculator, soon: true },
 ];
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
