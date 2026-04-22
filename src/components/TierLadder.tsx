@@ -350,12 +350,25 @@ function AdminProgressionChart({ history }: { history: any[] }) {
 export function TierAdvancementBanner({ orgId, currentTier }: { orgId: string; currentTier: string | null }) {
   const [dismissed, setDismissed] = useState(true);
   const storageKey = `tier-banner-dismissed:${orgId}:${currentTier}`;
+  const confettiKey = `tier-confetti-fired:${orgId}:${currentTier}`;
 
   useEffect(() => {
     if (!currentTier) return;
     const seen = localStorage.getItem(storageKey);
     setDismissed(!!seen);
-  }, [storageKey, currentTier]);
+
+    // Fire confetti once per advancement
+    if (!seen && !localStorage.getItem(confettiKey)) {
+      localStorage.setItem(confettiKey, "1");
+      import("canvas-confetti").then(({ default: confetti }) => {
+        const fire = (opts: confetti.Options) =>
+          confetti({ origin: { y: 0.3 }, spread: 70, startVelocity: 45, ticks: 200, ...opts });
+        fire({ particleCount: 80, angle: 60, origin: { x: 0, y: 0.4 } });
+        fire({ particleCount: 80, angle: 120, origin: { x: 1, y: 0.4 } });
+        setTimeout(() => fire({ particleCount: 60, spread: 100 }), 250);
+      }).catch(() => {});
+    }
+  }, [storageKey, confettiKey, currentTier]);
 
   const dismiss = () => {
     localStorage.setItem(storageKey, "1");
