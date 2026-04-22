@@ -736,6 +736,10 @@ function calculate(intake: any) {
     operations_health_score, market_position_health_score, program_health_score,
     strategic_clarity_score, overall_health_score,
     selection_leakage_flag, growth_opportunity_direction,
+    // Round 2 risk + engagement
+    execution_risk, market_risk, retention_risk, engagement_complexity,
+    engagement_approach_recommendation, pricing_strategy_note,
+    admin_alerts,
     calculated_at: new Date().toISOString(),
   };
 }
