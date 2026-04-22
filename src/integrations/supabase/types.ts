@@ -697,6 +697,7 @@ export type Database = {
           plan_status: Database["public"]["Enums"]["plan_status"]
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
+          source: Database["public"]["Enums"]["task_source"]
           status: Database["public"]["Enums"]["task_status"]
           suggested_due_date: string | null
           task_type: Database["public"]["Enums"]["task_type"]
@@ -717,6 +718,7 @@ export type Database = {
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
+          source?: Database["public"]["Enums"]["task_source"]
           status?: Database["public"]["Enums"]["task_status"]
           suggested_due_date?: string | null
           task_type: Database["public"]["Enums"]["task_type"]
@@ -737,6 +739,7 @@ export type Database = {
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
+          source?: Database["public"]["Enums"]["task_source"]
           status?: Database["public"]["Enums"]["task_status"]
           suggested_due_date?: string | null
           task_type?: Database["public"]["Enums"]["task_type"]
@@ -1545,6 +1548,7 @@ export type Database = {
         | "Operations"
         | "Affiliate"
       task_priority: "high" | "medium" | "low"
+      task_source: "system" | "library" | "custom"
       task_status: "not_started" | "in_progress" | "completed" | "overdue"
       task_type: "Strategy" | "Execute" | "Communication" | "Track"
     }
@@ -1730,6 +1734,7 @@ export const Constants = {
         "Affiliate",
       ],
       task_priority: ["high", "medium", "low"],
+      task_source: ["system", "library", "custom"],
       task_status: ["not_started", "in_progress", "completed", "overdue"],
       task_type: ["Strategy", "Execute", "Communication", "Track"],
     },
