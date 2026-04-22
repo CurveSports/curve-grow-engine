@@ -285,8 +285,24 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
     ? Math.floor((Date.now() - new Date(org.last_activity_at).getTime()) / 86400000)
     : null;
 
+  const highAlerts = (org.admin_alerts ?? []).filter((a: any) => a?.severity === "high");
+  const complexity = org.engagement_complexity;
+  const complexityClass =
+    complexity === "Straightforward" ? "bg-accent-soft text-accent border-accent/30" :
+    complexity === "Moderate" ? "bg-warning-soft text-warning border-warning/30" :
+    complexity === "Complex" ? "bg-destructive/10 text-destructive border-destructive/30" :
+    "bg-secondary text-muted-foreground border-border";
+
   return (
-    <Link to={`/admin/org/${org.id}`} className="block curve-card-interactive group">
+    <Link to={`/admin/org/${org.id}`} className="block curve-card-interactive group relative">
+      {highAlerts.length > 0 && (
+        <span
+          title={`This org has ${highAlerts.length} high-priority alert${highAlerts.length === 1 ? "" : "s"}`}
+          className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center shadow-md ring-2 ring-background z-10"
+        >
+          !
+        </span>
+      )}
       <div className="flex items-start justify-between gap-2 mb-4">
         <h3 className="font-display font-semibold text-[18px] leading-tight group-hover:text-accent transition-colors">{org.name}</h3>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -343,13 +359,21 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
             </>
           )}
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: "#8B5CF6" }} />
               Health: <span className="font-semibold" style={{ color: "#8B5CF6" }}>{org.overall_health_score ?? "—"}/40</span>
             </span>
             <span>{daysAgo !== null ? `Active ${daysAgo}d ago` : "No activity"}</span>
           </div>
+          {complexity && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">Complexity:</span>
+              <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border", complexityClass)}>
+                {complexity}
+              </span>
+            </div>
+          )}
           {org.revenue_needs_review && (
             <div className="mt-3 inline-flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-warning bg-warning-soft px-2 py-1 rounded">
               <Sparkles className="h-3 w-3" /> Revenue review flagged
