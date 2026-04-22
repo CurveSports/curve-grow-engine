@@ -492,6 +492,47 @@ export type Database = {
           },
         ]
       }
+      org_presentation_edits: {
+        Row: {
+          edited_at: string
+          edited_by: string
+          edited_value: string
+          field_key: string
+          id: string
+          org_id: string
+          presentation_type: string
+          slide_number: number
+        }
+        Insert: {
+          edited_at?: string
+          edited_by: string
+          edited_value: string
+          field_key: string
+          id?: string
+          org_id: string
+          presentation_type: string
+          slide_number: number
+        }
+        Update: {
+          edited_at?: string
+          edited_by?: string
+          edited_value?: string
+          field_key?: string
+          id?: string
+          org_id?: string
+          presentation_type?: string
+          slide_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_presentation_edits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_projects: {
         Row: {
           awaiting_completion_approval: boolean
