@@ -24,6 +24,7 @@ import {
   executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
   engineScoreExplain,
 } from "@/components/admin/explainContent";
+import { TierLadder } from "@/components/TierLadder";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
