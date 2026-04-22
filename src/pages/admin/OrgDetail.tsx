@@ -336,7 +336,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
             score={platformScore}
             done={platformDone}
             total={platformTotal}
-            onJump={onJumpToPlan}
+            onJump={() => onJumpToPlan("Platform")}
           />
           <UniversalEngineCard
             label="Marketing Foundation"
@@ -344,7 +344,7 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
             score={marketingScore}
             done={marketingDone}
             total={marketingTotal}
-            onJump={onJumpToPlan}
+            onJump={() => onJumpToPlan("Marketing")}
           />
         </div>
       </div>
