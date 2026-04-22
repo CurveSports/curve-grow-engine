@@ -7,7 +7,7 @@ import { ImpactStat } from "./ImpactStat";
 import { ShareModal } from "./ShareModal";
 import {
   calcWallet, num,
-  APPAREL_PACKAGE_DEFAULT, ADDON_PACKAGE_DEFAULT, TRAVEL_SPEND_DEFAULT,
+  APPAREL_PACKAGE_DEFAULT, ADDON_PACKAGE_DEFAULT, AVG_ROOM_NIGHT_DEFAULT, ENGINE_CASHBACK_RATE,
   type WalletContext, type WalletInputs,
 } from "@/lib/calculators";
 import { saveScenario, type ScenarioLabel } from "./scenarioStore";
