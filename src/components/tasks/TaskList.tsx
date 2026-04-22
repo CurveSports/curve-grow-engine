@@ -28,7 +28,7 @@ export default function TaskList({ tasks, scores, onSelect, showPlanStatus = fal
         const score = scores?.[engine];
         const draftInGroup = list.filter(t => t.plan_status === "draft").length;
         return (
-          <div key={engine} className="curve-card p-0 overflow-hidden">
+          <div key={engine} id={`engine-${engine}`} className="curve-card p-0 overflow-hidden scroll-mt-24">
             <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30">
               <div className="flex items-center gap-3">
                 <h3 className="font-display font-semibold">{engine}</h3>
