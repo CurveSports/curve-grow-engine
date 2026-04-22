@@ -37,14 +37,14 @@ export default function RouteResolver() {
         return;
       }
 
-      // 2. Welcome gate
+      // 2. Admins skip the welcome flow and go straight to their dashboard
+      if (role === "admin") { navigate("/admin", { replace: true }); return; }
+
+      // 3. Welcome gate (org users only)
       if (!onboarding?.welcomed_at) {
         navigate("/welcome", { replace: true });
         return;
       }
-
-      // 3. Role-based destination
-      if (role === "admin") { navigate("/admin", { replace: true }); return; }
 
       if (role === "org_user" && profile?.org_id) {
         const { data: intake } = await supabase
