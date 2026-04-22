@@ -70,6 +70,11 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
 
   if (loading) return <p className="text-sm text-muted-foreground">Loading…</p>;
 
+  const unassignedCount = tasks.filter((t) => !(t as any).project_id).length;
+  const hasNoProjects = projects.length === 0;
+  const showApprovalNudge = !planActivatedAt && unassignedCount > 0;
+  const showFirstProjectNudge = !!planActivatedAt && hasNoProjects && unassignedCount > 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -78,6 +83,33 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
           <Plus className="h-4 w-4 mr-1" /> New Project
         </Button>
       </div>
+
+      {showApprovalNudge && (
+        <div className="rounded-lg border border-warning/40 bg-warning-soft p-4 flex items-start gap-3">
+          <Lock className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-foreground">Approve the recommended plan first</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {unassignedCount} draft task{unassignedCount === 1 ? "" : "s"} are waiting for review on the Action Plan tab. Approve them to start organizing work into projects.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {showFirstProjectNudge && (
+        <div className="rounded-lg border border-accent/40 bg-accent-soft p-4 flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-medium text-foreground">Plan approved — create your first project</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              You have {unassignedCount} approved task{unassignedCount === 1 ? "" : "s"} ready to release. Bundle them into a project to send the first wave of work to the org.
+            </p>
+          </div>
+          <Button size="sm" onClick={() => setCreateOpen(true)} className="bg-accent hover:bg-accent/90 text-accent-foreground flex-shrink-0">
+            <Plus className="h-4 w-4 mr-1" /> Create First Project
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Column title="Draft" count={byStatus.draft.length}>
