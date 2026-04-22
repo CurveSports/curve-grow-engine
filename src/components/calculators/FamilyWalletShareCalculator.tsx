@@ -149,12 +149,13 @@ export function FamilyWalletShareCalculator({
             <StreamRow
               label="Player Dues"
               current={fmt(ctx.currentDues)}
-              currentSub={`${fmt(out.lowWallet > 0 ? ctx.currentDues / Math.max(1, ctx.totalPlayers) : 0)} per player`}
-              value={inputs.duesCapturePct}
-              min={0} max={100} step={1} suffix="%"
-              sliderLabel="Capture rate"
-              onChange={(v) => setInputs({ ...inputs, duesCapturePct: v })}
+              currentSub={`${fmt(ctx.totalPlayers > 0 ? ctx.currentDues / ctx.totalPlayers : 0)} per player today`}
+              value={inputs.duesIncreasePct}
+              min={0} max={50} step={1} suffix="%"
+              sliderLabel="Fee increase"
+              onChange={(v) => setInputs({ ...inputs, duesIncreasePct: v })}
               projected={fmt(out.newDues)}
+              assumption="Applied as a percentage lift to current dues revenue (no attrition modeled here — see Pricing Sensitivity for that)."
             />
             <StreamRow
               label="Sponsorship"
@@ -178,24 +179,49 @@ export function FamilyWalletShareCalculator({
               prefixValue
             />
             <StreamRow
-              label="Apparel Margin"
+              label="Apparel / Hard Goods Spend Capture"
               current={fmt(ctx.currentApparelMargin)}
-              currentSub="of $600 family spend"
+              currentSub={`of ${fmt(inputs.apparelPackageAmount)} family spend`}
               value={inputs.apparelCapturePct}
-              min={0} max={60} step={1} suffix="%"
+              min={0} max={100} step={1} suffix="%"
               sliderLabel="Capture rate"
               onChange={(v) => setInputs({ ...inputs, apparelCapturePct: v })}
               projected={fmt(out.newApparel)}
+              packageLabel="Package $/family/yr"
+              packageValue={inputs.apparelPackageAmount}
+              onPackageChange={(v) => setInputs({ ...inputs, apparelPackageAmount: v })}
+              assumption="Default $600/family covers helmets, bats, gloves, bags, and other hard goods."
             />
             <StreamRow
               label="Training / Add-Ons"
               current={fmt(ctx.currentAddOns)}
-              currentSub="monthly package adoption"
+              currentSub={`${(inputs.addonPackageAmount / 12).toFixed(0)}/mo · ${fmt(inputs.addonPackageAmount)}/yr package`}
               value={inputs.addonAdoptionPct}
-              min={0} max={30} step={1} suffix="%"
-              sliderLabel="Adoption"
+              min={0} max={50} step={1} suffix="%"
+              sliderLabel="Family adoption"
               onChange={(v) => setInputs({ ...inputs, addonAdoptionPct: v })}
               projected={fmt(out.newAddOns)}
+              packageLabel="Package $/family/yr"
+              packageValue={inputs.addonPackageAmount}
+              onPackageChange={(v) => setInputs({ ...inputs, addonPackageAmount: v })}
+              assumption="Default $100/mo ($1,200/yr) per adopting family — covers lessons, skills training, or recovery packages. Adjust to match your actual offering."
+            />
+            <StreamRow
+              label="Travel / Outside Spend Capture"
+              current="$0"
+              currentSub={`Families spend ~${fmt(inputs.travelSpendPerFamily)}/yr on outside travel & dining`}
+              value={inputs.travelCapturePct}
+              min={0} max={40} step={1} suffix="%"
+              sliderLabel="Redirected to your org"
+              onChange={(v) => setInputs({ ...inputs, travelCapturePct: v })}
+              projected={fmt(out.newTravel)}
+              packageLabel="Outside spend $/family"
+              packageValue={inputs.travelSpendPerFamily}
+              onPackageChange={(v) => setInputs({ ...inputs, travelSpendPerFamily: v })}
+              packageMin={5000}
+              packageMax={7000}
+              packageStep={250}
+              assumption="Assumes $5K–$7K of family spend currently flows to outside hotels, restaurants, and travel. Capture via block hotel rates, on-site concessions, or team travel packages where you keep margin."
             />
             {ctx.hasFacility && (
               <StreamRow
