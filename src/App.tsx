@@ -17,6 +17,7 @@ import AdminInvite from "@/pages/AdminInvite";
 import AdminOrgTasks from "@/pages/admin/AdminOrgTasks";
 import AdminTasksPage from "@/pages/admin/AdminTasksPage";
 import OrgDetail from "@/pages/admin/OrgDetail";
+import AdminHealthReports from "@/pages/admin/AdminHealthReports";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
