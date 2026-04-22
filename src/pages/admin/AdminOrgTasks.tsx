@@ -59,25 +59,18 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  // Legacy support: if URL still has ?engine=, scroll to that engine block within the project view.
   const engineParam = searchParams.get("engine");
-  const clearEngineFocus = () => {
-    const next = new URLSearchParams(searchParams);
-    next.delete("engine");
-    setSearchParams(next, { replace: true });
-  };
-
-  // Tasks for engine focus view (all tasks for that engine across projects + unassigned)
-  const engineTasks = useMemo(
-    () => (engineParam ? tasks.filter((t) => t.engine === engineParam) : []),
-    [tasks, engineParam]
-  );
-  const engineTasksByStatus = useMemo(() => {
-    const out: Record<TaskStatus, OrgTask[]> = { not_started: [], in_progress: [], completed: [], overdue: [] };
-    for (const t of engineTasks) out[t.status as TaskStatus]?.push(t);
-    return out;
-  }, [engineTasks]);
-  const projectsById = useMemo(() => Object.fromEntries(projects.map((p) => [p.id, p])), [projects]);
+  useEffect(() => {
+    if (loading || !engineParam) return;
+    const el = document.getElementById(`engine-${engineParam}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-2", "ring-accent");
+      setTimeout(() => el.classList.remove("ring-2", "ring-accent"), 2000);
+    }
+  }, [loading, engineParam, tasks]);
 
   const draftCount = useMemo(() => tasks.filter(t => t.plan_status === "draft").length, [tasks]);
 
