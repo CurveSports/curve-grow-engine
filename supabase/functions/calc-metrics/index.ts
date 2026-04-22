@@ -1027,7 +1027,7 @@ async function notifyTierAdvancement(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { org_id, intake } = await req.json();
+    const { org_id, intake, reset } = await req.json();
     if (!org_id || !intake) {
       return new Response(JSON.stringify({ error: "org_id and intake required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
