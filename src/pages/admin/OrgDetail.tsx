@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { ENGINE_SCORE_FIELD } from "@/lib/tasks";
-import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail } from "lucide-react";
+import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import CommunicationsLogTab from "@/components/admin/CommunicationsLogTab";
 import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
@@ -189,6 +190,7 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
               Activate Plan
             </Button>
           )}
+          <RecalcMetricsButton orgId={orgId} />
           <Button size="sm" variant="outline" onClick={onAddNote}>Add Note</Button>
           <Button size="sm" variant="outline" onClick={onAddTask}>Add Task</Button>
           <Button size="sm" variant="outline" onClick={() => navigate(`/calculators/${orgId}`)}>Calculators</Button>
@@ -196,6 +198,42 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
         </div>
       </div>
     </div>
+  );
+}
+
+/* ─── TEMP: Recalculate Metrics (DELETE BEFORE GO-LIVE) ─── */
+function RecalcMetricsButton({ orgId }: { orgId: string }) {
+  const [busy, setBusy] = useState(false);
+  const handle = async () => {
+    setBusy(true);
+    try {
+      const { data: intake, error: iErr } = await supabase
+        .from("organization_intake").select("*").eq("org_id", orgId).maybeSingle();
+      if (iErr || !intake) throw new Error(iErr?.message ?? "No intake on file for this org.");
+      const { data, error } = await supabase.functions.invoke("calc-metrics", {
+        body: { org_id: orgId, intake },
+      });
+      if (error) throw error;
+      toast({ title: "Metrics recalculated", description: "Derived metrics refreshed from existing intake." });
+      setTimeout(() => window.location.reload(), 600);
+    } catch (e: any) {
+      toast({ title: "Recalculation failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handle}
+      disabled={busy}
+      title="DEV ONLY — re-runs calc-metrics against the saved intake. Remove before launch."
+      className="border-warning/40 text-warning hover:bg-warning-soft"
+    >
+      <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", busy && "animate-spin")} />
+      {busy ? "Recalculating…" : "Recalc Metrics (dev)"}
+    </Button>
   );
 }
 
