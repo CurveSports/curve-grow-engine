@@ -407,6 +407,53 @@ export type Database = {
           },
         ]
       }
+      org_calculator_scenarios: {
+        Row: {
+          calculator_type: string
+          id: string
+          input_values: Json
+          notes: string | null
+          org_id: string
+          output_values: Json
+          saved_at: string
+          saved_by: string
+          scenario_label: string
+          updated_at: string
+        }
+        Insert: {
+          calculator_type: string
+          id?: string
+          input_values?: Json
+          notes?: string | null
+          org_id: string
+          output_values?: Json
+          saved_at?: string
+          saved_by: string
+          scenario_label: string
+          updated_at?: string
+        }
+        Update: {
+          calculator_type?: string
+          id?: string
+          input_values?: Json
+          notes?: string | null
+          org_id?: string
+          output_values?: Json
+          saved_at?: string
+          saved_by?: string
+          scenario_label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_calculator_scenarios_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_notes: {
         Row: {
           created_at: string
@@ -1302,6 +1349,7 @@ export type Database = {
         | "project_completion_pending"
         | "project_completed"
         | "next_project_suggested"
+        | "calculator_share"
       org_note_tag:
         | "internal_planning"
         | "kickoff"
@@ -1481,6 +1529,7 @@ export const Constants = {
         "project_completion_pending",
         "project_completed",
         "next_project_suggested",
+        "calculator_share",
       ],
       org_note_tag: [
         "internal_planning",
