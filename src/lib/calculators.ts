@@ -150,8 +150,12 @@ export interface WalletInputs {
   apparelPackageAmount: number;  // $/family, default $600
   addonAdoptionPct: number;      // 0-50
   addonPackageAmount: number;    // $/family/year, default $1,200 ($100/mo)
-  travelCapturePct: number;      // 0-40, % of outside travel spend redirected to org
-  travelSpendPerFamily: number;  // $5,000-$7,000, default $6,000
+  // Hotel spend inputs (HS + Youth)
+  hsTournamentsAttending: number;       // tournaments per HS player per year
+  hsNightsPerTournament: number;        // avg hotel nights per tournament
+  youthTournamentsAttending: number;    // tournaments per youth player per year
+  youthNightsPerTournament: number;     // avg hotel nights per tournament
+  avgRoomNightCost: number;             // $/night, default $200
   facilityCapturePct: number;    // 0-100 of $2,400/player benchmark
 }
 
