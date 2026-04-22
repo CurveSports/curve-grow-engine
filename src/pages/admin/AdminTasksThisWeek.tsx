@@ -186,18 +186,52 @@ export default function AdminTasksThisWeek() {
                   </div>
                 </div>
                 {!isCollapsed && (
-                  <div className="divide-y divide-border">
-                    {engineOrder.map((engine) => {
-                      const list = engineMap[engine];
+                  <div>
+                    {(["overdue", "upcoming"] as const).map((bucket) => {
+                      const bucketEngines = engineOrder
+                        .map((engine) => {
+                          const list = engineMap[engine].filter((t) =>
+                            bucket === "overdue"
+                              ? !!t.due_date && t.due_date < today
+                              : !(t.due_date && t.due_date < today)
+                          );
+                          return { engine, list };
+                        })
+                        .filter((g) => g.list.length > 0);
+                      if (bucketEngines.length === 0) return null;
+                      const bucketTotal = bucketEngines.reduce((a, g) => a + g.list.length, 0);
+                      const isOverdue = bucket === "overdue";
                       return (
-                        <div key={engine} className="px-5 py-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-semibold text-sm">{engine}</h3>
-                            <span className="text-xs text-muted-foreground tabular-nums">{list.length}</span>
+                        <div key={bucket} className="border-t border-border first:border-t-0">
+                          <div
+                            className={cn(
+                              "px-5 py-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider",
+                              isOverdue
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-muted/40 text-muted-foreground"
+                            )}
+                          >
+                            {isOverdue ? (
+                              <AlertCircle className="h-3.5 w-3.5" />
+                            ) : (
+                              <Clock className="h-3.5 w-3.5" />
+                            )}
+                            <span>{isOverdue ? "Overdue" : "Upcoming"}</span>
+                            <span className="tabular-nums font-normal opacity-70">· {bucketTotal}</span>
                           </div>
-                          <div className="space-y-1">
-                            {list.map((t) => (
-                              <TaskRow key={t.id} task={t} orgId={orgId} today={today} />
+                          <div className="divide-y divide-border">
+                            {bucketEngines.map(({ engine, list }) => (
+                              <div key={engine} className="px-5 py-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h3 className="font-semibold text-sm">{engine}</h3>
+                                  <span className="text-xs text-muted-foreground tabular-nums">{list.length}</span>
+                                </div>
+                                <div className="space-y-1">
+                                  {list.map((t) => (
+                                    <TaskRow key={t.id} task={t} orgId={orgId} today={today} />
+                                  ))}
+                                </div>
+                              </div>
                             ))}
                           </div>
                         </div>
