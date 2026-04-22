@@ -21,6 +21,7 @@ export type Database = {
           addon_opportunity_high: number | null
           addon_opportunity_low: number | null
           addon_score: number | null
+          admin_alerts: Json | null
           affiliate_fee_opportunity_high: number | null
           affiliate_fee_opportunity_low: number | null
           affiliate_fee_revenue: number | null
@@ -41,6 +42,7 @@ export type Database = {
           diagnosis_text: string | null
           dues_revenue: number | null
           dues_revenue_pct: number | null
+          engagement_approach_recommendation: string | null
           engagement_complexity: string | null
           estimated_churned_players: number | null
           estimated_returning_players: number | null
@@ -86,6 +88,7 @@ export type Database = {
           pricing_opportunity_high: number | null
           pricing_opportunity_low: number | null
           pricing_score: number | null
+          pricing_strategy_note: string | null
           priority_engine: string | null
           program_health_score: number | null
           retention_health: string | null
@@ -119,6 +122,7 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
+          admin_alerts?: Json | null
           affiliate_fee_opportunity_high?: number | null
           affiliate_fee_opportunity_low?: number | null
           affiliate_fee_revenue?: number | null
@@ -139,6 +143,7 @@ export type Database = {
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
+          engagement_approach_recommendation?: string | null
           engagement_complexity?: string | null
           estimated_churned_players?: number | null
           estimated_returning_players?: number | null
@@ -184,6 +189,7 @@ export type Database = {
           pricing_opportunity_high?: number | null
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
+          pricing_strategy_note?: string | null
           priority_engine?: string | null
           program_health_score?: number | null
           retention_health?: string | null
@@ -217,6 +223,7 @@ export type Database = {
           addon_opportunity_high?: number | null
           addon_opportunity_low?: number | null
           addon_score?: number | null
+          admin_alerts?: Json | null
           affiliate_fee_opportunity_high?: number | null
           affiliate_fee_opportunity_low?: number | null
           affiliate_fee_revenue?: number | null
@@ -237,6 +244,7 @@ export type Database = {
           diagnosis_text?: string | null
           dues_revenue?: number | null
           dues_revenue_pct?: number | null
+          engagement_approach_recommendation?: string | null
           engagement_complexity?: string | null
           estimated_churned_players?: number | null
           estimated_returning_players?: number | null
@@ -282,6 +290,7 @@ export type Database = {
           pricing_opportunity_high?: number | null
           pricing_opportunity_low?: number | null
           pricing_score?: number | null
+          pricing_strategy_note?: string | null
           priority_engine?: string | null
           program_health_score?: number | null
           retention_health?: string | null
@@ -1256,6 +1265,7 @@ export type Database = {
         | "task_completed"
         | "task_overdue"
         | "no_activity_digest"
+        | "high_risk_alert"
       org_note_tag:
         | "internal_planning"
         | "kickoff"
@@ -1426,6 +1436,7 @@ export const Constants = {
         "task_completed",
         "task_overdue",
         "no_activity_digest",
+        "high_risk_alert",
       ],
       org_note_tag: [
         "internal_planning",
