@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import TaskList from "@/components/tasks/TaskList";
-import type { OrgTask } from "@/lib/tasks";
+import { ENGINES, groupByEngine, type OrgTask } from "@/lib/tasks";
 import type { OrgProject } from "@/lib/projects";
 import { PROJECT_STATUS_LABEL, PROJECT_STATUS_STYLE, buildProjectWithTasks } from "@/lib/projects";
 import { ChevronDown, ChevronRight } from "lucide-react";
