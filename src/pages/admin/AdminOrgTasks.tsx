@@ -210,7 +210,17 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
         </>
       )}
 
-      {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
+      {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : engineParam && !isReviewMode && projects.length > 0 ? (
+        <EngineFocusView
+          engine={engineParam}
+          tasks={engineTasks}
+          tasksByStatus={engineTasksByStatus}
+          score={scores[engineParam] ?? null}
+          projectsById={projectsById}
+          onSelect={setSelected}
+          onClear={clearEngineFocus}
+        />
+      ) : (
         tasks.length === 0 ? (
           <div className="curve-card text-center py-16">
             <p className="text-muted-foreground mb-4">{planActivatedAt ? "No tasks yet — add one to get started." : "No tasks yet. They'll be auto-generated when this org completes intake."}</p>
