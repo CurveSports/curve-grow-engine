@@ -14,6 +14,12 @@ import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
 import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
+import { ExplainProvider, ExplainButton } from "@/components/admin/ExplainDrawer";
+import {
+  operationsHealthExplain, marketPositionExplain, programHealthExplain, strategicClarityExplain,
+  executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
+  engineScoreExplain,
+} from "@/components/admin/explainContent";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
