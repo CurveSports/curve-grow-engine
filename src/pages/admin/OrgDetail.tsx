@@ -207,16 +207,17 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
 function RecalcMetricsButton({ orgId }: { orgId: string }) {
   const [busy, setBusy] = useState(false);
   const handle = async () => {
+    if (!confirm("DEV RESET: This will delete ALL tasks, projects, weekly focus, and activity for this org, then regenerate the draft action plan from intake. Continue?")) return;
     setBusy(true);
     try {
       const { data: intake, error: iErr } = await supabase
         .from("organization_intake").select("*").eq("org_id", orgId).maybeSingle();
       if (iErr || !intake) throw new Error(iErr?.message ?? "No intake on file for this org.");
-      const { data, error } = await supabase.functions.invoke("calc-metrics", {
-        body: { org_id: orgId, intake },
+      const { error } = await supabase.functions.invoke("calc-metrics", {
+        body: { org_id: orgId, intake, reset: true },
       });
       if (error) throw error;
-      toast({ title: "Metrics recalculated", description: "Derived metrics refreshed from existing intake." });
+      toast({ title: "Org reset & metrics recalculated", description: "Tasks and projects wiped; fresh draft plan generated." });
       setTimeout(() => window.location.reload(), 600);
     } catch (e: any) {
       toast({ title: "Recalculation failed", description: e?.message ?? "Unknown error", variant: "destructive" });
@@ -230,11 +231,11 @@ function RecalcMetricsButton({ orgId }: { orgId: string }) {
       variant="outline"
       onClick={handle}
       disabled={busy}
-      title="DEV ONLY — re-runs calc-metrics against the saved intake. Remove before launch."
+      title="DEV ONLY — wipes tasks/projects and regenerates plan from intake. Remove before launch."
       className="border-warning/40 text-warning hover:bg-warning-soft"
     >
       <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", busy && "animate-spin")} />
-      {busy ? "Recalculating…" : "Recalc Metrics (dev)"}
+      {busy ? "Resetting…" : "Reset & Recalc (dev)"}
     </Button>
   );
 }
