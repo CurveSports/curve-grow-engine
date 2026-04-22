@@ -9,7 +9,7 @@ import AdminUsers from "@/pages/admin/AdminUsers";
 import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
-  CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus,
+  CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
