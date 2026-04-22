@@ -118,10 +118,12 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
             <ProjectCard
               key={p.id}
               project={p}
+              orgId={orgId}
               expanded={expanded.has(p.id)}
               onToggle={() => toggleExpand(p.id)}
               onEdit={() => setEditTarget(p)}
               onRelease={() => setReleaseTarget(p)}
+              onChanged={load}
             />
           ))}
           {byStatus.draft.length === 0 && <EmptyColumn label="No draft projects" />}
@@ -131,10 +133,12 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
             <ProjectCard
               key={p.id}
               project={p}
+              orgId={orgId}
               expanded={expanded.has(p.id)}
               onToggle={() => toggleExpand(p.id)}
               onEdit={() => setEditTarget(p)}
               onComplete={p.awaiting_completion_approval ? () => setCompleteTarget(p) : undefined}
+              onChanged={load}
             />
           ))}
           {byStatus.active.length === 0 && <EmptyColumn label="No active projects" />}
@@ -144,8 +148,10 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
             <ProjectCard
               key={p.id}
               project={p}
+              orgId={orgId}
               expanded={expanded.has(p.id)}
               onToggle={() => toggleExpand(p.id)}
+              onChanged={load}
             />
           ))}
           {byStatus.completed.length === 0 && <EmptyColumn label="No completed projects" />}
