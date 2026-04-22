@@ -174,23 +174,27 @@ const FAMILY_WALLET_HIGH_PER_PLAYER = 20000;
 const APPAREL_FAMILY_SPEND = 600;
 const ADDON_MONTHLY_PACKAGE = 1200; // $100/mo × 12
 const FACILITY_PER_PLAYER_BENCHMARK = 2400;
+export const APPAREL_PACKAGE_DEFAULT = 600;
+export const ADDON_PACKAGE_DEFAULT = 1200; // $100/mo × 12
+export const TRAVEL_SPEND_DEFAULT = 6000;  // midpoint of $5K-$7K outside travel/restaurant spend
 
 export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
   const lowWallet = FAMILY_WALLET_LOW_PER_PLAYER * ctx.totalPlayers;
   const highWallet = FAMILY_WALLET_HIGH_PER_PLAYER * ctx.totalPlayers;
 
-  // dues capture is % of high-wallet per family
-  const newDues = (inputs.duesCapturePct / 100) * FAMILY_WALLET_HIGH_PER_PLAYER * ctx.totalPlayers;
+  // Dues: apply % increase to current dues revenue
+  const newDues = ctx.currentDues * (1 + inputs.duesIncreasePct / 100);
   const newSponsorship = inputs.numSponsors * ctx.fmvPerSponsorMid;
   const newEvents = inputs.eventRevPerPlayer * ctx.totalPlayers;
-  const newApparel = (inputs.apparelCapturePct / 100) * APPAREL_FAMILY_SPEND * ctx.totalPlayers;
-  const newAddOns = (inputs.addonAdoptionPct / 100) * ADDON_MONTHLY_PACKAGE * ctx.totalPlayers;
+  const newApparel = (inputs.apparelCapturePct / 100) * inputs.apparelPackageAmount * ctx.totalPlayers;
+  const newAddOns = (inputs.addonAdoptionPct / 100) * inputs.addonPackageAmount * ctx.totalPlayers;
+  const newTravel = (inputs.travelCapturePct / 100) * inputs.travelSpendPerFamily * ctx.totalPlayers;
   const newFacility = ctx.hasFacility
     ? (inputs.facilityCapturePct / 100) * FACILITY_PER_PLAYER_BENCHMARK * ctx.totalPlayers
     : 0;
 
   const projectedTotal =
-    newDues + newSponsorship + newEvents + newApparel + newAddOns + newFacility;
+    newDues + newSponsorship + newEvents + newApparel + newAddOns + newTravel + newFacility;
   const currentTotal =
     ctx.currentDues +
     ctx.currentSponsorship +
@@ -212,6 +216,7 @@ export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
     newEvents,
     newApparel,
     newAddOns,
+    newTravel,
     newFacility,
     projectedTotal,
     currentTotal,
