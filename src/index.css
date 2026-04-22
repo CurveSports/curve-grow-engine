@@ -43,6 +43,9 @@
     --health: 258 90% 66%;              /* #8B5CF6 */
     --health-soft: 258 90% 95%;
 
+    --combo: 271 81% 56%;               /* #9333EA — owner_type=combo */
+    --combo-soft: 271 81% 95%;
+
     --neutral: 215 20% 65%;             /* #94A3B8 */
 
     --border: 214 32% 91%;              /* #E2E8F0 */
@@ -95,6 +98,8 @@
     --info-soft: 217 30% 18%;
     --health: 258 90% 66%;
     --health-soft: 258 30% 18%;
+    --combo: 271 81% 66%;
+    --combo-soft: 271 30% 20%;
     --neutral: 215 20% 55%;
     --border: 217 33% 18%;
     --input: 217 33% 18%;

@@ -1,5 +1,42 @@
-export const ENGINES = ["Pricing", "Sponsorship", "Apparel", "Events", "Add-Ons", "Retention", "Facility", "Operations"] as const;
+export const ENGINES = [
+  "Pricing", "Sponsorship", "Apparel", "Events", "Add-Ons",
+  "Retention", "Facility", "Affiliate",
+  "Platform", "Marketing",
+  "Operations",
+] as const;
 export type Engine = typeof ENGINES[number];
+
+/** Engines whose tasks/projects are auto-created for every org regardless of score. */
+export const UNIVERSAL_ENGINES: readonly Engine[] = ["Platform", "Marketing"] as const;
+
+/** Revenue engines whose scores feed the monetization tier. */
+export const REVENUE_ENGINES: readonly Engine[] = [
+  "Pricing", "Sponsorship", "Apparel", "Events", "Add-Ons", "Retention", "Facility", "Affiliate",
+] as const;
+
+export const TASK_OWNER_TYPES = ["curve_team", "org_user", "third_party", "combo"] as const;
+export type TaskOwnerType = typeof TASK_OWNER_TYPES[number];
+
+export const OWNER_LABEL: Record<TaskOwnerType, string> = {
+  curve_team: "Curve Team",
+  org_user: "Org User",
+  third_party: "Third Party",
+  combo: "Combo",
+};
+
+export const OWNER_STYLE: Record<TaskOwnerType, string> = {
+  curve_team: "bg-info-soft text-info border-info/30",
+  org_user: "bg-accent-soft text-accent border-accent/30",
+  third_party: "bg-secondary text-foreground/70 border-border",
+  combo: "bg-combo-soft text-combo border-combo/30",
+};
+
+export const OWNER_HELP: Record<TaskOwnerType, string> = {
+  curve_team: "Curve staff are responsible for completing this task",
+  org_user: "The organization is responsible for completing this task",
+  third_party: "An external partner or vendor completes this — track status only",
+  combo: "Both Curve team and org user are involved in completing this task",
+};
 
 export const TASK_TYPES = ["Strategy", "Execute", "Communication", "Track"] as const;
 export type TaskType = typeof TASK_TYPES[number];
@@ -68,6 +105,8 @@ export type OrgTask = {
   priority: TaskPriority;
   plan_status: PlanStatus;
   source: TaskSource;
+  owner_type: TaskOwnerType;
+  project_id: string | null;
   suggested_due_date: string | null;
   due_date: string | null;
   assigned_by: string | null;
@@ -101,6 +140,8 @@ export type TaskTemplate = {
   description: string;
   engine: Engine;
   task_type: TaskType;
+  owner_type: TaskOwnerType;
+  display_order: number;
   suggested_days_to_complete: number;
   is_system_template: boolean;
   created_by: string | null;

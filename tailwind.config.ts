@@ -29,6 +29,7 @@ export default {
         warning: { DEFAULT: "hsl(var(--warning))", soft: "hsl(var(--warning-soft))", foreground: "hsl(0 0% 100%)" },
         info: { DEFAULT: "hsl(var(--info))", soft: "hsl(var(--info-soft))", foreground: "hsl(0 0% 100%)" },
         health: { DEFAULT: "hsl(var(--health))", soft: "hsl(var(--health-soft))", foreground: "hsl(0 0% 100%)" },
+        combo: { DEFAULT: "hsl(var(--combo))", soft: "hsl(var(--combo-soft))", foreground: "hsl(0 0% 100%)" },
         neutral: { DEFAULT: "hsl(var(--neutral))", foreground: "hsl(0 0% 100%)" },
         nav: {
           DEFAULT: "hsl(var(--nav-background))",
