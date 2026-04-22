@@ -916,6 +916,90 @@ function escape(s: string): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
 
+const TIER_DESCRIPTIONS_ORG: Record<string, string> = {
+  Foundational: "You're building the foundation of a stronger business. Every system you put in place now multiplies your results later.",
+  Emerging: "You've built something real. Revenue is coming from more than one place and the systems are starting to take shape.",
+  Growth: "Your program is strong and your business is growing. Multiple revenue engines are working.",
+  Advanced: "You're running a sophisticated operation. Most engines are performing well and your revenue per player reflects the quality of your program.",
+  Elite: "Best in class. You've built what most clubs only dream about — a fully optimized revenue operation.",
+};
+
+async function notifyTierAdvancement(
+  admin: any,
+  org: { id: string; name: string },
+  payload: {
+    previous_tier: string; new_tier: string;
+    previous_score: number; new_score: number;
+    next_tier: string | null;
+    fastest_path_engines: { engine: string; current_score: number; target_score: number; points_available: number }[];
+  },
+) {
+  const diff = payload.new_score - payload.previous_score;
+  const fastestList = payload.fastest_path_engines.map((e) => e.engine).join(", ");
+  const desc = TIER_DESCRIPTIONS_ORG[payload.new_tier] ?? "";
+
+  // Log notifications
+  try {
+    await admin.from("notification_log").insert([
+      { org_id: org.id, notification_type: "tier_advancement", recipient_role: "org_all", task_ids: [payload.new_tier] },
+      { org_id: org.id, notification_type: "tier_advancement", recipient_role: "admin", task_ids: [payload.new_tier] },
+    ]);
+  } catch (e) { console.error("tier advancement log error", e); }
+
+  if (!RESEND_API_KEY) return;
+
+  // Org users
+  try {
+    const { data: orgProfiles } = await admin.from("profiles").select("email").eq("org_id", org.id);
+    const orgEmails = (orgProfiles ?? []).map((p: any) => p.email).filter(Boolean);
+    if (orgEmails.length > 0) {
+      const url = `${APP_URL}/report`;
+      const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+        <h2 style="color:#15803d;">🎉 You've reached ${escape(payload.new_tier)} tier</h2>
+        <p>Congratulations — your hard work is paying off.</p>
+        <p><strong>${escape(org.name)}</strong> has advanced from <strong>${escape(payload.previous_tier)}</strong> to <strong>${escape(payload.new_tier)}</strong> tier with a score of <strong>${payload.new_score}/60</strong>.</p>
+        <p style="color:#475569;">${escape(desc)}</p>
+        ${payload.next_tier ? `<p><strong>Your fastest path to ${escape(payload.next_tier)}:</strong><br/>${escape(fastestList)}</p>` : ""}
+        <p style="margin-top:24px;"><a href="${url}" style="background:#15803d;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">See your tier ladder →</a></p>
+      </div>`;
+      await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+        body: JSON.stringify({ from: FROM_EMAIL, to: orgEmails, subject: `🎉 You've reached ${payload.new_tier} tier — ${org.name}`, html }),
+      });
+    }
+  } catch (e) { console.error("tier advancement org email failed", e); }
+
+  // Admins
+  try {
+    const { data: adminRoles } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+    const userIds = (adminRoles ?? []).map((r: any) => r.user_id);
+    if (userIds.length > 0) {
+      const { data: profs } = await admin.from("profiles").select("email").in("user_id", userIds);
+      const adminEmails = (profs ?? []).map((p: any) => p.email).filter(Boolean);
+      if (adminEmails.length > 0) {
+        const url = `${APP_URL}/admin/org/${org.id}`;
+        const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+          <h2 style="color:#0f5132;">⬆️ Tier advancement — ${escape(org.name)} reached ${escape(payload.new_tier)}</h2>
+          <p><strong>${escape(org.name)}</strong> has advanced from <strong>${escape(payload.previous_tier)}</strong> to <strong>${escape(payload.new_tier)}</strong> tier.</p>
+          <table style="border-collapse:collapse;margin:16px 0;">
+            <tr><td style="padding:6px 12px;color:#666;">Previous score</td><td style="padding:6px 12px;"><strong>${payload.previous_score}/60</strong></td></tr>
+            <tr><td style="padding:6px 12px;color:#666;">New score</td><td style="padding:6px 12px;"><strong>${payload.new_score}/60</strong></td></tr>
+            <tr><td style="padding:6px 12px;color:#666;">Points gained</td><td style="padding:6px 12px;"><strong>+${diff}</strong></td></tr>
+          </table>
+          <p>This is a great moment to celebrate with the client and discuss what comes next.</p>
+          <p style="margin-top:24px;"><a href="${url}" style="background:#0f5132;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Open org →</a></p>
+        </div>`;
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+          body: JSON.stringify({ from: FROM_EMAIL, to: adminEmails, subject: `⬆️ Tier advancement — ${org.name} reached ${payload.new_tier}`, html }),
+        });
+      }
+    }
+  } catch (e) { console.error("tier advancement admin email failed", e); }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
