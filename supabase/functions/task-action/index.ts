@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const resendKey = Deno.env.get("RESEND_API_KEY");
 
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: authHeader } } });
     const { data: userData } = await userClient.auth.getUser();
@@ -33,7 +34,6 @@ Deno.serve(async (req) => {
     const { data: task, error: tErr } = await admin.from("org_tasks").select("*").eq("id", action.task_id).maybeSingle();
     if (tErr || !task) return json({ error: "task not found" }, 404);
 
-    // Authorization: must be admin OR member of task's org
     const { data: roleRow } = await admin.from("user_roles").select("role").eq("user_id", uid).maybeSingle();
     const isAdmin = roleRow?.role === "admin";
     if (!isAdmin) {
@@ -67,10 +67,100 @@ Deno.serve(async (req) => {
         await admin.from("task_notes").insert({
           task_id: task.id, org_id: task.org_id, note_text: action.completion_note, created_by: uid,
         });
-        // Log completion notification (email integration: future)
         await admin.from("notification_log").insert({
           org_id: task.org_id, notification_type: "task_completed", recipient_role: "admin", task_ids: [task.id],
         });
+
+        // ── Project completion check ─────────────────────────────────────
+        if (task.project_id) {
+          const { data: siblings } = await admin
+            .from("org_tasks")
+            .select("id, status")
+            .eq("project_id", task.project_id);
+          const all = siblings ?? [];
+          const allDone = all.length > 0 && all.every((s: any) => s.status === "completed");
+
+          if (allDone) {
+            const { data: project } = await admin
+              .from("org_projects")
+              .select("*")
+              .eq("id", task.project_id)
+              .maybeSingle();
+
+            if (project && project.status === "active" && !project.awaiting_completion_approval) {
+              await admin
+                .from("org_projects")
+                .update({ awaiting_completion_approval: true, updated_at: now })
+                .eq("id", project.id);
+
+              await admin.from("notification_log").insert({
+                org_id: task.org_id,
+                notification_type: "project_completion_pending",
+                recipient_role: "admin",
+                task_ids: [project.id],
+              });
+
+              // Email all admins
+              if (resendKey) {
+                const { data: adminUsers } = await admin
+                  .from("user_roles")
+                  .select("user_id")
+                  .eq("role", "admin");
+                const adminIds = (adminUsers ?? []).map((u: any) => u.user_id);
+                if (adminIds.length > 0) {
+                  const { data: adminProfiles } = await admin
+                    .from("profiles")
+                    .select("email")
+                    .in("user_id", adminIds);
+                  const recipients = (adminProfiles ?? []).map((p: any) => p.email).filter(Boolean);
+                  const { data: org } = await admin
+                    .from("organizations")
+                    .select("name")
+                    .eq("id", task.org_id)
+                    .maybeSingle();
+                  const orgName = (org as any)?.name ?? "Organization";
+
+                  const releasedAt = project.released_at ? new Date(project.released_at) : null;
+                  const days = releasedAt
+                    ? Math.max(0, Math.round((Date.now() - releasedAt.getTime()) / 86400000))
+                    : null;
+
+                  if (recipients.length > 0) {
+                    const origin = req.headers.get("origin") ?? "https://curve-grow-engine.lovable.app";
+                    const link = `${origin}/admin/org/${task.org_id}?tab=projects`;
+                    await fetch("https://api.resend.com/emails", {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${resendKey}`,
+                      },
+                      body: JSON.stringify({
+                        from: "Curve OS <onboarding@resend.dev>",
+                        to: recipients,
+                        subject: `✅ Project ready for completion approval — ${project.name} / ${orgName}`,
+                        html: `<!doctype html><html><body style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;padding:40px 16px;color:#0f172a;">
+                          <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                            <tr><td style="padding:32px;">
+                              <h1 style="font-size:20px;margin:0 0 12px;">✅ ${escapeHtml(project.name)} is ready for approval</h1>
+                              <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 16px;">All tasks in <strong>${escapeHtml(project.name)}</strong> have been completed by <strong>${escapeHtml(orgName)}</strong>.</p>
+                              <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 8px;"><strong>Project summary</strong></p>
+                              <ul style="font-size:14px;color:#334155;margin:0 0 24px;padding-left:18px;">
+                                <li>Tasks completed: ${all.length}</li>
+                                <li>Completion date: ${new Date().toLocaleDateString()}</li>
+                                ${days !== null ? `<li>Time from release to completion: ${days} day${days === 1 ? "" : "s"}</li>` : ""}
+                              </ul>
+                              <a href="${link}" style="display:inline-block;background:#22c55e;color:#fff;text-decoration:none;padding:10px 20px;border-radius:8px;font-weight:600;font-size:14px;">Review & approve</a>
+                            </td></tr>
+                          </table>
+                        </body></html>`,
+                      }),
+                    }).catch(() => {});
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     } else if (action.type === "set_priority") {
       if (!isAdmin) return json({ error: "admin only" }, 403);
@@ -107,4 +197,8 @@ Deno.serve(async (req) => {
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }

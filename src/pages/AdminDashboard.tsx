@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminTasks from "@/pages/admin/AdminTasks";
 import AdminTemplates from "@/pages/admin/AdminTemplates";
 import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
-  CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning,
+  CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning, FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +43,10 @@ type OrgRow = {
   overall_health_score: number | null;
   engagement_complexity: string | null;
   admin_alerts: any[] | null;
+  active_project_count: number;
+  draft_project_count: number;
+  completed_project_count: number;
+  awaiting_project_name: string | null;
 };
 
 type Density = "compact" | "standard" | "detailed";
@@ -51,22 +56,23 @@ export default function AdminDashboard() {
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [density, setDensity] = useState<Density>("standard");
+  const [awaitingTotal, setAwaitingTotal] = useState(0);
 
   useEffect(() => {
     (async () => {
-      const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
       const oneWeekAhead = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
       const today = new Date().toISOString().slice(0, 10);
 
-      const [orgsRes, tasksRes, activityRes] = await Promise.all([
+      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes] = await Promise.all([
         supabase
           .from("organizations")
-          .select("id, name, plan_activated_at, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts)"),
+          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts)"),
         supabase.from("org_tasks").select("org_id, status, due_date, completed_at, last_activity_at"),
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
+        supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
       ]);
 
-      const tasksByOrg: Record<string, OrgRow["task_total"] extends number ? any : never> = {};
+      const tasksByOrg: Record<string, any> = {};
       for (const t of (tasksRes.data ?? []) as any[]) {
         const o = (tasksByOrg[t.org_id] ??= { total: 0, complete: 0, due_week: 0, overdue: 0, last: null });
         o.total++;
@@ -75,6 +81,12 @@ export default function AdminDashboard() {
         if (t.due_date && t.due_date >= today && t.due_date <= oneWeekAhead && t.status !== "completed") o.due_week++;
         if (t.last_activity_at && (!o.last || t.last_activity_at > o.last)) o.last = t.last_activity_at;
       }
+
+      const awaitingByOrg = new Map<string, string>();
+      for (const p of (awaitingProjectsRes.data ?? []) as any[]) {
+        awaitingByOrg.set(p.org_id, p.name);
+      }
+      setAwaitingTotal((awaitingProjectsRes.data ?? []).length);
 
       const r: OrgRow[] = ((orgsRes.data ?? []) as any[]).map((o) => {
         const intake = Array.isArray(o.organization_intake) ? o.organization_intake[0] : o.organization_intake;
@@ -98,6 +110,10 @@ export default function AdminDashboard() {
           overall_health_score: metrics?.overall_health_score ?? null,
           engagement_complexity: metrics?.engagement_complexity ?? null,
           admin_alerts: Array.isArray(metrics?.admin_alerts) ? metrics.admin_alerts : [],
+          active_project_count: o.active_project_count ?? 0,
+          draft_project_count: o.draft_project_count ?? 0,
+          completed_project_count: o.completed_project_count ?? 0,
+          awaiting_project_name: awaitingByOrg.get(o.id) ?? null,
         };
       });
       setOrgs(r);
@@ -159,6 +175,9 @@ export default function AdminDashboard() {
           value={loading ? "—" : `${stats.due} due`}
           subtitle={`${stats.completed} completed${stats.overdue > 0 ? ` · ${stats.overdue} overdue` : ""}`}
           valueClass={stats.overdue > 0 ? "text-destructive" : ""}
+          extra={awaitingTotal > 0 ? (
+            <p className="text-xs text-accent font-semibold mt-1.5">{awaitingTotal} project{awaitingTotal === 1 ? "" : "s"} awaiting completion approval</p>
+          ) : undefined}
         />
         <StatCard
           icon={<Trophy className="h-4 w-4 text-health" />}
@@ -199,6 +218,7 @@ export default function AdminDashboard() {
         <TabsList className="mb-6">
           <TabsTrigger value="orgs">Organizations</TabsTrigger>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
@@ -235,6 +255,7 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="tasks"><AdminTasks /></TabsContent>
+        <TabsContent value="projects"><AdminProjectsCrossOrg /></TabsContent>
         <TabsContent value="templates"><AdminTemplates /></TabsContent>
         <TabsContent value="users"><AdminUsers /></TabsContent>
       </Tabs>
@@ -242,12 +263,13 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ icon, label, value, subtitle, valueClass = "" }: { icon: React.ReactNode; label: string; value: any; subtitle?: string; valueClass?: string; }) {
+function StatCard({ icon, label, value, subtitle, valueClass = "", extra }: { icon: React.ReactNode; label: string; value: any; subtitle?: string; valueClass?: string; extra?: React.ReactNode }) {
   return (
     <div className="curve-card">
       <div className="flex items-center gap-2 mb-3">{icon}<p className="curve-eyebrow">{label}</p></div>
       <p className={cn("curve-stat", valueClass)}>{value}</p>
       {subtitle && <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>}
+      {extra}
     </div>
   );
 }
@@ -292,6 +314,8 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
     complexity === "Moderate" ? "bg-warning-soft text-warning border-warning/30" :
     complexity === "Complex" ? "bg-destructive/10 text-destructive border-destructive/30" :
     "bg-secondary text-muted-foreground border-border";
+
+  const hasProjects = org.active_project_count + org.draft_project_count + org.completed_project_count > 0;
 
   return (
     <Link to={`/admin/org/${org.id}`} className="block curve-card-interactive group relative">
@@ -357,6 +381,23 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
                 <div className="h-full bg-accent transition-all" style={{ width: `${pct}%` }} />
               </div>
             </>
+          )}
+
+          {hasProjects && (
+            <div className="flex items-center gap-2 text-xs mb-2 text-muted-foreground">
+              <FolderKanban className="h-3.5 w-3.5" />
+              <span>
+                <strong className="text-foreground">{org.active_project_count}</strong> active ·{" "}
+                <strong className="text-foreground">{org.draft_project_count}</strong> draft ·{" "}
+                <strong className="text-foreground">{org.completed_project_count}</strong> complete
+              </span>
+              {org.awaiting_project_name && (
+                <span
+                  title={`${org.awaiting_project_name} is complete and awaiting your approval`}
+                  className="inline-block h-2 w-2 rounded-full bg-warning ring-2 ring-warning/30"
+                />
+              )}
+            </div>
           )}
 
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
