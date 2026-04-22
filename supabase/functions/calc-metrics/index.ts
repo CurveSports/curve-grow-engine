@@ -794,6 +794,30 @@ async function generateDraftTasks(admin: any, org_id: string, metrics: any, isFa
     }
   }
 
+  // Universal engines (Platform, Marketing) — always include all system templates,
+  // independent of any computed score. These power the universal engine cards.
+  for (const universalEngine of ["Platform", "Marketing"]) {
+    const universalTemplates = templates.filter((t: any) => t.engine === universalEngine);
+    for (const t of universalTemplates) {
+      const due = new Date(today);
+      due.setDate(due.getDate() + (t.suggested_days_to_complete ?? 30));
+      tasksToInsert.push({
+        org_id,
+        template_id: t.id,
+        title: t.title,
+        description: t.description,
+        engine: t.engine,
+        task_type: t.task_type,
+        status: "not_started",
+        plan_status: "draft",
+        priority: "medium",
+        suggested_due_date: due.toISOString().slice(0, 10),
+        due_date: due.toISOString().slice(0, 10),
+        assigned_by: uid,
+      });
+    }
+  }
+
   // Selection-leakage auto-task (Round 1)
   if (metrics.selection_leakage_flag === true) {
     const due = new Date(today);
