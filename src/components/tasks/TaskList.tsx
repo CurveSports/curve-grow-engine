@@ -14,7 +14,18 @@ interface Props {
 
 export default function TaskList({ tasks, scores, onSelect, showPlanStatus = false, showOwner = false }: Props) {
   const grouped = groupByEngine(tasks);
-  const engineOrder = ENGINES.filter(e => grouped[e]?.length);
+  const engineOrder = ENGINES.filter(e => grouped[e]?.length).sort((a, b) => {
+    const sa = scores?.[a];
+    const sb = scores?.[b];
+    // Engines without a score (null/undefined) sort to the end
+    const aMissing = sa === null || sa === undefined;
+    const bMissing = sb === null || sb === undefined;
+    if (aMissing && bMissing) return ENGINES.indexOf(a) - ENGINES.indexOf(b);
+    if (aMissing) return 1;
+    if (bMissing) return -1;
+    if (sa !== sb) return (sa as number) - (sb as number);
+    return ENGINES.indexOf(a) - ENGINES.indexOf(b);
+  });
 
   if (engineOrder.length === 0) {
     return <div className="curve-card text-sm text-muted-foreground">No tasks yet.</div>;
