@@ -861,6 +861,57 @@ async function notifyAdminsNewIntake(admin: any, org: { id: string; name: string
   }
 }
 
+async function notifyAdminsHighRisk(admin: any, org: { id: string; name: string }, metrics: any) {
+  const alerts: any[] = Array.isArray(metrics.admin_alerts) ? metrics.admin_alerts : [];
+  const highAlerts = alerts.filter((a) => a.severity === "high");
+  if (highAlerts.length === 0) return;
+
+  const { data: adminRoles } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+  if (!adminRoles || adminRoles.length === 0) return;
+  const userIds = adminRoles.map((r: any) => r.user_id);
+  const { data: profs } = await admin.from("profiles").select("email").in("user_id", userIds);
+  const recipients = (profs ?? []).map((p: any) => p.email).filter(Boolean);
+
+  try {
+    await admin.from("notification_log").insert({
+      org_id: org.id,
+      notification_type: "high_risk_alert",
+      recipient_role: "admin",
+      task_ids: highAlerts.map((a) => a.type),
+    });
+  } catch (e) {
+    console.error("high-risk log error", e);
+  }
+
+  if (!RESEND_API_KEY || recipients.length === 0) return;
+
+  const subject = `⚠️ High Risk Alert — ${org.name} needs attention before plan activation`;
+  const reviewUrl = `${APP_URL}/admin/org/${org.id}`;
+  const alertsHtml = highAlerts.map((a) => `<li style="margin-bottom:8px;">${escape(a.message)}</li>`).join("");
+  const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <h2 style="color:#b91c1c;">High Risk Alert — ${escape(org.name)}</h2>
+    <p>${escape(org.name)} has completed their intake assessment. Before activating their plan, please review the following high-priority items:</p>
+    <ul style="padding-left:20px;color:#333;">${alertsHtml}</ul>
+    <table style="border-collapse:collapse;margin:16px 0;">
+      <tr><td style="padding:6px 12px;color:#666;">Engagement Complexity</td><td style="padding:6px 12px;"><strong>${escape(metrics.engagement_complexity ?? "—")}</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Overall Health Score</td><td style="padding:6px 12px;"><strong>${metrics.overall_health_score ?? "—"}/40</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Priority Engine</td><td style="padding:6px 12px;"><strong>${escape(metrics.priority_engine ?? "—")}</strong></td></tr>
+    </table>
+    <p style="margin-top:24px;"><a href="${reviewUrl}" style="background:#b91c1c;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Review org →</a></p>
+  </div>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+      body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html }),
+    });
+    if (!res.ok) console.error("high-risk notify resend error", res.status, await res.text());
+  } catch (e) {
+    console.error("high-risk notify exception", e);
+  }
+}
+
 function escape(s: string): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
