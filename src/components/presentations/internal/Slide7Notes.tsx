@@ -22,7 +22,6 @@ export function Slide7Notes({
 
   useEffect(() => { setNotes(initialNotes); }, [initialNotes]);
 
-  const total = tasks.length;
   const completed = tasks.filter((t) => t.status === "completed").length;
   const weekAgo = Date.now() - 7 * 86400000;
   const completedThisWeek = tasks.filter((t) => t.status === "completed" && t.completed_at && new Date(t.completed_at).getTime() > weekAgo).length;
