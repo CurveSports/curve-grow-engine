@@ -310,8 +310,20 @@ interface StreamRowProps {
   sliderLabel: string;
   onChange: (v: number) => void;
   projected: string;
+  assumption?: string;
+  packageLabel?: string;
+  packageValue?: number;
+  onPackageChange?: (v: number) => void;
+  packageMin?: number;
+  packageMax?: number;
+  packageStep?: number;
 }
-function StreamRow({ label, current, currentSub, value, min, max, step, suffix, prefixValue, sliderLabel, onChange, projected }: StreamRowProps) {
+function StreamRow({
+  label, current, currentSub, value, min, max, step, suffix, prefixValue,
+  sliderLabel, onChange, projected, assumption,
+  packageLabel, packageValue, onPackageChange,
+  packageMin = 0, packageMax = 5000, packageStep = 50,
+}: StreamRowProps) {
   return (
     <div className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
@@ -328,6 +340,30 @@ function StreamRow({ label, current, currentSub, value, min, max, step, suffix, 
         </span>
       </div>
       <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} />
+      {packageLabel && onPackageChange && packageValue !== undefined && (
+        <div className="mt-3 pt-3 border-t border-border/60">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <label className="text-xs text-muted-foreground">{packageLabel}</label>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">$</span>
+              <Input
+                type="number"
+                value={packageValue}
+                min={packageMin}
+                max={packageMax}
+                step={packageStep}
+                onChange={(e) => onPackageChange(num(e.target.value, packageValue))}
+                className="h-7 w-24 text-xs tabular-nums"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      {assumption && (
+        <p className="mt-2 text-[11px] leading-snug text-muted-foreground/90 italic">
+          ⓘ {assumption}
+        </p>
+      )}
     </div>
   );
 }
