@@ -13,6 +13,7 @@ import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard,
 import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
+import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
@@ -29,12 +30,25 @@ export default function OrgDetail() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const tab = (params.get("tab") as Tab) || "overview";
+  const [alerts, setAlerts] = useState<AdminAlert[]>([]);
 
   const setTab = (t: Tab) => {
     const next = new URLSearchParams(params);
     next.set("tab", t);
     setParams(next, { replace: true });
   };
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("derived_metrics")
+        .select("admin_alerts")
+        .eq("org_id", orgId!)
+        .maybeSingle();
+      const raw = (data?.admin_alerts as any) ?? [];
+      setAlerts(Array.isArray(raw) ? raw : []);
+    })();
+  }, [orgId]);
 
   return (
     <AppShell title="Organization">
@@ -43,6 +57,8 @@ export default function OrgDetail() {
           <ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations
         </Link>
       </div>
+
+      <AdminAlertsBanner alerts={alerts} />
 
       <OrgHeader orgId={orgId!} onActivate={() => setTab("plan")} onAddNote={() => setTab("notes")} onAddTask={() => setTab("plan")} />
 
@@ -224,6 +240,19 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
           <DimensionCard label="Strategic Clarity" score={strategicHealth} />
         </div>
       )}
+
+      {/* Round 2: Risk Assessment + Engagement Complexity + Pricing context */}
+      <RiskAssessmentSection
+        executionRisk={(metrics as any).execution_risk ?? null}
+        marketRisk={(metrics as any).market_risk ?? null}
+        retentionRisk={(metrics as any).retention_risk ?? null}
+        engagementComplexity={(metrics as any).engagement_complexity ?? null}
+        engagementRecommendation={(metrics as any).engagement_approach_recommendation ?? null}
+        pricingStrategyNote={(metrics as any).pricing_strategy_note ?? null}
+      />
+
+      {/* Round 2: Monetization tier key */}
+      <MonetizationTierGuide currentTier={(metrics as any).monetization_tier ?? null} />
 
       {/* Row 2: This week's focus (admin-editable) */}
       <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />

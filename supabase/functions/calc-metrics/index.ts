@@ -635,6 +635,68 @@ function calculate(intake: any) {
     : hs_player_pct <= 0.30 ? "HS Program Expansion"
     : "Pipeline Optimization";
 
+  // ===== Round 2: Risk Assessment =====
+  const execution_risk = operations_health_score >= 7 ? "Low"
+    : operations_health_score >= 4 ? "Medium" : "High";
+  const market_risk = market_position_health_score >= 7 ? "Low"
+    : market_position_health_score >= 4 ? "Medium" : "High";
+  let retention_risk: string;
+  if (retention_score >= 7 && retention_pct >= 75) retention_risk = "Low";
+  else if (retention_score < 4 && retention_pct < 65) retention_risk = "High";
+  else retention_risk = "Medium";
+
+  // Engagement complexity (priority order: Complex > Straightforward > Moderate)
+  let engagement_complexity: string;
+  if (overall_health_score < 20 || execution_risk === "High" || market_risk === "High" || retention_risk === "High") {
+    engagement_complexity = "Complex";
+  } else if (overall_health_score > 30 && execution_risk === "Low" && market_risk === "Low" && retention_risk === "Low") {
+    engagement_complexity = "Straightforward";
+  } else {
+    engagement_complexity = "Moderate";
+  }
+
+  // Engagement approach recommendation
+  let engagement_approach_recommendation: string;
+  if (engagement_complexity === "Complex") {
+    engagement_approach_recommendation = `This organization requires foundational work before revenue strategies will stick. Begin with operations and coach alignment — inconsistent execution will undermine any revenue initiative. Expect a longer runway of 60–90 days before meaningful revenue moves are visible. Sequence: stabilize operations first, then activate ${priority_engine} as the first revenue engine.`;
+  } else if (engagement_complexity === "Moderate") {
+    engagement_approach_recommendation = `This organization has the foundation to execute but has meaningful gaps that need attention in parallel with revenue work. Run operations improvements and revenue activation simultaneously rather than sequentially. The ${priority_engine} engine is the highest-leverage starting point and can begin immediately while operational improvements are layered in.`;
+  } else {
+    engagement_approach_recommendation = `This organization is well-positioned to execute quickly. Strong operational foundation means revenue strategies can be activated immediately without foundational work first. Lead with ${priority_engine} as the primary focus and expect to see results within the first 30–45 days. Multiple engines can be activated in parallel given their execution capacity.`;
+  }
+
+  // Pricing strategy note
+  let pricing_strategy_note: string | null = null;
+  if (intake.local_market_competition === "Highly Competitive" && pricing_score <= 6) {
+    pricing_strategy_note = "High competition market — pricing increases must be paired with clear value differentiation. Lead with sponsorship and events before raising dues to build perceived value first.";
+  } else if (intake.local_market_competition === "Limited" && pricing_score <= 7) {
+    pricing_strategy_note = "Limited local competition provides pricing power. This org can likely support higher fees without significant family attrition — pricing is a near-term opportunity.";
+  } else if (intake.local_market_competition === "Moderate") {
+    pricing_strategy_note = "Moderate competition — standard pricing strategy applies. Focus on value packaging before rate increases.";
+  }
+
+  // Admin alerts
+  const admin_alerts: { type: string; severity: string; message: string }[] = [];
+  if (execution_risk === "High") {
+    admin_alerts.push({ type: "execution_risk", severity: "high", message: "Operations health is critically low. This org may struggle to execute recommendations. Prioritize coach alignment and communication standards before activating revenue strategies." });
+  }
+  if (market_risk === "High") {
+    admin_alerts.push({ type: "market_risk", severity: "high", message: "Market position is weak — low demand and/or high competition creates headwinds. Revenue strategies need to account for market constraints. Consider retention-first approach." });
+  }
+  if (retention_risk === "High") {
+    admin_alerts.push({ type: "retention_risk", severity: "high", message: "Retention is critically low. Every revenue gain is partially offset by churn. Retention plan must be activated immediately alongside any revenue initiatives." });
+  }
+  if (selection_leakage_flag) {
+    admin_alerts.push({ type: "selection_leakage", severity: "medium", message: "Org regularly cuts players with no alternative programming. Revenue is leaving the ecosystem. Developmental tier conversation recommended in kickoff." });
+  }
+  if (high_dues_concentration) {
+    admin_alerts.push({ type: "revenue_concentration", severity: "medium", message: "85%+ of revenue from player fees. Single revenue stream creates vulnerability. Diversification should be an early priority." });
+  }
+  // revenue_needs_review pulled from intake (set in serve handler before calculate)
+  if (intake.revenue_needs_review === true) {
+    admin_alerts.push({ type: "revenue_accuracy", severity: "medium", message: "Org flagged their revenue data as potentially inaccurate during intake. Verify financials before presenting opportunity numbers." });
+  }
+
   return {
     market_multiplier, revenue_benchmark, revenue_per_player, hs_player_pct,
     calculated_total_revenue,
@@ -674,6 +736,10 @@ function calculate(intake: any) {
     operations_health_score, market_position_health_score, program_health_score,
     strategic_clarity_score, overall_health_score,
     selection_leakage_flag, growth_opportunity_direction,
+    // Round 2 risk + engagement
+    execution_risk, market_risk, retention_risk, engagement_complexity,
+    engagement_approach_recommendation, pricing_strategy_note,
+    admin_alerts,
     calculated_at: new Date().toISOString(),
   };
 }
@@ -795,6 +861,57 @@ async function notifyAdminsNewIntake(admin: any, org: { id: string; name: string
   }
 }
 
+async function notifyAdminsHighRisk(admin: any, org: { id: string; name: string }, metrics: any) {
+  const alerts: any[] = Array.isArray(metrics.admin_alerts) ? metrics.admin_alerts : [];
+  const highAlerts = alerts.filter((a) => a.severity === "high");
+  if (highAlerts.length === 0) return;
+
+  const { data: adminRoles } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+  if (!adminRoles || adminRoles.length === 0) return;
+  const userIds = adminRoles.map((r: any) => r.user_id);
+  const { data: profs } = await admin.from("profiles").select("email").in("user_id", userIds);
+  const recipients = (profs ?? []).map((p: any) => p.email).filter(Boolean);
+
+  try {
+    await admin.from("notification_log").insert({
+      org_id: org.id,
+      notification_type: "high_risk_alert",
+      recipient_role: "admin",
+      task_ids: highAlerts.map((a) => a.type),
+    });
+  } catch (e) {
+    console.error("high-risk log error", e);
+  }
+
+  if (!RESEND_API_KEY || recipients.length === 0) return;
+
+  const subject = `⚠️ High Risk Alert — ${org.name} needs attention before plan activation`;
+  const reviewUrl = `${APP_URL}/admin/org/${org.id}`;
+  const alertsHtml = highAlerts.map((a) => `<li style="margin-bottom:8px;">${escape(a.message)}</li>`).join("");
+  const html = `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
+    <h2 style="color:#b91c1c;">High Risk Alert — ${escape(org.name)}</h2>
+    <p>${escape(org.name)} has completed their intake assessment. Before activating their plan, please review the following high-priority items:</p>
+    <ul style="padding-left:20px;color:#333;">${alertsHtml}</ul>
+    <table style="border-collapse:collapse;margin:16px 0;">
+      <tr><td style="padding:6px 12px;color:#666;">Engagement Complexity</td><td style="padding:6px 12px;"><strong>${escape(metrics.engagement_complexity ?? "—")}</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Overall Health Score</td><td style="padding:6px 12px;"><strong>${metrics.overall_health_score ?? "—"}/40</strong></td></tr>
+      <tr><td style="padding:6px 12px;color:#666;">Priority Engine</td><td style="padding:6px 12px;"><strong>${escape(metrics.priority_engine ?? "—")}</strong></td></tr>
+    </table>
+    <p style="margin-top:24px;"><a href="${reviewUrl}" style="background:#b91c1c;color:#fff;padding:10px 18px;text-decoration:none;border-radius:6px;">Review org →</a></p>
+  </div>`;
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
+      body: JSON.stringify({ from: FROM_EMAIL, to: recipients, subject, html }),
+    });
+    if (!res.ok) console.error("high-risk notify resend error", res.status, await res.text());
+  } catch (e) {
+    console.error("high-risk notify exception", e);
+  }
+}
+
 function escape(s: string): string {
   return String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!));
 }
@@ -879,9 +996,11 @@ Deno.serve(async (req) => {
     let tasksGenerated = 0;
     try {
       tasksGenerated = await generateDraftTasks(supabase, org_id, metrics, isFacilityOrg, userData.user.id);
-      if (tasksGenerated > 0) {
-        const { data: org } = await supabase.from("organizations").select("id, name").eq("id", org_id).maybeSingle();
-        if (org) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
+      const { data: org } = await supabase.from("organizations").select("id, name").eq("id", org_id).maybeSingle();
+      if (org) {
+        if (tasksGenerated > 0) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
+        // Round 2: high-risk alert (always check after intake)
+        await notifyAdminsHighRisk(supabase, org as any, metrics);
       }
     } catch (e) {
       console.error("draft task generation failed (non-fatal)", e);
