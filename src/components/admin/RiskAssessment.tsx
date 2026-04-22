@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { ExplainButton, type ExplainContent } from "@/components/admin/ExplainDrawer";
 
 type Severity = "Low" | "Medium" | "High";
 
