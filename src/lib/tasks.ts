@@ -42,6 +42,20 @@ export const ENGINE_SCORE_FIELD: Record<string, string> = {
 
 export type PlanStatus = "draft" | "active";
 
+export type TaskSource = "system" | "library" | "custom";
+
+export const TASK_SOURCE_LABEL: Record<TaskSource, string> = {
+  system: "Recommended",
+  library: "From Library",
+  custom: "Custom",
+};
+
+export const TASK_SOURCE_STYLE: Record<TaskSource, string> = {
+  system: "bg-info-soft text-info border-info/30",
+  library: "bg-accent-soft text-accent border-accent/30",
+  custom: "bg-secondary text-foreground/70 border-border",
+};
+
 export type OrgTask = {
   id: string;
   org_id: string;
@@ -53,6 +67,7 @@ export type OrgTask = {
   status: TaskStatus;
   priority: TaskPriority;
   plan_status: PlanStatus;
+  source: TaskSource;
   suggested_due_date: string | null;
   due_date: string | null;
   assigned_by: string | null;
