@@ -143,12 +143,16 @@ export function calcSponsorship(ctx: SponsorshipContext, inputs: SponsorshipInpu
 /* ──────────────────  CALCULATOR 3 — FAMILY WALLET SHARE  ────────────────── */
 
 export interface WalletInputs {
-  duesCapturePct: number;     // 0-100, % of $20k wallet captured per family in dues
+  duesIncreasePct: number;       // 0-50, % increase applied to current dues revenue
   numSponsors: number;
-  eventRevPerPlayer: number;  // $0 - 800
-  apparelCapturePct: number;  // 0-60 of $600
-  addonAdoptionPct: number;   // 0-30
-  facilityCapturePct: number; // 0-100 of $2,400/player benchmark
+  eventRevPerPlayer: number;     // $0 - 800
+  apparelCapturePct: number;     // 0-100 of apparel package
+  apparelPackageAmount: number;  // $/family, default $600
+  addonAdoptionPct: number;      // 0-50
+  addonPackageAmount: number;    // $/family/year, default $1,200 ($100/mo)
+  travelCapturePct: number;      // 0-40, % of outside travel spend redirected to org
+  travelSpendPerFamily: number;  // $5,000-$7,000, default $6,000
+  facilityCapturePct: number;    // 0-100 of $2,400/player benchmark
 }
 
 export interface WalletContext {
