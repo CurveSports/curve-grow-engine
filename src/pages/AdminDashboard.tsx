@@ -40,6 +40,8 @@ type OrgRow = {
   task_overdue: number;
   last_activity_at: string | null;
   overall_health_score: number | null;
+  engagement_complexity: string | null;
+  admin_alerts: any[] | null;
 };
 
 type Density = "compact" | "standard" | "detailed";
