@@ -15,6 +15,9 @@ import NotesTab from "@/components/admin/NotesTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
 import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
 import { ExplainProvider, ExplainButton } from "@/components/admin/ExplainDrawer";
+import ProjectsTab from "@/components/admin/ProjectsTab";
+import { ProjectCompletionBanner } from "@/components/admin/ProjectsTab";
+import { FolderKanban } from "lucide-react";
 import {
   operationsHealthExplain, marketPositionExplain, programHealthExplain, strategicClarityExplain,
   executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
@@ -29,7 +32,7 @@ const TIER_STYLES: Record<string, string> = {
   Elite: "bg-warning-soft text-warning border-warning/30",
 };
 
-type Tab = "overview" | "report" | "brief" | "plan" | "notes";
+type Tab = "overview" | "report" | "brief" | "plan" | "projects" | "notes";
 
 export default function OrgDetail() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -37,6 +40,8 @@ export default function OrgDetail() {
   const [params, setParams] = useSearchParams();
   const tab = (params.get("tab") as Tab) || "overview";
   const [alerts, setAlerts] = useState<AdminAlert[]>([]);
+  const [orgName, setOrgName] = useState("Organization");
+  const [bannerKey, setBannerKey] = useState(0);
 
   const setTab = (t: Tab) => {
     const next = new URLSearchParams(params);
@@ -46,13 +51,13 @@ export default function OrgDetail() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("derived_metrics")
-        .select("admin_alerts")
-        .eq("org_id", orgId!)
-        .maybeSingle();
+      const [{ data }, { data: o }] = await Promise.all([
+        supabase.from("derived_metrics").select("admin_alerts").eq("org_id", orgId!).maybeSingle(),
+        supabase.from("organizations").select("name").eq("id", orgId!).maybeSingle(),
+      ]);
       const raw = (data?.admin_alerts as any) ?? [];
       setAlerts(Array.isArray(raw) ? raw : []);
+      setOrgName((o as any)?.name ?? "Organization");
     })();
   }, [orgId]);
 
@@ -66,6 +71,7 @@ export default function OrgDetail() {
         </div>
 
         <AdminAlertsBanner alerts={alerts} />
+        <ProjectCompletionBanner key={bannerKey} orgId={orgId!} orgName={orgName} onApproved={() => setBannerKey((k) => k + 1)} />
 
         <OrgHeader orgId={orgId!} onActivate={() => setTab("plan")} onAddNote={() => setTab("notes")} onAddTask={() => setTab("plan")} />
 
@@ -83,6 +89,9 @@ export default function OrgDetail() {
             <TabsTrigger value="plan" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <ListChecks className="h-3.5 w-3.5" /> Action Plan
             </TabsTrigger>
+            <TabsTrigger value="projects" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <FolderKanban className="h-3.5 w-3.5" /> Projects
+            </TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <StickyNote className="h-3.5 w-3.5" /> Notes
             </TabsTrigger>
@@ -99,6 +108,9 @@ export default function OrgDetail() {
           </TabsContent>
           <TabsContent value="plan" className="mt-6">
             <AdminOrgTasks bare orgIdProp={orgId} />
+          </TabsContent>
+          <TabsContent value="projects" className="mt-6">
+            <ProjectsTab orgId={orgId!} orgName={orgName} />
           </TabsContent>
           <TabsContent value="notes" className="mt-6">
             <NotesTab orgId={orgId!} />
