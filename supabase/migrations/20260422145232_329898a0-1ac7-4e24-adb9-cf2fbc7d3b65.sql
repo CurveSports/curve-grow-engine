@@ -1,0 +1,1 @@
+ALTER TABLE public.org_communication_log ADD COLUMN outreach_track text;

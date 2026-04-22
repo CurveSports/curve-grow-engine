@@ -487,6 +487,7 @@ export type Database = {
           generated_on_behalf_of_org: boolean
           id: string
           org_id: string
+          outreach_track: string | null
           prompt_text: string | null
           tone: string | null
           was_refined: boolean
@@ -499,6 +500,7 @@ export type Database = {
           generated_on_behalf_of_org?: boolean
           id?: string
           org_id: string
+          outreach_track?: string | null
           prompt_text?: string | null
           tone?: string | null
           was_refined?: boolean
@@ -511,6 +513,7 @@ export type Database = {
           generated_on_behalf_of_org?: boolean
           id?: string
           org_id?: string
+          outreach_track?: string | null
           prompt_text?: string | null
           tone?: string | null
           was_refined?: boolean
