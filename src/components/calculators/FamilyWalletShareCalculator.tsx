@@ -65,7 +65,7 @@ function buildContext(intake: any, metrics: any): WalletContext {
 function defaultsFrom(ctx: WalletContext): WalletInputs {
   const FACILITY = 2400;
   return {
-    duesIncreasePct: 0, // start at no increase; user dials in
+    duesIncreasePct: 0,
     numSponsors: ctx.currentSponsors,
     eventRevPerPlayer: ctx.totalPlayers > 0 ? ctx.currentEvents / ctx.totalPlayers : 0,
     apparelCapturePct: ctx.totalPlayers > 0
@@ -76,8 +76,11 @@ function defaultsFrom(ctx: WalletContext): WalletInputs {
       ? Math.min(50, (ctx.currentAddOns / (ADDON_PACKAGE_DEFAULT * ctx.totalPlayers)) * 100)
       : 0,
     addonPackageAmount: ADDON_PACKAGE_DEFAULT,
-    travelCapturePct: 0,
-    travelSpendPerFamily: TRAVEL_SPEND_DEFAULT,
+    hsTournamentsAttending: 8,
+    hsNightsPerTournament: 2,
+    youthTournamentsAttending: 6,
+    youthNightsPerTournament: 2,
+    avgRoomNightCost: AVG_ROOM_NIGHT_DEFAULT,
     facilityCapturePct: ctx.totalPlayers > 0 && ctx.hasFacility
       ? Math.min(100, (ctx.currentFacility / (FACILITY * ctx.totalPlayers)) * 100)
       : 0,
