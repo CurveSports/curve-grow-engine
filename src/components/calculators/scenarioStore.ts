@@ -8,8 +8,8 @@ export async function saveScenario(
   orgId: string,
   calculatorType: CalculatorType,
   label: ScenarioLabel,
-  inputs: Record<string, unknown>,
-  outputs: Record<string, unknown>,
+  inputs: Record<string, any>,
+  outputs: Record<string, any>,
 ) {
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData.user?.id;
