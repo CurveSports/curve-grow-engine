@@ -1187,6 +1187,19 @@ Deno.serve(async (req) => {
       } catch (e) { console.error("tier history seed failed", e); }
     }
 
+    // Optional reset (admin dev recalc): wipe all tasks + projects so the plan regenerates from scratch
+    if (reset === true) {
+      try {
+        // Delete dependents first to satisfy FKs
+        await supabase.from("task_notes").delete().eq("org_id", org_id);
+        await supabase.from("task_activity_log").delete().eq("org_id", org_id);
+        await supabase.from("org_tasks").delete().eq("org_id", org_id);
+        await supabase.from("org_projects").delete().eq("org_id", org_id);
+        await supabase.from("org_weekly_focus").delete().eq("org_id", org_id);
+        await supabase.from("organizations").update({ plan_activated_at: null }).eq("id", org_id);
+      } catch (e) { console.error("reset failed", e); }
+    }
+
     // Auto-generate draft tasks (only if none exist yet) and notify admins
     const isFacilityOrg = !!intake?.org_type && FACILITY_ORG_TYPES.has(intake.org_type);
     let tasksGenerated = 0;
