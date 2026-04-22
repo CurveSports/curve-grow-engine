@@ -214,23 +214,21 @@ export function FamilyWalletShareCalculator({
               onPackageChange={(v) => setInputs({ ...inputs, addonPackageAmount: v })}
               assumption="Default $100/mo ($1,200/yr) per adopting family — covers lessons, skills training, or recovery packages. Adjust to match your actual offering."
             />
-            <StreamRow
-              label="Travel / Outside Spend Capture"
-              current="$0"
-              currentSub={`Families spend ~${fmt(inputs.travelSpendPerFamily)}/yr on outside travel & dining`}
-              value={inputs.travelCapturePct}
-              min={0} max={40} step={1} suffix="%"
-              sliderLabel="Redirected to your org"
-              onChange={(v) => setInputs({ ...inputs, travelCapturePct: v })}
-              projected={fmt(out.newTravel)}
-              packageLabel="Outside spend $/family"
-              packageValue={inputs.travelSpendPerFamily}
-              onPackageChange={(v) => setInputs({ ...inputs, travelSpendPerFamily: v })}
-              packageMin={5000}
-              packageMax={7000}
-              packageStep={250}
-              assumption="Assumes $5K–$7K of family spend currently flows to outside hotels, restaurants, and travel. Capture via block hotel rates, on-site concessions, or team travel packages where you keep margin."
+            <HotelSpendRow
+              hsPlayers={num((ctx as any).hsPlayers)}
+              youthPlayers={num((ctx as any).youthPlayers)}
+              hsTournaments={inputs.hsTournamentsAttending}
+              hsNights={inputs.hsNightsPerTournament}
+              youthTournaments={inputs.youthTournamentsAttending}
+              youthNights={inputs.youthNightsPerTournament}
+              roomNightCost={inputs.avgRoomNightCost}
+              hsHotelSpend={out.hsHotelSpend}
+              youthHotelSpend={out.youthHotelSpend}
+              totalHotelSpend={out.totalHotelSpend}
+              engineCashBack={out.engineCashBack}
+              onChange={(patch) => setInputs({ ...inputs, ...patch })}
             />
+
             {ctx.hasFacility && (
               <StreamRow
                 label="Facility"
