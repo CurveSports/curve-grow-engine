@@ -286,6 +286,29 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </div>
       )}
 
+      {/* Platform & Marketing universal engines */}
+      <div>
+        <p className="curve-eyebrow mb-3">Platform & Marketing</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UniversalEngineCard
+            label="Curve Sports Platform"
+            subtitle="Platform setup and partner activation"
+            score={platformScore}
+            done={platformDone}
+            total={platformTotal}
+            onJump={onJumpToPlan}
+          />
+          <UniversalEngineCard
+            label="Marketing Foundation"
+            subtitle="Brand, website, and content systems"
+            score={marketingScore}
+            done={marketingDone}
+            total={marketingTotal}
+            onJump={onJumpToPlan}
+          />
+        </div>
+      </div>
+
       {/* Tier ladder */}
       {(metrics as any)?.monetization_tier && (
         <div className="curve-card">
