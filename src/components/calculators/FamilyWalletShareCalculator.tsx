@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { CalculatorShell } from "./CalculatorShell";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { ImpactStat } from "./ImpactStat";
 import { ShareModal } from "./ShareModal";
-import { calcWallet, num, type WalletContext, type WalletInputs } from "@/lib/calculators";
+import {
+  calcWallet, num,
+  APPAREL_PACKAGE_DEFAULT, ADDON_PACKAGE_DEFAULT, TRAVEL_SPEND_DEFAULT,
+  type WalletContext, type WalletInputs,
+} from "@/lib/calculators";
 import { saveScenario, type ScenarioLabel } from "./scenarioStore";
 
 const fmt = (n: number) =>
