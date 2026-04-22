@@ -23,6 +23,8 @@ import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
 import Calculators from "@/pages/Calculators";
+import Communications from "@/pages/Communications";
+import AdminCommunications from "@/pages/admin/AdminCommunications";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -47,6 +49,9 @@ const App = () => (
             <Route path="/team" element={<ProtectedRoute role="org_user"><Team /></ProtectedRoute>} />
             <Route path="/calculators" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
             <Route path="/calculators/:orgId" element={<ProtectedRoute role="admin"><Calculators /></ProtectedRoute>} />
+            <Route path="/communications" element={<ProtectedRoute><Communications /></ProtectedRoute>} />
+            <Route path="/communications/:orgId" element={<ProtectedRoute role="admin"><Communications /></ProtectedRoute>} />
+            <Route path="/admin/communications" element={<ProtectedRoute role="admin"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin"><AdminTasksPage /></ProtectedRoute>} />
             <Route path="/admin/health" element={<ProtectedRoute role="admin"><AdminHealthReports /></ProtectedRoute>} />
