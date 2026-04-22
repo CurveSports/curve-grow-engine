@@ -12,6 +12,7 @@ import { ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
+import { PresentationsTab } from "@/components/presentations/PresentationsTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
 import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
 import { ExplainProvider, ExplainButton } from "@/components/admin/ExplainDrawer";
@@ -32,7 +33,7 @@ const TIER_STYLES: Record<string, string> = {
   Elite: "bg-warning-soft text-warning border-warning/30",
 };
 
-type Tab = "overview" | "report" | "brief" | "plan" | "projects" | "notes";
+type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "notes";
 
 export default function OrgDetail() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -83,8 +84,8 @@ export default function OrgDetail() {
             <TabsTrigger value="report" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <FileText className="h-3.5 w-3.5" /> Report
             </TabsTrigger>
-            <TabsTrigger value="brief" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" /> Internal Brief
+            <TabsTrigger value="presentations" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" /> Presentations
             </TabsTrigger>
             <TabsTrigger value="plan" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <ListChecks className="h-3.5 w-3.5" /> Action Plan
@@ -103,8 +104,8 @@ export default function OrgDetail() {
           <TabsContent value="report" className="mt-6">
             <Report bare orgIdProp={orgId} />
           </TabsContent>
-          <TabsContent value="brief" className="mt-6">
-            <BriefTab />
+          <TabsContent value="presentations" className="mt-6">
+            <PresentationsTab orgId={orgId!} />
           </TabsContent>
           <TabsContent value="plan" className="mt-6">
             <AdminOrgTasks bare orgIdProp={orgId} />

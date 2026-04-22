@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles,
 } from "lucide-react";
 
 type NavItem = {
@@ -21,6 +21,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/tasks", label: "Portfolio Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
   { to: "/admin/templates", label: "Templates", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
+  { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
 ];
 const ADMIN_SOON: NavItem[] = [
