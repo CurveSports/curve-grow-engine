@@ -179,18 +179,20 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
 
 function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; onJumpToPlan: () => void; onJumpToReport: () => void }) {
   const [metrics, setMetrics] = useState<any>(null);
+  const [intake, setIntake] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [{ data: m }, { data: t }, { data: a }] = await Promise.all([
+      const [{ data: m }, { data: i }, { data: t }, { data: a }] = await Promise.all([
         supabase.from("derived_metrics").select("*").eq("org_id", orgId).maybeSingle(),
+        supabase.from("organization_intake").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("org_tasks").select("*").eq("org_id", orgId).eq("plan_status", "active"),
         supabase.from("task_activity_log").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(8),
       ]);
-      setMetrics(m); setTasks(t ?? []); setActivity(a ?? []); setLoading(false);
+      setMetrics(m); setIntake(i); setTasks(t ?? []); setActivity(a ?? []); setLoading(false);
     })();
   }, [orgId]);
 
@@ -205,14 +207,19 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
 
   const total = tasks.length;
   const completed = tasks.filter(t => t.status === "completed").length;
-  const overdue = tasks.filter(t => t.status === "overdue" || (t.due_date && new Date(t.due_date) < new Date() && t.status !== "completed")).length;
   const completionPct = total ? Math.round((completed / total) * 100) : 0;
 
-  // Health scores from derived_metrics; fallback to engine sum if not yet calculated
-  const engineScores = Object.entries(ENGINE_SCORE_FIELD)
-    .map(([eng, field]) => ({ name: eng, score: Number((metrics as any)[field] ?? 0) }))
+  const allEngineNames = ["Pricing", "Sponsorship", "Apparel", "Events", "Add-Ons", "Retention", "Facility", "Affiliate"];
+  const engineFieldMap: Record<string, string> = {
+    Pricing: "pricing_score", Sponsorship: "sponsorship_score", Apparel: "apparel_score",
+    Events: "event_score", "Add-Ons": "addon_score", Retention: "retention_score",
+    Facility: "facility_score", Affiliate: "affiliate_score",
+  };
+  const engineScores = allEngineNames
+    .map((eng) => ({ name: eng, score: Number((metrics as any)[engineFieldMap[eng]] ?? 0) }))
     .filter(e => e.score > 0)
     .sort((a, b) => b.score - a.score);
+
   const fallbackHealth = engineScores.slice(0, 4).reduce((s, e) => s + e.score, 0);
   const overallHealth = (metrics as any).overall_health_score ?? fallbackHealth;
   const opsHealth = (metrics as any).operations_health_score ?? null;
@@ -242,10 +249,10 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
       {/* Health dimensions 2x2 (collapses to 1 col on mobile, 4 on lg) */}
       {hasDimensions && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <DimensionCard label="Operations Health" score={opsHealth} />
-          <DimensionCard label="Market Position" score={marketHealth} />
-          <DimensionCard label="Program Health" score={programHealth} />
-          <DimensionCard label="Strategic Clarity" score={strategicHealth} />
+          <DimensionCard label="Operations Health" score={opsHealth} explain={operationsHealthExplain(intake ?? {}, metrics)} />
+          <DimensionCard label="Market Position" score={marketHealth} explain={marketPositionExplain(intake ?? {}, metrics)} />
+          <DimensionCard label="Program Health" score={programHealth} explain={programHealthExplain(intake ?? {}, metrics)} />
+          <DimensionCard label="Strategic Clarity" score={strategicHealth} explain={strategicClarityExplain(intake ?? {}, metrics)} />
         </div>
       )}
 
@@ -257,6 +264,12 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         engagementComplexity={(metrics as any).engagement_complexity ?? null}
         engagementRecommendation={(metrics as any).engagement_approach_recommendation ?? null}
         pricingStrategyNote={(metrics as any).pricing_strategy_note ?? null}
+        explains={{
+          execution: executionRiskExplain(intake ?? {}, metrics),
+          market: marketRiskExplain(intake ?? {}, metrics),
+          retention: retentionRiskExplain(intake ?? {}, metrics),
+          complexity: engagementComplexityExplain(intake ?? {}, metrics),
+        }}
       />
 
       {/* Round 2: Monetization tier key */}
@@ -275,24 +288,27 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
             <ul className="space-y-3">
               {engineScores.map(e => (
                 <li key={e.name}>
-                  <button
-                    onClick={onJumpToPlan}
-                    className="w-full text-left group"
-                  >
-                    <div className="flex items-baseline justify-between mb-1">
-                      <span className="text-sm font-medium group-hover:text-accent transition-colors">{e.name}</span>
-                      <span className="text-sm font-semibold tabular-nums">{e.score}<span className="text-muted-foreground font-normal">/10</span></span>
+                  <div className="flex items-baseline justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={onJumpToPlan}
+                        className="text-sm font-medium hover:text-accent transition-colors"
+                      >
+                        {e.name}
+                      </button>
+                      <ExplainButton content={engineScoreExplain(e.name, intake ?? {}, metrics)} />
                     </div>
-                    <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className={cn(
-                          "h-full transition-all",
-                          e.score <= 3 ? "bg-destructive" : e.score <= 6 ? "bg-warning" : e.score <= 8 ? "bg-info" : "bg-accent",
-                        )}
-                        style={{ width: `${(e.score / 10) * 100}%` }}
-                      />
-                    </div>
-                  </button>
+                    <span className="text-sm font-semibold tabular-nums">{e.score}<span className="text-muted-foreground font-normal">/10</span></span>
+                  </div>
+                  <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-full transition-all",
+                        e.score <= 3 ? "bg-destructive" : e.score <= 6 ? "bg-warning" : e.score <= 8 ? "bg-info" : "bg-accent",
+                      )}
+                      style={{ width: `${(e.score / 10) * 100}%` }}
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
