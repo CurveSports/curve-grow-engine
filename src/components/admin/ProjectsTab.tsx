@@ -26,6 +26,7 @@ type Props = { orgId: string; orgName: string };
 export default function ProjectsTab({ orgId, orgName }: Props) {
   const [projects, setProjects] = useState<OrgProject[]>([]);
   const [tasks, setTasks] = useState<OrgTask[]>([]);
+  const [planActivatedAt, setPlanActivatedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -36,12 +37,14 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
 
   const load = async () => {
     setLoading(true);
-    const [{ data: p }, { data: t }] = await Promise.all([
+    const [{ data: p }, { data: t }, { data: o }] = await Promise.all([
       supabase.from("org_projects").select("*").eq("org_id", orgId).order("display_order").order("created_at"),
       supabase.from("org_tasks").select("*").eq("org_id", orgId),
+      supabase.from("organizations").select("plan_activated_at").eq("id", orgId).maybeSingle(),
     ]);
     setProjects((p as OrgProject[]) ?? []);
     setTasks((t as OrgTask[]) ?? []);
+    setPlanActivatedAt((o as any)?.plan_activated_at ?? null);
     setLoading(false);
   };
 
