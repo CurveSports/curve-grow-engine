@@ -478,6 +478,53 @@ export type Database = {
           },
         ]
       }
+      org_communication_log: {
+        Row: {
+          communication_type: string
+          format: string | null
+          generated_at: string
+          generated_by: string
+          generated_on_behalf_of_org: boolean
+          id: string
+          org_id: string
+          prompt_text: string | null
+          tone: string | null
+          was_refined: boolean
+        }
+        Insert: {
+          communication_type: string
+          format?: string | null
+          generated_at?: string
+          generated_by: string
+          generated_on_behalf_of_org?: boolean
+          id?: string
+          org_id: string
+          prompt_text?: string | null
+          tone?: string | null
+          was_refined?: boolean
+        }
+        Update: {
+          communication_type?: string
+          format?: string | null
+          generated_at?: string
+          generated_by?: string
+          generated_on_behalf_of_org?: boolean
+          id?: string
+          org_id?: string
+          prompt_text?: string | null
+          tone?: string | null
+          was_refined?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_communication_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_notes: {
         Row: {
           created_at: string
