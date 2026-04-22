@@ -20,6 +20,7 @@ export default function TopNav() {
           {role === "admin" && (
             <>
               <Link to="/admin" className="text-foreground/70 hover:text-foreground transition-colors">Admin</Link>
+              <Link to="/admin/task-tracker" className="text-foreground/70 hover:text-foreground transition-colors">Task Tracker</Link>
               <Link to="/admin/health" className="text-foreground/70 hover:text-foreground transition-colors">Health</Link>
               <Link to="/admin/invite" className="text-foreground/70 hover:text-foreground transition-colors">Invite</Link>
             </>
