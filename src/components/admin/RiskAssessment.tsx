@@ -204,49 +204,82 @@ const TIER_DETAILS = [
 
 export function MonetizationTierGuide({ currentTier }: { currentTier: string | null }) {
   const upper = currentTier?.toUpperCase() ?? null;
+  const [openTier, setOpenTier] = useState<string | null>(upper);
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-3">
         <p className="curve-eyebrow">Monetization Tier Guide</p>
         <div className="flex-1 h-px bg-border" />
       </div>
-      <div className="space-y-3">
+      <div className="space-y-2">
         {TIER_DETAILS.map((t) => {
           const isCurrent = upper === t.name;
+          const isOpen = openTier === t.name;
           return (
-            <div
+            <Collapsible
               key={t.name}
-              className={cn(
-                "curve-card transition-all",
-                isCurrent && "border-2 border-accent shadow-md",
-              )}
+              open={isOpen}
+              onOpenChange={(open) => setOpenTier(open ? t.name : null)}
             >
-              <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
-                <div className="flex items-baseline gap-2">
-                  <h4 className="font-display text-base font-bold tracking-wide">{t.name}</h4>
-                  <span className="text-xs text-muted-foreground tabular-nums">({t.range})</span>
+              <CollapsibleTrigger asChild>
+                <div
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all",
+                    isCurrent
+                      ? "border-accent bg-accent/5"
+                      : "border-border bg-card hover:bg-muted/50",
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <h4
+                      className={cn(
+                        "font-display text-sm font-bold tracking-wide",
+                        isCurrent ? "text-accent" : "text-foreground",
+                      )}
+                    >
+                      {t.name}
+                    </h4>
+                    <span className="text-xs text-muted-foreground tabular-nums">({t.range})</span>
+                    {isCurrent && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent text-accent-foreground">
+                        Current
+                      </span>
+                    )}
+                  </div>
+                  <ChevronRight
+                    className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform",
+                      isOpen && "rotate-90",
+                    )}
+                  />
                 </div>
-                {isCurrent && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-accent text-accent-foreground">
-                    Current Tier
-                  </span>
-                )}
-              </div>
-              <dl className="space-y-2 text-sm">
-                <div>
-                  <dt className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Revenue</dt>
-                  <dd className="text-foreground mt-0.5">{t.revenue}</dd>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="p-3 pt-0 border-x border-b rounded-b-lg border-border bg-card">
+                  <dl className="space-y-2 text-sm pt-3">
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                        Revenue
+                      </dt>
+                      <dd className="text-foreground mt-0.5 text-sm">{t.revenue}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                        Engagement
+                      </dt>
+                      <dd className="text-foreground mt-0.5 text-sm">{t.engagement}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+                        Typical first move
+                      </dt>
+                      <dd className="text-foreground mt-0.5 text-sm">{t.firstMove}</dd>
+                    </div>
+                  </dl>
                 </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Engagement</dt>
-                  <dd className="text-foreground mt-0.5">{t.engagement}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Typical first move</dt>
-                  <dd className="text-foreground mt-0.5">{t.firstMove}</dd>
-                </div>
-              </dl>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           );
         })}
       </div>
