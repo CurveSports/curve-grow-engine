@@ -124,6 +124,7 @@ export default function OrgDetail() {
 /* ─────────────────────────  HEADER  ───────────────────────── */
 
 function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string; onActivate: () => void; onAddNote: () => void; onAddTask: () => void }) {
+  const navigate = useNavigate();
   const [org, setOrg] = useState<any>(null);
   const [intake, setIntake] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
@@ -181,6 +182,7 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
           )}
           <Button size="sm" variant="outline" onClick={onAddNote}>Add Note</Button>
           <Button size="sm" variant="outline" onClick={onAddTask}>Add Task</Button>
+          <Button size="sm" variant="outline" onClick={() => navigate(`/calculators/${orgId}`)}>Calculators</Button>
         </div>
       </div>
     </div>
