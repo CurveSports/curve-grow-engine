@@ -1089,6 +1089,15 @@ Deno.serve(async (req) => {
         if (tasksGenerated > 0) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
         // Round 2: high-risk alert (always check after intake)
         await notifyAdminsHighRisk(supabase, org as any, metrics);
+        // Tier advancement
+        if (tierAdvanced) {
+          await notifyTierAdvancement(
+            supabase, org as any,
+            { previous_tier: prevTier!, new_tier: metrics.monetization_tier,
+              previous_score: prevScore!, new_score: metrics.total_engine_score,
+              next_tier, fastest_path_engines },
+          );
+        }
       }
     } catch (e) {
       console.error("draft task generation failed (non-fatal)", e);
