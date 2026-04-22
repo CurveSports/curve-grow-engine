@@ -986,10 +986,98 @@ Deno.serve(async (req) => {
 
     const metrics = calculate(intakeRow);
 
+    // ===== TIER LADDER (post-scoring) =====
+    const TIER_THRESHOLDS: Record<string, number> = {
+      Emerging: 21, Growth: 33, Advanced: 45, Elite: 53,
+    };
+    const TIER_NEXT: Record<string, string | null> = {
+      Foundational: "Emerging", Emerging: "Growth", Growth: "Advanced",
+      Advanced: "Elite", Elite: null,
+    };
+    const next_tier = TIER_NEXT[metrics.monetization_tier] ?? null;
+    const next_tier_threshold = next_tier ? TIER_THRESHOLDS[next_tier] : null;
+    const points_to_next_tier = next_tier_threshold !== null
+      ? Math.max(0, next_tier_threshold - metrics.total_engine_score) : null;
+
+    // Fastest path: top 3 engines with biggest gap to 7
+    const engineList: { engine: string; current_score: number }[] = [
+      { engine: "Pricing", current_score: metrics.pricing_score },
+      { engine: "Sponsorship", current_score: metrics.sponsorship_score },
+      { engine: "Apparel", current_score: metrics.apparel_score },
+      { engine: "Events", current_score: metrics.event_score },
+      { engine: "Add-Ons", current_score: metrics.addon_score },
+      { engine: "Retention", current_score: metrics.retention_score },
+    ];
+    if (metrics.facility_score !== null && metrics.facility_score !== undefined) {
+      engineList.push({ engine: "Facility", current_score: metrics.facility_score });
+    }
+    if (metrics.affiliate_score !== null && metrics.affiliate_score !== undefined) {
+      engineList.push({ engine: "Affiliate", current_score: metrics.affiliate_score });
+    }
+    const fastest_path_engines = engineList
+      .map((e) => ({
+        engine: e.engine,
+        current_score: e.current_score,
+        target_score: 7,
+        points_available: Math.max(0, 7 - e.current_score),
+      }))
+      .sort((a, b) => b.points_available - a.points_available)
+      .slice(0, 3);
+    const fastest_path_total_points = fastest_path_engines.reduce((s, e) => s + e.points_available, 0);
+    const can_reach_next_tier = points_to_next_tier !== null
+      ? fastest_path_total_points >= points_to_next_tier : null;
+
+    // Active project alignment
+    const { data: activeProjects } = await supabase
+      .from("org_projects").select("engine").eq("org_id", org_id).eq("status", "active");
+    const active_project_engines = Array.from(new Set(
+      ((activeProjects ?? []) as any[]).map((p) => p.engine).filter(Boolean),
+    ));
+    const fastestEngineSet = new Set(fastest_path_engines.map((e) => e.engine));
+    const project_aligned_with_fastest_path = active_project_engines.some((e) => fastestEngineSet.has(e));
+
+    const tierLadderFields = {
+      next_tier, next_tier_threshold, points_to_next_tier,
+      fastest_path_engines, fastest_path_total_points, can_reach_next_tier,
+      active_project_engines, project_aligned_with_fastest_path,
+    };
+
+    // ===== TIER ADVANCEMENT TRACKING =====
+    const { data: prevMetrics } = await supabase
+      .from("derived_metrics")
+      .select("monetization_tier, total_engine_score")
+      .eq("org_id", org_id).maybeSingle();
+    const prevTier = prevMetrics?.monetization_tier ?? null;
+    const prevScore = prevMetrics?.total_engine_score ?? null;
+    const TIER_ORDER = ["Foundational", "Emerging", "Growth", "Advanced", "Elite"];
+    const tierAdvanced = prevTier && prevTier !== metrics.monetization_tier
+      && TIER_ORDER.indexOf(metrics.monetization_tier) > TIER_ORDER.indexOf(prevTier);
+
     const { error: metErr } = await supabase
       .from("derived_metrics")
-      .upsert({ org_id, ...metrics }, { onConflict: "org_id" });
+      .upsert({ org_id, ...metrics, ...tierLadderFields }, { onConflict: "org_id" });
     if (metErr) throw metErr;
+
+    // Record tier history when tier changes (in either direction; flag advancement only for notifications)
+    if (prevTier && prevTier !== metrics.monetization_tier) {
+      try {
+        await supabase.from("org_tier_history").insert({
+          org_id,
+          previous_tier: prevTier,
+          new_tier: metrics.monetization_tier,
+          previous_score: prevScore,
+          new_score: metrics.total_engine_score,
+        });
+      } catch (e) { console.error("tier history insert failed", e); }
+    } else if (!prevTier) {
+      // first calculation — seed history with starting tier
+      try {
+        await supabase.from("org_tier_history").insert({
+          org_id, previous_tier: null, new_tier: metrics.monetization_tier,
+          previous_score: null, new_score: metrics.total_engine_score,
+        });
+      } catch (e) { console.error("tier history seed failed", e); }
+    }
 
     // Auto-generate draft tasks (only if none exist yet) and notify admins
     const isFacilityOrg = !!intake?.org_type && FACILITY_ORG_TYPES.has(intake.org_type);
