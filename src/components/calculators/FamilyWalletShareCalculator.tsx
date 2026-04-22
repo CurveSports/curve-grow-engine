@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { CalculatorShell } from "./CalculatorShell";
 import { AnimatedNumber } from "./AnimatedNumber";
 import { ImpactStat } from "./ImpactStat";
 import { ShareModal } from "./ShareModal";
-import { calcWallet, num, type WalletContext, type WalletInputs } from "@/lib/calculators";
+import {
+  calcWallet, num,
+  APPAREL_PACKAGE_DEFAULT, ADDON_PACKAGE_DEFAULT, TRAVEL_SPEND_DEFAULT,
+  type WalletContext, type WalletInputs,
+} from "@/lib/calculators";
 import { saveScenario, type ScenarioLabel } from "./scenarioStore";
 
 const fmt = (n: number) =>
@@ -53,23 +58,21 @@ function buildContext(intake: any, metrics: any): WalletContext {
 }
 
 function defaultsFrom(ctx: WalletContext): WalletInputs {
-  // Compute current capture % per stream as default
-  const HIGH = 20000;
-  const APPAREL = 600;
-  const ADDON = 1200;
   const FACILITY = 2400;
   return {
-    duesCapturePct: ctx.totalPlayers > 0
-      ? Math.min(100, (ctx.currentDues / (HIGH * ctx.totalPlayers)) * 100)
-      : 0,
+    duesIncreasePct: 0, // start at no increase; user dials in
     numSponsors: ctx.currentSponsors,
     eventRevPerPlayer: ctx.totalPlayers > 0 ? ctx.currentEvents / ctx.totalPlayers : 0,
     apparelCapturePct: ctx.totalPlayers > 0
-      ? Math.min(60, (ctx.currentApparelMargin / (APPAREL * ctx.totalPlayers)) * 100)
+      ? Math.min(100, (ctx.currentApparelMargin / (APPAREL_PACKAGE_DEFAULT * ctx.totalPlayers)) * 100)
       : 0,
+    apparelPackageAmount: APPAREL_PACKAGE_DEFAULT,
     addonAdoptionPct: ctx.totalPlayers > 0
-      ? Math.min(30, (ctx.currentAddOns / (ADDON * ctx.totalPlayers)) * 100)
+      ? Math.min(50, (ctx.currentAddOns / (ADDON_PACKAGE_DEFAULT * ctx.totalPlayers)) * 100)
       : 0,
+    addonPackageAmount: ADDON_PACKAGE_DEFAULT,
+    travelCapturePct: 0,
+    travelSpendPerFamily: TRAVEL_SPEND_DEFAULT,
     facilityCapturePct: ctx.totalPlayers > 0 && ctx.hasFacility
       ? Math.min(100, (ctx.currentFacility / (FACILITY * ctx.totalPlayers)) * 100)
       : 0,
@@ -146,12 +149,13 @@ export function FamilyWalletShareCalculator({
             <StreamRow
               label="Player Dues"
               current={fmt(ctx.currentDues)}
-              currentSub={`${fmt(out.lowWallet > 0 ? ctx.currentDues / Math.max(1, ctx.totalPlayers) : 0)} per player`}
-              value={inputs.duesCapturePct}
-              min={0} max={100} step={1} suffix="%"
-              sliderLabel="Capture rate"
-              onChange={(v) => setInputs({ ...inputs, duesCapturePct: v })}
+              currentSub={`${fmt(ctx.totalPlayers > 0 ? ctx.currentDues / ctx.totalPlayers : 0)} per player today`}
+              value={inputs.duesIncreasePct}
+              min={0} max={50} step={1} suffix="%"
+              sliderLabel="Fee increase"
+              onChange={(v) => setInputs({ ...inputs, duesIncreasePct: v })}
               projected={fmt(out.newDues)}
+              assumption="Applied as a percentage lift to current dues revenue (no attrition modeled here — see Pricing Sensitivity for that)."
             />
             <StreamRow
               label="Sponsorship"
@@ -175,24 +179,49 @@ export function FamilyWalletShareCalculator({
               prefixValue
             />
             <StreamRow
-              label="Apparel Margin"
+              label="Apparel / Hard Goods Spend Capture"
               current={fmt(ctx.currentApparelMargin)}
-              currentSub="of $600 family spend"
+              currentSub={`of ${fmt(inputs.apparelPackageAmount)} family spend`}
               value={inputs.apparelCapturePct}
-              min={0} max={60} step={1} suffix="%"
+              min={0} max={100} step={1} suffix="%"
               sliderLabel="Capture rate"
               onChange={(v) => setInputs({ ...inputs, apparelCapturePct: v })}
               projected={fmt(out.newApparel)}
+              packageLabel="Package $/family/yr"
+              packageValue={inputs.apparelPackageAmount}
+              onPackageChange={(v) => setInputs({ ...inputs, apparelPackageAmount: v })}
+              assumption="Default $600/family covers helmets, bats, gloves, bags, and other hard goods."
             />
             <StreamRow
               label="Training / Add-Ons"
               current={fmt(ctx.currentAddOns)}
-              currentSub="monthly package adoption"
+              currentSub={`${(inputs.addonPackageAmount / 12).toFixed(0)}/mo · ${fmt(inputs.addonPackageAmount)}/yr package`}
               value={inputs.addonAdoptionPct}
-              min={0} max={30} step={1} suffix="%"
-              sliderLabel="Adoption"
+              min={0} max={50} step={1} suffix="%"
+              sliderLabel="Family adoption"
               onChange={(v) => setInputs({ ...inputs, addonAdoptionPct: v })}
               projected={fmt(out.newAddOns)}
+              packageLabel="Package $/family/yr"
+              packageValue={inputs.addonPackageAmount}
+              onPackageChange={(v) => setInputs({ ...inputs, addonPackageAmount: v })}
+              assumption="Default $100/mo ($1,200/yr) per adopting family — covers lessons, skills training, or recovery packages. Adjust to match your actual offering."
+            />
+            <StreamRow
+              label="Travel / Outside Spend Capture"
+              current="$0"
+              currentSub={`Families spend ~${fmt(inputs.travelSpendPerFamily)}/yr on outside travel & dining`}
+              value={inputs.travelCapturePct}
+              min={0} max={40} step={1} suffix="%"
+              sliderLabel="Redirected to your org"
+              onChange={(v) => setInputs({ ...inputs, travelCapturePct: v })}
+              projected={fmt(out.newTravel)}
+              packageLabel="Outside spend $/family"
+              packageValue={inputs.travelSpendPerFamily}
+              onPackageChange={(v) => setInputs({ ...inputs, travelSpendPerFamily: v })}
+              packageMin={5000}
+              packageMax={7000}
+              packageStep={250}
+              assumption="Assumes $5K–$7K of family spend currently flows to outside hotels, restaurants, and travel. Capture via block hotel rates, on-site concessions, or team travel packages where you keep margin."
             />
             {ctx.hasFacility && (
               <StreamRow
@@ -281,8 +310,20 @@ interface StreamRowProps {
   sliderLabel: string;
   onChange: (v: number) => void;
   projected: string;
+  assumption?: string;
+  packageLabel?: string;
+  packageValue?: number;
+  onPackageChange?: (v: number) => void;
+  packageMin?: number;
+  packageMax?: number;
+  packageStep?: number;
 }
-function StreamRow({ label, current, currentSub, value, min, max, step, suffix, prefixValue, sliderLabel, onChange, projected }: StreamRowProps) {
+function StreamRow({
+  label, current, currentSub, value, min, max, step, suffix, prefixValue,
+  sliderLabel, onChange, projected, assumption,
+  packageLabel, packageValue, onPackageChange,
+  packageMin = 0, packageMax = 5000, packageStep = 50,
+}: StreamRowProps) {
   return (
     <div className="rounded-lg border border-border p-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
@@ -299,6 +340,30 @@ function StreamRow({ label, current, currentSub, value, min, max, step, suffix, 
         </span>
       </div>
       <Slider value={[value]} min={min} max={max} step={step} onValueChange={([v]) => onChange(v)} />
+      {packageLabel && onPackageChange && packageValue !== undefined && (
+        <div className="mt-3 pt-3 border-t border-border/60">
+          <div className="flex items-center justify-between gap-3 mb-1">
+            <label className="text-xs text-muted-foreground">{packageLabel}</label>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-muted-foreground">$</span>
+              <Input
+                type="number"
+                value={packageValue}
+                min={packageMin}
+                max={packageMax}
+                step={packageStep}
+                onChange={(e) => onPackageChange(num(e.target.value, packageValue))}
+                className="h-7 w-24 text-xs tabular-nums"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+      {assumption && (
+        <p className="mt-2 text-[11px] leading-snug text-muted-foreground/90 italic">
+          ⓘ {assumption}
+        </p>
+      )}
     </div>
   );
 }

@@ -143,12 +143,16 @@ export function calcSponsorship(ctx: SponsorshipContext, inputs: SponsorshipInpu
 /* ──────────────────  CALCULATOR 3 — FAMILY WALLET SHARE  ────────────────── */
 
 export interface WalletInputs {
-  duesCapturePct: number;     // 0-100, % of $20k wallet captured per family in dues
+  duesIncreasePct: number;       // 0-50, % increase applied to current dues revenue
   numSponsors: number;
-  eventRevPerPlayer: number;  // $0 - 800
-  apparelCapturePct: number;  // 0-60 of $600
-  addonAdoptionPct: number;   // 0-30
-  facilityCapturePct: number; // 0-100 of $2,400/player benchmark
+  eventRevPerPlayer: number;     // $0 - 800
+  apparelCapturePct: number;     // 0-100 of apparel package
+  apparelPackageAmount: number;  // $/family, default $600
+  addonAdoptionPct: number;      // 0-50
+  addonPackageAmount: number;    // $/family/year, default $1,200 ($100/mo)
+  travelCapturePct: number;      // 0-40, % of outside travel spend redirected to org
+  travelSpendPerFamily: number;  // $5,000-$7,000, default $6,000
+  facilityCapturePct: number;    // 0-100 of $2,400/player benchmark
 }
 
 export interface WalletContext {
@@ -167,26 +171,28 @@ export interface WalletContext {
 
 const FAMILY_WALLET_LOW_PER_PLAYER = 15000;
 const FAMILY_WALLET_HIGH_PER_PLAYER = 20000;
-const APPAREL_FAMILY_SPEND = 600;
-const ADDON_MONTHLY_PACKAGE = 1200; // $100/mo × 12
 const FACILITY_PER_PLAYER_BENCHMARK = 2400;
+export const APPAREL_PACKAGE_DEFAULT = 600;
+export const ADDON_PACKAGE_DEFAULT = 1200; // $100/mo × 12
+export const TRAVEL_SPEND_DEFAULT = 6000;  // midpoint of $5K-$7K outside travel/restaurant spend
 
 export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
   const lowWallet = FAMILY_WALLET_LOW_PER_PLAYER * ctx.totalPlayers;
   const highWallet = FAMILY_WALLET_HIGH_PER_PLAYER * ctx.totalPlayers;
 
-  // dues capture is % of high-wallet per family
-  const newDues = (inputs.duesCapturePct / 100) * FAMILY_WALLET_HIGH_PER_PLAYER * ctx.totalPlayers;
+  // Dues: apply % increase to current dues revenue
+  const newDues = ctx.currentDues * (1 + inputs.duesIncreasePct / 100);
   const newSponsorship = inputs.numSponsors * ctx.fmvPerSponsorMid;
   const newEvents = inputs.eventRevPerPlayer * ctx.totalPlayers;
-  const newApparel = (inputs.apparelCapturePct / 100) * APPAREL_FAMILY_SPEND * ctx.totalPlayers;
-  const newAddOns = (inputs.addonAdoptionPct / 100) * ADDON_MONTHLY_PACKAGE * ctx.totalPlayers;
+  const newApparel = (inputs.apparelCapturePct / 100) * inputs.apparelPackageAmount * ctx.totalPlayers;
+  const newAddOns = (inputs.addonAdoptionPct / 100) * inputs.addonPackageAmount * ctx.totalPlayers;
+  const newTravel = (inputs.travelCapturePct / 100) * inputs.travelSpendPerFamily * ctx.totalPlayers;
   const newFacility = ctx.hasFacility
     ? (inputs.facilityCapturePct / 100) * FACILITY_PER_PLAYER_BENCHMARK * ctx.totalPlayers
     : 0;
 
   const projectedTotal =
-    newDues + newSponsorship + newEvents + newApparel + newAddOns + newFacility;
+    newDues + newSponsorship + newEvents + newApparel + newAddOns + newTravel + newFacility;
   const currentTotal =
     ctx.currentDues +
     ctx.currentSponsorship +
@@ -208,6 +214,7 @@ export function calcWallet(ctx: WalletContext, inputs: WalletInputs) {
     newEvents,
     newApparel,
     newAddOns,
+    newTravel,
     newFacility,
     projectedTotal,
     currentTotal,
