@@ -57,53 +57,55 @@ export default function OrgDetail() {
   }, [orgId]);
 
   return (
-    <AppShell title="Organization">
-      <div className="mb-4">
-        <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations
-        </Link>
-      </div>
+    <ExplainProvider>
+      <AppShell title="Organization">
+        <div className="mb-4">
+          <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations
+          </Link>
+        </div>
 
-      <AdminAlertsBanner alerts={alerts} />
+        <AdminAlertsBanner alerts={alerts} />
 
-      <OrgHeader orgId={orgId!} onActivate={() => setTab("plan")} onAddNote={() => setTab("notes")} onAddTask={() => setTab("plan")} />
+        <OrgHeader orgId={orgId!} onActivate={() => setTab("plan")} onAddNote={() => setTab("notes")} onAddTask={() => setTab("plan")} />
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="mt-6">
-        <TabsList className="bg-card border border-border h-auto p-1 flex-wrap">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
-            <LayoutDashboard className="h-3.5 w-3.5" /> Overview
-          </TabsTrigger>
-          <TabsTrigger value="report" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
-            <FileText className="h-3.5 w-3.5" /> Report
-          </TabsTrigger>
-          <TabsTrigger value="brief" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
-            <Sparkles className="h-3.5 w-3.5" /> Internal Brief
-          </TabsTrigger>
-          <TabsTrigger value="plan" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
-            <ListChecks className="h-3.5 w-3.5" /> Action Plan
-          </TabsTrigger>
-          <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
-            <StickyNote className="h-3.5 w-3.5" /> Notes
-          </TabsTrigger>
-        </TabsList>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="mt-6">
+          <TabsList className="bg-card border border-border h-auto p-1 flex-wrap">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <LayoutDashboard className="h-3.5 w-3.5" /> Overview
+            </TabsTrigger>
+            <TabsTrigger value="report" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Report
+            </TabsTrigger>
+            <TabsTrigger value="brief" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" /> Internal Brief
+            </TabsTrigger>
+            <TabsTrigger value="plan" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <ListChecks className="h-3.5 w-3.5" /> Action Plan
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <StickyNote className="h-3.5 w-3.5" /> Notes
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="overview" className="mt-6">
-          <OverviewTab orgId={orgId!} onJumpToPlan={() => setTab("plan")} onJumpToReport={() => setTab("report")} />
-        </TabsContent>
-        <TabsContent value="report" className="mt-6">
-          <Report bare orgIdProp={orgId} />
-        </TabsContent>
-        <TabsContent value="brief" className="mt-6">
-          <BriefTab />
-        </TabsContent>
-        <TabsContent value="plan" className="mt-6">
-          <AdminOrgTasks bare orgIdProp={orgId} />
-        </TabsContent>
-        <TabsContent value="notes" className="mt-6">
-          <NotesTab orgId={orgId!} />
-        </TabsContent>
-      </Tabs>
-    </AppShell>
+          <TabsContent value="overview" className="mt-6">
+            <OverviewTab orgId={orgId!} onJumpToPlan={() => setTab("plan")} onJumpToReport={() => setTab("report")} />
+          </TabsContent>
+          <TabsContent value="report" className="mt-6">
+            <Report bare orgIdProp={orgId} />
+          </TabsContent>
+          <TabsContent value="brief" className="mt-6">
+            <BriefTab />
+          </TabsContent>
+          <TabsContent value="plan" className="mt-6">
+            <AdminOrgTasks bare orgIdProp={orgId} />
+          </TabsContent>
+          <TabsContent value="notes" className="mt-6">
+            <NotesTab orgId={orgId!} />
+          </TabsContent>
+        </Tabs>
+      </AppShell>
+    </ExplainProvider>
   );
 }
 
