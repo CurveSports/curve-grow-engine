@@ -116,7 +116,10 @@ export default function AdminDashboard() {
     const tierCounts: Record<string, number> = {};
     orgs.forEach(o => { if (o.tier) tierCounts[o.tier] = (tierCounts[o.tier] ?? 0) + 1; });
     const topTier = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
-    return { total: orgs.length, active, opp_low, opp_high, due, overdue, completed, topTier };
+    const complexCount = orgs.filter(o => o.engagement_complexity === "Complex").length;
+    const highAlertCount = orgs.filter(o => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high")).length;
+    const reviewCount = orgs.filter(o => o.revenue_needs_review === true).length;
+    return { total: orgs.length, active, opp_low, opp_high, due, overdue, completed, topTier, complexCount, highAlertCount, reviewCount };
   }, [orgs]);
 
   return (
