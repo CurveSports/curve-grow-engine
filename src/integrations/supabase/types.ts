@@ -76,6 +76,9 @@ export type Database = {
           market_multiplier: number | null
           market_position_health_score: number | null
           market_risk: string | null
+          marketing_score: number | null
+          marketing_tasks_complete: number
+          marketing_tasks_total: number
           monetization_tier:
             | Database["public"]["Enums"]["monetization_tier"]
             | null
@@ -87,6 +90,10 @@ export type Database = {
           operations_health_score: number | null
           org_id: string
           overall_health_score: number | null
+          platform_marketing_updated_at: string | null
+          platform_score: number | null
+          platform_tasks_complete: number
+          platform_tasks_total: number
           points_to_next_tier: number | null
           pricing_benchmark_hs_high: number | null
           pricing_benchmark_hs_low: number | null
@@ -185,6 +192,9 @@ export type Database = {
           market_multiplier?: number | null
           market_position_health_score?: number | null
           market_risk?: string | null
+          marketing_score?: number | null
+          marketing_tasks_complete?: number
+          marketing_tasks_total?: number
           monetization_tier?:
             | Database["public"]["Enums"]["monetization_tier"]
             | null
@@ -196,6 +206,10 @@ export type Database = {
           operations_health_score?: number | null
           org_id: string
           overall_health_score?: number | null
+          platform_marketing_updated_at?: string | null
+          platform_score?: number | null
+          platform_tasks_complete?: number
+          platform_tasks_total?: number
           points_to_next_tier?: number | null
           pricing_benchmark_hs_high?: number | null
           pricing_benchmark_hs_low?: number | null
@@ -294,6 +308,9 @@ export type Database = {
           market_multiplier?: number | null
           market_position_health_score?: number | null
           market_risk?: string | null
+          marketing_score?: number | null
+          marketing_tasks_complete?: number
+          marketing_tasks_total?: number
           monetization_tier?:
             | Database["public"]["Enums"]["monetization_tier"]
             | null
@@ -305,6 +322,10 @@ export type Database = {
           operations_health_score?: number | null
           org_id?: string
           overall_health_score?: number | null
+          platform_marketing_updated_at?: string | null
+          platform_score?: number | null
+          platform_tasks_complete?: number
+          platform_tasks_total?: number
           points_to_next_tier?: number | null
           pricing_benchmark_hs_high?: number | null
           pricing_benchmark_hs_low?: number | null
@@ -609,6 +630,7 @@ export type Database = {
       }
       org_projects: {
         Row: {
+          auto_created: boolean
           awaiting_completion_approval: boolean
           completion_approved_at: string | null
           completion_approved_by: string | null
@@ -628,6 +650,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_created?: boolean
           awaiting_completion_approval?: boolean
           completion_approved_at?: string | null
           completion_approved_by?: string | null
@@ -647,6 +670,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_created?: boolean
           awaiting_completion_approval?: boolean
           completion_approved_at?: string | null
           completion_approved_by?: string | null
@@ -694,6 +718,7 @@ export type Database = {
           id: string
           last_activity_at: string
           org_id: string
+          owner_type: Database["public"]["Enums"]["task_owner_type"]
           plan_status: Database["public"]["Enums"]["plan_status"]
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -715,6 +740,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           org_id: string
+          owner_type?: Database["public"]["Enums"]["task_owner_type"]
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -736,6 +762,7 @@ export type Database = {
           id?: string
           last_activity_at?: string
           org_id?: string
+          owner_type?: Database["public"]["Enums"]["task_owner_type"]
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -1378,9 +1405,11 @@ export type Database = {
           created_at: string
           created_by: string | null
           description: string
+          display_order: number
           engine: Database["public"]["Enums"]["task_engine"]
           id: string
           is_system_template: boolean
+          owner_type: Database["public"]["Enums"]["task_owner_type"]
           suggested_days_to_complete: number
           task_type: Database["public"]["Enums"]["task_type"]
           title: string
@@ -1389,9 +1418,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description: string
+          display_order?: number
           engine: Database["public"]["Enums"]["task_engine"]
           id?: string
           is_system_template?: boolean
+          owner_type?: Database["public"]["Enums"]["task_owner_type"]
           suggested_days_to_complete?: number
           task_type: Database["public"]["Enums"]["task_type"]
           title: string
@@ -1400,9 +1431,11 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           description?: string
+          display_order?: number
           engine?: Database["public"]["Enums"]["task_engine"]
           id?: string
           is_system_template?: boolean
+          owner_type?: Database["public"]["Enums"]["task_owner_type"]
           suggested_days_to_complete?: number
           task_type?: Database["public"]["Enums"]["task_type"]
           title?: string
@@ -1495,6 +1528,10 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      recompute_platform_marketing_scores: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "org_user"
@@ -1547,6 +1584,9 @@ export type Database = {
         | "Facility"
         | "Operations"
         | "Affiliate"
+        | "Platform"
+        | "Marketing"
+      task_owner_type: "curve_team" | "org_user" | "third_party" | "combo"
       task_priority: "high" | "medium" | "low"
       task_source: "system" | "library" | "custom"
       task_status: "not_started" | "in_progress" | "completed" | "overdue"
@@ -1732,7 +1772,10 @@ export const Constants = {
         "Facility",
         "Operations",
         "Affiliate",
+        "Platform",
+        "Marketing",
       ],
+      task_owner_type: ["curve_team", "org_user", "third_party", "combo"],
       task_priority: ["high", "medium", "low"],
       task_source: ["system", "library", "custom"],
       task_status: ["not_started", "in_progress", "completed", "overdue"],
