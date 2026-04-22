@@ -106,55 +106,84 @@ export default function AdminTasksByProject({ projects, tasks, scores, orgId, on
       })}
 
       {unassigned.length > 0 && (
-        <div className="curve-card p-0 overflow-hidden">
-          <div className="p-4 border-b">
+        <div className="space-y-3">
+          <div className="curve-card">
             <div className="font-medium">Unassigned Tasks <span className="text-muted-foreground font-normal">({unassigned.length})</span></div>
             <p className="text-xs text-muted-foreground mt-1">
-              Tasks not yet added to any project. Use the dropdown to assign.
+              Tasks not yet added to any project. Grouped by engine — use the dropdown on each task to assign.
             </p>
           </div>
-          <div className="divide-y">
-            {unassigned.map((t) => (
-              <div key={t.id} className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30">
-                <button
-                  type="button"
-                  onClick={() => onSelect(t)}
-                  className="flex-1 min-w-0 text-left"
-                >
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium truncate">{t.title}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full border bg-secondary text-foreground/70 border-border">
-                      {t.engine}
-                    </span>
+          {(() => {
+            const grouped = groupByEngine(unassigned);
+            const engineOrder = ENGINES.filter((e) => grouped[e]?.length).sort((a, b) => {
+              const sa = scores?.[a];
+              const sb = scores?.[b];
+              const aMissing = sa === null || sa === undefined;
+              const bMissing = sb === null || sb === undefined;
+              if (aMissing && bMissing) return ENGINES.indexOf(a) - ENGINES.indexOf(b);
+              if (aMissing) return 1;
+              if (bMissing) return -1;
+              if (sa !== sb) return (sa as number) - (sb as number);
+              return ENGINES.indexOf(a) - ENGINES.indexOf(b);
+            });
+            return engineOrder.map((engine) => {
+              const list = grouped[engine];
+              const score = scores?.[engine];
+              return (
+                <div key={engine} className="curve-card p-0 overflow-hidden">
+                  <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30">
+                    <div className="flex items-center gap-3">
+                      <h3 className="font-display font-semibold">{engine}</h3>
+                      {score !== null && score !== undefined && (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-background border border-border tabular-nums">
+                          Score {score}/10
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground tabular-nums">{list.length} unassigned</span>
                   </div>
-                </button>
-                <Select
-                  value={assignTarget[t.id] ?? ""}
-                  onValueChange={(v) => setAssignTarget((s) => ({ ...s, [t.id]: v }))}
-                >
-                  <SelectTrigger className="h-8 w-[180px]">
-                    <SelectValue placeholder="Add to project…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.length === 0 ? (
-                      <div className="px-2 py-1.5 text-xs text-muted-foreground">No projects yet</div>
-                    ) : (
-                      projects
-                        .filter((p) => p.status !== "completed")
-                        .map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} ({PROJECT_STATUS_LABEL[p.status]})
-                          </SelectItem>
-                        ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <Button size="sm" variant="outline" onClick={() => addToProject(t.id)}>
-                  Add
-                </Button>
-              </div>
-            ))}
-          </div>
+                  <div className="divide-y divide-border">
+                    {list.map((t) => (
+                      <div key={t.id} className="flex items-center gap-3 px-5 py-3 hover:bg-muted/30">
+                        <button
+                          type="button"
+                          onClick={() => onSelect(t)}
+                          className="flex-1 min-w-0 text-left"
+                        >
+                          <p className="text-sm font-medium truncate">{t.title}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{t.task_type}</p>
+                        </button>
+                        <Select
+                          value={assignTarget[t.id] ?? ""}
+                          onValueChange={(v) => setAssignTarget((s) => ({ ...s, [t.id]: v }))}
+                        >
+                          <SelectTrigger className="h-8 w-[180px]">
+                            <SelectValue placeholder="Add to project…" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {projects.length === 0 ? (
+                              <div className="px-2 py-1.5 text-xs text-muted-foreground">No projects yet</div>
+                            ) : (
+                              projects
+                                .filter((p) => p.status !== "completed")
+                                .map((p) => (
+                                  <SelectItem key={p.id} value={p.id}>
+                                    {p.name} ({PROJECT_STATUS_LABEL[p.status]})
+                                  </SelectItem>
+                                ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <Button size="sm" variant="outline" onClick={() => addToProject(t.id)}>
+                          Add
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
 
