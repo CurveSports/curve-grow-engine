@@ -5,10 +5,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM_EMAIL = "Curve OS <onboarding@resend.dev>";
-const APP_URL = "https://curve-grow-engine.lovable.app";
-
 const ENGINE_SCORE_FIELDS: Record<string, string> = {
   Pricing: "pricing_score",
   Sponsorship: "sponsorship_score",
@@ -20,6 +16,7 @@ const ENGINE_SCORE_FIELDS: Record<string, string> = {
 };
 
 const FACILITY_ORG_TYPES = new Set(["Facility + Teams", "Facility Only", "Teams + Facility"]);
+const UNIVERSAL_ENGINES = ["Platform", "Marketing"] as const;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -42,8 +39,6 @@ Deno.serve(async (req) => {
 
     const { org_id, mode } = await req.json();
     if (!org_id) return json({ error: "org_id required" }, 400);
-    // mode: "activate" (default) flips drafts→active and stamps plan_activated_at;
-    //       "topup" only adds missing template tasks (as drafts) without activating
 
     const { data: org } = await admin.from("organizations").select("id, name, plan_activated_at").eq("id", org_id).maybeSingle();
     if (!org) return json({ error: "org not found" }, 404);
@@ -54,23 +49,27 @@ Deno.serve(async (req) => {
 
     const isFacilityOrg = !!intake?.org_type && FACILITY_ORG_TYPES.has(intake.org_type);
 
-    // Top-up: only add tasks that don't already exist (matched by template_id)
-    const { data: existing } = await admin.from("org_tasks").select("id, template_id").eq("org_id", org_id);
+    const { data: existing } = await admin.from("org_tasks").select("id, template_id, engine").eq("org_id", org_id);
     const existingTemplateIds = new Set((existing ?? []).map((t: any) => t.template_id).filter(Boolean));
+    const hasUniversalTasks: Record<string, boolean> = {
+      Platform: (existing ?? []).some((t: any) => t.engine === "Platform"),
+      Marketing: (existing ?? []).some((t: any) => t.engine === "Marketing"),
+    };
 
-    const { data: templates } = await admin.from("task_templates").select("*").eq("is_system_template", true);
+    const { data: templates } = await admin.from("task_templates").select("*");
     if (!templates) return json({ error: "no templates" }, 500);
 
     const today = new Date();
     const tasksToInsert: any[] = [];
 
+    // ── Revenue engine tasks (score-driven) ─────────────────────────────────
     for (const engine of Object.keys(ENGINE_SCORE_FIELDS)) {
       if (engine === "Facility" && !isFacilityOrg) continue;
       const scoreField = ENGINE_SCORE_FIELDS[engine];
       const score = (metrics as any)[scoreField] ?? null;
       if (score === null || score >= 9) continue;
 
-      const engineTemplates = templates.filter((t: any) => t.engine === engine);
+      const engineTemplates = (templates as any[]).filter((t: any) => t.engine === engine);
       let chosen = engineTemplates;
       let priority: "high" | "medium" | "low" = "medium";
 
@@ -83,7 +82,7 @@ Deno.serve(async (req) => {
       }
 
       for (const t of chosen) {
-        if (existingTemplateIds.has(t.id)) continue; // never duplicate
+        if (existingTemplateIds.has(t.id)) continue;
         const due = new Date(today);
         due.setDate(due.getDate() + (t.suggested_days_to_complete ?? 30));
         tasksToInsert.push({
@@ -93,8 +92,9 @@ Deno.serve(async (req) => {
           description: t.description,
           engine: t.engine,
           task_type: t.task_type,
+          owner_type: t.owner_type ?? "org_user",
           status: "not_started",
-          plan_status: "draft", // top-up always lands in draft
+          plan_status: "draft",
           priority,
           suggested_due_date: due.toISOString().slice(0, 10),
           due_date: due.toISOString().slice(0, 10),
@@ -103,14 +103,45 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Universal Platform & Marketing tasks (always, every org) ────────────
+    // These go straight to plan_status='active' because they will live inside
+    // auto-released projects (created below).
+    for (const universalEngine of UNIVERSAL_ENGINES) {
+      if (hasUniversalTasks[universalEngine]) continue; // never duplicate
+      const universalTemplates = (templates as any[])
+        .filter((t: any) => t.engine === universalEngine && t.is_system_template)
+        .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      for (const t of universalTemplates) {
+        const due = new Date(today);
+        due.setDate(due.getDate() + (t.suggested_days_to_complete ?? 30));
+        tasksToInsert.push({
+          org_id,
+          template_id: t.id,
+          title: t.title,
+          description: t.description,
+          engine: t.engine,
+          task_type: t.task_type,
+          owner_type: t.owner_type ?? "curve_team",
+          status: "not_started",
+          plan_status: "active",
+          priority: "high",
+          suggested_due_date: due.toISOString().slice(0, 10),
+          due_date: due.toISOString().slice(0, 10),
+          assigned_by: uid,
+        });
+      }
+    }
+
     let inserted_count = 0;
+    let inserted_rows: any[] = [];
     if (tasksToInsert.length > 0) {
-      const { data: inserted, error } = await admin.from("org_tasks").insert(tasksToInsert).select("id");
+      const { data: inserted, error } = await admin.from("org_tasks").insert(tasksToInsert).select("id, engine, plan_status");
       if (error) return json({ error: error.message }, 500);
       inserted_count = inserted?.length ?? 0;
-      const activityRows = (inserted ?? []).map((t: any) => ({
+      inserted_rows = inserted ?? [];
+      const activityRows = inserted_rows.map((t: any) => ({
         task_id: t.id, org_id, action: "created", performed_by: uid,
-        new_value: org.plan_activated_at ? "top-up draft (admin re-run)" : "draft (admin re-run)",
+        new_value: t.plan_status === "active" ? "auto-generated (universal)" : "draft (admin re-run)",
       }));
       if (activityRows.length) await admin.from("task_activity_log").insert(activityRows);
       await admin.from("derived_metrics").update({ tasks_generated_at: new Date().toISOString() }).eq("org_id", org_id);
@@ -120,17 +151,72 @@ Deno.serve(async (req) => {
       return json({ success: true, mode: "topup", added: inserted_count });
     }
 
-    // APPROVE: stamp plan_activated_at as the admin's "recommendation approved"
-    // signal. Tasks remain at plan_status='draft' and only become visible to
-    // org users when an admin releases a project containing them.
+    // ── Approve plan: stamp plan_activated_at ──────────────────────────────
     const activated_at = new Date().toISOString();
-    if (!org.plan_activated_at) {
+    const isFirstActivation = !org.plan_activated_at;
+    if (isFirstActivation) {
       await admin.from("organizations").update({ plan_activated_at: activated_at }).eq("id", org_id);
     }
 
-    // Count drafts so the admin sees how many tasks are now ready to organize
-    // into projects. We do NOT flip plan_status here and we do NOT email org
-    // users — release happens at the project level.
+    // ── Auto-create Platform Setup + Marketing Foundation projects ─────────
+    // Only on first activation, only if not already present.
+    let auto_projects_created = 0;
+    if (isFirstActivation) {
+      const { data: existingProjects } = await admin
+        .from("org_projects")
+        .select("id, engine, auto_created")
+        .eq("org_id", org_id);
+      const existingByEngine = new Map<string, string>();
+      for (const p of (existingProjects ?? []) as any[]) {
+        if (p.auto_created && p.engine) existingByEngine.set(p.engine, p.id);
+      }
+
+      const autoProjectsSpec = [
+        {
+          engine: "Platform" as const,
+          name: "Platform Setup",
+          description: "Activating the Curve Sports Platform and partner network for your organization.",
+          display_order: 0,
+        },
+        {
+          engine: "Marketing" as const,
+          name: "Marketing Foundation",
+          description: "Building your organization's brand presence and digital marketing infrastructure.",
+          display_order: 1,
+        },
+      ];
+
+      for (const spec of autoProjectsSpec) {
+        if (existingByEngine.has(spec.engine)) continue;
+        const { data: created, error: pErr } = await admin
+          .from("org_projects")
+          .insert({
+            org_id,
+            name: spec.name,
+            description: spec.description,
+            engine: spec.engine,
+            status: "active",
+            released_at: activated_at,
+            released_by: uid,
+            auto_created: true,
+            display_order: spec.display_order,
+            created_by: uid,
+          })
+          .select("id")
+          .single();
+        if (pErr || !created) continue;
+        auto_projects_created++;
+        // Assign every existing task in that engine to this project
+        await admin
+          .from("org_tasks")
+          .update({ project_id: created.id, plan_status: "active" })
+          .eq("org_id", org_id)
+          .eq("engine", spec.engine)
+          .is("project_id", null);
+      }
+    }
+
+    // Count drafts still waiting for project assignment
     const { data: draftRows } = await admin
       .from("org_tasks")
       .select("id")
@@ -143,6 +229,7 @@ Deno.serve(async (req) => {
       mode: "approve",
       tasks_added: inserted_count,
       draft_count,
+      auto_projects_created,
       plan_activated_at: org.plan_activated_at ?? activated_at,
     });
   } catch (e: any) {
@@ -153,4 +240,3 @@ Deno.serve(async (req) => {
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
-
