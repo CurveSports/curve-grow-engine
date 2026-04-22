@@ -7,7 +7,8 @@ import AppShell from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, formatPct, formatDate } from "@/lib/format";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Info, Check, Download } from "lucide-react";
+import { Info, Check, Download, ChevronDown, ChevronUp } from "lucide-react";
+import { TierLadder, TierAdvancementBanner, useTierAdvancement } from "@/components/TierLadder";
 
 const TIER_STYLES: Record<string, string> = {
   Foundational: "bg-secondary text-foreground border-border",
@@ -477,6 +478,11 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
             ))}
           </p>
         </section>
+
+        <SectionDivider />
+
+        {/* Tier Progression Ladder */}
+        <TierProgressionSection orgId={orgId!} metrics={data} />
 
         <SectionDivider />
 
