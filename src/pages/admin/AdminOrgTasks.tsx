@@ -346,3 +346,106 @@ function AddTaskForm({ orgId, templates, planActive, onSaved }: { orgId: string;
     </div>
   );
 }
+
+/* ─── Engine focus view: flat, status-grouped tasks for a single engine ─── */
+const STATUS_ORDER: TaskStatus[] = ["overdue", "in_progress", "not_started", "completed"];
+
+function EngineFocusView({
+  engine,
+  tasks,
+  tasksByStatus,
+  score,
+  projectsById,
+  onSelect,
+  onClear,
+}: {
+  engine: string;
+  tasks: OrgTask[];
+  tasksByStatus: Record<TaskStatus, OrgTask[]>;
+  score: number | null;
+  projectsById: Record<string, OrgProject>;
+  onSelect: (t: OrgTask) => void;
+  onClear: () => void;
+}) {
+  const total = tasks.length;
+  const completed = tasksByStatus.completed.length;
+  const pct = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+  return (
+    <div className="space-y-4">
+      <div className="curve-card flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <p className="curve-eyebrow mb-1">Engine focus</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <h2 className="font-display text-xl font-semibold">{engine}</h2>
+            {score !== null && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-background border border-border tabular-nums">
+                Score {score}/10
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground tabular-nums">
+              {completed}/{total} complete · {pct}%
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            All {engine} tasks across every project, grouped by completion stage.
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={onClear}>
+          <X className="h-3.5 w-3.5 mr-1" /> Clear filter
+        </Button>
+      </div>
+
+      {total === 0 ? (
+        <div className="curve-card text-sm text-muted-foreground text-center py-10">
+          No {engine} tasks yet.
+        </div>
+      ) : (
+        STATUS_ORDER.map((status) => {
+          const list = tasksByStatus[status];
+          if (!list || list.length === 0) return null;
+          return (
+            <div key={status} className="curve-card p-0 overflow-hidden">
+              <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-secondary/30">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_STYLE[status]}`}>
+                    {STATUS_LABEL[status]}
+                  </span>
+                  <span className="text-xs text-muted-foreground tabular-nums">{list.length}</span>
+                </div>
+              </div>
+              <ul className="divide-y divide-border">
+                {list.map((t) => {
+                  const proj = t.project_id ? projectsById[t.project_id] : null;
+                  return (
+                    <li key={t.id}>
+                      <button
+                        onClick={() => onSelect(t)}
+                        className="w-full text-left px-5 py-3 hover:bg-secondary/40 transition-colors flex items-center gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium truncate ${status === "completed" ? "line-through text-muted-foreground" : ""}`}>
+                            {t.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {t.task_type}
+                            {t.due_date ? ` · Due ${formatDate(t.due_date)}` : ""}
+                            {proj
+                              ? ` · ${proj.name} (${PROJECT_STATUS_LABEL[proj.status]})`
+                              : " · Unassigned"}
+                          </p>
+                        </div>
+                        <OwnerPill owner={t.owner_type} size="xs" />
+                        <span className={`text-xs px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[t.priority]}`}>{t.priority}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
