@@ -2,13 +2,22 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Trash2, UserPlus } from "lucide-react";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 type Row = {
   user_id: string;
@@ -19,20 +28,31 @@ type Row = {
   roles: string[];
 };
 
+type Org = { id: string; name: string };
+
 export default function AdminUsers() {
   const { user } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
+  const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
 
+  // Create user dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newFullName, setNewFullName] = useState("");
+  const [newRole, setNewRole] = useState<"admin" | "org_user">("admin");
+  const [newOrgId, setNewOrgId] = useState<string>("");
+
   const load = async () => {
     setLoading(true);
-    const [{ data: profiles }, { data: roles }, { data: orgs }] = await Promise.all([
+    const [{ data: profiles }, { data: roles }, { data: orgsData }] = await Promise.all([
       supabase.from("profiles").select("user_id, email, full_name, org_id"),
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("organizations").select("id, name"),
+      supabase.from("organizations").select("id, name").order("name"),
     ]);
-    const orgMap = new Map((orgs ?? []).map((o: any) => [o.id, o.name]));
+    const orgMap = new Map((orgsData ?? []).map((o: any) => [o.id, o.name]));
     const roleMap = new Map<string, string[]>();
     (roles ?? []).forEach((r: any) => {
       const arr = roleMap.get(r.user_id) ?? [];
@@ -49,6 +69,7 @@ export default function AdminUsers() {
     }));
     r.sort((a, b) => (a.org_name ?? "zzz").localeCompare(b.org_name ?? "zzz") || a.email.localeCompare(b.email));
     setRows(r);
+    setOrgs((orgsData ?? []) as Org[]);
     setLoading(false);
   };
 
@@ -69,64 +90,179 @@ export default function AdminUsers() {
     }
   };
 
+  const resetCreateForm = () => {
+    setNewEmail("");
+    setNewFullName("");
+    setNewRole("admin");
+    setNewOrgId("");
+  };
+
+  const createUser = async () => {
+    if (!newEmail.trim()) {
+      toast.error("Email is required");
+      return;
+    }
+    if (newRole === "org_user" && !newOrgId) {
+      toast.error("Select an organization for org users");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: {
+          email: newEmail.trim(),
+          full_name: newFullName.trim() || null,
+          role: newRole,
+          org_id: newRole === "org_user" ? newOrgId : null,
+        },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      toast.success(newRole === "admin" ? "Curve admin invited" : "Org user invited");
+      setCreateOpen(false);
+      resetCreateForm();
+      load();
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   if (loading) return <p className="p-6 text-sm text-muted-foreground">Loading…</p>;
 
   return (
-    <div className="curve-card p-0 overflow-hidden">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase tracking-wider">
-            <th className="px-5 py-3 font-medium">Name</th>
-            <th className="px-5 py-3 font-medium">Email</th>
-            <th className="px-5 py-3 font-medium">Organization</th>
-            <th className="px-5 py-3 font-medium">Role</th>
-            <th className="px-5 py-3 font-medium text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {rows.map((r) => {
-            const isSelf = r.user_id === user?.id;
-            return (
-              <tr key={r.user_id} className="hover:bg-secondary/40 transition-colors">
-                <td className="px-5 py-3">{r.full_name ?? "—"}</td>
-                <td className="px-5 py-3 text-muted-foreground">{r.email}</td>
-                <td className="px-5 py-3">{r.org_name ?? <span className="text-muted-foreground">—</span>}</td>
-                <td className="px-5 py-3 text-xs uppercase tracking-wider text-muted-foreground">
-                  {r.roles.join(", ") || "—"}
-                </td>
-                <td className="px-5 py-3 text-right">
-                  {!isSelf && (
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="sm" disabled={removingId === r.user_id} className="text-destructive hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete this user?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This permanently deletes {r.full_name ?? r.email}'s account, profile, roles, and onboarding state. This cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => remove(r.user_id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-          {rows.length === 0 && (
-            <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">No users.</td></tr>
-          )}
-        </tbody>
-      </table>
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetCreateForm(); }}>
+          <DialogTrigger asChild>
+            <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <UserPlus className="h-4 w-4 mr-2" />
+              Create New User
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New User</DialogTitle>
+              <DialogDescription>
+                An invitation email will be sent. The user sets their own password on first sign-in.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div>
+                <Label className="text-sm font-medium">Role</Label>
+                <Select value={newRole} onValueChange={(v) => setNewRole(v as "admin" | "org_user")}>
+                  <SelectTrigger className="mt-2 h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Curve Admin</SelectItem>
+                    <SelectItem value="org_user">Organization User</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Email</Label>
+                <Input
+                  className="mt-2 h-11"
+                  type="email"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="name@example.com"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Full name (optional)</Label>
+                <Input
+                  className="mt-2 h-11"
+                  value={newFullName}
+                  onChange={(e) => setNewFullName(e.target.value)}
+                  placeholder="Jane Doe"
+                />
+              </div>
+              {newRole === "org_user" && (
+                <div>
+                  <Label className="text-sm font-medium">Organization</Label>
+                  <Select value={newOrgId} onValueChange={setNewOrgId}>
+                    <SelectTrigger className="mt-2 h-11">
+                      <SelectValue placeholder="Select an organization" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orgs.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
+                Cancel
+              </Button>
+              <Button onClick={createUser} disabled={creating} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                {creating ? "Creating…" : "Create & Invite"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="curve-card p-0 overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border text-left text-xs text-muted-foreground uppercase tracking-wider">
+              <th className="px-5 py-3 font-medium">Name</th>
+              <th className="px-5 py-3 font-medium">Email</th>
+              <th className="px-5 py-3 font-medium">Organization</th>
+              <th className="px-5 py-3 font-medium">Role</th>
+              <th className="px-5 py-3 font-medium text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {rows.map((r) => {
+              const isSelf = r.user_id === user?.id;
+              return (
+                <tr key={r.user_id} className="hover:bg-secondary/40 transition-colors">
+                  <td className="px-5 py-3">{r.full_name ?? "—"}</td>
+                  <td className="px-5 py-3 text-muted-foreground">{r.email}</td>
+                  <td className="px-5 py-3">{r.org_name ?? <span className="text-muted-foreground">—</span>}</td>
+                  <td className="px-5 py-3 text-xs uppercase tracking-wider text-muted-foreground">
+                    {r.roles.join(", ") || "—"}
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    {!isSelf && (
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="sm" disabled={removingId === r.user_id} className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete this user?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently deletes {r.full_name ?? r.email}'s account, profile, roles, and onboarding state. This cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => remove(r.user_id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {rows.length === 0 && (
+              <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">No users.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
