@@ -75,10 +75,10 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
     const { data, error } = await supabase.functions.invoke("activate-action-plan", { body: { org_id: orgId } });
     setActivating(false);
     if (error || (data as any)?.error) {
-      toast.error((data as any)?.error ?? error?.message ?? "Activation failed");
+      toast.error((data as any)?.error ?? error?.message ?? "Approval failed");
     } else {
       const d = data as any;
-      toast.success(`Plan activated · ${d?.tasks_activated ?? 0} tasks now live`);
+      toast.success(`Plan approved · ${d?.draft_count ?? 0} tasks ready to organize into projects`);
       load();
     }
   };
@@ -123,10 +123,10 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           <h1 className="font-display text-3xl font-semibold tracking-tight">{orgName}</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {planActivatedAt
-              ? `Plan activated ${formatDate(planActivatedAt)}`
+              ? `Recommended plan approved ${formatDate(planActivatedAt)} · release work in waves from the Projects tab`
               : draftCount > 0
-                ? `${draftCount} draft task${draftCount === 1 ? "" : "s"} awaiting review`
-                : "Plan not activated yet"}
+                ? `${draftCount} draft task${draftCount === 1 ? "" : "s"} awaiting your review`
+                : "Plan not approved yet"}
           </p>
         </div>
         <div className="flex gap-2 flex-wrap">
@@ -156,8 +156,8 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
                 <AlertTriangle className="h-4 w-4 text-warning" />
               </div>
               <div>
-                <p className="font-medium text-foreground">Draft Plan — Not visible to org until activated</p>
-                <p className="text-sm text-muted-foreground">Tasks are in draft mode and only visible to Curve admins. Org users will see nothing until you activate the plan.</p>
+                <p className="font-medium text-foreground">Recommended Plan — Admin review</p>
+                <p className="text-sm text-muted-foreground">These are the auto-generated recommendations. Review, edit, or remove tasks. Approving the plan unlocks the Projects tab so you can release work to the org in waves.</p>
               </div>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
               ))}
             </div>
             <p className="text-xs text-muted-foreground mt-3">
-              Review, edit, or remove tasks below. New tasks added manually will join the draft plan. Click <strong>Activate Plan</strong> when ready to publish.
+              Approving the plan does <strong>not</strong> send work to the org. Tasks become visible only when you release a project that contains them.
             </p>
           </div>
         </>
@@ -207,7 +207,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
         )
       )}
 
-      {/* Full-width Activate Plan button at bottom for review mode */}
+      {/* Full-width Approve Plan button at bottom for review mode */}
       {isReviewMode && (
         <div className="mt-8 pt-6 border-t">
           <Button
@@ -216,10 +216,10 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
             onClick={() => setConfirmOpen(true)}
             disabled={activating}
           >
-            {activating ? "Activating…" : `Activate Plan for ${orgName}`}
+            {activating ? "Approving…" : `Approve Recommended Plan for ${orgName}`}
           </Button>
           <p className="text-xs text-center text-muted-foreground mt-2">
-            {draftCount} task{draftCount === 1 ? "" : "s"} will become visible to {orgName} immediately
+            Approving unlocks the Projects tab. Org users won't see anything until you release a project.
           </p>
         </div>
       )}
@@ -230,15 +230,15 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Activate this plan for {orgName}?</AlertDialogTitle>
+            <AlertDialogTitle>Approve recommended plan for {orgName}?</AlertDialogTitle>
             <AlertDialogDescription>
-              They will be notified immediately and tasks will become visible. This action cannot be undone.
+              This marks the {draftCount} draft task{draftCount === 1 ? "" : "s"} as the approved recommendation and unlocks project releases. Nothing is sent to the org yet — release work in waves from the Projects tab.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setConfirmOpen(false)}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleActivate} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-              Confirm Activation
+              Approve Plan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

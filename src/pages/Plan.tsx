@@ -54,23 +54,19 @@ export default function Plan() {
   );
   const hasDrafts = projects.some((p) => p.status === "draft");
 
-  // Tasks with no project assignment, but visible (active plan_status)
-  const orphanTasks = useMemo(
-    () => tasks.filter((t) => !(t as any).project_id && t.plan_status === "active"),
-    [tasks],
-  );
-
   if (loading) {
     return <AppShell title="Action Plan"><PlanSkeleton /></AppShell>;
   }
 
-  if (!planActivated && activeProjects.length === 0 && orphanTasks.length === 0) {
+  if (activeProjects.length === 0 && completedProjects.length === 0) {
     return (
       <AppShell title="Action Plan">
         <EmptyState
           icon={<Lock className="h-10 w-10 text-muted-foreground" />}
-          title="Plan not yet activated"
-          description="Your Curve consultant is reviewing your report. Your action plan will appear here once activated."
+          title="No projects released yet"
+          description={hasDrafts
+            ? "Your Curve team is preparing your first project. You'll see your tasks here as soon as it's released."
+            : "Your Curve consultant is reviewing your report. Your action plan will appear here once your first project is released."}
           action={<Link to="/report"><Button variant="outline">View Report</Button></Link>}
         />
       </AppShell>
@@ -87,10 +83,10 @@ export default function Plan() {
 
       {/* Active project sections */}
       <div className="space-y-6">
-        {activeProjects.length === 0 && orphanTasks.length === 0 && (
+        {activeProjects.length === 0 && (
           <EmptyState
             icon={<ListChecks className="h-10 w-10 text-muted-foreground" />}
-            title="No active projects yet"
+            title="No active projects right now"
             description="Your Curve team is preparing your next project."
           />
         )}
@@ -113,15 +109,6 @@ export default function Plan() {
             )}
           </div>
         ))}
-
-        {orphanTasks.length > 0 && (
-          <div className="curve-card p-0 overflow-hidden">
-            <div className="px-5 py-4 border-b border-border bg-secondary/30">
-              <h3 className="font-display font-semibold text-lg">Other Tasks</h3>
-            </div>
-            <TaskList tasks={orphanTasks} scores={scores} onSelect={setSelected} />
-          </div>
-        )}
 
         {/* Completed projects (collapsed) */}
         {completedProjects.length > 0 && (
