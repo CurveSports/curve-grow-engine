@@ -10,13 +10,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD, STATUS_LABEL, STATUS_STYLE, PRIORITY_STYLE, type TaskStatus } from "@/lib/tasks";
+import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import type { OrgProject } from "@/lib/projects";
-import { PROJECT_STATUS_LABEL } from "@/lib/projects";
 import AdminTasksByProject from "@/components/admin/AdminTasksByProject";
-import OwnerPill from "@/components/tasks/OwnerPill";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, RefreshCw, AlertTriangle, X } from "lucide-react";
+import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/format";
 
 export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
