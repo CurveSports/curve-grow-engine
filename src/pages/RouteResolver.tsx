@@ -31,16 +31,16 @@ export default function RouteResolver() {
 
       if (!role) { setChecking(false); return; }
 
+      // Admins skip onboarding gates entirely and go straight to their dashboard
+      if (role === "admin") { navigate("/admin", { replace: true }); return; }
+
       // 1. Password gate — must be set before anything else
       if (!onboarding?.password_set_at) {
         navigate("/set-password", { replace: true });
         return;
       }
 
-      // 2. Admins skip the welcome flow and go straight to their dashboard
-      if (role === "admin") { navigate("/admin", { replace: true }); return; }
-
-      // 3. Welcome gate (org users only)
+      // 2. Welcome gate (org users only)
       if (!onboarding?.welcomed_at) {
         navigate("/welcome", { replace: true });
         return;
