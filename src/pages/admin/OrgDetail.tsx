@@ -243,6 +243,7 @@ function RecalcMetricsButton({ orgId }: { orgId: string }) {
 /* ─────────────────────────  OVERVIEW  ───────────────────────── */
 
 function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; onJumpToPlan: (engine?: string) => void; onJumpToReport: () => void }) {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState<any>(null);
   const [intake, setIntake] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
