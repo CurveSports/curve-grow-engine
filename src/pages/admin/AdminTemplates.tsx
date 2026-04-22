@@ -7,15 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Copy, Info, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, Copy, Info, Search, FolderPlus } from "lucide-react";
 
 type TemplateWithUsage = TaskTemplate & { usage_count: number };
+
+type OrgOption = { id: string; name: string };
+type ProjectOption = { id: string; name: string; org_id: string; status: string };
 
 export default function AdminTemplates() {
   const [templates, setTemplates] = useState<TemplateWithUsage[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<TaskTemplate | null>(null);
+  const [addingTo, setAddingTo] = useState<TaskTemplate | null>(null);
 
   const [search, setSearch] = useState("");
   const [engineFilter, setEngineFilter] = useState<string>("all");
@@ -83,9 +87,9 @@ export default function AdminTemplates() {
       <div className="curve-card p-4 flex gap-3 bg-accent-soft/40 border-accent/30">
         <Info className="h-5 w-5 text-accent shrink-0 mt-0.5" />
         <div className="text-sm">
-          <p className="font-medium text-foreground">Task Templates are reusable blueprints.</p>
+          <p className="font-medium text-foreground">Task Library — reusable tasks the system recommends and admins can add to any project.</p>
           <p className="text-muted-foreground mt-1">
-            Each template defines a recommended task (title, description, engine, type, suggested duration). When you build a project or plan for an org, you pick from these templates and the system creates real tasks under that org. <strong>System templates</strong> are seeded by Curve and read-only; <strong>Custom templates</strong> are yours to edit, duplicate, and delete.
+            Each library entry is a <strong>blueprint</strong> (title, description, engine, type, suggested duration). Use <strong>Add to Project</strong> to drop one into an org's draft project, or open a project's <em>Add Task</em> menu to pick from here. <strong>System</strong> entries are seeded by Curve and read-only; <strong>Custom</strong> entries are yours to edit, duplicate, and delete.
           </p>
         </div>
       </div>
@@ -126,11 +130,11 @@ export default function AdminTemplates() {
           </Select>
         </div>
         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> Create template</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4 mr-1" /> New Library Entry</Button></DialogTrigger>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>New task template</DialogTitle>
-              <DialogDescription>This blueprint will be available when building plans for any org.</DialogDescription>
+              <DialogTitle>New library entry</DialogTitle>
+              <DialogDescription>This blueprint will be available when building projects for any org.</DialogDescription>
             </DialogHeader>
             <TemplateForm onSaved={() => { setCreateOpen(false); load(); }} />
           </DialogContent>
@@ -138,7 +142,7 @@ export default function AdminTemplates() {
       </div>
 
       <p className="text-xs text-muted-foreground">
-        Showing {filtered.length} of {templates.length} templates · {totalUsage} total tasks created from these blueprints
+        Showing {filtered.length} of {templates.length} library entries · {totalUsage} total tasks created from these blueprints
       </p>
 
       {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
@@ -157,7 +161,7 @@ export default function AdminTemplates() {
             </thead>
             <tbody className="divide-y divide-border">
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground text-sm">No templates match those filters.</td></tr>
+                <tr><td colSpan={7} className="px-5 py-8 text-center text-muted-foreground text-sm">No library entries match those filters.</td></tr>
               )}
               {filtered.map(t => (
                 <tr key={t.id} className="hover:bg-secondary/40">
@@ -178,6 +182,13 @@ export default function AdminTemplates() {
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => setAddingTo(t)}
+                        title="Add to a project"
+                        className="p-1.5 rounded hover:bg-secondary text-muted-foreground hover:text-accent"
+                      >
+                        <FolderPlus className="h-4 w-4" />
+                      </button>
                       <button
                         onClick={() => handleDuplicate(t)}
                         title="Duplicate as Custom"
@@ -215,8 +226,8 @@ export default function AdminTemplates() {
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Edit template</DialogTitle>
-            <DialogDescription>Existing tasks already created from this template won't change.</DialogDescription>
+            <DialogTitle>Edit library entry</DialogTitle>
+            <DialogDescription>Existing tasks already created from this entry won't change.</DialogDescription>
           </DialogHeader>
           {editing && (
             <TemplateForm
@@ -226,9 +237,136 @@ export default function AdminTemplates() {
           )}
         </DialogContent>
       </Dialog>
+
+      {addingTo && (
+        <AddTemplateToProjectDialog
+          template={addingTo}
+          onClose={() => setAddingTo(null)}
+          onAdded={() => { setAddingTo(null); load(); }}
+        />
+      )}
     </div>
   );
 }
+
+/* ───────────────────────── Add-to-Project dialog ───────────────────────── */
+
+function AddTemplateToProjectDialog({
+  template, onClose, onAdded,
+}: {
+  template: TaskTemplate;
+  onClose: () => void;
+  onAdded: () => void;
+}) {
+  const [orgs, setOrgs] = useState<OrgOption[]>([]);
+  const [projects, setProjects] = useState<ProjectOption[]>([]);
+  const [orgId, setOrgId] = useState<string>("");
+  const [projectId, setProjectId] = useState<string>("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("organizations").select("id, name").order("name");
+      setOrgs((data as OrgOption[]) ?? []);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (!orgId) { setProjects([]); setProjectId(""); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("org_projects")
+        .select("id, name, org_id, status")
+        .eq("org_id", orgId)
+        .in("status", ["draft", "active"])
+        .order("status")
+        .order("name");
+      setProjects((data as ProjectOption[]) ?? []);
+      setProjectId("");
+    })();
+  }, [orgId]);
+
+  const add = async () => {
+    if (!projectId) { toast.error("Pick a project"); return; }
+    setBusy(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    const days = template.suggested_days_to_complete || 30;
+    const due = new Date();
+    due.setDate(due.getDate() + days);
+    const { data: inserted, error } = await supabase
+      .from("org_tasks")
+      .insert({
+        org_id: orgId,
+        project_id: projectId,
+        template_id: template.id,
+        title: template.title,
+        description: template.description,
+        engine: template.engine,
+        task_type: template.task_type,
+        priority: "medium" as const,
+        status: "not_started" as const,
+        plan_status: "active" as const,
+        source: "library" as const,
+        suggested_due_date: due.toISOString().slice(0, 10),
+        assigned_by: user?.id ?? null,
+      })
+      .select("id")
+      .single();
+    if (error || !inserted) { toast.error(error?.message ?? "Failed"); setBusy(false); return; }
+    await supabase.from("task_activity_log").insert({
+      task_id: inserted.id, org_id: orgId, action: "created",
+      performed_by: user?.id ?? null, new_value: "Added from Task Library",
+    });
+    toast.success("Task added to project");
+    setBusy(false);
+    onAdded();
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add to a project</DialogTitle>
+          <DialogDescription>Drop "{template.title}" into a draft or active project.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Organization</label>
+            <Select value={orgId} onValueChange={setOrgId}>
+              <SelectTrigger><SelectValue placeholder="Select an org…" /></SelectTrigger>
+              <SelectContent className="max-h-[300px]">
+                {orgs.map((o) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Project</label>
+            <Select value={projectId} onValueChange={setProjectId} disabled={!orgId || projects.length === 0}>
+              <SelectTrigger>
+                <SelectValue placeholder={!orgId ? "Pick an org first" : projects.length === 0 ? "No draft/active projects" : "Select a project…"} />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} <span className="text-muted-foreground">({p.status})</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={add} disabled={busy || !projectId} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+            {busy ? "Adding…" : "Add Task"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/* ───────────────────────── Library entry form ───────────────────────── */
 
 function TemplateForm({ initial, onSaved }: { initial?: TaskTemplate; onSaved: () => void }) {
   const isEdit = !!initial;
@@ -250,7 +388,7 @@ function TemplateForm({ initial, onSaved }: { initial?: TaskTemplate; onSaved: (
       }).eq("id", initial.id);
       setBusy(false);
       if (error) toast.error(error.message);
-      else { toast.success("Template updated"); onSaved(); }
+      else { toast.success("Library entry updated"); onSaved(); }
     } else {
       const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase.from("task_templates").insert({
@@ -260,7 +398,7 @@ function TemplateForm({ initial, onSaved }: { initial?: TaskTemplate; onSaved: (
       });
       setBusy(false);
       if (error) toast.error(error.message);
-      else { toast.success("Template created"); onSaved(); }
+      else { toast.success("Library entry created"); onSaved(); }
     }
   };
 
@@ -289,7 +427,7 @@ function TemplateForm({ initial, onSaved }: { initial?: TaskTemplate; onSaved: (
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={busy}>{isEdit ? "Save changes" : "Create template"}</Button>
+        <Button onClick={save} disabled={busy}>{isEdit ? "Save changes" : "Create entry"}</Button>
       </DialogFooter>
     </div>
   );
