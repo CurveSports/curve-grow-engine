@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
-import { Trash2 } from "lucide-react";
+import { Trash2, Lock } from "lucide-react";
+import OwnerPill from "@/components/tasks/OwnerPill";
 
 interface Props {
   task: OrgTask | null;
@@ -132,6 +133,7 @@ export default function TaskDetailPanel({ task, open, onClose, isAdmin, onChange
         <div className="mt-4 flex items-center gap-2 flex-wrap">
           <span className="text-xs px-2 py-0.5 rounded-full bg-secondary border border-border">{task.engine}</span>
           <span className="text-xs px-2 py-0.5 rounded-full bg-secondary border border-border">{task.task_type}</span>
+          <OwnerPill owner={task.owner_type} />
           <span className={`text-xs px-2 py-0.5 rounded-full border ${STATUS_STYLE[task.status]}`}>{STATUS_LABEL[task.status]}</span>
           <span className={`text-xs px-2 py-0.5 rounded-full border ${PRIORITY_STYLE[task.priority]}`}>{task.priority}</span>
           {isAdmin && isDraft && (
@@ -154,16 +156,32 @@ export default function TaskDetailPanel({ task, open, onClose, isAdmin, onChange
           <p className="text-sm text-muted-foreground mt-4 leading-relaxed whitespace-pre-wrap">{task.description}</p>
         )}
 
-        <div className="mt-6 grid gap-4">
-          <div>
-            <label className="curve-eyebrow block mb-1.5">Status</label>
-            <Select value={task.status} onValueChange={handleStatus} disabled={busy || task.status === "completed"}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TASK_STATUSES.filter(s => s !== "overdue").map(s => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
-              </SelectContent>
-            </Select>
+        {!isAdmin && (task.owner_type === "curve_team" || task.owner_type === "third_party") && (
+          <div className="mt-4 p-3 rounded-md border border-info/30 bg-info-soft text-sm flex items-start gap-2">
+            <Lock className="h-4 w-4 text-info flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-foreground">
+                {task.owner_type === "curve_team" ? "Managed by your Curve team" : "Tracking — external partner"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                You can add notes, but only the {task.owner_type === "curve_team" ? "Curve admin" : "admin"} can mark this task complete.
+              </p>
+            </div>
           </div>
+        )}
+
+        <div className="mt-6 grid gap-4">
+          {(isAdmin || (task.owner_type !== "curve_team" && task.owner_type !== "third_party")) && (
+            <div>
+              <label className="curve-eyebrow block mb-1.5">Status</label>
+              <Select value={task.status} onValueChange={handleStatus} disabled={busy || task.status === "completed"}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {TASK_STATUSES.filter(s => s !== "overdue").map(s => <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {isAdmin && (
             <>

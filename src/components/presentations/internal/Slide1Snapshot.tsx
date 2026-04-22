@@ -143,6 +143,22 @@ export function Slide1Snapshot({ orgName, metrics, intake }: { orgName: string; 
         <Signal label="Affiliates" value={hasAffiliates ? `Yes (${intake?.number_of_affiliates ?? "?"})` : "No"} />
       </div>
 
+      {/* Row 5b — Platform & Marketing universal engines */}
+      <div className="grid grid-cols-2 gap-3 text-xs">
+        <UniversalEngineCard
+          label="Platform Setup"
+          score={metrics?.platform_score ?? null}
+          done={Number(metrics?.platform_tasks_complete ?? 0)}
+          total={Number(metrics?.platform_tasks_total ?? 0)}
+        />
+        <UniversalEngineCard
+          label="Marketing Foundation"
+          score={metrics?.marketing_score ?? null}
+          done={Number(metrics?.marketing_tasks_complete ?? 0)}
+          total={Number(metrics?.marketing_tasks_total ?? 0)}
+        />
+      </div>
+
       {/* Row 6 — tier progression */}
       {metrics?.next_tier && (
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4 grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
@@ -180,6 +196,27 @@ function Signal({ label, value, flag }: { label: string; value: string; flag?: b
     <div className={cn("rounded-lg border p-3", flag ? "border-amber-500/40 bg-amber-500/10" : "border-white/10 bg-white/[0.04]")}>
       <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold">{label}</p>
       <p className="text-sm font-semibold mt-1">{value}</p>
+    </div>
+  );
+}
+
+function UniversalEngineCard({ label, score, done, total }: { label: string; score: number | null; done: number; total: number }) {
+  const hex =
+    score === null ? "#94a3b8" :
+    score >= 7 ? "#10b981" :
+    score >= 4 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="rounded-lg border border-white/10 bg-white/[0.04] p-3 flex items-center justify-between">
+      <div>
+        <p className="text-[10px] uppercase tracking-wider text-white/50 font-semibold">{label}</p>
+        <p className="text-sm font-semibold mt-1 tabular-nums">{done} of {total} task{total === 1 ? "" : "s"} complete</p>
+      </div>
+      <span
+        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border tabular-nums"
+        style={{ borderColor: hex + "66", backgroundColor: hex + "22", color: hex }}
+      >
+        {score ?? "—"}/10
+      </span>
     </div>
   );
 }

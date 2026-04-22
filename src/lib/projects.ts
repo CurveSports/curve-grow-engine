@@ -13,6 +13,7 @@ export type OrgProject = {
   released_at: string | null;
   released_by: string | null;
   display_order: number;
+  auto_created: boolean;
   awaiting_completion_approval: boolean;
   completion_approved_at: string | null;
   completion_approved_by: string | null;

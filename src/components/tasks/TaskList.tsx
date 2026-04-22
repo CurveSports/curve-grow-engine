@@ -1,5 +1,6 @@
 import { OrgTask, STATUS_LABEL, STATUS_STYLE, PRIORITY_STYLE, groupByEngine, ENGINES } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
+import OwnerPill from "@/components/tasks/OwnerPill";
 
 interface Props {
   tasks: OrgTask[];
@@ -7,9 +8,11 @@ interface Props {
   onSelect: (task: OrgTask) => void;
   /** When true, draft tasks are visually marked. Admin views only. */
   showPlanStatus?: boolean;
+  /** When true, render owner pills on each task row. Admin views only. */
+  showOwner?: boolean;
 }
 
-export default function TaskList({ tasks, scores, onSelect, showPlanStatus = false }: Props) {
+export default function TaskList({ tasks, scores, onSelect, showPlanStatus = false, showOwner = false }: Props) {
   const grouped = groupByEngine(tasks);
   const engineOrder = ENGINES.filter(e => grouped[e]?.length);
 
@@ -45,6 +48,8 @@ export default function TaskList({ tasks, scores, onSelect, showPlanStatus = fal
             <ul className="divide-y divide-border">
               {list.map(t => {
                 const isDraft = showPlanStatus && t.plan_status === "draft";
+                const isCurveOwned = t.owner_type === "curve_team";
+                const isThirdParty = t.owner_type === "third_party";
                 return (
                   <li key={t.id}>
                     <button
@@ -53,8 +58,14 @@ export default function TaskList({ tasks, scores, onSelect, showPlanStatus = fal
                     >
                       <div className="flex-1 min-w-0">
                         <p className={`text-sm font-medium truncate ${t.status === "completed" ? "line-through text-muted-foreground" : ""}`}>{t.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{t.task_type}{t.due_date ? ` · Due ${formatDate(t.due_date)}` : ""}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t.task_type}
+                          {t.due_date ? ` · Due ${formatDate(t.due_date)}` : ""}
+                          {!showOwner && isCurveOwned && " · Managed by your Curve team"}
+                          {!showOwner && isThirdParty && " · Tracking (third party)"}
+                        </p>
                       </div>
+                      {showOwner && <OwnerPill owner={t.owner_type} size="xs" />}
                       {isDraft && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 uppercase tracking-wider font-medium">Draft</span>
                       )}
@@ -71,3 +82,4 @@ export default function TaskList({ tasks, scores, onSelect, showPlanStatus = fal
     </div>
   );
 }
+

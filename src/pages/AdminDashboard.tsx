@@ -48,6 +48,8 @@ type OrgRow = {
   awaiting_project_name: string | null;
   next_tier: string | null;
   points_to_next_tier: number | null;
+  platform_score: number | null;
+  marketing_score: number | null;
 };
 
 type Density = "compact" | "standard" | "detailed";
@@ -67,7 +69,7 @@ export default function AdminDashboard() {
       const [orgsRes, tasksRes, activityRes, awaitingProjectsRes] = await Promise.all([
         supabase
           .from("organizations")
-          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier)"),
+          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier, platform_score, marketing_score)"),
         supabase.from("org_tasks").select("org_id, status, due_date, completed_at, last_activity_at"),
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
         supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
@@ -117,6 +119,8 @@ export default function AdminDashboard() {
           awaiting_project_name: awaitingByOrg.get(o.id) ?? null,
           next_tier: metrics?.next_tier ?? null,
           points_to_next_tier: metrics?.points_to_next_tier ?? null,
+          platform_score: metrics?.platform_score ?? null,
+          marketing_score: metrics?.marketing_score ?? null,
         };
       });
       setOrgs(r);
@@ -417,6 +421,14 @@ function OrgCard({ org, density }: { org: OrgRow; density: Density }) {
             </span>
             <span>{daysAgo !== null ? `Active ${daysAgo}d ago` : "No activity"}</span>
           </div>
+          <div className="flex items-center gap-3 text-[11px] text-muted-foreground mb-2">
+            <span className="inline-flex items-center gap-1">
+              <ScoreDot score={org.platform_score} /> Platform: <span className="font-semibold tabular-nums text-foreground">{org.platform_score ?? "—"}/10</span>
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <ScoreDot score={org.marketing_score} /> Marketing: <span className="font-semibold tabular-nums text-foreground">{org.marketing_score ?? "—"}/10</span>
+            </span>
+          </div>
           {complexity && (
             <div className="flex items-center gap-2 text-xs">
               <span className="text-muted-foreground">Complexity:</span>
@@ -443,6 +455,11 @@ function Metric({ label, value, accent }: { label: string; value: string; accent
       <p className={cn("font-display text-sm font-semibold tabular-nums truncate", accent && "text-accent")}>{value}</p>
     </div>
   );
+}
+
+function ScoreDot({ score }: { score: number | null }) {
+  const cls = score === null ? "bg-neutral" : score >= 7 ? "bg-accent" : score >= 4 ? "bg-warning" : "bg-destructive";
+  return <span className={cn("h-1.5 w-1.5 rounded-full", cls)} />;
 }
 
 function TaskPill({ icon, count, kind }: { icon: React.ReactNode; count: number; kind: "complete" | "week" | "overdue" }) {
