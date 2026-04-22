@@ -23,10 +23,10 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
   { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
+  { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
 ];
 const ADMIN_SOON: NavItem[] = [
   { label: "Sponsorship Pipeline", icon: TrendingUp, soon: true },
-  { label: "Communications", icon: Mail, soon: true },
   { label: "Analytics", icon: BarChart3, soon: true },
 ];
 
@@ -35,10 +35,10 @@ const ORG_PRIMARY: NavItem[] = [
   { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
   { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
+  { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
 ];
 const ORG_SOON: NavItem[] = [
   { label: "Sponsorships", icon: Megaphone, soon: true },
-  { label: "Communications", icon: Mail, soon: true },
 ];
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
