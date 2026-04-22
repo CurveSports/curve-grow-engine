@@ -63,17 +63,31 @@ export default function AdminTasksThisWeek() {
     })();
   }, [weekAhead]);
 
+  // Filter tasks by search (matches task title, engine, or org name)
+  const filteredTasks = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return tasks;
+    return tasks.filter((t) => {
+      const orgName = orgs[t.org_id]?.name?.toLowerCase() ?? "";
+      return (
+        t.title.toLowerCase().includes(q) ||
+        t.engine.toLowerCase().includes(q) ||
+        orgName.includes(q)
+      );
+    });
+  }, [tasks, orgs, search]);
+
   // Group: org -> engine -> tasks
   const grouped = useMemo(() => {
     const byOrg: Record<string, Record<string, TaskRow[]>> = {};
-    for (const t of tasks) {
+    for (const t of filteredTasks) {
       const orgId = t.org_id;
       if (!byOrg[orgId]) byOrg[orgId] = {};
       if (!byOrg[orgId][t.engine]) byOrg[orgId][t.engine] = [];
       byOrg[orgId][t.engine].push(t);
     }
     return byOrg;
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const orgIds = useMemo(
     () =>
@@ -105,50 +119,92 @@ export default function AdminTasksThisWeek() {
         <Stat icon={<Clock className="h-4 w-4 text-accent" />} label="Upcoming (≤7d)" value={totals.dueSoon} />
       </div>
 
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="relative flex-1 min-w-[240px] max-w-md">
+          <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search org, engine, or task…"
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <button onClick={expandAll} className="px-3 h-8 rounded-md border border-border hover:bg-secondary transition">Expand all</button>
+          <button onClick={collapseAll} className="px-3 h-8 rounded-md border border-border hover:bg-secondary transition">Collapse all</button>
+        </div>
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : orgIds.length === 0 ? (
         <div className="curve-card text-center py-12">
           <Calendar className="h-10 w-10 mx-auto text-neutral mb-3" />
-          <h3 className="font-display text-lg font-semibold mb-1">No tasks due this week</h3>
-          <p className="text-sm text-muted-foreground">Nothing on the radar in the next 7 days.</p>
+          <h3 className="font-display text-lg font-semibold mb-1">
+            {search ? "No matches" : "No tasks due this week"}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {search ? "Try a different search term." : "Nothing on the radar in the next 7 days."}
+          </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {orgIds.map((orgId) => {
             const engineMap = grouped[orgId];
             const engineOrder = ENGINES.filter((e) => engineMap[e]?.length);
             const orgTotal = Object.values(engineMap).reduce((a, l) => a + l.length, 0);
+            // When searching, force-expand so matches are visible
+            const isCollapsed = search.trim() ? false : !!collapsed[orgId];
             return (
               <div key={orgId} className="curve-card p-0 overflow-hidden">
-                <div className="px-5 py-3 border-b border-border bg-secondary/40 flex items-center justify-between">
-                  <Link
-                    to={`/admin/org/${orgId}`}
-                    className="flex items-center gap-2 font-display font-semibold hover:text-accent transition"
+                <div className="px-5 py-3 border-b border-border bg-secondary/40 flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => toggle(orgId)}
+                    className="flex items-center gap-2 flex-1 min-w-0 text-left hover:text-accent transition"
                   >
-                    <Building2 className="h-4 w-4" />
-                    {orgs[orgId]?.name ?? "Unknown org"}
-                  </Link>
-                  <span className="text-xs text-muted-foreground tabular-nums">{orgTotal} task{orgTotal === 1 ? "" : "s"}</span>
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    )}
+                    <Building2 className="h-4 w-4 flex-shrink-0" />
+                    <span className="font-display font-semibold truncate">
+                      {orgs[orgId]?.name ?? "Unknown org"}
+                    </span>
+                  </button>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {orgTotal} task{orgTotal === 1 ? "" : "s"}
+                    </span>
+                    <Link
+                      to={`/admin/org/${orgId}`}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      Open org
+                    </Link>
+                  </div>
                 </div>
-                <div className="divide-y divide-border">
-                  {engineOrder.map((engine) => {
-                    const list = engineMap[engine];
-                    return (
-                      <div key={engine} className="px-5 py-3">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-semibold text-sm">{engine}</h3>
-                          <span className="text-xs text-muted-foreground tabular-nums">{list.length}</span>
+                {!isCollapsed && (
+                  <div className="divide-y divide-border">
+                    {engineOrder.map((engine) => {
+                      const list = engineMap[engine];
+                      return (
+                        <div key={engine} className="px-5 py-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-semibold text-sm">{engine}</h3>
+                            <span className="text-xs text-muted-foreground tabular-nums">{list.length}</span>
+                          </div>
+                          <div className="space-y-1">
+                            {list.map((t) => (
+                              <TaskRow key={t.id} task={t} orgId={orgId} today={today} />
+                            ))}
+                          </div>
                         </div>
-                        <div className="space-y-1">
-                          {list.map((t) => (
-                            <TaskRow key={t.id} task={t} orgId={orgId} today={today} />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
