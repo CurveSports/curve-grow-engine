@@ -996,9 +996,11 @@ Deno.serve(async (req) => {
     let tasksGenerated = 0;
     try {
       tasksGenerated = await generateDraftTasks(supabase, org_id, metrics, isFacilityOrg, userData.user.id);
-      if (tasksGenerated > 0) {
-        const { data: org } = await supabase.from("organizations").select("id, name").eq("id", org_id).maybeSingle();
-        if (org) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
+      const { data: org } = await supabase.from("organizations").select("id, name").eq("id", org_id).maybeSingle();
+      if (org) {
+        if (tasksGenerated > 0) await notifyAdminsNewIntake(supabase, org as any, metrics, tasksGenerated);
+        // Round 2: high-risk alert (always check after intake)
+        await notifyAdminsHighRisk(supabase, org as any, metrics);
       }
     } catch (e) {
       console.error("draft task generation failed (non-fatal)", e);
