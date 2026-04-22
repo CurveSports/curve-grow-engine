@@ -201,6 +201,42 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
   );
 }
 
+/* ─── TEMP: Recalculate Metrics (DELETE BEFORE GO-LIVE) ─── */
+function RecalcMetricsButton({ orgId }: { orgId: string }) {
+  const [busy, setBusy] = useState(false);
+  const handle = async () => {
+    setBusy(true);
+    try {
+      const { data: intake, error: iErr } = await supabase
+        .from("organization_intake").select("*").eq("org_id", orgId).maybeSingle();
+      if (iErr || !intake) throw new Error(iErr?.message ?? "No intake on file for this org.");
+      const { data, error } = await supabase.functions.invoke("calc-metrics", {
+        body: { org_id: orgId, intake },
+      });
+      if (error) throw error;
+      toast({ title: "Metrics recalculated", description: "Derived metrics refreshed from existing intake." });
+      setTimeout(() => window.location.reload(), 600);
+    } catch (e: any) {
+      toast({ title: "Recalculation failed", description: e?.message ?? "Unknown error", variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handle}
+      disabled={busy}
+      title="DEV ONLY — re-runs calc-metrics against the saved intake. Remove before launch."
+      className="border-warning/40 text-warning hover:bg-warning-soft"
+    >
+      <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", busy && "animate-spin")} />
+      {busy ? "Recalculating…" : "Recalc Metrics (dev)"}
+    </Button>
+  );
+}
+
 /* ─────────────────────────  OVERVIEW  ───────────────────────── */
 
 function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; onJumpToPlan: () => void; onJumpToReport: () => void }) {
