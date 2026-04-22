@@ -272,6 +272,14 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </div>
       )}
 
+      {/* Tier ladder */}
+      {(metrics as any)?.monetization_tier && (
+        <div className="curve-card">
+          <p className="curve-eyebrow mb-4">Tier Progression</p>
+          <TierLadder metrics={metrics} orgId={orgId} variant="admin" />
+        </div>
+      )}
+
       {/* Round 2: Risk Assessment + Engagement Complexity + Pricing context */}
       <RiskAssessmentSection
         executionRisk={(metrics as any).execution_risk ?? null}
