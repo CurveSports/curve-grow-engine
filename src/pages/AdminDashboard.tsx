@@ -279,7 +279,7 @@ export default function AdminDashboard() {
       </div>
 
       {drill && (
-        <DrillPanel kind={drill} orgs={orgs} onClose={() => setDrill(null)} />
+        <DrillPanel kind={drill} orgs={orgs} reviewed={reviewed} onToggleReviewed={toggleReviewed} onClose={() => setDrill(null)} />
       )}
 
       <div className="mb-8" />
