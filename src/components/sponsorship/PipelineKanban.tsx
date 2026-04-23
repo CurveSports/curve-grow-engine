@@ -328,6 +328,44 @@ export default function PipelineKanban({
           );
         })}
       </div>
+
+      <Dialog open={!!wonPrompt} onOpenChange={(o) => { if (!o && !savingWon) { setWonPrompt(null); setWonAmount(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PartyPopper className="h-5 w-5 text-health" /> Deal closed!
+            </DialogTitle>
+            <DialogDescription>
+              Enter the final closed amount for <span className="font-semibold text-foreground">{wonPrompt?.businessName}</span>. This is what gets reported as won revenue.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="closed-amount" className="text-xs">Closed amount ($)</Label>
+            <Input
+              id="closed-amount"
+              type="number"
+              min="0"
+              step="100"
+              autoFocus
+              value={wonAmount}
+              onChange={(e) => setWonAmount(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") confirmWon(); }}
+              placeholder="0"
+            />
+            {wonPrompt?.defaultValue != null && (
+              <p className="text-[11px] text-muted-foreground">Pre-filled from proposed value. Adjust if the final amount differs.</p>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setWonPrompt(null); setWonAmount(""); }} disabled={savingWon}>
+              Cancel
+            </Button>
+            <Button onClick={confirmWon} disabled={savingWon} className="bg-health text-health-foreground hover:bg-health/90">
+              {savingWon ? "Saving…" : "Mark as Won"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
