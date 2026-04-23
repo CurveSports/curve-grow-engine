@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
 import { PresentationsTab } from "@/components/presentations/PresentationsTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
-import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
+import { RiskAssessmentSection, AdminAlertsBanner, type AdminAlert } from "@/components/admin/RiskAssessment";
 import { ExplainProvider, ExplainButton } from "@/components/admin/ExplainDrawer";
 import ProjectsTab from "@/components/admin/ProjectsTab";
 import { ProjectCompletionBanner } from "@/components/admin/ProjectsTab";
