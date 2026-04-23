@@ -55,12 +55,13 @@ export function WeeklyFocusCard({
       const map = new Map(tasks.map(t => [t.id, t]));
       return focus.focus_task_ids.map(id => map.get(id)).filter(Boolean) as Task[];
     }
-    // Fallback: top high-priority open tasks (existing behavior)
+    if (!editable) return [];
+    // Admin-only preview fallback: top high-priority open tasks
     return [...openTasks].sort((a, b) => {
       const pri = { high: 0, medium: 1, low: 2 } as any;
       return (pri[a.priority] ?? 9) - (pri[b.priority] ?? 9);
     }).slice(0, 4);
-  }, [focus, tasks, openTasks]);
+  }, [focus, tasks, openTasks, editable]);
 
   const toggle = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
@@ -89,6 +90,9 @@ export function WeeklyFocusCard({
   };
 
   const isAdminSet = !!focus?.focus_task_ids?.length;
+
+  // Org-side: hide entirely when no focus set for current week (no stale data)
+  if (!editable && !isAdminSet) return null;
 
   return (
     <div className="curve-card border-l-4 border-l-warning">

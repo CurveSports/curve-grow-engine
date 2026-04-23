@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2, UsersRound,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2, UsersRound, Target,
 } from "lucide-react";
 
 type NavItem = {
@@ -20,6 +20,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p.startsWith("/admin/org") || p === "/admin" },
   { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
   { to: "/admin/tasks", label: "Portfolio Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
+  { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
   { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
   { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },

@@ -6,13 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { CheckCheck } from "lucide-react";
+import { weekStartingMonday } from "@/lib/week";
 
 import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
   CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning, FolderKanban,
-  ChevronDown, ChevronUp, X,
+  ChevronDown, ChevronUp, X, Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -73,6 +74,8 @@ export default function AdminDashboard() {
   const [density, setDensity] = useState<Density>("standard");
   const [awaitingTotal, setAwaitingTotal] = useState(0);
   const [reviewed, setReviewed] = useState<Record<string, Partial<Record<"high_alert" | "revenue_review", { reviewed_at: string; reviewed_by: string }>>>>({});
+  const [orgsMissingFocus, setOrgsMissingFocus] = useState<{ id: string; name: string }[]>([]);
+  const [focusReminderOpen, setFocusReminderOpen] = useState(true);
 
   const [drill, setDrill] = useState<DrillKey>(null);
 
@@ -81,7 +84,8 @@ export default function AdminDashboard() {
       const oneWeekAhead = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
       const today = new Date().toISOString().slice(0, 10);
 
-      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes, reviewsRes] = await Promise.all([
+      const week = weekStartingMonday();
+      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes, reviewsRes, focusRes] = await Promise.all([
         supabase
           .from("organizations")
           .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review, revenue_verification), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier, platform_score, marketing_score, retention_risk, market_risk, execution_risk, strategic_clarity_score, engagement_approach_recommendation)"),
@@ -89,7 +93,13 @@ export default function AdminDashboard() {
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
         supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
         supabase.from("admin_org_reviews").select("org_id, kind, reviewed_at, reviewed_by"),
+        supabase.from("org_weekly_focus" as any).select("org_id, week_starting, focus_task_ids"),
       ]);
+
+      const focusedOrgIds = new Set<string>();
+      for (const f of ((focusRes.data as any[]) ?? [])) {
+        if (f.week_starting === week && (f.focus_task_ids?.length ?? 0) > 0) focusedOrgIds.add(f.org_id);
+      }
 
       const reviewedMap: Record<string, any> = {};
       for (const r of (reviewsRes.data ?? []) as any[]) {
@@ -152,6 +162,7 @@ export default function AdminDashboard() {
         };
       });
       setOrgs(r);
+      setOrgsMissingFocus(r.filter(o => !!o.plan_activated_at && !focusedOrgIds.has(o.id)).map(o => ({ id: o.id, name: o.name })));
       setActivity(activityRes.data ?? []);
       setLoading(false);
     })();
@@ -208,6 +219,52 @@ export default function AdminDashboard() {
           <Plus className="h-4 w-4" /> New organization
         </Link>
       </div>
+
+      {/* Weekly focus reminder */}
+      {!loading && orgsMissingFocus.length > 0 && (
+        <div className="curve-card border-l-4 border-l-warning bg-warning-soft/30 mb-6 p-0 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setFocusReminderOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-warning-soft/40 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Target className="h-5 w-5 text-warning flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  {orgsMissingFocus.length} org{orgsMissingFocus.length === 1 ? "" : "s"} need this week's focus set
+                </p>
+                <p className="text-xs text-muted-foreground">Clients won't see a focus card until you set one.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                to="/admin/weekly-focus"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-semibold text-foreground hover:underline"
+              >
+                Set all →
+              </Link>
+              {focusReminderOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </button>
+          {focusReminderOpen && (
+            <div className="px-4 pb-4 pt-0">
+              <div className="flex flex-wrap gap-1.5">
+                {orgsMissingFocus.map(o => (
+                  <Link
+                    key={o.id}
+                    to={`/admin/org/${o.id}`}
+                    className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-background border border-border hover:border-foreground/40 hover:bg-secondary/50 transition-colors"
+                  >
+                    {o.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stat row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
