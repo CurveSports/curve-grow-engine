@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { toast } from "@/hooks/use-toast";
-import { ENGINES } from "@/lib/tasks";
 import { Search, ChevronRight, ChevronDown, Calendar } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -221,16 +220,14 @@ export default function AdminRoadmap() {
     const d = dragRef.current;
     if (!d) return;
     dragRef.current = null;
-    // Persist
     const updated = projects.find((p) => p.id === d.project.id);
     if (!updated) return;
-    const patch: Partial<Project> = {};
+    const patch: { release_date?: string | null; released_at?: string | null; completion_approved_at?: string | null } = {};
     if (d.mode !== "resize-end") {
       patch.release_date = updated.release_date;
       if (updated.released_at) patch.released_at = updated.released_at;
     }
     if (d.mode !== "resize-start") {
-      // Only persist completion change if originally set (locked completed handled above)
       if (updated.completion_approved_at) patch.completion_approved_at = updated.completion_approved_at;
     }
     const { error } = await supabase.from("org_projects").update(patch).eq("id", d.project.id);
@@ -365,7 +362,7 @@ export default function AdminRoadmap() {
                   ))}
                   {/* Project pills */}
                   <div className="relative py-2 space-y-1.5">
-                    {orgProjects.map((p, idx) => {
+                    {orgProjects.map((p) => {
                       const range = getProjectRange(p);
                       if (!range) return null;
                       const startPct = dateToPct(range.start);
