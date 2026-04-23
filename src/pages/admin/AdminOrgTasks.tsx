@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD } from "@/lib/tasks";
-import type { OrgProject } from "@/lib/projects";
 import PlanReviewWorkspace from "@/components/admin/PlanReviewWorkspace";
 import PlanManageSummary from "@/components/admin/PlanManageSummary";
 import { toast } from "sonner";
