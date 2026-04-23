@@ -18,8 +18,7 @@ type NavItem = {
 };
 
 const ADMIN_PRIMARY: NavItem[] = [
-  { to: "/admin", label: "Home", icon: LayoutDashboard, match: (p) => p === "/admin" },
-  { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p.startsWith("/admin/org") || p === "/admin" },
+  { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p === "/admin" || p.startsWith("/admin/org") },
   { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
   { to: "/admin/tasks", label: "Portfolio Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
   { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
@@ -34,6 +33,14 @@ const ADMIN_PRIMARY: NavItem[] = [
 const ADMIN_SOON: NavItem[] = [
   { label: "Sponsorship Pipeline", icon: TrendingUp, soon: true },
   { label: "Analytics", icon: BarChart3, soon: true },
+];
+
+// Mobile bottom-nav for admins (curated 4 highest-frequency tabs)
+const ADMIN_MOBILE: NavItem[] = [
+  { to: "/admin", label: "Orgs", icon: Grid3x3, match: (p) => p === "/admin" || p.startsWith("/admin/org") },
+  { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
+  { to: "/admin/weekly-focus", label: "Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
+  { to: "/admin/communications", label: "Comms", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
 ];
 
 const ORG_PRIMARY: NavItem[] = [
