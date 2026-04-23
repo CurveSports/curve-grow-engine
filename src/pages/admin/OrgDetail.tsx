@@ -247,18 +247,16 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
   const [metrics, setMetrics] = useState<any>(null);
   const [intake, setIntake] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
-  const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [{ data: m }, { data: i }, { data: t }, { data: a }] = await Promise.all([
+      const [{ data: m }, { data: i }, { data: t }] = await Promise.all([
         supabase.from("derived_metrics").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("organization_intake").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("org_tasks").select("*").eq("org_id", orgId).eq("plan_status", "active"),
-        supabase.from("task_activity_log").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(8),
       ]);
-      setMetrics(m); setIntake(i); setTasks(t ?? []); setActivity(a ?? []); setLoading(false);
+      setMetrics(m); setIntake(i); setTasks(t ?? []); setLoading(false);
     })();
   }, [orgId]);
 
