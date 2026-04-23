@@ -263,14 +263,43 @@ export default function AddLeadModal({ open, onOpenChange, orgId: lockedOrgId, o
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Sponsorship tier">
-                <PillGroup
-                  options={[{ value: "", label: "—" }, ...TIERS.map((t) => ({ value: t, label: t }))]}
-                  value={tier}
-                  onChange={(v) => setTier(v as Tier | "")}
-                />
+                {!orgIdSel ? (
+                  <p className="text-xs text-muted-foreground italic py-2">Select an organization first.</p>
+                ) : !approvedTiers ? (
+                  <div className="rounded-md border border-dashed border-border bg-muted/30 p-2.5 flex items-start gap-2">
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Sponsorship tiers haven't been approved for this org. A Curve admin can approve them in the Sponsorship Value calculator.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <PillGroup
+                      options={[
+                        { value: "", label: "—" },
+                        ...TIERS.map((t) => {
+                          const amt = tierAmount(t, approvedTiers) ?? 0;
+                          return { value: t, label: `${t} · ${formatCurrency(amt)}` };
+                        }),
+                      ]}
+                      value={tier}
+                      onChange={(v) => { setTier(v as Tier | ""); setProposedTouched(false); }}
+                    />
+                    {tier && (
+                      <p className="text-[11px] text-accent mt-1.5">
+                        Pre-filled from approved tier — edit below if needed.
+                      </p>
+                    )}
+                  </>
+                )}
               </Field>
               <Field label="Proposed value ($)">
-                <Input type="number" value={proposedValue} onChange={(e) => setProposedValue(e.target.value)} placeholder="0" />
+                <Input
+                  type="number"
+                  value={proposedValue}
+                  onChange={(e) => { setProposedValue(e.target.value); setProposedTouched(true); }}
+                  placeholder="0"
+                />
               </Field>
             </div>
             <Field label="Initial stage">
