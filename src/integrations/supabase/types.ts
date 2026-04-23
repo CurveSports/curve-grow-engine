@@ -2048,7 +2048,7 @@ export type Database = {
         | "win"
         | "renewal"
       org_project_status: "draft" | "active" | "completed"
-      plan_status: "draft" | "active"
+      plan_status: "draft" | "active" | "parked"
       task_action:
         | "created"
         | "status_changed"
@@ -2238,7 +2238,7 @@ export const Constants = {
         "renewal",
       ],
       org_project_status: ["draft", "active", "completed"],
-      plan_status: ["draft", "active"],
+      plan_status: ["draft", "active", "parked"],
       task_action: [
         "created",
         "status_changed",

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
-import TaskList from "@/components/tasks/TaskList";
 import TaskDetailPanel from "@/components/tasks/TaskDetailPanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,8 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrgTask, TaskTemplate, ENGINES, TASK_TYPES, ENGINE_SCORE_FIELD } from "@/lib/tasks";
-import type { OrgProject } from "@/lib/projects";
-import AdminTasksByProject from "@/components/admin/AdminTasksByProject";
+import PlanReviewWorkspace from "@/components/admin/PlanReviewWorkspace";
+import PlanManageSummary from "@/components/admin/PlanManageSummary";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import BaselineModal from "@/components/sponsorship/BaselineModal";
@@ -25,8 +24,10 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [planActivatedAt, setPlanActivatedAt] = useState<string | null>(null);
   const [tasks, setTasks] = useState<OrgTask[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [priorityEngine, setPriorityEngine] = useState<string | null>(null);
+  const [fastestPathEngines, setFastestPathEngines] = useState<string[]>([]);
+  const [tasksGeneratedAt, setTasksGeneratedAt] = useState<string | null>(null);
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
-  const [projects, setProjects] = useState<OrgProject[]>([]);
   const [selected, setSelected] = useState<OrgTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
@@ -37,22 +38,24 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   const load = async () => {
     if (!orgId) return;
-    const [{ data: org }, { data: t }, { data: m }, { data: tpl }, { data: pj }] = await Promise.all([
+    const [{ data: org }, { data: t }, { data: m }, { data: tpl }] = await Promise.all([
       supabase.from("organizations").select("name, plan_activated_at").eq("id", orgId).maybeSingle(),
       supabase.from("org_tasks").select("*").eq("org_id", orgId).order("priority").order("due_date"),
       supabase.from("derived_metrics").select("*").eq("org_id", orgId).maybeSingle(),
       supabase.from("task_templates").select("*").order("engine"),
-      supabase.from("org_projects").select("*").eq("org_id", orgId).order("display_order").order("created_at"),
     ]);
     setOrgName((org as any)?.name ?? "");
     setPlanActivatedAt((org as any)?.plan_activated_at ?? null);
     setTasks((t as OrgTask[]) ?? []);
     setTemplates((tpl as TaskTemplate[]) ?? []);
-    setProjects((pj as OrgProject[]) ?? []);
     if (m) {
       const s: Record<string, number | null> = {};
       for (const [eng, field] of Object.entries(ENGINE_SCORE_FIELD)) s[eng] = (m as any)[field];
       setScores(s);
+      setPriorityEngine((m as any).priority_engine ?? null);
+      const fp = (m as any).fastest_path_engines;
+      setFastestPathEngines(Array.isArray(fp) ? fp.filter((x: any) => typeof x === "string") : []);
+      setTasksGeneratedAt((m as any).tasks_generated_at ?? null);
     }
     setLoading(false);
   };
@@ -73,16 +76,6 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   }, [loading, engineParam, tasks]);
 
   const draftCount = useMemo(() => tasks.filter(t => t.plan_status === "draft").length, [tasks]);
-
-  // Per-engine summary (used while reviewing draft plan)
-  const draftByEngine = useMemo(() => {
-    const out: Record<string, number> = {};
-    for (const t of tasks) {
-      if (t.plan_status !== "draft") continue;
-      out[t.engine] = (out[t.engine] ?? 0) + 1;
-    }
-    return out;
-  }, [tasks]);
 
   const handleActivate = async () => {
     setConfirmOpen(false);
@@ -142,15 +135,6 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   const isReviewMode = !planActivatedAt && draftCount > 0;
 
-  // Get score badge color based on score
-  const getScoreBadgeClasses = (score: number | null) => {
-    if (score === null) return "bg-muted text-muted-foreground border-transparent";
-    if (score <= 3) return "bg-destructive/15 text-destructive border-destructive/30";
-    if (score <= 6) return "bg-warning/15 text-warning border-warning/30";
-    if (score <= 7) return "bg-accent/15 text-accent border-accent/30";
-    return "bg-muted text-muted-foreground border-transparent";
-  };
-
   const Wrap = ({ children }: { children: any }) => bare ? <>{children}</> : <AppShell>{children}</AppShell>;
   return (
     <Wrap>
@@ -191,44 +175,19 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
       )}
 
       {isReviewMode && (
-        <>
-          {/* Amber draft mode banner */}
-          <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning-soft">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Recommended Plan — Admin review</p>
-                <p className="text-sm text-muted-foreground">These are the auto-generated recommendations. Review, edit, or remove tasks. Approving the plan unlocks the Projects tab so you can release work to the org in waves.</p>
-              </div>
+        <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning-soft">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Recommended Plan — Admin review</p>
+              <p className="text-sm text-muted-foreground">
+                Triage the auto-generated tasks below: park what's not relevant, adjust priority/owner, search and filter freely. Approving the plan unlocks the Projects tab so you can release work to the org in waves.
+              </p>
             </div>
           </div>
-
-          {/* Engine summary cards */}
-          <div className="mb-6">
-            <p className="curve-eyebrow mb-4">Plan coverage by engine</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {Object.entries(draftByEngine).map(([engine, count]) => (
-                <div key={engine} className="p-3 rounded-lg border bg-card">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{engine}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getScoreBadgeClasses(scores[engine])}`}>
-                      {scores[engine] ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-semibold tabular-nums">{count}</span>
-                    <span className="text-xs text-muted-foreground">task{count === 1 ? "" : "s"}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Approving the plan does <strong>not</strong> send work to the org. Tasks become visible only when you release a project that contains them.
-            </p>
-          </div>
-        </>
+        </div>
       )}
 
       {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
@@ -236,16 +195,22 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           <div className="curve-card text-center py-16">
             <p className="text-muted-foreground mb-4">{planActivatedAt ? "No tasks yet — add one to get started." : "No tasks yet. They'll be auto-generated when this org completes intake."}</p>
           </div>
-        ) : (isReviewMode || projects.length === 0) ? (
-          <TaskList tasks={tasks} scores={scores} onSelect={setSelected} showPlanStatus />
-        ) : (
-          <AdminTasksByProject
-            projects={projects}
+        ) : isReviewMode ? (
+          <PlanReviewWorkspace
+            orgId={orgId!}
             tasks={tasks}
             scores={scores}
-            orgId={orgId!}
+            priorityEngine={priorityEngine}
+            fastestPathEngines={fastestPathEngines}
             onSelect={setSelected}
             onChanged={load}
+          />
+        ) : (
+          <PlanManageSummary
+            orgId={orgId!}
+            tasks={tasks}
+            scores={scores}
+            tasksGeneratedAt={tasksGeneratedAt}
           />
         )
       )}
