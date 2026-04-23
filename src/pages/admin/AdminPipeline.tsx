@@ -10,7 +10,8 @@ import PipelineList from "@/components/sponsorship/PipelineList";
 import PipelineMetrics from "@/components/sponsorship/PipelineMetrics";
 import AddLeadModal from "@/components/sponsorship/AddLeadModal";
 import LeadDetailPanel from "@/components/sponsorship/LeadDetailPanel";
-import { Plus, LayoutGrid, Rows3, BarChart3, Filter as FilterIcon, Globe, Building2, ChevronDown } from "lucide-react";
+import AdminAIGenerateLeadsModal from "@/components/sponsorship/AdminAIGenerateLeadsModal";
+import { Plus, LayoutGrid, Rows3, BarChart3, Filter as FilterIcon, Globe, Building2, ChevronDown, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STAGES, STAGE_LABELS, SOURCES, SOURCE_LABELS, type SponsorshipLead } from "@/lib/sponsorship";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -29,6 +30,8 @@ export default function AdminPipeline() {
   const [loading, setLoading] = useState(true);
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiOrgId, setAiOrgId] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filters
@@ -112,6 +115,9 @@ export default function AdminPipeline() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setFiltersOpen((v) => !v)}>
             <FilterIcon className="h-4 w-4 mr-1.5" /> Filter
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => { setAiOrgId(orgFilter || orgs[0]?.id || ""); setAiOpen(true); }} disabled={orgs.length === 0}>
+            <Sparkles className="h-4 w-4 mr-1.5" /> AI Generate Leads
           </Button>
           <Button size="sm" onClick={() => setAddOpen(true)} className="bg-health text-health-foreground hover:bg-health/90">
             <Plus className="h-4 w-4 mr-1.5" /> Add Lead
@@ -203,6 +209,12 @@ export default function AdminPipeline() {
         open={addOpen}
         onOpenChange={setAddOpen}
         onCreated={() => { setAddOpen(false); load(); }}
+      />
+      <AdminAIGenerateLeadsModal
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        orgId={aiOrgId}
+        onCreated={() => { setAiOpen(false); load(); }}
       />
       <LeadDetailPanel
         leadId={openLeadId}

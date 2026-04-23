@@ -51,10 +51,9 @@ const ORG_PRIMARY: NavItem[] = [
   { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
   { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
+  { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
 ];
-const ORG_SOON: NavItem[] = [
-  { label: "Sponsorships", icon: Megaphone, soon: true },
-];
+const ORG_SOON: NavItem[] = [];
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { role, profile, signOut, isPrimary } = useAuth();
