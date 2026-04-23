@@ -59,7 +59,18 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
         body: { city_state: city.trim(), count, categories: Array.from(cats) },
       });
       if (error) throw error;
-      const list = ((data as any)?.candidates ?? []).map((c: any) => ({ ...c, selected: true }));
+      const list: Candidate[] = ((data as any)?.candidates ?? []).map((c: any) => ({
+        business_name: c.business_name ?? "",
+        business_type: c.business_type ?? "",
+        contact_name: c.contact_name ?? "",
+        contact_phone: c.contact_phone ?? "",
+        contact_email: c.contact_email ?? "",
+        website: c.website ?? "",
+        address: c.address ?? "",
+        city_state: c.city_state ?? city.trim(),
+        rationale: c.rationale ?? "",
+        selected: true,
+      }));
       if (list.length === 0) throw new Error("No candidates returned");
       setCandidates(list);
       toast.success(`${list.length} candidates generated — review and import`);
