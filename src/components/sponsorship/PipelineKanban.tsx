@@ -356,6 +356,17 @@ export default function PipelineKanban({
               onKeyDown={(e) => { if (e.key === "Enter") confirmWon(); }}
               placeholder="0"
             />
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[11px] text-muted-foreground">Preview</span>
+              <span className="text-lg font-semibold tabular-nums text-health">
+                {(() => {
+                  const n = Number(wonAmount);
+                  return wonAmount.trim() !== "" && Number.isFinite(n) && n >= 0
+                    ? formatCurrency(n)
+                    : formatCurrency(0);
+                })()}
+              </span>
+            </div>
             {wonPrompt?.defaultValue != null && (
               <p className="text-[11px] text-muted-foreground">Pre-filled from proposed value. Adjust if the final amount differs.</p>
             )}
