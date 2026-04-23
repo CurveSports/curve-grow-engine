@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { OrgTask, STATUS_LABEL, STATUS_STYLE, PRIORITY_STYLE, groupByEngine, ENGINES } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
 import OwnerPill from "@/components/tasks/OwnerPill";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   tasks: OrgTask[];
@@ -12,7 +14,40 @@ interface Props {
   showOwner?: boolean;
 }
 
+type AssigneeMap = Record<string, { user_id: string; initial: string; name: string }[]>;
+
 export default function TaskList({ tasks, scores, onSelect, showPlanStatus = false, showOwner = false }: Props) {
+  const [assigneesByTask, setAssigneesByTask] = useState<AssigneeMap>({});
+
+  useEffect(() => {
+    if (!showOwner || tasks.length === 0) { setAssigneesByTask({}); return; }
+    const ids = tasks.map((t) => t.id);
+    let cancelled = false;
+    (async () => {
+      const { data: rows } = await supabase
+        .from("org_task_assignees" as any)
+        .select("task_id, user_id")
+        .in("task_id", ids);
+      const userIds = Array.from(new Set(((rows ?? []) as any[]).map((r) => r.user_id)));
+      const { data: profs } = userIds.length
+        ? await supabase.from("profiles").select("user_id, full_name, email").in("user_id", userIds)
+        : { data: [] as any[] };
+      const profMap = new Map<string, { name: string; initial: string }>();
+      for (const p of (profs ?? []) as any[]) {
+        const name = p.full_name || p.email;
+        profMap.set(p.user_id, { name, initial: name.charAt(0).toUpperCase() });
+      }
+      const map: AssigneeMap = {};
+      for (const r of (rows ?? []) as any[]) {
+        const info = profMap.get(r.user_id);
+        if (!info) continue;
+        (map[r.task_id] ||= []).push({ user_id: r.user_id, name: info.name, initial: info.initial });
+      }
+      if (!cancelled) setAssigneesByTask(map);
+    })();
+    return () => { cancelled = true; };
+  }, [tasks, showOwner]);
+
   const grouped = groupByEngine(tasks);
   const engineOrder = ENGINES.filter(e => grouped[e]?.length).sort((a, b) => {
     const sa = scores?.[a];
