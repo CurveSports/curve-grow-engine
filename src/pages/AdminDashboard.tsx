@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
 import {
@@ -227,7 +226,6 @@ export default function AdminDashboard() {
         <TabsList className="mb-6">
           <TabsTrigger value="orgs">Organizations</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
         </TabsList>
 
         <TabsContent value="orgs">
@@ -266,7 +264,6 @@ export default function AdminDashboard() {
         </TabsContent>
 
         <TabsContent value="projects"><AdminProjectsCrossOrg /></TabsContent>
-        <TabsContent value="users"><AdminUsers /></TabsContent>
       </Tabs>
     </AppShell>
   );
