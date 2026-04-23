@@ -205,6 +205,11 @@ export default function TaskDetailPanel({ task, open, onClose, isAdmin, onChange
           {!isAdmin && task.due_date && (
             <p className="text-sm"><span className="curve-eyebrow">Due</span> <span className="ml-2">{formatDate(task.due_date)}</span></p>
           )}
+
+          <div>
+            <label className="curve-eyebrow block mb-1.5">Curve admin assignees</label>
+            <TaskAssigneePicker taskId={task.id} orgId={task.org_id} readOnly={!isAdmin} onChanged={onChanged} />
+          </div>
         </div>
 
         {showComplete && (
