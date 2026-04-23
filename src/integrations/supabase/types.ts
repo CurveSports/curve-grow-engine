@@ -1746,6 +1746,8 @@ export type Database = {
       }
       sponsorship_leads: {
         Row: {
+          ai_generated: boolean
+          ai_generation_notes: string | null
           assigned_to: string | null
           business_name: string
           business_type: string | null
@@ -1772,8 +1774,11 @@ export type Database = {
           warm_flagged_by_dsf: boolean
           warm_flagged_by_org: boolean
           warm_notes: string | null
+          warm_reasons: string[] | null
         }
         Insert: {
+          ai_generated?: boolean
+          ai_generation_notes?: string | null
           assigned_to?: string | null
           business_name: string
           business_type?: string | null
@@ -1800,8 +1805,11 @@ export type Database = {
           warm_flagged_by_dsf?: boolean
           warm_flagged_by_org?: boolean
           warm_notes?: string | null
+          warm_reasons?: string[] | null
         }
         Update: {
+          ai_generated?: boolean
+          ai_generation_notes?: string | null
           assigned_to?: string | null
           business_name?: string
           business_type?: string | null
@@ -1828,6 +1836,7 @@ export type Database = {
           warm_flagged_by_dsf?: boolean
           warm_flagged_by_org?: boolean
           warm_notes?: string | null
+          warm_reasons?: string[] | null
         }
         Relationships: [
           {
@@ -2045,6 +2054,29 @@ export type Database = {
         }[]
       }
       current_org_id: { Args: never; Returns: string }
+      get_org_sponsorship_view: {
+        Args: { p_org_id: string }
+        Returns: {
+          assigned_rep_name: string
+          business_name: string
+          business_type: string
+          city_state: string
+          client_notes: Json
+          closed_at: string
+          closed_value: number
+          contact_name: string
+          id: string
+          is_warm: boolean
+          last_stage_change_at: string
+          source: string
+          sponsorship_tier: string
+          stage: string
+          stage_simplified: string
+          submitted_at: string
+          warm_notes: string
+          warm_reasons: string[]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
