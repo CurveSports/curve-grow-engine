@@ -111,6 +111,23 @@ export default function TaskList({ tasks, scores, onSelect, showPlanStatus = fal
                           {!showOwner && isThirdParty && " · Tracking (third party)"}
                         </p>
                       </div>
+                      {showOwner && (assigneesByTask[t.id]?.length ?? 0) > 0 && (
+                        <div className="flex items-center -space-x-1.5" title={assigneesByTask[t.id].map((a) => a.name).join(", ")}>
+                          {assigneesByTask[t.id].slice(0, 3).map((a) => (
+                            <span
+                              key={a.user_id}
+                              className="h-5 w-5 rounded-full bg-accent/15 border border-accent/40 text-[10px] font-semibold flex items-center justify-center text-accent"
+                            >
+                              {a.initial}
+                            </span>
+                          ))}
+                          {assigneesByTask[t.id].length > 3 && (
+                            <span className="h-5 w-5 rounded-full bg-secondary border border-border text-[10px] font-semibold flex items-center justify-center text-muted-foreground">
+                              +{assigneesByTask[t.id].length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {showOwner && <OwnerPill owner={t.owner_type} size="xs" />}
                       {isDraft && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 uppercase tracking-wider font-medium">Draft</span>
