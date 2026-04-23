@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { CheckCheck } from "lucide-react";
 
 import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
