@@ -5,6 +5,7 @@ import { useAuth } from "./useAuth";
 export interface OnboardingState {
   password_set_at: string | null;
   welcomed_at: string | null;
+  branding_completed_at: string | null;
   intake_started_at: string | null;
   intake_completed_at: string | null;
   report_viewed_at: string | null;
@@ -13,6 +14,7 @@ export interface OnboardingState {
 const empty: OnboardingState = {
   password_set_at: null,
   welcomed_at: null,
+  branding_completed_at: null,
   intake_started_at: null,
   intake_completed_at: null,
   report_viewed_at: null,
@@ -27,7 +29,7 @@ export function useOnboarding() {
     if (!user) { setState(null); setLoading(false); return; }
     const { data } = await supabase
       .from("user_onboarding")
-      .select("password_set_at, welcomed_at, intake_started_at, intake_completed_at, report_viewed_at")
+      .select("password_set_at, welcomed_at, branding_completed_at, intake_started_at, intake_completed_at, report_viewed_at")
       .eq("user_id", user.id)
       .maybeSingle();
     setState((data as OnboardingState) ?? empty);
