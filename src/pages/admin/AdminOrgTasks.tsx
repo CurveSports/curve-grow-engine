@@ -136,15 +136,6 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   const isReviewMode = !planActivatedAt && draftCount > 0;
 
-  // Get score badge color based on score
-  const getScoreBadgeClasses = (score: number | null) => {
-    if (score === null) return "bg-muted text-muted-foreground border-transparent";
-    if (score <= 3) return "bg-destructive/15 text-destructive border-destructive/30";
-    if (score <= 6) return "bg-warning/15 text-warning border-warning/30";
-    if (score <= 7) return "bg-accent/15 text-accent border-accent/30";
-    return "bg-muted text-muted-foreground border-transparent";
-  };
-
   const Wrap = ({ children }: { children: any }) => bare ? <>{children}</> : <AppShell>{children}</AppShell>;
   return (
     <Wrap>
