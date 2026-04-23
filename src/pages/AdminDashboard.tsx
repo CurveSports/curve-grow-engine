@@ -168,10 +168,30 @@ export default function AdminDashboard() {
     orgs.forEach(o => { if (o.tier) tierCounts[o.tier] = (tierCounts[o.tier] ?? 0) + 1; });
     const topTier = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
     const complexCount = orgs.filter(o => o.engagement_complexity === "Complex").length;
-    const highAlertCount = orgs.filter(o => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high")).length;
-    const reviewCount = orgs.filter(o => o.revenue_needs_review === true).length;
+    const highAlertCount = orgs.filter(o => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high") && !reviewed[o.id]?.high_alert).length;
+    const reviewCount = orgs.filter(o => o.revenue_needs_review === true && !reviewed[o.id]?.revenue_review).length;
     return { total: orgs.length, active, opp_low, opp_high, due, overdue, completed, topTier, complexCount, highAlertCount, reviewCount };
-  }, [orgs]);
+  }, [orgs, reviewed]);
+
+  async function toggleReviewed(orgId: string, kind: "high_alert" | "revenue_review") {
+    if (!user) return;
+    const isCurrentlyReviewed = !!reviewed[orgId]?.[kind];
+    if (isCurrentlyReviewed) {
+      const { error } = await supabase.from("admin_org_reviews").delete().eq("org_id", orgId).eq("kind", kind);
+      if (error) { toast({ title: "Could not undo", description: error.message, variant: "destructive" }); return; }
+      setReviewed(prev => {
+        const next = { ...prev };
+        if (next[orgId]) { const { [kind]: _, ...rest } = next[orgId] as any; next[orgId] = rest; }
+        return next;
+      });
+      toast({ title: "Marked as not reviewed" });
+    } else {
+      const { error } = await supabase.from("admin_org_reviews").upsert({ org_id: orgId, kind, reviewed_by: user.id, reviewed_at: new Date().toISOString() }, { onConflict: "org_id,kind" });
+      if (error) { toast({ title: "Could not save", description: error.message, variant: "destructive" }); return; }
+      setReviewed(prev => ({ ...prev, [orgId]: { ...(prev[orgId] ?? {}), [kind]: { reviewed_at: new Date().toISOString(), reviewed_by: user.id } } }));
+      toast({ title: "Marked as reviewed" });
+    }
+  }
 
   return (
     <AppShell title="Command Center">
