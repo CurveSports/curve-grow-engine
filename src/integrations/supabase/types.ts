@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_org_reviews: {
+        Row: {
+          id: string
+          kind: Database["public"]["Enums"]["admin_review_kind"]
+          note: string | null
+          org_id: string
+          reviewed_at: string
+          reviewed_by: string
+        }
+        Insert: {
+          id?: string
+          kind: Database["public"]["Enums"]["admin_review_kind"]
+          note?: string | null
+          org_id: string
+          reviewed_at?: string
+          reviewed_by: string
+        }
+        Update: {
+          id?: string
+          kind?: Database["public"]["Enums"]["admin_review_kind"]
+          note?: string | null
+          org_id?: string
+          reviewed_at?: string
+          reviewed_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_org_reviews_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       derived_metrics: {
         Row: {
           active_project_engines: Json | null
@@ -1534,6 +1569,7 @@ export type Database = {
       }
     }
     Enums: {
+      admin_review_kind: "high_alert" | "revenue_review"
       app_role: "admin" | "org_user"
       invitation_status: "pending" | "accepted" | "revoked" | "expired"
       monetization_tier:
@@ -1718,6 +1754,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_review_kind: ["high_alert", "revenue_review"],
       app_role: ["admin", "org_user"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       monetization_tier: [

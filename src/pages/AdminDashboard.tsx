@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { CheckCheck } from "lucide-react";
 
 import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
@@ -63,11 +66,13 @@ type DrillKey = "complex" | "high-alert" | "review" | null;
 type Density = "compact" | "standard" | "detailed";
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [density, setDensity] = useState<Density>("standard");
   const [awaitingTotal, setAwaitingTotal] = useState(0);
+  const [reviewed, setReviewed] = useState<Record<string, Partial<Record<"high_alert" | "revenue_review", { reviewed_at: string; reviewed_by: string }>>>>({});
 
   const [drill, setDrill] = useState<DrillKey>(null);
 
@@ -76,14 +81,21 @@ export default function AdminDashboard() {
       const oneWeekAhead = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
       const today = new Date().toISOString().slice(0, 10);
 
-      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes] = await Promise.all([
+      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes, reviewsRes] = await Promise.all([
         supabase
           .from("organizations")
           .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review, revenue_verification), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier, platform_score, marketing_score, retention_risk, market_risk, execution_risk, strategic_clarity_score, engagement_approach_recommendation)"),
         supabase.from("org_tasks").select("org_id, status, due_date, completed_at, last_activity_at"),
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
         supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
+        supabase.from("admin_org_reviews").select("org_id, kind, reviewed_at, reviewed_by"),
       ]);
+
+      const reviewedMap: Record<string, any> = {};
+      for (const r of (reviewsRes.data ?? []) as any[]) {
+        (reviewedMap[r.org_id] ??= {})[r.kind] = { reviewed_at: r.reviewed_at, reviewed_by: r.reviewed_by };
+      }
+      setReviewed(reviewedMap);
 
       const tasksByOrg: Record<string, any> = {};
       for (const t of (tasksRes.data ?? []) as any[]) {
@@ -156,10 +168,30 @@ export default function AdminDashboard() {
     orgs.forEach(o => { if (o.tier) tierCounts[o.tier] = (tierCounts[o.tier] ?? 0) + 1; });
     const topTier = Object.entries(tierCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
     const complexCount = orgs.filter(o => o.engagement_complexity === "Complex").length;
-    const highAlertCount = orgs.filter(o => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high")).length;
-    const reviewCount = orgs.filter(o => o.revenue_needs_review === true).length;
+    const highAlertCount = orgs.filter(o => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high") && !reviewed[o.id]?.high_alert).length;
+    const reviewCount = orgs.filter(o => o.revenue_needs_review === true && !reviewed[o.id]?.revenue_review).length;
     return { total: orgs.length, active, opp_low, opp_high, due, overdue, completed, topTier, complexCount, highAlertCount, reviewCount };
-  }, [orgs]);
+  }, [orgs, reviewed]);
+
+  async function toggleReviewed(orgId: string, kind: "high_alert" | "revenue_review") {
+    if (!user) return;
+    const isCurrentlyReviewed = !!reviewed[orgId]?.[kind];
+    if (isCurrentlyReviewed) {
+      const { error } = await supabase.from("admin_org_reviews").delete().eq("org_id", orgId).eq("kind", kind);
+      if (error) { toast({ title: "Could not undo", description: error.message, variant: "destructive" }); return; }
+      setReviewed(prev => {
+        const next = { ...prev };
+        if (next[orgId]) { const { [kind]: _, ...rest } = next[orgId] as any; next[orgId] = rest; }
+        return next;
+      });
+      toast({ title: "Marked as not reviewed" });
+    } else {
+      const { error } = await supabase.from("admin_org_reviews").upsert({ org_id: orgId, kind, reviewed_by: user.id, reviewed_at: new Date().toISOString() }, { onConflict: "org_id,kind" });
+      if (error) { toast({ title: "Could not save", description: error.message, variant: "destructive" }); return; }
+      setReviewed(prev => ({ ...prev, [orgId]: { ...(prev[orgId] ?? {}), [kind]: { reviewed_at: new Date().toISOString(), reviewed_by: user.id } } }));
+      toast({ title: "Marked as reviewed" });
+    }
+  }
 
   return (
     <AppShell title="Command Center">
@@ -247,7 +279,7 @@ export default function AdminDashboard() {
       </div>
 
       {drill && (
-        <DrillPanel kind={drill} orgs={orgs} onClose={() => setDrill(null)} />
+        <DrillPanel kind={drill} orgs={orgs} reviewed={reviewed} onToggleReviewed={toggleReviewed} onClose={() => setDrill(null)} />
       )}
 
       <div className="mb-8" />
@@ -357,7 +389,19 @@ function complexReasons(o: OrgRow): string[] {
   return reasons;
 }
 
-function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; orgs: OrgRow[]; onClose: () => void }) {
+type ReviewKind = "high_alert" | "revenue_review";
+type ReviewedMap = Record<string, Partial<Record<ReviewKind, { reviewed_at: string; reviewed_by: string }>>>;
+
+function DrillPanel({ kind, orgs, reviewed, onToggleReviewed, onClose }: {
+  kind: Exclude<DrillKey, null>;
+  orgs: OrgRow[];
+  reviewed: ReviewedMap;
+  onToggleReviewed: (orgId: string, kind: ReviewKind) => void;
+  onClose: () => void;
+}) {
+  const [showReviewed, setShowReviewed] = useState(false);
+  const reviewKind: ReviewKind | null = kind === "high-alert" ? "high_alert" : kind === "review" ? "revenue_review" : null;
+
   const config = {
     "complex": {
       title: "Complex Engagements",
@@ -379,7 +423,9 @@ function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; or
     },
   }[kind];
 
-  const matched = orgs.filter(config.filter);
+  const allMatched = orgs.filter(config.filter);
+  const open = reviewKind ? allMatched.filter(o => !reviewed[o.id]?.[reviewKind]) : allMatched;
+  const done = reviewKind ? allMatched.filter(o => !!reviewed[o.id]?.[reviewKind]) : [];
 
   return (
     <div className="curve-card mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -400,33 +446,83 @@ function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; or
         </button>
       </div>
 
-      {matched.length === 0 ? (
+      {open.length === 0 && done.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">No matching organizations.</p>
       ) : (
-        <div className="divide-y divide-border -mx-6">
-          {matched.map((o) => (
-            <DrillRow key={o.id} org={o} kind={kind} />
-          ))}
-        </div>
+        <>
+          <div className="divide-y divide-border -mx-6">
+            {open.length === 0 ? (
+              <p className="px-6 py-4 text-sm text-muted-foreground text-center">All matching orgs have been reviewed. 🎉</p>
+            ) : open.map((o) => (
+              <DrillRow
+                key={o.id}
+                org={o}
+                kind={kind}
+                reviewKind={reviewKind}
+                reviewedInfo={reviewKind ? reviewed[o.id]?.[reviewKind] ?? null : null}
+                onToggleReviewed={onToggleReviewed}
+              />
+            ))}
+          </div>
+
+          {reviewKind && done.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowReviewed(s => !s)}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+              >
+                {showReviewed ? "Hide" : "Show"} {done.length} reviewed
+              </button>
+              {showReviewed && (
+                <div className="divide-y divide-border -mx-6 mt-3">
+                  {done.map((o) => (
+                    <DrillRow
+                      key={o.id}
+                      org={o}
+                      kind={kind}
+                      reviewKind={reviewKind}
+                      reviewedInfo={reviewed[o.id]?.[reviewKind] ?? null}
+                      onToggleReviewed={onToggleReviewed}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function DrillRow({ org, kind }: { org: OrgRow; kind: Exclude<DrillKey, null> }) {
+function DrillRow({ org, kind, reviewKind, reviewedInfo, onToggleReviewed }: {
+  org: OrgRow;
+  kind: Exclude<DrillKey, null>;
+  reviewKind: ReviewKind | null;
+  reviewedInfo: { reviewed_at: string; reviewed_by: string } | null;
+  onToggleReviewed: (orgId: string, kind: ReviewKind) => void;
+}) {
   const reasons = kind === "complex" ? complexReasons(org)
     : kind === "high-alert" ? (org.admin_alerts ?? []).filter((a: any) => a?.severity === "high").map((a: any) => a?.message ?? a?.title ?? "High-severity alert")
     : kind === "review" ? [org.revenue_verification ?? "Client did not confirm revenue totals during intake"]
     : [];
 
+  const isReviewed = !!reviewedInfo;
+
   return (
-    <Link to={`/admin/org/${org.id}`} className="flex items-start justify-between gap-4 px-6 py-3 hover:bg-secondary/40 transition-colors group">
-      <div className="min-w-0 flex-1">
+    <div className={cn("flex items-start justify-between gap-4 px-6 py-3 hover:bg-secondary/40 transition-colors group", isReviewed && "opacity-60")}>
+      <Link to={`/admin/org/${org.id}`} className="min-w-0 flex-1 block">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-display font-semibold text-sm group-hover:text-accent transition-colors">{org.name}</span>
+          <span className={cn("font-display font-semibold text-sm group-hover:text-accent transition-colors", isReviewed && "line-through")}>{org.name}</span>
           {org.tier && (
             <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold border", TIER_STYLES[org.tier] ?? "bg-secondary")}>
               {org.tier}
+            </span>
+          )}
+          {isReviewed && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent-soft text-accent border border-accent/30">
+              <CheckCheck className="h-3 w-3" /> Reviewed
             </span>
           )}
         </div>
@@ -442,9 +538,28 @@ function DrillRow({ org, kind }: { org: OrgRow; kind: Exclude<DrillKey, null> })
         ) : (
           <p className="text-xs text-muted-foreground">No specific detail available.</p>
         )}
+        {isReviewed && reviewedInfo && (
+          <p className="text-[10px] text-muted-foreground mt-1">Reviewed {timeAgo(reviewedInfo.reviewed_at)}</p>
+        )}
+      </Link>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {reviewKind && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReviewed(org.id, reviewKind); }}
+            className={cn(
+              "text-[11px] font-semibold px-2.5 py-1 rounded-md border transition-colors",
+              isReviewed
+                ? "border-border text-muted-foreground hover:bg-secondary"
+                : "border-accent/40 text-accent bg-accent-soft hover:bg-accent hover:text-accent-foreground",
+            )}
+          >
+            {isReviewed ? "Undo" : "Mark reviewed"}
+          </button>
+        )}
+        <Link to={`/admin/org/${org.id}`} className="text-xs font-semibold text-accent hover:underline">View →</Link>
       </div>
-      <span className="text-xs font-semibold text-accent group-hover:underline flex-shrink-0 mt-0.5">View →</span>
-    </Link>
+    </div>
   );
 }
 
