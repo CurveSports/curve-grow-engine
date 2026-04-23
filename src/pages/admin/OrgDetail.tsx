@@ -24,7 +24,6 @@ import { FolderKanban } from "lucide-react";
 import {
   operationsHealthExplain, marketPositionExplain, programHealthExplain, strategicClarityExplain,
   executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
-  engineScoreExplain,
 } from "@/components/admin/explainContent";
 import { TierLadder } from "@/components/TierLadder";
 
