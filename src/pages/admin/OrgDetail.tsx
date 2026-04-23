@@ -192,9 +192,7 @@ function OrgHeader({ orgId, onActivate, onAddNote, onAddTask }: { orgId: string;
             </Button>
           )}
           <RecalcMetricsButton orgId={orgId} />
-          <Button size="sm" variant="outline" onClick={onAddNote}>Add Note</Button>
           <Button size="sm" variant="outline" onClick={onAddTask}>Add Task</Button>
-          <Button size="sm" variant="outline" onClick={() => navigate(`/calculators/${orgId}`)}>Calculators</Button>
           <Button size="sm" variant="outline" onClick={() => navigate(`/communications/${orgId}`)}>Draft Communication</Button>
         </div>
       </div>
