@@ -220,3 +220,85 @@ function ToggleBtn({ active, onClick, icon, label }: { active: boolean; onClick:
     </button>
   );
 }
+
+function ByOrgView({
+  leads, orgs, view, onOpenLead, onChanged,
+}: {
+  leads: any[];
+  orgs: { id: string; name: string }[];
+  view: "pipeline" | "list";
+  onOpenLead: (id: string) => void;
+  onChanged: () => void;
+}) {
+  const grouped = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const l of leads) {
+      const arr = m.get(l.org_id) ?? [];
+      arr.push(l);
+      m.set(l.org_id, arr);
+    }
+    const orgName = new Map(orgs.map((o) => [o.id, o.name]));
+    return Array.from(m.entries())
+      .map(([orgId, items]) => ({
+        orgId,
+        orgName: orgName.get(orgId) ?? items[0]?.org_name ?? "Unknown org",
+        items,
+        warm: items.filter((l) => l.is_warm).length,
+        won: items.filter((l) => l.stage === "closed_won").length,
+        wonValue: items.filter((l) => l.stage === "closed_won").reduce((a, l) => a + (Number(l.closed_value) || 0), 0),
+        proposed: items.filter((l) => l.is_active).reduce((a, l) => a + (Number(l.proposed_value) || 0), 0),
+      }))
+      .sort((a, b) => b.items.length - a.items.length);
+  }, [leads, orgs]);
+
+  if (grouped.length === 0) {
+    return <p className="text-sm text-muted-foreground">No leads match the current filters.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {grouped.map((g) => (
+        <Collapsible key={g.orgId} defaultOpen className="curve-card group">
+          <CollapsibleTrigger className="w-full flex items-center justify-between gap-4 text-left">
+            <div className="flex items-center gap-3 min-w-0">
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=closed]:-rotate-90 shrink-0" />
+              <div className="min-w-0">
+                <p className="font-display text-base font-semibold truncate">{g.orgName}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {g.items.length} lead{g.items.length === 1 ? "" : "s"} · {g.warm} warm · {g.won} won
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-5 text-right shrink-0">
+              <MiniStat label="Proposed" value={formatCurrency(g.proposed)} />
+              <MiniStat label="Closed" value={formatCurrency(g.wonValue)} accent />
+              <Link
+                to={`/admin/orgs/${g.orgId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Open org →
+              </Link>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            {view === "pipeline" ? (
+              <PipelineKanban leads={g.items} showOrgName={false} onOpenLead={onOpenLead} onChanged={onChanged} />
+            ) : (
+              <PipelineList leads={g.items} onOpenLead={onOpenLead} />
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+      ))}
+    </div>
+  );
+}
+
+function MiniStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={cn("font-semibold text-sm mt-0.5", accent && "text-health")}>{value}</p>
+    </div>
+  );
+}
