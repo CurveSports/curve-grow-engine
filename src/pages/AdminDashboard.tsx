@@ -162,6 +162,7 @@ export default function AdminDashboard() {
         };
       });
       setOrgs(r);
+      setOrgsMissingFocus(r.filter(o => !!o.plan_activated_at && !focusedOrgIds.has(o.id)).map(o => ({ id: o.id, name: o.name })));
       setActivity(activityRes.data ?? []);
       setLoading(false);
     })();
