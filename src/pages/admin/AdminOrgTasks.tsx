@@ -15,6 +15,7 @@ import type { OrgProject } from "@/lib/projects";
 import AdminTasksByProject from "@/components/admin/AdminTasksByProject";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
+import BaselineModal from "@/components/sponsorship/BaselineModal";
 import { formatDate } from "@/lib/format";
 
 export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
@@ -32,6 +33,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [toppingUp, setToppingUp] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [baselineOpen, setBaselineOpen] = useState(false);
 
   const load = async () => {
     if (!orgId) return;
@@ -84,7 +86,35 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   const handleActivate = async () => {
     setConfirmOpen(false);
+    // First-time activation requires baseline confirmation.
+    if (!planActivatedAt) { setBaselineOpen(true); return; }
+    await runActivation();
+  };
+
+  const runActivation = async (baseline?: number, reason?: string | null) => {
     setActivating(true);
+    if (baseline !== undefined && orgId) {
+      // Persist baseline first
+      const { data: metrics } = await supabase.from("derived_metrics").select("calculated_total_revenue").eq("org_id", orgId).maybeSingle();
+      const calc = (metrics?.calculated_total_revenue ?? null) as number | null;
+      const wasAdjusted = calc !== null && Math.abs(baseline - calc) > 0.5;
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData?.user?.id;
+      if (uid) {
+        await supabase.from("org_engagement_baselines").upsert({
+          org_id: orgId,
+          baseline_revenue: baseline,
+          baseline_set_by: uid,
+          original_calculated_revenue: calc,
+          was_manually_adjusted: wasAdjusted,
+          adjustment_reason: reason,
+        }, { onConflict: "org_id" });
+        await supabase.from("organizations").update({
+          plan_activated_revenue: baseline,
+          engagement_baseline_set: true,
+        }).eq("id", orgId);
+      }
+    }
     const { data, error } = await supabase.functions.invoke("activate-action-plan", { body: { org_id: orgId } });
     setActivating(false);
     if (error || (data as any)?.error) {
