@@ -382,10 +382,6 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
   );
 }
 
-// (removed) — function body closer below was moved up
-    </div>
-  );
-}
 
 function MetricCard({ label, value, suffix, children, accent }: { label: string; value: string; suffix?: string; children?: React.ReactNode; accent?: "health" }) {
   return (
