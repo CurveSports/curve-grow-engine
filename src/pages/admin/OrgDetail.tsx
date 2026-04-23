@@ -322,6 +322,52 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
       {/* This week's focus (admin-editable) */}
       <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
 
+      {/* Platform & Marketing universal engines */}
+      <div>
+        <p className="curve-eyebrow mb-3">Platform & Marketing</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UniversalEngineCard
+            label="Curve Sports Platform"
+            subtitle="Platform setup and partner activation"
+            score={platformScore}
+            done={platformDone}
+            total={platformTotal}
+            onJump={() => navigate(`/admin/org/${orgId}/engine/Platform`)}
+          />
+          <UniversalEngineCard
+            label="Marketing Foundation"
+            subtitle="Brand, website, and content systems"
+            score={marketingScore}
+            done={marketingDone}
+            total={marketingTotal}
+            onJump={() => navigate(`/admin/org/${orgId}/engine/Marketing`)}
+          />
+        </div>
+      </div>
+
+      {/* Revenue engines progress */}
+      {engineScores.length > 0 && (
+        <div>
+          <p className="curve-eyebrow mb-3">Revenue Engine Progress</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {engineScores.map((e) => {
+              const engineTasks = tasks.filter((t: any) => t.engine === e.name);
+              const done = engineTasks.filter((t: any) => t.status === "completed").length;
+              return (
+                <EngineProgressCard
+                  key={e.name}
+                  label={e.name}
+                  score={e.score}
+                  done={done}
+                  total={engineTasks.length}
+                  onJump={() => onJumpToPlan(e.name)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Risk Assessment + Engagement Complexity + Pricing context */}
       <RiskAssessmentSection
         executionRisk={(metrics as any).execution_risk ?? null}
@@ -347,29 +393,6 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
           <DimensionCard label="Strategic Clarity" score={strategicHealth} explain={strategicClarityExplain(intake ?? {}, metrics)} />
         </div>
       )}
-
-      {/* Platform & Marketing universal engines */}
-      <div>
-        <p className="curve-eyebrow mb-3">Platform & Marketing</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UniversalEngineCard
-            label="Curve Sports Platform"
-            subtitle="Platform setup and partner activation"
-            score={platformScore}
-            done={platformDone}
-            total={platformTotal}
-            onJump={() => navigate(`/admin/org/${orgId}/engine/Platform`)}
-          />
-          <UniversalEngineCard
-            label="Marketing Foundation"
-            subtitle="Brand, website, and content systems"
-            score={marketingScore}
-            done={marketingDone}
-            total={marketingTotal}
-            onJump={() => navigate(`/admin/org/${orgId}/engine/Marketing`)}
-          />
-        </div>
-      </div>
 
       {/* Tier ladder */}
       {(metrics as any)?.monetization_tier && (
@@ -415,31 +438,73 @@ function UniversalEngineCard({
     tone === "warning" ? "bg-warning" :
     tone === "destructive" ? "bg-destructive" : "bg-muted-foreground/40";
   return (
-    <div className="curve-card flex flex-col">
-      <div className="flex items-baseline justify-between gap-3 mb-1">
-        <p className="font-display text-base font-semibold">{label}</p>
-        <span className={cn("text-sm font-semibold tabular-nums", toneText)}>
-          {score ?? "—"}<span className="text-muted-foreground font-normal">/10</span>
+    <button
+      onClick={onJump}
+      className="curve-card flex items-center gap-4 text-left hover:border-accent/40 transition-colors w-full"
+    >
+      <div className="flex flex-col items-center justify-center min-w-[64px] px-2">
+        <span className={cn("font-display text-2xl font-semibold tabular-nums leading-none", toneText)}>
+          {score ?? "—"}
         </span>
+        <span className="text-[10px] text-muted-foreground mt-0.5">/10</span>
       </div>
-      <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>
-      <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-sm tabular-nums">
-          <span className="font-semibold">{done}</span>
-          <span className="text-muted-foreground"> / {total} tasks complete</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between gap-2 mb-0.5">
+          <p className="font-display text-sm font-semibold truncate">{label}</p>
+          <span className="text-xs tabular-nums text-muted-foreground flex-shrink-0">
+            <span className="font-semibold text-foreground">{done}</span>/{total} tasks
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-2 truncate">{subtitle}</p>
+        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function EngineProgressCard({
+  label, score, done, total, onJump,
+}: {
+  label: string; score: number; done: number; total: number; onJump: () => void;
+}) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const tone =
+    total === 0 ? "muted" :
+    score >= 7 ? "accent" :
+    score >= 4 ? "warning" : "destructive";
+  const toneText =
+    tone === "accent" ? "text-accent" :
+    tone === "warning" ? "text-warning" :
+    tone === "destructive" ? "text-destructive" : "text-muted-foreground";
+  const toneBar =
+    tone === "accent" ? "bg-accent" :
+    tone === "warning" ? "bg-warning" :
+    tone === "destructive" ? "bg-destructive" : "bg-muted-foreground/40";
+  return (
+    <button
+      onClick={onJump}
+      className="curve-card flex items-center gap-4 text-left hover:border-accent/40 transition-colors w-full"
+    >
+      <div className="flex flex-col items-center justify-center min-w-[64px] px-2">
+        <span className={cn("font-display text-2xl font-semibold tabular-nums leading-none", toneText)}>
+          {score}
         </span>
-        <span className="text-xs text-muted-foreground tabular-nums">{pct}%</span>
+        <span className="text-[10px] text-muted-foreground mt-0.5">/10</span>
       </div>
-      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-        <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between gap-2 mb-1.5">
+          <p className="font-display text-sm font-semibold truncate">{label}</p>
+          <span className="text-xs tabular-nums text-muted-foreground flex-shrink-0">
+            <span className="font-semibold text-foreground">{done}</span>/{total} tasks
+          </span>
+        </div>
+        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+        </div>
       </div>
-      <button
-        onClick={onJump}
-        className="text-xs text-accent hover:underline mt-3 self-start"
-      >
-        View tasks →
-      </button>
-    </div>
+    </button>
   );
 }
 
