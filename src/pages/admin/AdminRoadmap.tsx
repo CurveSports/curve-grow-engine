@@ -187,10 +187,10 @@ export default function AdminRoadmap() {
     const d = dragRef.current;
     if (!d) return;
     const dxDays = Math.round((e.clientX - d.startX) / d.pxPerDay);
-    if (dxDays === 0) return;
     const newStart = new Date(d.startStart.getTime() + (d.mode !== "resize-end" ? dxDays * dayMs : 0));
     const newEnd = new Date(d.startEnd.getTime() + (d.mode !== "resize-start" ? dxDays * dayMs : 0));
-    // only repaint via state-update on the dragged project
+    setDragTip({ x: e.clientX, y: e.clientY, start: newStart, end: newEnd, mode: d.mode, name: d.project.name });
+    if (dxDays === 0) return;
     setProjects((prev) =>
       prev.map((p) => {
         if (p.id !== d.project.id) return p;
@@ -220,6 +220,7 @@ export default function AdminRoadmap() {
 
   const onDragEnd = useCallback(async () => {
     const d = dragRef.current;
+    setDragTip(null);
     if (!d) return;
     dragRef.current = null;
     const updated = projects.find((p) => p.id === d.project.id);
