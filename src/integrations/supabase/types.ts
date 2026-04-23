@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alert_dismissals: {
+        Row: {
+          alert_signature: string
+          alert_type: string
+          dismissed_at: string
+          dismissed_by: string
+          id: string
+          org_id: string
+        }
+        Insert: {
+          alert_signature: string
+          alert_type: string
+          dismissed_at?: string
+          dismissed_by: string
+          id?: string
+          org_id: string
+        }
+        Update: {
+          alert_signature?: string
+          alert_type?: string
+          dismissed_at?: string
+          dismissed_by?: string
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_alert_dismissals_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_org_reviews: {
         Row: {
           id: string
