@@ -12,7 +12,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { SOURCES, SOURCE_LABELS, TIERS, type Source, type Tier } from "@/lib/sponsorship";
 import { cn } from "@/lib/utils";
 
