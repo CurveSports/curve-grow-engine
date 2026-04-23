@@ -13,8 +13,13 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { SOURCES, SOURCE_LABELS, TIERS, type Source, type Tier } from "@/lib/sponsorship";
+import {
+  SOURCES, SOURCE_LABELS, TIERS, tierAmount,
+  type Source, type Tier, type ApprovedSponsorshipTiers,
+} from "@/lib/sponsorship";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
+import { Lock } from "lucide-react";
 
 type Props = {
   open: boolean;
