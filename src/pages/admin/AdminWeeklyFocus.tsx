@@ -52,6 +52,12 @@ export default function AdminWeeklyFocus() {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [editing, setEditing] = useState<Record<string, boolean>>({});
 
+  // per-org task filters
+  const [filterQuery, setFilterQuery] = useState<Record<string, string>>({});
+  const [filterEngine, setFilterEngine] = useState<Record<string, string>>({});
+  const [filterPriority, setFilterPriority] = useState<Record<string, string>>({});
+  const [filterDue, setFilterDue] = useState<Record<string, string>>({});
+
   const load = async () => {
     setLoading(true);
     const [{ data: o }, { data: t }, { data: f }] = await Promise.all([
