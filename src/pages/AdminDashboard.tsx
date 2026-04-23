@@ -84,7 +84,8 @@ export default function AdminDashboard() {
       const oneWeekAhead = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
       const today = new Date().toISOString().slice(0, 10);
 
-      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes, reviewsRes] = await Promise.all([
+      const week = weekStartingMonday();
+      const [orgsRes, tasksRes, activityRes, awaitingProjectsRes, reviewsRes, focusRes] = await Promise.all([
         supabase
           .from("organizations")
           .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review, revenue_verification), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier, platform_score, marketing_score, retention_risk, market_risk, execution_risk, strategic_clarity_score, engagement_approach_recommendation)"),
@@ -92,7 +93,13 @@ export default function AdminDashboard() {
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
         supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
         supabase.from("admin_org_reviews").select("org_id, kind, reviewed_at, reviewed_by"),
+        supabase.from("org_weekly_focus" as any).select("org_id, week_starting, focus_task_ids"),
       ]);
+
+      const focusedOrgIds = new Set<string>();
+      for (const f of ((focusRes.data as any[]) ?? [])) {
+        if (f.week_starting === week && (f.focus_task_ids?.length ?? 0) > 0) focusedOrgIds.add(f.org_id);
+      }
 
       const reviewedMap: Record<string, any> = {};
       for (const r of (reviewsRes.data ?? []) as any[]) {
