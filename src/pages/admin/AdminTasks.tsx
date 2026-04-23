@@ -19,7 +19,7 @@ const ENGINE_OPPORTUNITY_FIELD: Record<string, string> = {
   Affiliate: "affiliate_fee_opportunity_high",
 };
 
-type EngineStat = { total: number; completed: number };
+type EngineStat = { total: number; completed: number; opportunity: number };
 type Row = {
   id: string;
   name: string;
