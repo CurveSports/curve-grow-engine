@@ -209,10 +209,28 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
                       <p className="text-xs text-muted-foreground italic mt-1">{c.rationale}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
                         <Input value={c.business_type} onChange={(e) => updateCand(i, { business_type: e.target.value })} placeholder="Type" className="h-7 text-xs" />
-                        <Input value={c.contact_name} onChange={(e) => updateCand(i, { contact_name: e.target.value })} placeholder="Contact" className="h-7 text-xs" />
-                        <Input value={c.contact_phone} onChange={(e) => updateCand(i, { contact_phone: e.target.value })} placeholder="Phone (verify)" className="h-7 text-xs" />
-                        <Input value={c.contact_email} onChange={(e) => updateCand(i, { contact_email: e.target.value })} placeholder="Email (verify)" className="h-7 text-xs" />
+                        <Input value={c.contact_name} onChange={(e) => updateCand(i, { contact_name: e.target.value })} placeholder="Contact name" className="h-7 text-xs" />
+                        <Input value={c.contact_phone} onChange={(e) => updateCand(i, { contact_phone: e.target.value })} placeholder="Phone" className="h-7 text-xs" />
+                        <Input value={c.contact_email} onChange={(e) => updateCand(i, { contact_email: e.target.value })} placeholder="Email (often blank)" className="h-7 text-xs" />
+                        <Input value={c.address} onChange={(e) => updateCand(i, { address: e.target.value })} placeholder="Address" className="h-7 text-xs sm:col-span-2" />
+                        <Input value={c.website} onChange={(e) => updateCand(i, { website: e.target.value })} placeholder="Website" className="h-7 text-xs sm:col-span-2" />
                       </div>
+                      {(c.website || c.business_name) && (
+                        <div className="flex flex-wrap gap-2 mt-2 text-[11px]">
+                          {c.website && (
+                            <a href={c.website.startsWith("http") ? c.website : `https://${c.website}`} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              Visit site →
+                            </a>
+                          )}
+                          <a
+                            href={`https://www.google.com/search?q=${encodeURIComponent(`${c.business_name} ${c.city_state} email contact`)}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-foreground hover:underline"
+                          >
+                            Find email on Google →
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
