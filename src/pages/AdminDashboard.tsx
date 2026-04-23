@@ -55,6 +55,7 @@ type OrgRow = {
   execution_risk: string | null;
   strategic_clarity_score: number | null;
   engagement_approach_recommendation: string | null;
+  revenue_verification: string | null;
 };
 
 type DrillKey = "complex" | "high-alert" | "review" | null;
@@ -212,31 +213,44 @@ export default function AdminDashboard() {
       </div>
 
       {/* Engagement Health Overview */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <InteractiveStatCard
           icon={<AlertTriangle className={cn("h-4 w-4", stats.complexCount > 0 ? "text-destructive" : "text-accent")} />}
           label="Complex Engagements"
           value={loading ? "—" : stats.complexCount}
           valueClass={stats.complexCount > 0 ? "text-destructive" : "text-accent"}
           subtitle="Require foundational work before revenue activation"
+          active={drill === "complex"}
+          disabled={stats.complexCount === 0}
+          onClick={() => setDrill(drill === "complex" ? null : "complex")}
         />
-        <Link to="/admin?filter=high-alert" className="block">
-          <StatCard
-            icon={<ShieldAlert className={cn("h-4 w-4", stats.highAlertCount > 0 ? "text-destructive" : "text-accent")} />}
-            label="High Risk Alerts"
-            value={loading ? "—" : stats.highAlertCount}
-            valueClass={stats.highAlertCount > 0 ? "text-destructive" : "text-accent"}
-            subtitle="Click to view orgs needing immediate attention"
-          />
-        </Link>
-        <StatCard
+        <InteractiveStatCard
+          icon={<ShieldAlert className={cn("h-4 w-4", stats.highAlertCount > 0 ? "text-destructive" : "text-accent")} />}
+          label="High Risk Alerts"
+          value={loading ? "—" : stats.highAlertCount}
+          valueClass={stats.highAlertCount > 0 ? "text-destructive" : "text-accent"}
+          subtitle="Orgs needing immediate attention"
+          active={drill === "high-alert"}
+          disabled={stats.highAlertCount === 0}
+          onClick={() => setDrill(drill === "high-alert" ? null : "high-alert")}
+        />
+        <InteractiveStatCard
           icon={<FileWarning className={cn("h-4 w-4", stats.reviewCount > 0 ? "text-warning" : "text-accent")} />}
           label="Revenue Review Needed"
           value={loading ? "—" : stats.reviewCount}
           valueClass={stats.reviewCount > 0 ? "text-warning" : "text-accent"}
           subtitle="Intake data flagged for verification"
+          active={drill === "review"}
+          disabled={stats.reviewCount === 0}
+          onClick={() => setDrill(drill === "review" ? null : "review")}
         />
       </div>
+
+      {drill && (
+        <DrillPanel kind={drill} orgs={orgs} onClose={() => setDrill(null)} />
+      )}
+
+      <div className="mb-8" />
 
       <Tabs defaultValue="orgs">
         <TabsList className="mb-6">
