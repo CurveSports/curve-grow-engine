@@ -49,6 +49,38 @@ export type Database = {
           },
         ]
       }
+      admin_org_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          org_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          org_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          org_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_org_assignments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_org_reviews: {
         Row: {
           id: string
