@@ -636,6 +636,120 @@ export type Database = {
           },
         ]
       }
+      org_calendar_items: {
+        Row: {
+          ai_communication_type: string | null
+          calculated_due_date: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_custom: boolean
+          is_non_negotiable: boolean
+          is_sent: boolean
+          is_system_item: boolean
+          is_tbd: boolean
+          org_id: string
+          phase: string
+          recurrence_day: string | null
+          recurrence_frequency: string | null
+          recurrence_note: string | null
+          season_id: string
+          sent_at: string | null
+          sent_by: string | null
+          sent_notes: string | null
+          stakeholder: string
+          system_code: string | null
+          timing_anchor: string | null
+          timing_direction: string | null
+          timing_note: string | null
+          timing_offset_days: number | null
+          timing_type: string
+          title: string
+          track: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_communication_type?: string | null
+          calculated_due_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_custom?: boolean
+          is_non_negotiable?: boolean
+          is_sent?: boolean
+          is_system_item?: boolean
+          is_tbd?: boolean
+          org_id: string
+          phase: string
+          recurrence_day?: string | null
+          recurrence_frequency?: string | null
+          recurrence_note?: string | null
+          season_id: string
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_notes?: string | null
+          stakeholder: string
+          system_code?: string | null
+          timing_anchor?: string | null
+          timing_direction?: string | null
+          timing_note?: string | null
+          timing_offset_days?: number | null
+          timing_type: string
+          title: string
+          track?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_communication_type?: string | null
+          calculated_due_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_custom?: boolean
+          is_non_negotiable?: boolean
+          is_sent?: boolean
+          is_system_item?: boolean
+          is_tbd?: boolean
+          org_id?: string
+          phase?: string
+          recurrence_day?: string | null
+          recurrence_frequency?: string | null
+          recurrence_note?: string | null
+          season_id?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_notes?: string | null
+          stakeholder?: string
+          system_code?: string | null
+          timing_anchor?: string | null
+          timing_direction?: string | null
+          timing_note?: string | null
+          timing_offset_days?: number | null
+          timing_type?: string
+          title?: string
+          track?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_calendar_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_calendar_items_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "org_communication_seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_communication_log: {
         Row: {
           communication_type: string
@@ -681,6 +795,141 @@ export type Database = {
             foreignKeyName: "org_communication_log_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_communication_seasons: {
+        Row: {
+          created_at: string
+          created_by: string
+          has_tryouts: boolean
+          id: string
+          org_id: string
+          re_enrollment_deadline: string | null
+          season_end_date: string
+          season_name: string
+          season_start_date: string
+          status: string
+          track: string
+          tryout_date: string | null
+          tryout_date_tbd: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          has_tryouts?: boolean
+          id?: string
+          org_id: string
+          re_enrollment_deadline?: string | null
+          season_end_date: string
+          season_name: string
+          season_start_date: string
+          status?: string
+          track: string
+          tryout_date?: string | null
+          tryout_date_tbd?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          has_tryouts?: boolean
+          id?: string
+          org_id?: string
+          re_enrollment_deadline?: string | null
+          season_end_date?: string
+          season_name?: string
+          season_start_date?: string
+          status?: string
+          track?: string
+          tryout_date?: string | null
+          tryout_date_tbd?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_communication_seasons_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_communication_standards: {
+        Row: {
+          created_at: string
+          id: string
+          last_updated_by: string | null
+          org_id: string
+          standards_content: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_updated_by?: string | null
+          org_id: string
+          standards_content: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_updated_by?: string | null
+          org_id?: string
+          standards_content?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_communication_standards_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_communication_tracks: {
+        Row: {
+          created_at: string
+          has_hs_track: boolean
+          has_youth_track: boolean
+          id: string
+          org_id: string
+          tracks_configured_at: string | null
+          tracks_configured_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          has_hs_track?: boolean
+          has_youth_track?: boolean
+          id?: string
+          org_id: string
+          tracks_configured_at?: string | null
+          tracks_configured_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          has_hs_track?: boolean
+          has_youth_track?: boolean
+          id?: string
+          org_id?: string
+          tracks_configured_at?: string | null
+          tracks_configured_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_communication_tracks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
