@@ -66,6 +66,42 @@ export const SOURCE_PILL: Record<Source, string> = {
 export const TIERS = ["Presenting", "Supporting", "Community"] as const;
 export type Tier = (typeof TIERS)[number];
 
+// Multipliers applied to FMV-per-sponsor midpoint to recommend tier amounts.
+// Presenting is a stretch ask (3×), Supporting matches FMV, Community is entry-level.
+export const TIER_MULTIPLIERS: Record<Tier, number> = {
+  Presenting: 3.0,
+  Supporting: 1.0,
+  Community: 0.5,
+};
+
+export function recommendedTierAmounts(fmvMid: number): Record<Tier, number> {
+  const round = (n: number) => Math.max(0, Math.round(n / 50) * 50);
+  return {
+    Presenting: round(fmvMid * TIER_MULTIPLIERS.Presenting),
+    Supporting: round(fmvMid * TIER_MULTIPLIERS.Supporting),
+    Community: round(fmvMid * TIER_MULTIPLIERS.Community),
+  };
+}
+
+export type ApprovedSponsorshipTiers = {
+  id: string;
+  org_id: string;
+  presenting_amount: number;
+  supporting_amount: number;
+  community_amount: number;
+  fmv_per_sponsor_mid: number | null;
+  approved_by: string;
+  approved_at: string;
+  notes: string | null;
+};
+
+export function tierAmount(t: Tier, tiers: ApprovedSponsorshipTiers | null): number | null {
+  if (!tiers) return null;
+  if (t === "Presenting") return Number(tiers.presenting_amount);
+  if (t === "Supporting") return Number(tiers.supporting_amount);
+  return Number(tiers.community_amount);
+}
+
 export type SponsorshipLead = {
   id: string;
   org_id: string;

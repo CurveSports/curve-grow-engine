@@ -946,6 +946,59 @@ export type Database = {
           },
         ]
       }
+      org_sponsorship_tiers: {
+        Row: {
+          approved_at: string
+          approved_by: string
+          community_amount: number
+          created_at: string
+          fmv_per_sponsor_mid: number | null
+          id: string
+          notes: string | null
+          org_id: string
+          presenting_amount: number
+          source_inputs: Json | null
+          supporting_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string
+          approved_by: string
+          community_amount: number
+          created_at?: string
+          fmv_per_sponsor_mid?: number | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          presenting_amount: number
+          source_inputs?: Json | null
+          supporting_amount: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string
+          approved_by?: string
+          community_amount?: number
+          created_at?: string
+          fmv_per_sponsor_mid?: number | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          presenting_amount?: number
+          source_inputs?: Json | null
+          supporting_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_sponsorship_tiers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_task_assignees: {
         Row: {
           assigned_at: string

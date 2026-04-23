@@ -12,6 +12,7 @@ import {
 import { saveScenario, type ScenarioLabel } from "./scenarioStore";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ArrowUp } from "lucide-react";
+import TierApprovalCard from "@/components/sponsorship/TierApprovalCard";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
@@ -280,6 +281,14 @@ export function SponsorshipValueCalculator({
               )}
             </div>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <TierApprovalCard
+            orgId={orgId}
+            fmvMid={(out.fmvLow + out.fmvHigh) / 2}
+            sourceInputs={inputs as unknown as Record<string, unknown>}
+          />
         </div>
       </CalculatorShell>
       <ShareModal
