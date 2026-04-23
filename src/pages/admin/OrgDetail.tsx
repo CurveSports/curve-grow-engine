@@ -318,6 +318,9 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </MetricCard>
       </div>
 
+      {/* This week's focus (admin-editable) */}
+      <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
+
       {/* Risk Assessment + Engagement Complexity + Pricing context */}
       <RiskAssessmentSection
         executionRisk={(metrics as any).execution_risk ?? null}
