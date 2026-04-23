@@ -97,6 +97,8 @@ Tone modifier: ${body.tone}
 Format: ${body.format}
 ${formatGuidance(body.format)}
 
+${typeSpecificCoaching(body.communicationType)}
+
 ${
   isDeck
     ? `This is a multi-section sales document, NOT a single message.
