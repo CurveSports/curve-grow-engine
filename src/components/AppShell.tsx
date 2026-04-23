@@ -18,6 +18,7 @@ type NavItem = {
 const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin", label: "Home", icon: LayoutDashboard, match: (p) => p === "/admin" },
   { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p.startsWith("/admin/org") || p === "/admin" },
+  { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
   { to: "/admin/tasks", label: "Portfolio Tasks", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
   { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
