@@ -119,10 +119,24 @@ export default function AdminPipeline() {
         </div>
       </div>
 
-      <div className="inline-flex items-center bg-card border border-border rounded-lg p-1 mb-6">
-        <ToggleBtn active={view === "pipeline"} onClick={() => setView("pipeline")} icon={<LayoutGrid className="h-4 w-4" />} label="Pipeline" />
-        <ToggleBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-4 w-4" />} label="List" />
-        <ToggleBtn active={view === "metrics"} onClick={() => setView("metrics")} icon={<BarChart3 className="h-4 w-4" />} label="Metrics" />
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="inline-flex items-center bg-card border border-border rounded-lg p-1">
+          <ToggleBtn active={scope === "global"} onClick={() => setScope("global")} icon={<Globe className="h-4 w-4" />} label="Global" />
+          <ToggleBtn active={scope === "by_org"} onClick={() => setScope("by_org")} icon={<Building2 className="h-4 w-4" />} label="By Organization" />
+        </div>
+        {scope === "global" && (
+          <div className="inline-flex items-center bg-card border border-border rounded-lg p-1">
+            <ToggleBtn active={view === "pipeline"} onClick={() => setView("pipeline")} icon={<LayoutGrid className="h-4 w-4" />} label="Pipeline" />
+            <ToggleBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-4 w-4" />} label="List" />
+            <ToggleBtn active={view === "metrics"} onClick={() => setView("metrics")} icon={<BarChart3 className="h-4 w-4" />} label="Metrics" />
+          </div>
+        )}
+        {scope === "by_org" && (
+          <div className="inline-flex items-center bg-card border border-border rounded-lg p-1">
+            <ToggleBtn active={view === "pipeline"} onClick={() => setView("pipeline")} icon={<LayoutGrid className="h-4 w-4" />} label="Pipeline" />
+            <ToggleBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-4 w-4" />} label="List" />
+          </div>
+        )}
       </div>
 
       {filtersOpen && (
