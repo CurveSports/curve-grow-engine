@@ -48,6 +48,7 @@ export default function AdminWeeklyFocus() {
   const [draftIds, setDraftIds] = useState<Record<string, string[]>>({});
   const [draftNote, setDraftNote] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [editing, setEditing] = useState<Record<string, boolean>>({});
 
   const load = async () => {
     setLoading(true);
