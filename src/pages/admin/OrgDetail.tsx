@@ -378,74 +378,11 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </div>
       )}
 
-      {/* Round 2: Monetization tier key */}
-      <MonetizationTierGuide currentTier={(metrics as any).monetization_tier ?? null} />
+    </div>
+  );
+}
 
-      {/* Row 2: This week's focus (admin-editable) */}
-      <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
-
-      {/* Row 3: two columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="curve-card">
-          <p className="curve-eyebrow mb-4">Engine Scores</p>
-          {engineScores.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No scores yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {engineScores.map(e => (
-                <li key={e.name}>
-                  <div className="flex items-baseline justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => onJumpToPlan()}
-                        className="text-sm font-medium hover:text-accent transition-colors"
-                      >
-                        {e.name}
-                      </button>
-                      <ExplainButton content={engineScoreExplain(e.name, intake ?? {}, metrics)} />
-                    </div>
-                    <span className="text-sm font-semibold tabular-nums">{e.score}<span className="text-muted-foreground font-normal">/10</span></span>
-                  </div>
-                  <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full transition-all",
-                        e.score <= 3 ? "bg-destructive" : e.score <= 6 ? "bg-warning" : e.score <= 8 ? "bg-info" : "bg-accent",
-                      )}
-                      style={{ width: `${(e.score / 10) * 100}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="curve-card">
-          <p className="curve-eyebrow mb-4">Recent Activity</p>
-          {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No activity yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {activity.map(a => (
-                <li key={a.id} className="flex items-start gap-3 text-sm">
-                  <span className={cn(
-                    "h-2 w-2 rounded-full mt-1.5 flex-shrink-0",
-                    a.action === "completed" ? "bg-accent"
-                      : a.action === "created" ? "bg-info"
-                      : a.action === "note_added" ? "bg-health"
-                      : "bg-muted-foreground/40",
-                  )} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-foreground truncate"><span className="font-medium capitalize">{a.action.replace("_", " ")}</span>{a.new_value ? ` — ${a.new_value}` : ""}</p>
-                    <p className="text-xs text-muted-foreground">{timeAgo(a.created_at)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
+// (removed) — function body closer below was moved up
     </div>
   );
 }
