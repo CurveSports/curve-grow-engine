@@ -162,8 +162,8 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
             </div>
             <div className="rounded-md border border-warning/30 bg-warning-soft/40 p-3 flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
-              <p className="text-xs">
-                <strong>Heads up:</strong> Phone numbers and emails are AI-estimated and should be verified before outreach. Business names, types, and rationale are typically accurate, but contact details may be incorrect.
+              <p className="text-xs leading-relaxed">
+                <strong>Powered by Google Search.</strong> Business names, phones, addresses, and websites come from real Google results — but listings change. Spot-check before outreach. Emails usually aren't on Google; use the website link to find them.
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-2">
