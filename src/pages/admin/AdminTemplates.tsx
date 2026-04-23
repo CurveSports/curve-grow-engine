@@ -173,6 +173,16 @@ export default function AdminTemplates() {
       return next;
     });
   };
+  const bulkSetOwner = async (owner: TaskOwnerType) => {
+    const ids = Array.from(selected);
+    if (ids.length === 0) return;
+    const { error } = await supabase
+      .from("task_templates")
+      .update({ owner_type: owner })
+      .in("id", ids);
+    if (error) toast.error(error.message);
+    else { toast.success(`Owner set to ${OWNER_LABEL[owner]} for ${ids.length} template${ids.length === 1 ? "" : "s"}`); load(); }
+  };
   const bulkDelete = async () => {
     const ids = Array.from(selected);
     const sysSelected = templates.filter(t => ids.includes(t.id) && t.is_system_template);
