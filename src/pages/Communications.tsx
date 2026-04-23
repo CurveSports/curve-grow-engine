@@ -45,6 +45,7 @@ export default function Communications() {
 }
 
 function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string; isAdminContext: boolean; userId: string }) {
+  const navigate = useNavigate();
   const [orgName, setOrgName] = useState("Organization");
   const [intake, setIntake] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
@@ -54,6 +55,16 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
   const [trackSetupStep, setTrackSetupStep] = useState<"closed" | "select_tracks" | "first_season">("closed");
   const [selYouth, setSelYouth] = useState(false);
   const [selHs, setSelHs] = useState(false);
+  const [allOrgs, setAllOrgs] = useState<{ id: string; name: string }[]>([]);
+
+  // Load org list for admin switcher
+  useEffect(() => {
+    if (!isAdminContext) return;
+    (async () => {
+      const { data } = await supabase.from("organizations").select("id, name").order("name", { ascending: true });
+      setAllOrgs((data ?? []) as { id: string; name: string }[]);
+    })();
+  }, [isAdminContext]);
 
   async function loadAll() {
     setLoading(true);
