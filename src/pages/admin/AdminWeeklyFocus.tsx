@@ -276,25 +276,83 @@ export default function AdminWeeklyFocus() {
                     <p className="text-xs font-medium text-muted-foreground mb-2">
                       Select 3–7 tasks ({ids.length} selected)
                     </p>
-                    <div className="max-h-64 overflow-y-auto border border-border rounded-md divide-y divide-border mb-3">
-                      {tasks.map(t => (
-                        <label key={t.id} className={cn(
-                          "flex items-center gap-3 p-2.5 hover:bg-secondary/50 cursor-pointer",
-                          ids.includes(t.id) && "bg-secondary/40",
-                        )}>
-                          <Checkbox
-                            checked={ids.includes(t.id)}
-                            onCheckedChange={() => toggleTask(o.id, t.id)}
-                          />
-                          <span className="flex-1 min-w-0">
-                            <span className="block text-sm font-medium truncate">{t.title}</span>
-                            <span className="block text-xs text-muted-foreground">
-                              {t.engine}{t.due_date ? ` · due ${t.due_date}` : ""} · {t.priority}
-                            </span>
-                          </span>
-                        </label>
-                      ))}
-                    </div>
+                    {(() => {
+                      const q = (filterQuery[o.id] ?? "").trim().toLowerCase();
+                      const eng = filterEngine[o.id] ?? "all";
+                      const pri = filterPriority[o.id] ?? "all";
+                      const dueSort = filterDue[o.id] ?? "none";
+                      const engines = Array.from(new Set(tasks.map(t => t.engine))).sort();
+                      let filtered = tasks.filter(t => {
+                        if (q && !t.title.toLowerCase().includes(q)) return false;
+                        if (eng !== "all" && t.engine !== eng) return false;
+                        if (pri !== "all" && t.priority !== pri) return false;
+                        return true;
+                      });
+                      if (dueSort === "asc" || dueSort === "desc") {
+                        filtered = [...filtered].sort((a, b) => {
+                          const av = a.due_date ?? "9999-12-31";
+                          const bv = b.due_date ?? "9999-12-31";
+                          return dueSort === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+                        });
+                      }
+                      return (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 mb-2">
+                            <Input
+                              placeholder="Search by name…"
+                              value={filterQuery[o.id] ?? ""}
+                              onChange={(e) => setFilterQuery(prev => ({ ...prev, [o.id]: e.target.value }))}
+                              className="h-9 text-sm"
+                            />
+                            <Select value={eng} onValueChange={(v) => setFilterEngine(prev => ({ ...prev, [o.id]: v }))}>
+                              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Engine" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All engines</SelectItem>
+                                {engines.map(en => <SelectItem key={en} value={en}>{en}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                            <Select value={pri} onValueChange={(v) => setFilterPriority(prev => ({ ...prev, [o.id]: v }))}>
+                              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Priority" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="all">All priorities</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="low">Low</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select value={dueSort} onValueChange={(v) => setFilterDue(prev => ({ ...prev, [o.id]: v }))}>
+                              <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Due date" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">Default order</SelectItem>
+                                <SelectItem value="asc">Due date ↑ (soonest)</SelectItem>
+                                <SelectItem value="desc">Due date ↓ (latest)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="max-h-64 overflow-y-auto border border-border rounded-md divide-y divide-border mb-3">
+                            {filtered.length === 0 ? (
+                              <p className="text-xs text-muted-foreground p-3">No tasks match these filters.</p>
+                            ) : filtered.map(t => (
+                              <label key={t.id} className={cn(
+                                "flex items-center gap-3 p-2.5 hover:bg-secondary/50 cursor-pointer",
+                                ids.includes(t.id) && "bg-secondary/40",
+                              )}>
+                                <Checkbox
+                                  checked={ids.includes(t.id)}
+                                  onCheckedChange={() => toggleTask(o.id, t.id)}
+                                />
+                                <span className="flex-1 min-w-0">
+                                  <span className="block text-sm font-medium truncate">{t.title}</span>
+                                  <span className="block text-xs text-muted-foreground">
+                                    {t.engine}{t.due_date ? ` · due ${t.due_date}` : ""} · {t.priority}
+                                  </span>
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
                     <Textarea
                       placeholder="Optional focus note for this org…"
                       rows={2}
