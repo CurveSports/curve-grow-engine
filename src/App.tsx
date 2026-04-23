@@ -25,6 +25,7 @@ import AdminPresentations from "@/pages/admin/AdminPresentations";
 import AdminTemplates from "@/pages/admin/AdminTemplates";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import AdminInternalResources from "@/pages/admin/AdminInternalResources";
+import AdminMyTasks from "@/pages/admin/AdminMyTasks";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
