@@ -269,6 +269,29 @@ function AddTaskForm({ orgId, templates, planActive, onSaved }: { orgId: string;
   const [priority, setPriority] = useState<string>("medium");
   const [dueDate, setDueDate] = useState("");
   const [busy, setBusy] = useState(false);
+  const [admins, setAdmins] = useState<{ user_id: string; name: string }[]>([]);
+  const [assigneeIds, setAssigneeIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    (async () => {
+      const { data: roles } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      const ids = (roles ?? []).map((r: any) => r.user_id);
+      if (!ids.length) { setAdmins([]); return; }
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name, email").in("user_id", ids);
+      const list = ((profs ?? []) as any[])
+        .map((p) => ({ user_id: p.user_id, name: p.full_name || p.email }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setAdmins(list);
+    })();
+  }, []);
+
+  const toggleAssignee = (uid: string) => {
+    setAssigneeIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(uid)) next.delete(uid); else next.add(uid);
+      return next;
+    });
+  };
 
   const applyTemplate = (id: string) => {
     setTemplateId(id);
@@ -285,8 +308,6 @@ function AddTaskForm({ orgId, templates, planActive, onSaved }: { orgId: string;
     if (!title.trim() || !description.trim()) { toast.error("Title and description required"); return; }
     setBusy(true);
     const { data: { user } } = await supabase.auth.getUser();
-    // If plan is already active, manually-added tasks go straight to active.
-    // While in draft review, manually-added tasks join the draft plan.
     const plan_status = planActive ? "active" : "draft";
     const { data: t, error } = await supabase.from("org_tasks").insert({
       org_id: orgId, template_id: templateId || null,
@@ -298,6 +319,13 @@ function AddTaskForm({ orgId, templates, planActive, onSaved }: { orgId: string;
     }).select("id").single();
     if (!error && t) {
       await supabase.from("task_activity_log").insert({ task_id: t.id, org_id: orgId, action: "created", performed_by: user?.id, new_value: `manually added (${plan_status})` });
+      if (assigneeIds.size > 0) {
+        const rows = Array.from(assigneeIds).map((uid) => ({
+          task_id: t.id, user_id: uid, org_id: orgId, assigned_by: user?.id,
+        }));
+        const { error: aErr } = await supabase.from("org_task_assignees" as any).insert(rows as any);
+        if (aErr) toast.error(`Task created, but assigning admins failed: ${aErr.message}`);
+      }
     }
     setBusy(false);
     if (error) toast.error(error.message);
@@ -323,7 +351,36 @@ function AddTaskForm({ orgId, templates, planActive, onSaved }: { orgId: string;
         <Select value={priority} onValueChange={setPriority}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="high">high</SelectItem><SelectItem value="medium">medium</SelectItem><SelectItem value="low">low</SelectItem></SelectContent></Select>
         <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
       </div>
+
+      <div>
+        <label className="curve-eyebrow block mb-1.5">Curve admin assignees (optional)</label>
+        {admins.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No Curve admins available.</p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-md border border-border bg-secondary/30 p-2">
+            {admins.map((a) => {
+              const active = assigneeIds.has(a.user_id);
+              return (
+                <button
+                  key={a.user_id}
+                  type="button"
+                  onClick={() => toggleAssignee(a.user_id)}
+                  className={`text-xs px-2 py-1 rounded-full border transition-colors ${
+                    active
+                      ? "bg-accent/15 border-accent/40 text-foreground"
+                      : "bg-background border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                  }`}
+                >
+                  {active ? "✓ " : ""}{a.name}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
       <Button onClick={save} disabled={busy}>Add task</Button>
     </div>
   );
 }
+
