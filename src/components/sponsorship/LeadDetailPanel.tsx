@@ -20,7 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { formatCurrency } from "@/lib/format";
+// formatCurrency reserved for future use
 import {
   STAGES, STAGE_LABELS, STAGE_PILL, SOURCES, SOURCE_LABELS, TIERS,
   type SponsorshipLead, type Stage, type Source, type Tier, fireConfetti,
@@ -68,7 +68,7 @@ export default function LeadDetailPanel({
         supabase.from("user_roles").select("user_id").eq("role", "admin"),
       ]);
       setLead(l as SponsorshipLead);
-      setDraft(l ?? {});
+      setDraft((l ?? {}) as Partial<SponsorshipLead>);
       setNotes((n ?? []) as Note[]);
       setHistory((h ?? []) as Activity[]);
 
@@ -91,7 +91,7 @@ export default function LeadDetailPanel({
     if (!leadId) return;
     const { data: l } = await supabase.from("sponsorship_leads").select("*").eq("id", leadId).maybeSingle();
     setLead(l as SponsorshipLead);
-    setDraft(l ?? {});
+    setDraft((l ?? {}) as Partial<SponsorshipLead>);
     onChanged?.();
   };
 
