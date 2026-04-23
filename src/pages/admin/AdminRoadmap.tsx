@@ -41,6 +41,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const fmtISO = (d: Date) => d.toISOString().slice(0, 10);
 const fmtShort = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const fmtMonth = (d: Date) => d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+const fmtFull = (d: Date) => d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
 const ENGINE_COLOR: Record<string, string> = {
   Pricing: "bg-blue-500",
@@ -82,6 +83,7 @@ export default function AdminRoadmap() {
   const [showDrafts, setShowDrafts] = useState(true);
   const [showCompleted, setShowCompleted] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [dragTip, setDragTip] = useState<{ x: number; y: number; start: Date; end: Date; mode: "move" | "resize-start" | "resize-end"; name: string } | null>(null);
 
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -185,10 +187,10 @@ export default function AdminRoadmap() {
     const d = dragRef.current;
     if (!d) return;
     const dxDays = Math.round((e.clientX - d.startX) / d.pxPerDay);
-    if (dxDays === 0) return;
     const newStart = new Date(d.startStart.getTime() + (d.mode !== "resize-end" ? dxDays * dayMs : 0));
     const newEnd = new Date(d.startEnd.getTime() + (d.mode !== "resize-start" ? dxDays * dayMs : 0));
-    // only repaint via state-update on the dragged project
+    setDragTip({ x: e.clientX, y: e.clientY, start: newStart, end: newEnd, mode: d.mode, name: d.project.name });
+    if (dxDays === 0) return;
     setProjects((prev) =>
       prev.map((p) => {
         if (p.id !== d.project.id) return p;
@@ -218,6 +220,7 @@ export default function AdminRoadmap() {
 
   const onDragEnd = useCallback(async () => {
     const d = dragRef.current;
+    setDragTip(null);
     if (!d) return;
     dragRef.current = null;
     const updated = projects.find((p) => p.id === d.project.id);
@@ -446,6 +449,28 @@ export default function AdminRoadmap() {
       <p className="text-[11px] text-muted-foreground mt-3">
         Tip: Drag the middle of a pill to shift the whole project. Drag the left/right edges to adjust release or completion dates. Completed projects are locked.
       </p>
+
+      {dragTip && (
+        <div
+          className="fixed z-50 pointer-events-none rounded-md border border-border bg-popover text-popover-foreground shadow-lg px-3 py-2 text-xs"
+          style={{ left: dragTip.x + 14, top: dragTip.y + 14 }}
+        >
+          <div className="font-semibold mb-1 truncate max-w-[260px]">{dragTip.name}</div>
+          {dragTip.mode === "resize-end" ? (
+            <div className="tabular-nums"><span className="text-muted-foreground">Due:</span> {fmtFull(dragTip.end)}</div>
+          ) : dragTip.mode === "resize-start" ? (
+            <div className="tabular-nums"><span className="text-muted-foreground">Release:</span> {fmtFull(dragTip.start)}</div>
+          ) : (
+            <>
+              <div className="tabular-nums"><span className="text-muted-foreground">Release:</span> {fmtFull(dragTip.start)}</div>
+              <div className="tabular-nums"><span className="text-muted-foreground">Due:</span> {fmtFull(dragTip.end)}</div>
+              <div className="tabular-nums text-muted-foreground mt-0.5">
+                {Math.max(1, Math.round((dragTip.end.getTime() - dragTip.start.getTime()) / dayMs))} days
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </AppShell>
   );
 }
