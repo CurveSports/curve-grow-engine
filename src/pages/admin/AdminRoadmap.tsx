@@ -449,6 +449,28 @@ export default function AdminRoadmap() {
       <p className="text-[11px] text-muted-foreground mt-3">
         Tip: Drag the middle of a pill to shift the whole project. Drag the left/right edges to adjust release or completion dates. Completed projects are locked.
       </p>
+
+      {dragTip && (
+        <div
+          className="fixed z-50 pointer-events-none rounded-md border border-border bg-popover text-popover-foreground shadow-lg px-3 py-2 text-xs"
+          style={{ left: dragTip.x + 14, top: dragTip.y + 14 }}
+        >
+          <div className="font-semibold mb-1 truncate max-w-[260px]">{dragTip.name}</div>
+          {dragTip.mode === "resize-end" ? (
+            <div className="tabular-nums"><span className="text-muted-foreground">Due:</span> {fmtFull(dragTip.end)}</div>
+          ) : dragTip.mode === "resize-start" ? (
+            <div className="tabular-nums"><span className="text-muted-foreground">Release:</span> {fmtFull(dragTip.start)}</div>
+          ) : (
+            <>
+              <div className="tabular-nums"><span className="text-muted-foreground">Release:</span> {fmtFull(dragTip.start)}</div>
+              <div className="tabular-nums"><span className="text-muted-foreground">Due:</span> {fmtFull(dragTip.end)}</div>
+              <div className="tabular-nums text-muted-foreground mt-0.5">
+                {Math.max(1, Math.round((dragTip.end.getTime() - dragTip.start.getTime()) / dayMs))} days
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </AppShell>
   );
 }
