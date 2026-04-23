@@ -322,6 +322,52 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
       {/* This week's focus (admin-editable) */}
       <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
 
+      {/* Platform & Marketing universal engines */}
+      <div>
+        <p className="curve-eyebrow mb-3">Platform & Marketing</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <UniversalEngineCard
+            label="Curve Sports Platform"
+            subtitle="Platform setup and partner activation"
+            score={platformScore}
+            done={platformDone}
+            total={platformTotal}
+            onJump={() => navigate(`/admin/org/${orgId}/engine/Platform`)}
+          />
+          <UniversalEngineCard
+            label="Marketing Foundation"
+            subtitle="Brand, website, and content systems"
+            score={marketingScore}
+            done={marketingDone}
+            total={marketingTotal}
+            onJump={() => navigate(`/admin/org/${orgId}/engine/Marketing`)}
+          />
+        </div>
+      </div>
+
+      {/* Revenue engines progress */}
+      {engineScores.length > 0 && (
+        <div>
+          <p className="curve-eyebrow mb-3">Revenue Engine Progress</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {engineScores.map((e) => {
+              const engineTasks = tasks.filter((t: any) => t.engine === e.name);
+              const done = engineTasks.filter((t: any) => t.status === "completed").length;
+              return (
+                <EngineProgressCard
+                  key={e.name}
+                  label={e.name}
+                  score={e.score}
+                  done={done}
+                  total={engineTasks.length}
+                  onJump={() => onJumpToPlan(e.name)}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Risk Assessment + Engagement Complexity + Pricing context */}
       <RiskAssessmentSection
         executionRisk={(metrics as any).execution_risk ?? null}
