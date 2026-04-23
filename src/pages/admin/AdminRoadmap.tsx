@@ -41,6 +41,7 @@ const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDat
 const fmtISO = (d: Date) => d.toISOString().slice(0, 10);
 const fmtShort = (d: Date) => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const fmtMonth = (d: Date) => d.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+const fmtFull = (d: Date) => d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 
 const ENGINE_COLOR: Record<string, string> = {
   Pricing: "bg-blue-500",
@@ -82,6 +83,7 @@ export default function AdminRoadmap() {
   const [showDrafts, setShowDrafts] = useState(true);
   const [showCompleted, setShowCompleted] = useState(true);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [dragTip, setDragTip] = useState<{ x: number; y: number; start: Date; end: Date; mode: "move" | "resize-start" | "resize-end"; name: string } | null>(null);
 
   const trackRef = useRef<HTMLDivElement>(null);
 
