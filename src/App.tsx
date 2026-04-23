@@ -35,6 +35,7 @@ import Calculators from "@/pages/Calculators";
 import Communications from "@/pages/Communications";
 import AdminCommunications from "@/pages/admin/AdminCommunications";
 import Settings from "@/pages/Settings";
+import Customize from "@/pages/Customize";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -54,6 +55,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/set-password" element={<ProtectedRoute><SetPassword /></ProtectedRoute>} />
             <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+            <Route path="/customize" element={<ProtectedRoute role="org_user"><Customize /></ProtectedRoute>} />
             <Route path="/intake" element={<ProtectedRoute role="org_user"><Intake /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute role="org_user"><Dashboard /></ProtectedRoute>} />
             <Route path="/plan" element={<ProtectedRoute role="org_user"><Plan /></ProtectedRoute>} />

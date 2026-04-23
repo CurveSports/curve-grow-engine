@@ -52,8 +52,21 @@ export default function RouteResolver() {
           .select("id")
           .eq("org_id", profile.org_id)
           .maybeSingle();
-        if (intake) navigate("/dashboard", { replace: true });
-        else navigate("/intake", { replace: true });
+        if (intake) { navigate("/dashboard", { replace: true }); return; }
+        // Pre-intake: route org primary through the customize step once
+        if (!onboarding?.branding_completed_at && profile.user_id && profile.org_id) {
+          // Only the primary user is gated — peers go straight to intake
+          const { data: org } = await supabase
+            .from("organizations")
+            .select("primary_user_id")
+            .eq("id", profile.org_id)
+            .maybeSingle();
+          if (org?.primary_user_id === user?.id) {
+            navigate("/customize", { replace: true });
+            return;
+          }
+        }
+        navigate("/intake", { replace: true });
         return;
       }
 
