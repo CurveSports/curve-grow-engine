@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { ENGINE_SCORE_FIELD } from "@/lib/tasks";
-import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw, DollarSign } from "lucide-react";
+import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw, DollarSign, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import OrgSponsorshipTab from "@/components/sponsorship/OrgSponsorshipTab";
 import { toast } from "@/hooks/use-toast";
 import CommunicationsLogTab from "@/components/admin/CommunicationsLogTab";
@@ -323,49 +324,59 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
       <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
 
       {/* Platform & Marketing universal engines */}
-      <div>
-        <p className="curve-eyebrow mb-3">Platform & Marketing</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <UniversalEngineCard
-            label="Curve Sports Platform"
-            subtitle="Platform setup and partner activation"
-            score={platformScore}
-            done={platformDone}
-            total={platformTotal}
-            onJump={() => navigate(`/admin/org/${orgId}/engine/Platform`)}
-          />
-          <UniversalEngineCard
-            label="Marketing Foundation"
-            subtitle="Brand, website, and content systems"
-            score={marketingScore}
-            done={marketingDone}
-            total={marketingTotal}
-            onJump={() => navigate(`/admin/org/${orgId}/engine/Marketing`)}
-          />
-        </div>
-      </div>
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger className="group flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity">
+          <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90" />
+          <p className="curve-eyebrow !mb-0">Platform & Marketing</p>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <UniversalEngineCard
+              label="Curve Sports Platform"
+              subtitle="Platform setup and partner activation"
+              score={platformScore}
+              done={platformDone}
+              total={platformTotal}
+              onJump={() => navigate(`/admin/org/${orgId}/engine/Platform`)}
+            />
+            <UniversalEngineCard
+              label="Marketing Foundation"
+              subtitle="Brand, website, and content systems"
+              score={marketingScore}
+              done={marketingDone}
+              total={marketingTotal}
+              onJump={() => navigate(`/admin/org/${orgId}/engine/Marketing`)}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Revenue engines progress */}
       {engineScores.length > 0 && (
-        <div>
-          <p className="curve-eyebrow mb-3">Revenue Engine Progress</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {engineScores.map((e) => {
-              const engineTasks = tasks.filter((t: any) => t.engine === e.name);
-              const done = engineTasks.filter((t: any) => t.status === "completed").length;
-              return (
-                <EngineProgressCard
-                  key={e.name}
-                  label={e.name}
-                  score={e.score}
-                  done={done}
-                  total={engineTasks.length}
-                  onJump={() => onJumpToPlan(e.name)}
-                />
-              );
-            })}
-          </div>
-        </div>
+        <Collapsible defaultOpen>
+          <CollapsibleTrigger className="group flex items-center gap-2 mb-3 hover:opacity-80 transition-opacity">
+            <ChevronDown className="h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90" />
+            <p className="curve-eyebrow !mb-0">Revenue Engine Progress</p>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {engineScores.map((e) => {
+                const engineTasks = tasks.filter((t: any) => t.engine === e.name);
+                const done = engineTasks.filter((t: any) => t.status === "completed").length;
+                return (
+                  <EngineProgressCard
+                    key={e.name}
+                    label={e.name}
+                    score={e.score}
+                    done={done}
+                    total={engineTasks.length}
+                    onJump={() => onJumpToPlan(e.name)}
+                  />
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       )}
 
       {/* Risk Assessment + Engagement Complexity + Pricing context */}
