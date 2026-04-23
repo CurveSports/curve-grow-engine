@@ -24,6 +24,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
   { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
+  { to: "/admin/internal-resources", label: "Internal Resources", icon: BookOpen, match: (p) => p.startsWith("/admin/internal-resources") },
 ];
 const ADMIN_SOON: NavItem[] = [
   { label: "Sponsorship Pipeline", icon: TrendingUp, soon: true },
