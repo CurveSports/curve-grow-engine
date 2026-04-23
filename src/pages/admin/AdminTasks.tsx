@@ -5,7 +5,19 @@ import AppShell from "@/components/AppShell";
 import { ENGINES } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Lightbulb } from "lucide-react";
+
+// Map engine -> derived_metrics opportunity_high field
+const ENGINE_OPPORTUNITY_FIELD: Record<string, string> = {
+  Pricing: "pricing_opportunity_high",
+  Sponsorship: "sponsorship_opportunity_high",
+  Apparel: "apparel_opportunity_high",
+  Events: "event_opportunity_high",
+  "Add-Ons": "addon_opportunity_high",
+  Retention: "retention_opportunity_high",
+  Facility: "facility_opportunity_high",
+  Affiliate: "affiliate_fee_opportunity_high",
+};
 
 type EngineStat = { total: number; completed: number };
 type Row = {
