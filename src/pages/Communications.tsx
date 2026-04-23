@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle, Calendar as CalIcon, ScrollText, Plus } from "lucide-react";
+import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle, Calendar as CalIcon, ScrollText, Plus, Building2 } from "lucide-react";
 import {
   getCategoriesForOrg, findCard, buildUserPrompt, validateCard, visibleFields,
   type CommCard, type CommField,
