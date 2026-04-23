@@ -31,6 +31,7 @@ export default function AdminPipeline() {
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
+  const [aiOrgId, setAiOrgId] = useState<string>("");
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filters
@@ -115,7 +116,7 @@ export default function AdminPipeline() {
           <Button variant="outline" size="sm" onClick={() => setFiltersOpen((v) => !v)}>
             <FilterIcon className="h-4 w-4 mr-1.5" /> Filter
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setAiOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => { setAiOrgId(orgFilter || orgs[0]?.id || ""); setAiOpen(true); }} disabled={orgs.length === 0}>
             <Sparkles className="h-4 w-4 mr-1.5" /> AI Generate Leads
           </Button>
           <Button size="sm" onClick={() => setAddOpen(true)} className="bg-health text-health-foreground hover:bg-health/90">
@@ -212,8 +213,8 @@ export default function AdminPipeline() {
       <AdminAIGenerateLeadsModal
         open={aiOpen}
         onOpenChange={setAiOpen}
-        orgs={orgs}
-        onImported={() => { setAiOpen(false); load(); }}
+        orgId={aiOrgId}
+        onCreated={() => { setAiOpen(false); load(); }}
       />
       <LeadDetailPanel
         leadId={openLeadId}
