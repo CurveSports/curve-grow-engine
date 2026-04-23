@@ -359,6 +359,16 @@ export default function AdminTemplates() {
       {selected.size > 0 && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 curve-card flex items-center gap-3 shadow-lg bg-card">
           <span className="text-sm font-medium">{selected.size} selected</span>
+          <Select onValueChange={(v) => bulkSetOwner(v as TaskOwnerType)}>
+            <SelectTrigger className="w-[170px] h-8 text-xs">
+              <SelectValue placeholder="Set owner…" />
+            </SelectTrigger>
+            <SelectContent>
+              {TASK_OWNER_TYPES.map(o => (
+                <SelectItem key={o} value={o}>{OWNER_LABEL[o]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Button size="sm" variant="outline" onClick={() => setSelected(new Set())}>Clear</Button>
           <Button size="sm" variant="destructive" onClick={bulkDelete}>
             <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
