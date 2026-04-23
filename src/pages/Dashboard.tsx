@@ -5,13 +5,23 @@ import AppShell from "@/components/AppShell";
 import TaskList from "@/components/tasks/TaskList";
 import TaskDetailPanel from "@/components/tasks/TaskDetailPanel";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranding } from "@/hooks/useBranding";
 import { OrgTask, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
-import { CheckCircle2, AlertCircle, Calendar, ListChecks, Clock } from "lucide-react";
+import { CheckCircle2, AlertCircle, Calendar, ListChecks, Clock, Palette, X } from "lucide-react";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
 
 export default function Dashboard() {
-  const { profile } = useAuth();
+  const { profile, isPrimary } = useAuth();
+  const { logoUrl, primaryHsl, accentHsl } = useBranding();
+  const [bannerDismissed, setBannerDismissed] = useState<boolean>(
+    typeof window !== "undefined" && sessionStorage.getItem("brandingBannerDismissed") === "1"
+  );
+  const showBrandingBanner = isPrimary && !logoUrl && !primaryHsl && !accentHsl && !bannerDismissed;
+  const dismissBanner = () => {
+    sessionStorage.setItem("brandingBannerDismissed", "1");
+    setBannerDismissed(true);
+  };
   const [tasks, setTasks] = useState<OrgTask[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
   const [planActivated, setPlanActivated] = useState<string | null>(null);
@@ -64,6 +74,29 @@ export default function Dashboard() {
           {planActivated ? `Plan activated ${formatDate(planActivated)}` : "Your action plan hasn't been activated yet — your Curve consultant will activate it after reviewing your report."}
         </p>
       </div>
+
+      {showBrandingBanner && (
+        <div className="mb-6 rounded-lg border border-accent/30 bg-accent-soft px-4 py-3 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-md bg-accent/15 flex items-center justify-center flex-shrink-0">
+            <Palette className="h-4 w-4 text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Personalize your workspace</p>
+            <p className="text-xs text-muted-foreground">
+              Add your logo and brand colors so the platform reflects your organization.
+            </p>
+          </div>
+          <Link
+            to="/settings"
+            className="text-xs font-medium px-3 py-1.5 rounded-md bg-foreground text-background hover:opacity-90"
+          >
+            Customize
+          </Link>
+          <button onClick={dismissBanner} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {showHoldingState ? (
         <div className="curve-card">

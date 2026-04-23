@@ -19,6 +19,7 @@ import AdminTasksPage from "@/pages/admin/AdminTasksPage";
 import AdminTasksThisWeek from "@/pages/admin/AdminTasksThisWeek";
 import AdminTaskTracker from "@/pages/admin/AdminTaskTracker";
 import OrgDetail from "@/pages/admin/OrgDetail";
+import AdminOrgBranding from "@/pages/admin/AdminOrgBranding";
 import AdminEngineFocus from "@/pages/admin/AdminEngineFocus";
 import AdminHealthReports from "@/pages/admin/AdminHealthReports";
 import AdminPresentations from "@/pages/admin/AdminPresentations";
@@ -35,6 +36,7 @@ import Calculators from "@/pages/Calculators";
 import Communications from "@/pages/Communications";
 import AdminCommunications from "@/pages/admin/AdminCommunications";
 import Settings from "@/pages/Settings";
+import Customize from "@/pages/Customize";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -54,6 +56,7 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/set-password" element={<ProtectedRoute><SetPassword /></ProtectedRoute>} />
             <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+            <Route path="/customize" element={<ProtectedRoute role="org_user"><Customize /></ProtectedRoute>} />
             <Route path="/intake" element={<ProtectedRoute role="org_user"><Intake /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute role="org_user"><Dashboard /></ProtectedRoute>} />
             <Route path="/plan" element={<ProtectedRoute role="org_user"><Plan /></ProtectedRoute>} />
@@ -80,6 +83,7 @@ const App = () => (
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/engine/:engine" element={<ProtectedRoute role="admin"><AdminEngineFocus /></ProtectedRoute>} />
+            <Route path="/admin/org/:orgId/branding" element={<ProtectedRoute role="admin"><AdminOrgBranding /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>

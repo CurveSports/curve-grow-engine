@@ -1623,6 +1623,7 @@ export type Database = {
       }
       user_onboarding: {
         Row: {
+          branding_completed_at: string | null
           created_at: string
           id: string
           intake_completed_at: string | null
@@ -1634,6 +1635,7 @@ export type Database = {
           welcomed_at: string | null
         }
         Insert: {
+          branding_completed_at?: string | null
           created_at?: string
           id?: string
           intake_completed_at?: string | null
@@ -1645,6 +1647,7 @@ export type Database = {
           welcomed_at?: string | null
         }
         Update: {
+          branding_completed_at?: string | null
           created_at?: string
           id?: string
           intake_completed_at?: string | null
