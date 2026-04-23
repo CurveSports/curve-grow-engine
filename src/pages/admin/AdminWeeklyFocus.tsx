@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { weekStartingMonday } from "@/lib/week";
-import { AlertTriangle, CheckCircle2, ExternalLink, Save } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Pencil, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Task = {
@@ -48,6 +48,7 @@ export default function AdminWeeklyFocus() {
   const [draftIds, setDraftIds] = useState<Record<string, string[]>>({});
   const [draftNote, setDraftNote] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [editing, setEditing] = useState<Record<string, boolean>>({});
 
   const load = async () => {
     setLoading(true);
@@ -133,6 +134,7 @@ export default function AdminWeeklyFocus() {
       ...prev,
       [orgId]: { org_id: orgId, week_starting: week, focus_task_ids: ids, focus_note: (draftNote[orgId] ?? "").trim() || null },
     }));
+    setEditing(prev => ({ ...prev, [orgId]: false }));
   };
 
   return (
@@ -183,6 +185,10 @@ export default function AdminWeeklyFocus() {
             const ids = draftIds[o.id] ?? [];
             const set = isSetThisWeek(o.id);
             const lastWeek = focusByOrg[o.id];
+            const isEditing = editing[o.id] ?? !set;
+            const currentFocus = set ? focusByOrg[o.id] : null;
+            const taskById: Record<string, Task> = {};
+            for (const tk of tasks) taskById[tk.id] = tk;
             return (
               <div key={o.id} className="curve-card">
                 <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
@@ -210,15 +216,52 @@ export default function AdminWeeklyFocus() {
                       </p>
                     )}
                   </div>
-                  <Link
-                    to={`/admin/org/${o.id}`}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    Open org <ExternalLink className="h-3 w-3" />
-                  </Link>
+                  <div className="flex items-center gap-3">
+                    {set && !isEditing && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditing(prev => ({ ...prev, [o.id]: true }))}
+                      >
+                        <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+                      </Button>
+                    )}
+                    <Link
+                      to={`/admin/org/${o.id}`}
+                      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Open org <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </div>
                 </div>
 
-                {tasks.length === 0 ? (
+                {set && !isEditing && currentFocus ? (
+                  <div className="space-y-2">
+                    <ul className="space-y-1.5">
+                      {(currentFocus.focus_task_ids ?? []).map(tid => {
+                        const t = taskById[tid];
+                        return (
+                          <li key={tid} className="flex items-start gap-2 text-sm">
+                            <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-accent flex-shrink-0" />
+                            <span className="min-w-0">
+                              <span className="block font-medium truncate">{t?.title ?? "(task no longer open)"}</span>
+                              {t && (
+                                <span className="block text-xs text-muted-foreground">
+                                  {t.engine}{t.due_date ? ` · due ${t.due_date}` : ""} · {t.priority}
+                                </span>
+                              )}
+                            </span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {currentFocus.focus_note && (
+                      <p className="text-sm text-muted-foreground italic border-l-2 border-border pl-3 mt-2">
+                        "{currentFocus.focus_note}"
+                      </p>
+                    )}
+                  </div>
+                ) : tasks.length === 0 ? (
                   <p className="text-sm text-muted-foreground py-4">No open tasks to choose from.</p>
                 ) : (
                   <>
@@ -251,7 +294,16 @@ export default function AdminWeeklyFocus() {
                       onChange={(e) => setDraftNote(prev => ({ ...prev, [o.id]: e.target.value }))}
                       className="mb-3"
                     />
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-2">
+                      {set && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditing(prev => ({ ...prev, [o.id]: false }))}
+                        >
+                          Cancel
+                        </Button>
+                      )}
                       <Button
                         size="sm"
                         onClick={() => save(o.id)}
