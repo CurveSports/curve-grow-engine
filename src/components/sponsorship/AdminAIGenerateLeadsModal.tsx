@@ -76,20 +76,25 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
     const picked = candidates.filter(c => c.selected && c.business_name.trim());
     if (picked.length === 0) return toast.error("Select at least one candidate");
     setSubmitBusy(true);
-    const inserts = picked.map(c => ({
-      org_id: orgId,
-      business_name: c.business_name.trim(),
-      contact_name: c.contact_name?.trim() || null,
-      contact_email: c.contact_email?.trim() || null,
-      contact_phone: c.contact_phone?.trim() || null,
-      business_type: c.business_type?.trim() || null,
-      city_state: c.city_state?.trim() || city.trim(),
-      source: "dsf_outreach",
-      stage: "new_lead",
-      created_by: user.id,
-      ai_generated: true,
-      ai_generation_notes: c.rationale ?? null,
-    }));
+    const inserts = picked.map(c => {
+      const notes = [c.rationale, c.website && `Website: ${c.website}`, c.address && `Address: ${c.address}`]
+        .filter(Boolean)
+        .join(" • ");
+      return {
+        org_id: orgId,
+        business_name: c.business_name.trim(),
+        contact_name: c.contact_name?.trim() || null,
+        contact_email: c.contact_email?.trim() || null,
+        contact_phone: c.contact_phone?.trim() || null,
+        business_type: c.business_type?.trim() || null,
+        city_state: c.city_state?.trim() || city.trim(),
+        source: "dsf_outreach",
+        stage: "new_lead",
+        created_by: user.id,
+        ai_generated: true,
+        ai_generation_notes: notes || null,
+      };
+    });
     const { data, error } = await supabase.from("sponsorship_leads").insert(inserts).select("id");
     setSubmitBusy(false);
     if (error) {
