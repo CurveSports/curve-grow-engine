@@ -91,6 +91,9 @@ export function WeeklyFocusCard({
 
   const isAdminSet = !!focus?.focus_task_ids?.length;
 
+  // Org-side: hide entirely when no focus set for current week (no stale data)
+  if (!editable && !isAdminSet) return null;
+
   return (
     <div className="curve-card border-l-4 border-l-warning">
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
