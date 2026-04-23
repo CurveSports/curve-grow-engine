@@ -22,6 +22,7 @@ type Scope = "global" | "by_org";
 
 export default function AdminPipeline() {
   const [view, setView] = useState<View>("pipeline");
+  const [scope, setScope] = useState<Scope>("global");
   const [leads, setLeads] = useState<any[]>([]);
   const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([]);
   const [admins, setAdmins] = useState<{ id: string; name: string }[]>([]);
