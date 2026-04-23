@@ -220,6 +220,52 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
+      {/* Weekly focus reminder */}
+      {!loading && orgsMissingFocus.length > 0 && (
+        <div className="curve-card border-l-4 border-l-warning bg-warning-soft/30 mb-6 p-0 overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setFocusReminderOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-warning-soft/40 transition-colors"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Target className="h-5 w-5 text-warning flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  {orgsMissingFocus.length} org{orgsMissingFocus.length === 1 ? "" : "s"} need this week's focus set
+                </p>
+                <p className="text-xs text-muted-foreground">Clients won't see a focus card until you set one.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Link
+                to="/admin/weekly-focus"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-semibold text-foreground hover:underline"
+              >
+                Set all →
+              </Link>
+              {focusReminderOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </div>
+          </button>
+          {focusReminderOpen && (
+            <div className="px-4 pb-4 pt-0">
+              <div className="flex flex-wrap gap-1.5">
+                {orgsMissingFocus.map(o => (
+                  <Link
+                    key={o.id}
+                    to={`/admin/org/${o.id}`}
+                    className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-background border border-border hover:border-foreground/40 hover:bg-secondary/50 transition-colors"
+                  >
+                    {o.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Stat row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
