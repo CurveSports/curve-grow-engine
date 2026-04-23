@@ -154,6 +154,61 @@ const PARENT: CommCategory = {
         { key: "deadline", label: "Deadline", kind: "text" },
       ],
     },
+    // ── Round 10: tryout templates ──
+    {
+      id: "tryout_announcement",
+      label: "Tryout announcement",
+      fields: [
+        { key: "team", label: "Team or age group", kind: "text", required: true },
+        { key: "tryout_date", label: "Tryout date", kind: "text", required: true },
+        { key: "tryout_time", label: "Tryout time", kind: "text", required: true },
+        { key: "location", label: "Location", kind: "text", required: true },
+        { key: "ages", label: "Age groups eligible", kind: "text", required: true },
+        { key: "register", label: "How to register or sign up", kind: "text", required: true },
+        { key: "bring", label: "What to bring", kind: "textarea" },
+        { key: "contact", label: "Contact for questions", kind: "text", required: true },
+      ],
+    },
+    {
+      id: "tryout_reminder",
+      label: "Tryout reminder",
+      fields: [
+        { key: "family", label: "Player or family name", kind: "text" },
+        { key: "team", label: "Team or age group", kind: "text", required: true },
+        { key: "datetime", label: "Tryout date and time", kind: "text", required: true },
+        { key: "location", label: "Location and address", kind: "text", required: true },
+        { key: "parking", label: "Parking details", kind: "text" },
+        { key: "wear", label: "What to wear", kind: "text" },
+        { key: "arrival", label: "Arrival time recommendation", kind: "text" },
+      ],
+    },
+    {
+      id: "tryout_result_accepted",
+      label: "Tryout result — accepted",
+      fields: [
+        { key: "player", label: "Player first name", kind: "text", required: true },
+        { key: "parent", label: "Parent first name", kind: "text" },
+        { key: "team", label: "Team selected for", kind: "text", required: true },
+        { key: "season", label: "Season", kind: "text", required: true },
+        { key: "quality", label: "Specific quality observed at tryout", kind: "text", required: true,
+          placeholder: "e.g. strong arm, competitive at-bats, great attitude" },
+        { key: "deadline", label: "Confirmation deadline", kind: "text", required: true },
+        { key: "how", label: "How to confirm", kind: "text", required: true },
+        { key: "next", label: "Next steps after confirmation", kind: "textarea" },
+      ],
+    },
+    {
+      id: "tryout_result_not_selected",
+      label: "Tryout result — not selected",
+      fields: [
+        { key: "player", label: "Player first name", kind: "text", required: true },
+        { key: "parent", label: "Parent first name", kind: "text" },
+        { key: "positive", label: "One genuine positive observation", kind: "text",
+          placeholder: "Only include if true and specific — leave blank if not" },
+        { key: "feedback", label: "Offer development feedback?", kind: "pill",
+          options: ["Yes", "No"] },
+      ],
+    },
   ],
 };
 
