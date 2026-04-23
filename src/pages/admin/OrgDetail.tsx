@@ -126,6 +126,15 @@ export default function OrgDetail() {
             <ProjectsTab orgId={orgId!} orgName={orgName} />
           </TabsContent>
           <TabsContent value="communications" className="mt-6">
+            <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border-2 border-accent/40 bg-accent-soft px-4 py-3">
+              <div className="text-sm">
+                <p className="font-semibold text-accent">Calendar, Standards & Draft Assistant</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Manage {orgName}'s communication calendar, standards, and draft messages on their behalf.</p>
+              </div>
+              <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground shrink-0">
+                <Link to={`/communications/${orgId}`}>Open Communications →</Link>
+              </Button>
+            </div>
             <CommunicationsLogTab orgId={orgId!} />
           </TabsContent>
           <TabsContent value="sponsorship" className="mt-6">
