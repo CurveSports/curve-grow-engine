@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
@@ -57,6 +58,7 @@ const ORG_SOON: NavItem[] = [
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { role, profile, signOut, isPrimary } = useAuth();
+  const { logoUrl } = useBranding();
   const location = useLocation();
 
   const primary = role === "admin" ? ADMIN_PRIMARY : ORG_PRIMARY;
@@ -72,11 +74,11 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed inset-y-0 left-0 w-[240px] bg-nav text-nav-foreground flex-col z-40 border-r border-nav-border">
         <div className="h-[60px] flex items-center px-5 border-b border-nav-border">
-          <Link to="/" className="flex items-center" aria-label="Curve Sports Allegiance — Home">
+          <Link to="/" className="flex items-center" aria-label="Home">
             <img
-              src={logoFullWhite}
-              alt="Curve Sports Allegiance"
-              className="h-7 w-auto object-contain"
+              src={logoUrl ?? logoFullWhite}
+              alt="Organization logo"
+              className="h-7 w-auto max-w-[180px] object-contain"
             />
           </Link>
         </div>
@@ -108,8 +110,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
         <div className="border-t border-nav-border p-3">
           <SidebarLink
-            item={{ to: "#", label: "Settings", icon: Settings }}
-            active={false}
+            item={{ to: "/settings", label: "Settings", icon: Settings, match: (p) => p.startsWith("/settings") }}
+            active={location.pathname.startsWith("/settings")}
           />
           <div className="mt-3 px-3 py-3 rounded-lg bg-nav-hover/50">
             <p className="text-sm font-medium text-white truncate">{profile?.full_name ?? profile?.email ?? "Account"}</p>
@@ -137,8 +139,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Mobile top bar */}
       <header className="md:hidden sticky top-0 h-14 bg-nav text-white flex items-center justify-between px-4 z-30 border-b border-nav-border">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="Curve Sports Allegiance — Home">
-          <img src={logoIconWhite} alt="" className="h-6 w-6 object-contain" />
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Home">
+          <img src={logoUrl ?? logoIconWhite} alt="" className="h-6 w-6 max-w-[120px] object-contain" />
           <span className="font-display font-semibold text-sm tracking-tight">{title ?? "Curve OS"}</span>
         </Link>
         <button onClick={signOut} className="text-xs text-nav-muted hover:text-white" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>

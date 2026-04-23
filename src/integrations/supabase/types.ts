@@ -554,6 +554,41 @@ export type Database = {
           },
         ]
       }
+      org_branding: {
+        Row: {
+          accent_hsl: string | null
+          logo_url: string | null
+          org_id: string
+          primary_hsl: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accent_hsl?: string | null
+          logo_url?: string | null
+          org_id: string
+          primary_hsl?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accent_hsl?: string | null
+          logo_url?: string | null
+          org_id?: string
+          primary_hsl?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_branding_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_calculator_scenarios: {
         Row: {
           calculator_type: string
