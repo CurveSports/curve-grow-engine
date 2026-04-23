@@ -72,12 +72,19 @@ export default function PipelineKanban({
     return map;
   }, [leads]);
 
-  const moveTo = async (leadId: string, to: string) => {
+  // Closed-won prompt state
+  const [wonPrompt, setWonPrompt] = useState<{ leadId: string; businessName: string; defaultValue: number | null } | null>(null);
+  const [wonAmount, setWonAmount] = useState<string>("");
+  const [savingWon, setSavingWon] = useState(false);
+
+  const performMove = async (leadId: string, to: string, closedValue?: number | null) => {
     if (!user) return;
     const lead = leads.find((l) => l.id === leadId);
     if (!lead || lead.stage === to) return;
     const wasNotClosed = lead.stage !== "closed_won";
-    const { error } = await supabase.from("sponsorship_leads").update({ stage: to } as any).eq("id", leadId);
+    const updates: Record<string, any> = { stage: to };
+    if (to === "closed_won" && closedValue != null) updates.closed_value = closedValue;
+    const { error } = await supabase.from("sponsorship_leads").update(updates as any).eq("id", leadId);
     if (error) { toast.error(error.message); return; }
     await supabase.from("sponsorship_lead_stage_history").insert({
       lead_id: leadId, org_id: lead.org_id,
@@ -91,6 +98,33 @@ export default function PipelineKanban({
     toast.success(`Moved to ${STAGE_LABELS[to as keyof typeof STAGE_LABELS]}`);
     onChanged?.();
   };
+
+  const moveTo = async (leadId: string, to: string) => {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead || lead.stage === to) return;
+    if (to === "closed_won" && lead.stage !== "closed_won") {
+      const def = lead.closed_value ?? lead.proposed_value ?? null;
+      setWonAmount(def != null ? String(def) : "");
+      setWonPrompt({ leadId, businessName: lead.business_name, defaultValue: def });
+      return;
+    }
+    await performMove(leadId, to);
+  };
+
+  const confirmWon = async () => {
+    if (!wonPrompt) return;
+    const parsed = wonAmount.trim() === "" ? null : Number(wonAmount);
+    if (parsed != null && (!Number.isFinite(parsed) || parsed < 0)) {
+      toast.error("Enter a valid amount");
+      return;
+    }
+    setSavingWon(true);
+    await performMove(wonPrompt.leadId, "closed_won", parsed);
+    setSavingWon(false);
+    setWonPrompt(null);
+    setWonAmount("");
+  };
+
 
   // Auto-scroll the kanban container while dragging near edges
   const handleContainerDragOver = (e: React.DragEvent) => {
