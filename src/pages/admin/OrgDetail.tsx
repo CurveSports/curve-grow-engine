@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import NotesTab from "@/components/admin/NotesTab";
 import { PresentationsTab } from "@/components/presentations/PresentationsTab";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
-import { RiskAssessmentSection, AdminAlertsBanner, MonetizationTierGuide, type AdminAlert } from "@/components/admin/RiskAssessment";
+import { RiskAssessmentSection, AdminAlertsBanner, type AdminAlert } from "@/components/admin/RiskAssessment";
 import { ExplainProvider, ExplainButton } from "@/components/admin/ExplainDrawer";
 import ProjectsTab from "@/components/admin/ProjectsTab";
 import { ProjectCompletionBanner } from "@/components/admin/ProjectsTab";
@@ -24,7 +24,6 @@ import { FolderKanban } from "lucide-react";
 import {
   operationsHealthExplain, marketPositionExplain, programHealthExplain, strategicClarityExplain,
   executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
-  engineScoreExplain,
 } from "@/components/admin/explainContent";
 import { TierLadder } from "@/components/TierLadder";
 
@@ -247,18 +246,16 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
   const [metrics, setMetrics] = useState<any>(null);
   const [intake, setIntake] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
-  const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const [{ data: m }, { data: i }, { data: t }, { data: a }] = await Promise.all([
+      const [{ data: m }, { data: i }, { data: t }] = await Promise.all([
         supabase.from("derived_metrics").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("organization_intake").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("org_tasks").select("*").eq("org_id", orgId).eq("plan_status", "active"),
-        supabase.from("task_activity_log").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(8),
       ]);
-      setMetrics(m); setIntake(i); setTasks(t ?? []); setActivity(a ?? []); setLoading(false);
+      setMetrics(m); setIntake(i); setTasks(t ?? []); setLoading(false);
     })();
   }, [orgId]);
 
@@ -318,6 +315,9 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </MetricCard>
       </div>
 
+      {/* This week's focus (admin-editable) */}
+      <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
+
       {/* Risk Assessment + Engagement Complexity + Pricing context */}
       <RiskAssessmentSection
         executionRisk={(metrics as any).execution_risk ?? null}
@@ -375,77 +375,10 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </div>
       )}
 
-      {/* Round 2: Monetization tier key */}
-      <MonetizationTierGuide currentTier={(metrics as any).monetization_tier ?? null} />
-
-      {/* Row 2: This week's focus (admin-editable) */}
-      <WeeklyFocusCard orgId={orgId} tasks={tasks as any} editable />
-
-      {/* Row 3: two columns */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="curve-card">
-          <p className="curve-eyebrow mb-4">Engine Scores</p>
-          {engineScores.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No scores yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {engineScores.map(e => (
-                <li key={e.name}>
-                  <div className="flex items-baseline justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => onJumpToPlan()}
-                        className="text-sm font-medium hover:text-accent transition-colors"
-                      >
-                        {e.name}
-                      </button>
-                      <ExplainButton content={engineScoreExplain(e.name, intake ?? {}, metrics)} />
-                    </div>
-                    <span className="text-sm font-semibold tabular-nums">{e.score}<span className="text-muted-foreground font-normal">/10</span></span>
-                  </div>
-                  <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full transition-all",
-                        e.score <= 3 ? "bg-destructive" : e.score <= 6 ? "bg-warning" : e.score <= 8 ? "bg-info" : "bg-accent",
-                      )}
-                      style={{ width: `${(e.score / 10) * 100}%` }}
-                    />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="curve-card">
-          <p className="curve-eyebrow mb-4">Recent Activity</p>
-          {activity.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No activity yet.</p>
-          ) : (
-            <ul className="space-y-3">
-              {activity.map(a => (
-                <li key={a.id} className="flex items-start gap-3 text-sm">
-                  <span className={cn(
-                    "h-2 w-2 rounded-full mt-1.5 flex-shrink-0",
-                    a.action === "completed" ? "bg-accent"
-                      : a.action === "created" ? "bg-info"
-                      : a.action === "note_added" ? "bg-health"
-                      : "bg-muted-foreground/40",
-                  )} />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-foreground truncate"><span className="font-medium capitalize">{a.action.replace("_", " ")}</span>{a.new_value ? ` — ${a.new_value}` : ""}</p>
-                    <p className="text-xs text-muted-foreground">{timeAgo(a.created_at)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
+
 
 function MetricCard({ label, value, suffix, children, accent }: { label: string; value: string; suffix?: string; children?: React.ReactNode; accent?: "health" }) {
   return (
