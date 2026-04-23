@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2, UsersRound, Target, GanttChartSquare,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -28,7 +28,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
   { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
-  { to: "/admin/internal-resources", label: "Internal Resources", icon: BookOpen, match: (p) => p.startsWith("/admin/internal-resources") },
+  
   { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
 ];
 const ADMIN_SOON: NavItem[] = [
