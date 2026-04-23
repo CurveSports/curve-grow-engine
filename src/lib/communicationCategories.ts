@@ -281,6 +281,34 @@ const COACH: CommCategory = {
         { key: "consequences", label: "Consequences for not meeting standards", kind: "text" },
       ],
     },
+    // ── Round 10: coach templates ──
+    {
+      id: "new_coach_onboarding",
+      label: "New coach onboarding",
+      fields: [
+        { key: "coach", label: "Coach first name", kind: "text", required: true },
+        { key: "season", label: "Season", kind: "text", required: true },
+        { key: "bgcheck", label: "Background check provider", kind: "text", required: true },
+        { key: "platform", label: "Platform name", kind: "text", required: true,
+          placeholder: "Curve Sports Platform" },
+        { key: "team", label: "Team name and age group", kind: "text", required: true },
+        { key: "first_practice", label: "First practice date, time, location", kind: "text", required: true },
+        { key: "director", label: "Director name", kind: "text", required: true },
+        { key: "director_phone", label: "Director phone", kind: "text", required: true },
+      ],
+    },
+    {
+      id: "end_of_season_debrief",
+      label: "End of season debrief request",
+      fields: [
+        { key: "coach", label: "Coach first name", kind: "text", required: true },
+        { key: "team", label: "Team name", kind: "text", required: true },
+        { key: "season", label: "Season name", kind: "text", required: true },
+        { key: "deadline", label: "Deadline for responses", kind: "text", required: true },
+        { key: "platform", label: "Platform where dev notes should be logged", kind: "text",
+          placeholder: "Curve Sports Platform" },
+      ],
+    },
   ],
 };
 
