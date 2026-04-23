@@ -686,6 +686,50 @@ export type Database = {
           },
         ]
       }
+      org_engagement_baselines: {
+        Row: {
+          adjustment_reason: string | null
+          baseline_notes: string | null
+          baseline_revenue: number
+          baseline_set_at: string
+          baseline_set_by: string
+          id: string
+          org_id: string
+          original_calculated_revenue: number | null
+          was_manually_adjusted: boolean
+        }
+        Insert: {
+          adjustment_reason?: string | null
+          baseline_notes?: string | null
+          baseline_revenue: number
+          baseline_set_at?: string
+          baseline_set_by: string
+          id?: string
+          org_id: string
+          original_calculated_revenue?: number | null
+          was_manually_adjusted?: boolean
+        }
+        Update: {
+          adjustment_reason?: string | null
+          baseline_notes?: string | null
+          baseline_revenue?: number
+          baseline_set_at?: string
+          baseline_set_by?: string
+          id?: string
+          org_id?: string
+          original_calculated_revenue?: number | null
+          was_manually_adjusted?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_engagement_baselines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_notes: {
         Row: {
           created_at: string
@@ -839,6 +883,65 @@ export type Database = {
             columns: ["suggested_next_project_id"]
             isOneToOne: false
             referencedRelation: "org_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_sponsorship_summary: {
+        Row: {
+          cold_leads: number
+          curve_share_sponsorship: number
+          deals_closed_lost: number
+          deals_closed_won: number
+          id: string
+          last_updated: string
+          leads_contacted: number
+          leads_responded: number
+          meetings_scheduled: number
+          org_id: string
+          proposals_sent: number
+          total_closed_value: number
+          total_leads: number
+          warm_leads: number
+        }
+        Insert: {
+          cold_leads?: number
+          curve_share_sponsorship?: number
+          deals_closed_lost?: number
+          deals_closed_won?: number
+          id?: string
+          last_updated?: string
+          leads_contacted?: number
+          leads_responded?: number
+          meetings_scheduled?: number
+          org_id: string
+          proposals_sent?: number
+          total_closed_value?: number
+          total_leads?: number
+          warm_leads?: number
+        }
+        Update: {
+          cold_leads?: number
+          curve_share_sponsorship?: number
+          deals_closed_lost?: number
+          deals_closed_won?: number
+          id?: string
+          last_updated?: string
+          leads_contacted?: number
+          leads_responded?: number
+          meetings_scheduled?: number
+          org_id?: string
+          proposals_sent?: number
+          total_closed_value?: number
+          total_leads?: number
+          warm_leads?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_sponsorship_summary_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -1406,12 +1509,14 @@ export type Database = {
           created_at: string
           draft_project_count: number
           email: string | null
+          engagement_baseline_set: boolean
           id: string
           last_activity_at: string
           name: string
           org_type: string | null
           phone: string | null
           plan_activated_at: string | null
+          plan_activated_revenue: number | null
           primary_user_id: string | null
           updated_at: string
         }
@@ -1423,12 +1528,14 @@ export type Database = {
           created_at?: string
           draft_project_count?: number
           email?: string | null
+          engagement_baseline_set?: boolean
           id?: string
           last_activity_at?: string
           name: string
           org_type?: string | null
           phone?: string | null
           plan_activated_at?: string | null
+          plan_activated_revenue?: number | null
           primary_user_id?: string | null
           updated_at?: string
         }
@@ -1440,12 +1547,14 @@ export type Database = {
           created_at?: string
           draft_project_count?: number
           email?: string | null
+          engagement_baseline_set?: boolean
           id?: string
           last_activity_at?: string
           name?: string
           org_type?: string | null
           phone?: string | null
           plan_activated_at?: string | null
+          plan_activated_revenue?: number | null
           primary_user_id?: string | null
           updated_at?: string
         }
@@ -1482,6 +1591,194 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsorship_lead_notes: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_client_visible: boolean
+          lead_id: string
+          note_text: string
+          org_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          is_client_visible?: boolean
+          lead_id: string
+          note_text: string
+          org_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_client_visible?: boolean
+          lead_id?: string
+          note_text?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsorship_lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sponsorship_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsorship_lead_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsorship_lead_stage_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          from_stage: string | null
+          id: string
+          lead_id: string
+          notes: string | null
+          org_id: string
+          to_stage: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          from_stage?: string | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          org_id: string
+          to_stage: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          from_stage?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          org_id?: string
+          to_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsorship_lead_stage_history_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "sponsorship_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sponsorship_lead_stage_history_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsorship_leads: {
+        Row: {
+          assigned_to: string | null
+          business_name: string
+          business_type: string | null
+          city_state: string | null
+          closed_at: string | null
+          closed_value: number | null
+          contact_email: string | null
+          contact_name: string | null
+          contact_phone: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_active: boolean
+          is_warm: boolean
+          last_stage_change_at: string
+          org_id: string
+          proposed_value: number | null
+          source: string
+          source_other: string | null
+          sponsorship_tier: string | null
+          stage: string
+          submitted_at: string
+          updated_at: string
+          warm_flagged_by_dsf: boolean
+          warm_flagged_by_org: boolean
+          warm_notes: string | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          business_name: string
+          business_type?: string | null
+          city_state?: string | null
+          closed_at?: string | null
+          closed_value?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_active?: boolean
+          is_warm?: boolean
+          last_stage_change_at?: string
+          org_id: string
+          proposed_value?: number | null
+          source: string
+          source_other?: string | null
+          sponsorship_tier?: string | null
+          stage?: string
+          submitted_at?: string
+          updated_at?: string
+          warm_flagged_by_dsf?: boolean
+          warm_flagged_by_org?: boolean
+          warm_notes?: string | null
+        }
+        Update: {
+          assigned_to?: string | null
+          business_name?: string
+          business_type?: string | null
+          city_state?: string | null
+          closed_at?: string | null
+          closed_value?: number | null
+          contact_email?: string | null
+          contact_name?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_active?: boolean
+          is_warm?: boolean
+          last_stage_change_at?: string
+          org_id?: string
+          proposed_value?: number | null
+          source?: string
+          source_other?: string | null
+          sponsorship_tier?: string | null
+          stage?: string
+          submitted_at?: string
+          updated_at?: string
+          warm_flagged_by_dsf?: boolean
+          warm_flagged_by_org?: boolean
+          warm_notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsorship_leads_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -1714,6 +2011,10 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      recompute_sponsorship_summary: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       admin_review_kind: "high_alert" | "revenue_review"
@@ -1737,6 +2038,8 @@ export type Database = {
         | "next_project_suggested"
         | "calculator_share"
         | "tier_advancement"
+        | "sponsorship_closed"
+        | "sponsorship_stale"
       org_note_tag:
         | "internal_planning"
         | "kickoff"
@@ -1923,6 +2226,8 @@ export const Constants = {
         "next_project_suggested",
         "calculator_share",
         "tier_advancement",
+        "sponsorship_closed",
+        "sponsorship_stale",
       ],
       org_note_tag: [
         "internal_planning",
