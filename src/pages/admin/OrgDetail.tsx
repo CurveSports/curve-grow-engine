@@ -438,31 +438,73 @@ function UniversalEngineCard({
     tone === "warning" ? "bg-warning" :
     tone === "destructive" ? "bg-destructive" : "bg-muted-foreground/40";
   return (
-    <div className="curve-card flex flex-col">
-      <div className="flex items-baseline justify-between gap-3 mb-1">
-        <p className="font-display text-base font-semibold">{label}</p>
-        <span className={cn("text-sm font-semibold tabular-nums", toneText)}>
-          {score ?? "—"}<span className="text-muted-foreground font-normal">/10</span>
+    <button
+      onClick={onJump}
+      className="curve-card flex items-center gap-4 text-left hover:border-accent/40 transition-colors w-full"
+    >
+      <div className="flex flex-col items-center justify-center min-w-[64px] px-2">
+        <span className={cn("font-display text-2xl font-semibold tabular-nums leading-none", toneText)}>
+          {score ?? "—"}
         </span>
+        <span className="text-[10px] text-muted-foreground mt-0.5">/10</span>
       </div>
-      <p className="text-xs text-muted-foreground mb-3">{subtitle}</p>
-      <div className="flex items-baseline justify-between mb-1.5">
-        <span className="text-sm tabular-nums">
-          <span className="font-semibold">{done}</span>
-          <span className="text-muted-foreground"> / {total} tasks complete</span>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between gap-2 mb-0.5">
+          <p className="font-display text-sm font-semibold truncate">{label}</p>
+          <span className="text-xs tabular-nums text-muted-foreground flex-shrink-0">
+            <span className="font-semibold text-foreground">{done}</span>/{total} tasks
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-2 truncate">{subtitle}</p>
+        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function EngineProgressCard({
+  label, score, done, total, onJump,
+}: {
+  label: string; score: number; done: number; total: number; onJump: () => void;
+}) {
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const tone =
+    total === 0 ? "muted" :
+    score >= 7 ? "accent" :
+    score >= 4 ? "warning" : "destructive";
+  const toneText =
+    tone === "accent" ? "text-accent" :
+    tone === "warning" ? "text-warning" :
+    tone === "destructive" ? "text-destructive" : "text-muted-foreground";
+  const toneBar =
+    tone === "accent" ? "bg-accent" :
+    tone === "warning" ? "bg-warning" :
+    tone === "destructive" ? "bg-destructive" : "bg-muted-foreground/40";
+  return (
+    <button
+      onClick={onJump}
+      className="curve-card flex items-center gap-4 text-left hover:border-accent/40 transition-colors w-full"
+    >
+      <div className="flex flex-col items-center justify-center min-w-[64px] px-2">
+        <span className={cn("font-display text-2xl font-semibold tabular-nums leading-none", toneText)}>
+          {score}
         </span>
-        <span className="text-xs text-muted-foreground tabular-nums">{pct}%</span>
+        <span className="text-[10px] text-muted-foreground mt-0.5">/10</span>
       </div>
-      <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
-        <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline justify-between gap-2 mb-1.5">
+          <p className="font-display text-sm font-semibold truncate">{label}</p>
+          <span className="text-xs tabular-nums text-muted-foreground flex-shrink-0">
+            <span className="font-semibold text-foreground">{done}</span>/{total} tasks
+          </span>
+        </div>
+        <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
+          <div className={cn("h-full transition-all", toneBar)} style={{ width: `${pct}%` }} />
+        </div>
       </div>
-      <button
-        onClick={onJump}
-        className="text-xs text-accent hover:underline mt-3 self-start"
-      >
-        View tasks →
-      </button>
-    </div>
+    </button>
   );
 }
 
