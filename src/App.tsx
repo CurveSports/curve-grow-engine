@@ -27,6 +27,7 @@ import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 import AdminInternalResources from "@/pages/admin/AdminInternalResources";
 import AdminMyTasks from "@/pages/admin/AdminMyTasks";
 import AdminWeeklyFocus from "@/pages/admin/AdminWeeklyFocus";
+import AdminRoadmap from "@/pages/admin/AdminRoadmap";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
@@ -64,6 +65,7 @@ const App = () => (
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin"><AdminTasksPage /></ProtectedRoute>} />
             <Route path="/admin/my-tasks" element={<ProtectedRoute role="admin"><AdminMyTasks /></ProtectedRoute>} />
             <Route path="/admin/weekly-focus" element={<ProtectedRoute role="admin"><AdminWeeklyFocus /></ProtectedRoute>} />
+            <Route path="/admin/roadmap" element={<ProtectedRoute role="admin"><AdminRoadmap /></ProtectedRoute>} />
             <Route path="/admin/tasks-this-week" element={<ProtectedRoute role="admin"><AdminTasksThisWeek /></ProtectedRoute>} />
             <Route path="/admin/task-tracker" element={<ProtectedRoute role="admin"><AdminTaskTracker /></ProtectedRoute>} />
             <Route path="/admin/health" element={<ProtectedRoute role="admin"><AdminHealthReports /></ProtectedRoute>} />
