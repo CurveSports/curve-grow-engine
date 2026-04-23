@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import logoFull from "@/assets/curve-logo-full.png";
+import logoIcon from "@/assets/curve-logo-icon.png";
 
 type Mode = "signin" | "magic" | "forgot";
 
@@ -58,16 +60,16 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="curve-container py-6">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-foreground flex items-center justify-center">
-            <span className="text-background font-display font-bold text-sm">C</span>
-          </div>
-          <span className="font-display font-semibold text-lg tracking-tight">Curve OS</span>
+        <div className="flex items-center">
+          <img src={logoFull} alt="Curve Sports Allegiance" className="h-9 w-auto object-contain" />
         </div>
       </div>
 
       <main className="flex-1 flex items-center justify-center px-6">
         <div className="w-full max-w-md animate-fade-in">
+          <div className="md:hidden mb-6">
+            <img src={logoIcon} alt="" className="h-10 w-10 object-contain" />
+          </div>
           <p className="curve-eyebrow mb-3">
             {mode === "signin" ? "Sign in" : mode === "magic" ? "Magic link" : "Reset password"}
           </p>

@@ -6,6 +6,8 @@ import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2, UsersRound, Target,
 } from "lucide-react";
+import logoIconWhite from "@/assets/curve-logo-icon-white.png";
+import logoFullWhite from "@/assets/curve-logo-full-white.png";
 
 type NavItem = {
   to?: string;
@@ -61,12 +63,13 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     <div className="min-h-screen bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex fixed inset-y-0 left-0 w-[240px] bg-nav text-nav-foreground flex-col z-40 border-r border-nav-border">
-        <div className="h-[60px] flex items-center px-6 border-b border-nav-border">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
-              <span className="font-display font-bold text-white text-sm">C</span>
-            </div>
-            <span className="font-display font-semibold text-base tracking-tight text-white">Curve OS</span>
+        <div className="h-[60px] flex items-center px-5 border-b border-nav-border">
+          <Link to="/" className="flex items-center" aria-label="Curve Sports Allegiance — Home">
+            <img
+              src={logoFullWhite}
+              alt="Curve Sports Allegiance"
+              className="h-7 w-auto object-contain"
+            />
           </Link>
         </div>
 
@@ -126,13 +129,11 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Mobile top bar */}
       <header className="md:hidden sticky top-0 h-14 bg-nav text-white flex items-center justify-between px-4 z-30 border-b border-nav-border">
-        <Link to="/" className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-md bg-accent flex items-center justify-center">
-            <span className="font-display font-bold text-white text-xs">C</span>
-          </div>
-          <span className="font-display font-semibold text-sm">{title ?? "Curve OS"}</span>
+        <Link to="/" className="flex items-center gap-2.5" aria-label="Curve Sports Allegiance — Home">
+          <img src={logoIconWhite} alt="" className="h-6 w-6 object-contain" />
+          <span className="font-display font-semibold text-sm tracking-tight">{title ?? "Curve OS"}</span>
         </Link>
-        <button onClick={signOut} className="text-xs text-nav-muted hover:text-white"><LogOut className="h-4 w-4" /></button>
+        <button onClick={signOut} className="text-xs text-nav-muted hover:text-white" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
       </header>
 
       {/* Main content */}
