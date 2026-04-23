@@ -318,6 +318,22 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
         </MetricCard>
       </div>
 
+      {/* Risk Assessment + Engagement Complexity + Pricing context */}
+      <RiskAssessmentSection
+        executionRisk={(metrics as any).execution_risk ?? null}
+        marketRisk={(metrics as any).market_risk ?? null}
+        retentionRisk={(metrics as any).retention_risk ?? null}
+        engagementComplexity={(metrics as any).engagement_complexity ?? null}
+        engagementRecommendation={(metrics as any).engagement_approach_recommendation ?? null}
+        pricingStrategyNote={(metrics as any).pricing_strategy_note ?? null}
+        explains={{
+          execution: executionRiskExplain(intake ?? {}, metrics),
+          market: marketRiskExplain(intake ?? {}, metrics),
+          retention: retentionRiskExplain(intake ?? {}, metrics),
+          complexity: engagementComplexityExplain(intake ?? {}, metrics),
+        }}
+      />
+
       {/* Health dimensions 2x2 (collapses to 1 col on mobile, 4 on lg) */}
       {hasDimensions && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -358,22 +374,6 @@ function OverviewTab({ orgId, onJumpToPlan, onJumpToReport }: { orgId: string; o
           <TierLadder metrics={metrics} orgId={orgId} variant="admin" />
         </div>
       )}
-
-      {/* Round 2: Risk Assessment + Engagement Complexity + Pricing context */}
-      <RiskAssessmentSection
-        executionRisk={(metrics as any).execution_risk ?? null}
-        marketRisk={(metrics as any).market_risk ?? null}
-        retentionRisk={(metrics as any).retention_risk ?? null}
-        engagementComplexity={(metrics as any).engagement_complexity ?? null}
-        engagementRecommendation={(metrics as any).engagement_approach_recommendation ?? null}
-        pricingStrategyNote={(metrics as any).pricing_strategy_note ?? null}
-        explains={{
-          execution: executionRiskExplain(intake ?? {}, metrics),
-          market: marketRiskExplain(intake ?? {}, metrics),
-          retention: retentionRiskExplain(intake ?? {}, metrics),
-          complexity: engagementComplexityExplain(intake ?? {}, metrics),
-        }}
-      />
 
       {/* Round 2: Monetization tier key */}
       <MonetizationTierGuide currentTier={(metrics as any).monetization_tier ?? null} />
