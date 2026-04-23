@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
   CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning, FolderKanban,
+  ChevronDown, ChevronUp, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +50,14 @@ type OrgRow = {
   points_to_next_tier: number | null;
   platform_score: number | null;
   marketing_score: number | null;
+  retention_risk: string | null;
+  market_risk: string | null;
+  execution_risk: string | null;
+  strategic_clarity_score: number | null;
+  engagement_approach_recommendation: string | null;
 };
+
+type DrillKey = "complex" | "high-alert" | "review" | null;
 
 type Density = "compact" | "standard" | "detailed";
 
@@ -59,6 +67,8 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [density, setDensity] = useState<Density>("standard");
   const [awaitingTotal, setAwaitingTotal] = useState(0);
+
+  const [drill, setDrill] = useState<DrillKey>(null);
 
   useEffect(() => {
     (async () => {
