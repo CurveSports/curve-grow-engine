@@ -221,6 +221,47 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
+      {/* Awaiting plan activation reminder */}
+      {(() => {
+        const awaitingActivation = orgs.filter(o => !!o.submitted_at && !o.plan_activated_at);
+        if (loading || awaitingActivation.length === 0) return null;
+        return (
+          <div className="curve-card border-l-4 border-l-info bg-info-soft/30 mb-6 p-0 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setActivationReminderOpen(o => !o)}
+              className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-info-soft/40 transition-colors"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <Sparkles className="h-5 w-5 text-info flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">
+                    {awaitingActivation.length} org{awaitingActivation.length === 1 ? "" : "s"} awaiting plan activation
+                  </p>
+                  <p className="text-xs text-muted-foreground">Intake submitted — review the report and activate the action plan.</p>
+                </div>
+              </div>
+              {activationReminderOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+            </button>
+            {activationReminderOpen && (
+              <div className="px-4 pb-4 pt-0">
+                <div className="flex flex-wrap gap-1.5">
+                  {awaitingActivation.map(o => (
+                    <Link
+                      key={o.id}
+                      to={`/admin/org/${o.id}`}
+                      className="inline-flex items-center px-2 py-1 rounded-md text-xs bg-background border border-border hover:border-foreground/40 hover:bg-secondary/50 transition-colors"
+                    >
+                      {o.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Weekly focus reminder */}
       {!loading && orgsMissingFocus.length > 0 && (
         <div className="curve-card border-l-4 border-l-warning bg-warning-soft/30 mb-6 p-0 overflow-hidden">
