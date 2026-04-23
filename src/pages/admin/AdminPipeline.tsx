@@ -10,14 +10,19 @@ import PipelineList from "@/components/sponsorship/PipelineList";
 import PipelineMetrics from "@/components/sponsorship/PipelineMetrics";
 import AddLeadModal from "@/components/sponsorship/AddLeadModal";
 import LeadDetailPanel from "@/components/sponsorship/LeadDetailPanel";
-import { Plus, LayoutGrid, Rows3, BarChart3, Filter as FilterIcon } from "lucide-react";
+import { Plus, LayoutGrid, Rows3, BarChart3, Filter as FilterIcon, Globe, Building2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STAGES, STAGE_LABELS, SOURCES, SOURCE_LABELS, type SponsorshipLead } from "@/lib/sponsorship";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { formatCurrency } from "@/lib/format";
+import { Link } from "react-router-dom";
 
 type View = "pipeline" | "list" | "metrics";
+type Scope = "global" | "by_org";
 
 export default function AdminPipeline() {
   const [view, setView] = useState<View>("pipeline");
+  const [scope, setScope] = useState<Scope>("global");
   const [leads, setLeads] = useState<any[]>([]);
   const [orgs, setOrgs] = useState<{ id: string; name: string }[]>([]);
   const [admins, setAdmins] = useState<{ id: string; name: string }[]>([]);
@@ -114,10 +119,24 @@ export default function AdminPipeline() {
         </div>
       </div>
 
-      <div className="inline-flex items-center bg-card border border-border rounded-lg p-1 mb-6">
-        <ToggleBtn active={view === "pipeline"} onClick={() => setView("pipeline")} icon={<LayoutGrid className="h-4 w-4" />} label="Pipeline" />
-        <ToggleBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-4 w-4" />} label="List" />
-        <ToggleBtn active={view === "metrics"} onClick={() => setView("metrics")} icon={<BarChart3 className="h-4 w-4" />} label="Metrics" />
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <div className="inline-flex items-center bg-card border border-border rounded-lg p-1">
+          <ToggleBtn active={scope === "global"} onClick={() => setScope("global")} icon={<Globe className="h-4 w-4" />} label="Global" />
+          <ToggleBtn active={scope === "by_org"} onClick={() => setScope("by_org")} icon={<Building2 className="h-4 w-4" />} label="By Organization" />
+        </div>
+        {scope === "global" && (
+          <div className="inline-flex items-center bg-card border border-border rounded-lg p-1">
+            <ToggleBtn active={view === "pipeline"} onClick={() => setView("pipeline")} icon={<LayoutGrid className="h-4 w-4" />} label="Pipeline" />
+            <ToggleBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-4 w-4" />} label="List" />
+            <ToggleBtn active={view === "metrics"} onClick={() => setView("metrics")} icon={<BarChart3 className="h-4 w-4" />} label="Metrics" />
+          </div>
+        )}
+        {scope === "by_org" && (
+          <div className="inline-flex items-center bg-card border border-border rounded-lg p-1">
+            <ToggleBtn active={view === "pipeline"} onClick={() => setView("pipeline")} icon={<LayoutGrid className="h-4 w-4" />} label="Pipeline" />
+            <ToggleBtn active={view === "list"} onClick={() => setView("list")} icon={<Rows3 className="h-4 w-4" />} label="List" />
+          </div>
+        )}
       </div>
 
       {filtersOpen && (
@@ -164,12 +183,20 @@ export default function AdminPipeline() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading pipeline…</p>
-      ) : (
+      ) : scope === "global" ? (
         <>
           {view === "pipeline" && <PipelineKanban leads={filtered} onOpenLead={setOpenLeadId} onChanged={load} />}
           {view === "list" && <PipelineList leads={filtered} onOpenLead={setOpenLeadId} />}
           {view === "metrics" && <PipelineMetrics leads={leads} orgs={orgs} />}
         </>
+      ) : (
+        <ByOrgView
+          leads={filtered}
+          orgs={orgs}
+          view={view === "metrics" ? "pipeline" : view}
+          onOpenLead={setOpenLeadId}
+          onChanged={load}
+        />
       )}
 
       <AddLeadModal
@@ -191,5 +218,87 @@ function ToggleBtn({ active, onClick, icon, label }: { active: boolean; onClick:
     <button onClick={onClick} className={cn("inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all", active ? "bg-accent text-accent-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
       {icon} {label}
     </button>
+  );
+}
+
+function ByOrgView({
+  leads, orgs, view, onOpenLead, onChanged,
+}: {
+  leads: any[];
+  orgs: { id: string; name: string }[];
+  view: "pipeline" | "list";
+  onOpenLead: (id: string) => void;
+  onChanged: () => void;
+}) {
+  const grouped = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const l of leads) {
+      const arr = m.get(l.org_id) ?? [];
+      arr.push(l);
+      m.set(l.org_id, arr);
+    }
+    const orgName = new Map(orgs.map((o) => [o.id, o.name]));
+    return Array.from(m.entries())
+      .map(([orgId, items]) => ({
+        orgId,
+        orgName: orgName.get(orgId) ?? items[0]?.org_name ?? "Unknown org",
+        items,
+        warm: items.filter((l) => l.is_warm).length,
+        won: items.filter((l) => l.stage === "closed_won").length,
+        wonValue: items.filter((l) => l.stage === "closed_won").reduce((a, l) => a + (Number(l.closed_value) || 0), 0),
+        proposed: items.filter((l) => l.is_active).reduce((a, l) => a + (Number(l.proposed_value) || 0), 0),
+      }))
+      .sort((a, b) => b.items.length - a.items.length);
+  }, [leads, orgs]);
+
+  if (grouped.length === 0) {
+    return <p className="text-sm text-muted-foreground">No leads match the current filters.</p>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {grouped.map((g) => (
+        <Collapsible key={g.orgId} defaultOpen className="curve-card group">
+          <CollapsibleTrigger className="w-full flex items-center justify-between gap-4 text-left">
+            <div className="flex items-center gap-3 min-w-0">
+              <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=closed]:-rotate-90 shrink-0" />
+              <div className="min-w-0">
+                <p className="font-display text-base font-semibold truncate">{g.orgName}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {g.items.length} lead{g.items.length === 1 ? "" : "s"} · {g.warm} warm · {g.won} won
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:flex items-center gap-5 text-right shrink-0">
+              <MiniStat label="Proposed" value={formatCurrency(g.proposed)} />
+              <MiniStat label="Closed" value={formatCurrency(g.wonValue)} accent />
+              <Link
+                to={`/admin/orgs/${g.orgId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-semibold text-primary hover:underline"
+              >
+                Open org →
+              </Link>
+            </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-4">
+            {view === "pipeline" ? (
+              <PipelineKanban leads={g.items} showOrgName={false} onOpenLead={onOpenLead} onChanged={onChanged} />
+            ) : (
+              <PipelineList leads={g.items} onOpenLead={onOpenLead} />
+            )}
+          </CollapsibleContent>
+        </Collapsible>
+      ))}
+    </div>
+  );
+}
+
+function MiniStat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <p className={cn("font-semibold text-sm mt-0.5", accent && "text-health")}>{value}</p>
+    </div>
   );
 }
