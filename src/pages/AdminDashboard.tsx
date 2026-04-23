@@ -66,11 +66,13 @@ type DrillKey = "complex" | "high-alert" | "review" | null;
 type Density = "compact" | "standard" | "detailed";
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
   const [orgs, setOrgs] = useState<OrgRow[]>([]);
   const [activity, setActivity] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [density, setDensity] = useState<Density>("standard");
   const [awaitingTotal, setAwaitingTotal] = useState(0);
+  const [reviewed, setReviewed] = useState<Record<string, Partial<Record<"high_alert" | "revenue_review", { reviewed_at: string; reviewed_by: string }>>>>({});
 
   const [drill, setDrill] = useState<DrillKey>(null);
 
