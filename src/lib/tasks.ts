@@ -77,7 +77,19 @@ export const ENGINE_SCORE_FIELD: Record<string, string> = {
   Facility: "facility_score",
 };
 
-export type PlanStatus = "draft" | "active";
+export type PlanStatus = "draft" | "active" | "parked";
+
+export const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
+  draft: "Draft",
+  active: "Active",
+  parked: "Parked",
+};
+
+export const PLAN_STATUS_STYLE: Record<PlanStatus, string> = {
+  draft: "bg-amber-50 text-amber-700 border-amber-200",
+  active: "bg-accent-soft text-accent border-accent/30",
+  parked: "bg-secondary text-foreground/60 border-border",
+};
 
 export type TaskSource = "system" | "library" | "custom";
 
