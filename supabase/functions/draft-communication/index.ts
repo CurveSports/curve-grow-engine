@@ -52,7 +52,39 @@ function formatGuidance(format: string): string {
   }
 }
 
-function buildOrgSystemPrompt(intake: any, metrics: any, body: DraftBody, orgName: string): string {
+function typeSpecificCoaching(type: string): string {
+  const t = (type || "").toLowerCase();
+  const map: Record<string, string> = {
+    "weekly team update":
+      "Coaching: Should take under 3 minutes to fill in. Write so it can be sent as-is. Consistency every Thursday matters more than perfection. Three inputs only: schedule, focus, optional team-level positive note (never individual).",
+    "schedule change or cancellation":
+      "Coaching: Always lead with the NEW details before the explanation. Send the moment the change is confirmed. If Email, subject line should start with 'SCHEDULE CHANGE' in caps. For cancellations, text first then email — always include a make-up date or when families will hear next.",
+    "re-enrollment outreach":
+      "Coaching: Every personalized detail increases re-enrollment rate. Reference actual development notes where possible. Lead with the player's development, not the administrative ask.",
+    "dsf initial outreach":
+      "Coaching: Keep this short. Three short paragraphs maximum. Goal is a reply — not a full pitch. Do not over-explain the sponsorship. Get to the ask quickly.",
+    "post-meeting follow-up":
+      "Coaching: Must be sent within 24 hours of the meeting. Delay kills momentum. Reference something specific from the conversation — never generic. End with a clear next step and timeline.",
+    "tryout result accepted":
+      "Coaching: Always include something specific you saw from the player. Generic acceptance letters are missed opportunities to build loyalty from day one.",
+    "tryout result not selected":
+      "Coaching: Be honest, be kind, be specific. Families remember how they were treated. Only include a positive observation if it is true and specific — never generic praise. Always offer development feedback.",
+    "accountability follow-up":
+      "Coaching: Text or call the director first, then send this email as written record. Factual and chronological. No editorializing. Three sections only: situation, current status, specific ask.",
+    "tryout announcement":
+      "Coaching: Lead with the value of the program, then the logistics. Make it easy to sign up — one clear link or contact. Cover dates, location, age groups, what to bring.",
+    "tryout reminder":
+      "Coaching: Short and logistical. Confirm date, time, address, parking, what to wear, arrival time. No selling — they're already coming.",
+    "new coach onboarding":
+      "Coaching: Warm welcome, then clear next steps in order: background check, platform access, team roster, first practice, non-negotiables. Make the path obvious.",
+    "end of season debrief request":
+      "Coaching: Specific and structured. Three reflection questions max. Clear deadline. Make it easy for the coach to respond in 15 minutes.",
+  };
+  for (const key of Object.keys(map)) {
+    if (t.includes(key)) return map[key];
+  }
+  return "";
+}
   const cityState = intake?.city_state ?? "—";
   const marketType = intake?.market_type ?? "—";
   const orgType = intake?.org_type ?? "—";
