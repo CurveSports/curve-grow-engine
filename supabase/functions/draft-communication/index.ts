@@ -85,6 +85,8 @@ function typeSpecificCoaching(type: string): string {
   }
   return "";
 }
+
+function buildOrgSystemPrompt(intake: any, metrics: any, body: DraftBody, orgName: string): string {
   const cityState = intake?.city_state ?? "—";
   const marketType = intake?.market_type ?? "—";
   const orgType = intake?.org_type ?? "—";
