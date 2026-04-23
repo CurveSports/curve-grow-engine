@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { weekStartingMonday } from "@/lib/week";
-import { AlertTriangle, CheckCircle2, ExternalLink, Save } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Pencil, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Task = {
