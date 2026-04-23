@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2, UsersRound,
 } from "lucide-react";
 
 type NavItem = {
@@ -26,6 +26,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
   { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
   { to: "/admin/internal-resources", label: "Internal Resources", icon: BookOpen, match: (p) => p.startsWith("/admin/internal-resources") },
+  { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
 ];
 const ADMIN_SOON: NavItem[] = [
   { label: "Sponsorship Pipeline", icon: TrendingUp, soon: true },
