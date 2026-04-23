@@ -389,7 +389,19 @@ function complexReasons(o: OrgRow): string[] {
   return reasons;
 }
 
-function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; orgs: OrgRow[]; onClose: () => void }) {
+type ReviewKind = "high_alert" | "revenue_review";
+type ReviewedMap = Record<string, Partial<Record<ReviewKind, { reviewed_at: string; reviewed_by: string }>>>;
+
+function DrillPanel({ kind, orgs, reviewed, onToggleReviewed, onClose }: {
+  kind: Exclude<DrillKey, null>;
+  orgs: OrgRow[];
+  reviewed: ReviewedMap;
+  onToggleReviewed: (orgId: string, kind: ReviewKind) => void;
+  onClose: () => void;
+}) {
+  const [showReviewed, setShowReviewed] = useState(false);
+  const reviewKind: ReviewKind | null = kind === "high-alert" ? "high_alert" : kind === "review" ? "revenue_review" : null;
+
   const config = {
     "complex": {
       title: "Complex Engagements",
@@ -411,7 +423,9 @@ function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; or
     },
   }[kind];
 
-  const matched = orgs.filter(config.filter);
+  const allMatched = orgs.filter(config.filter);
+  const open = reviewKind ? allMatched.filter(o => !reviewed[o.id]?.[reviewKind]) : allMatched;
+  const done = reviewKind ? allMatched.filter(o => !!reviewed[o.id]?.[reviewKind]) : [];
 
   return (
     <div className="curve-card mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -432,33 +446,83 @@ function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; or
         </button>
       </div>
 
-      {matched.length === 0 ? (
+      {open.length === 0 && done.length === 0 ? (
         <p className="text-sm text-muted-foreground py-4 text-center">No matching organizations.</p>
       ) : (
-        <div className="divide-y divide-border -mx-6">
-          {matched.map((o) => (
-            <DrillRow key={o.id} org={o} kind={kind} />
-          ))}
-        </div>
+        <>
+          <div className="divide-y divide-border -mx-6">
+            {open.length === 0 ? (
+              <p className="px-6 py-4 text-sm text-muted-foreground text-center">All matching orgs have been reviewed. 🎉</p>
+            ) : open.map((o) => (
+              <DrillRow
+                key={o.id}
+                org={o}
+                kind={kind}
+                reviewKind={reviewKind}
+                reviewedInfo={reviewKind ? reviewed[o.id]?.[reviewKind] ?? null : null}
+                onToggleReviewed={onToggleReviewed}
+              />
+            ))}
+          </div>
+
+          {reviewKind && done.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setShowReviewed(s => !s)}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+              >
+                {showReviewed ? "Hide" : "Show"} {done.length} reviewed
+              </button>
+              {showReviewed && (
+                <div className="divide-y divide-border -mx-6 mt-3">
+                  {done.map((o) => (
+                    <DrillRow
+                      key={o.id}
+                      org={o}
+                      kind={kind}
+                      reviewKind={reviewKind}
+                      reviewedInfo={reviewed[o.id]?.[reviewKind] ?? null}
+                      onToggleReviewed={onToggleReviewed}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
-function DrillRow({ org, kind }: { org: OrgRow; kind: Exclude<DrillKey, null> }) {
+function DrillRow({ org, kind, reviewKind, reviewedInfo, onToggleReviewed }: {
+  org: OrgRow;
+  kind: Exclude<DrillKey, null>;
+  reviewKind: ReviewKind | null;
+  reviewedInfo: { reviewed_at: string; reviewed_by: string } | null;
+  onToggleReviewed: (orgId: string, kind: ReviewKind) => void;
+}) {
   const reasons = kind === "complex" ? complexReasons(org)
     : kind === "high-alert" ? (org.admin_alerts ?? []).filter((a: any) => a?.severity === "high").map((a: any) => a?.message ?? a?.title ?? "High-severity alert")
     : kind === "review" ? [org.revenue_verification ?? "Client did not confirm revenue totals during intake"]
     : [];
 
+  const isReviewed = !!reviewedInfo;
+
   return (
-    <Link to={`/admin/org/${org.id}`} className="flex items-start justify-between gap-4 px-6 py-3 hover:bg-secondary/40 transition-colors group">
-      <div className="min-w-0 flex-1">
+    <div className={cn("flex items-start justify-between gap-4 px-6 py-3 hover:bg-secondary/40 transition-colors group", isReviewed && "opacity-60")}>
+      <Link to={`/admin/org/${org.id}`} className="min-w-0 flex-1 block">
         <div className="flex items-center gap-2 mb-1">
-          <span className="font-display font-semibold text-sm group-hover:text-accent transition-colors">{org.name}</span>
+          <span className={cn("font-display font-semibold text-sm group-hover:text-accent transition-colors", isReviewed && "line-through")}>{org.name}</span>
           {org.tier && (
             <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold border", TIER_STYLES[org.tier] ?? "bg-secondary")}>
               {org.tier}
+            </span>
+          )}
+          {isReviewed && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-accent-soft text-accent border border-accent/30">
+              <CheckCheck className="h-3 w-3" /> Reviewed
             </span>
           )}
         </div>
@@ -474,9 +538,28 @@ function DrillRow({ org, kind }: { org: OrgRow; kind: Exclude<DrillKey, null> })
         ) : (
           <p className="text-xs text-muted-foreground">No specific detail available.</p>
         )}
+        {isReviewed && reviewedInfo && (
+          <p className="text-[10px] text-muted-foreground mt-1">Reviewed {timeAgo(reviewedInfo.reviewed_at)}</p>
+        )}
+      </Link>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {reviewKind && (
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleReviewed(org.id, reviewKind); }}
+            className={cn(
+              "text-[11px] font-semibold px-2.5 py-1 rounded-md border transition-colors",
+              isReviewed
+                ? "border-border text-muted-foreground hover:bg-secondary"
+                : "border-accent/40 text-accent bg-accent-soft hover:bg-accent hover:text-accent-foreground",
+            )}
+          >
+            {isReviewed ? "Undo" : "Mark reviewed"}
+          </button>
+        )}
+        <Link to={`/admin/org/${org.id}`} className="text-xs font-semibold text-accent hover:underline">View →</Link>
       </div>
-      <span className="text-xs font-semibold text-accent group-hover:underline flex-shrink-0 mt-0.5">View →</span>
-    </Link>
+    </div>
   );
 }
 
