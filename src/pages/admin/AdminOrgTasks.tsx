@@ -192,44 +192,19 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
       )}
 
       {isReviewMode && (
-        <>
-          {/* Amber draft mode banner */}
-          <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning-soft">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-              </div>
-              <div>
-                <p className="font-medium text-foreground">Recommended Plan — Admin review</p>
-                <p className="text-sm text-muted-foreground">These are the auto-generated recommendations. Review, edit, or remove tasks. Approving the plan unlocks the Projects tab so you can release work to the org in waves.</p>
-              </div>
+        <div className="mb-6 p-4 rounded-lg border border-warning/40 bg-warning-soft">
+          <div className="flex items-center gap-3">
+            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">Recommended Plan — Admin review</p>
+              <p className="text-sm text-muted-foreground">
+                Triage the auto-generated tasks below: park what's not relevant, adjust priority/owner, search and filter freely. Approving the plan unlocks the Projects tab so you can release work to the org in waves.
+              </p>
             </div>
           </div>
-
-          {/* Engine summary cards */}
-          <div className="mb-6">
-            <p className="curve-eyebrow mb-4">Plan coverage by engine</p>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-              {Object.entries(draftByEngine).map(([engine, count]) => (
-                <div key={engine} className="p-3 rounded-lg border bg-card">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">{engine}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full border ${getScoreBadgeClasses(scores[engine])}`}>
-                      {scores[engine] ?? "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-semibold tabular-nums">{count}</span>
-                    <span className="text-xs text-muted-foreground">task{count === 1 ? "" : "s"}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              Approving the plan does <strong>not</strong> send work to the org. Tasks become visible only when you release a project that contains them.
-            </p>
-          </div>
-        </>
+        </div>
       )}
 
       {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : (
@@ -237,16 +212,22 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           <div className="curve-card text-center py-16">
             <p className="text-muted-foreground mb-4">{planActivatedAt ? "No tasks yet — add one to get started." : "No tasks yet. They'll be auto-generated when this org completes intake."}</p>
           </div>
-        ) : (isReviewMode || projects.length === 0) ? (
-          <TaskList tasks={tasks} scores={scores} onSelect={setSelected} showPlanStatus />
-        ) : (
-          <AdminTasksByProject
-            projects={projects}
+        ) : isReviewMode ? (
+          <PlanReviewWorkspace
+            orgId={orgId!}
             tasks={tasks}
             scores={scores}
-            orgId={orgId!}
+            priorityEngine={priorityEngine}
+            fastestPathEngines={fastestPathEngines}
             onSelect={setSelected}
             onChanged={load}
+          />
+        ) : (
+          <PlanManageSummary
+            orgId={orgId!}
+            tasks={tasks}
+            scores={scores}
+            tasksGeneratedAt={tasksGeneratedAt}
           />
         )
       )}
