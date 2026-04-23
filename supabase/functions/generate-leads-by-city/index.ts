@@ -1,6 +1,7 @@
-// Admin-only: generate a curated list of local sponsor candidates for a city/state.
-// Uses Lovable AI Gateway with Gemini 2.5 Pro for breadth + reasoning.
-// Returns 20-40 candidates with category diversity. Contact info is AI-estimated and must be verified.
+// Admin-only: generate a curated list of REAL local sponsor candidates for a city/state.
+// Uses Gemini 2.5 Pro with Google Search grounding so businesses, phones, addresses, and
+// websites come from real Google results — not LLM hallucination.
+// Emails are typically NOT findable via search; admin verifies on the website.
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
@@ -9,40 +10,51 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM = `You generate curated lists of LOCAL businesses that would be strong sponsorship candidates for a youth/high-school travel sports organization. Focus on businesses that benefit from community visibility to families with disposable income (restaurants, auto dealers, real estate agents, doctors/dentists, financial advisors, fitness centers, retail, contractors, professional services). Return realistic-sounding business names and category-appropriate types. Phone numbers and emails MUST be marked as estimated/unverified (use plausible local-format placeholders).`;
+const SYSTEM = `You are a local-business researcher. You use Google Search to find REAL local businesses that would be strong sponsorship candidates for a youth/high-school travel sports organization.
 
-const TOOL = {
-  type: "function" as const,
-  function: {
-    name: "return_lead_candidates",
-    description: "Return a curated list of local sponsor candidates.",
-    parameters: {
-      type: "object",
-      properties: {
-        candidates: {
-          type: "array",
-          minItems: 15,
-          items: {
-            type: "object",
-            properties: {
-              business_name: { type: "string" },
-              business_type: { type: "string" },
-              contact_name: { type: "string", description: "Owner/manager name if commonly known, else empty" },
-              contact_phone: { type: "string", description: "Plausible local-format phone, marked as estimated" },
-              contact_email: { type: "string", description: "Plausible business email, marked as estimated" },
-              city_state: { type: "string" },
-              rationale: { type: "string", description: "1 sentence on why this is a good sponsor fit" },
-            },
-            required: ["business_name", "business_type", "contact_name", "contact_phone", "contact_email", "city_state", "rationale"],
-            additionalProperties: false,
-          },
-        },
-      },
-      required: ["candidates"],
-      additionalProperties: false,
-    },
-  },
-};
+CRITICAL RULES:
+1. Every business MUST be a real establishment you found via Google Search in the requested city.
+2. Phone numbers, addresses, and websites MUST come from actual Google search results — never invent them.
+3. If you cannot confirm a phone via search, leave contact_phone as an empty string. NEVER fabricate.
+4. Emails are rarely on Google — leave contact_email empty unless it appears in a search snippet.
+5. Owner/manager names: only include if found in search results, otherwise empty.
+6. Prefer locally-owned businesses (independent restaurants, family auto dealers, local realtors, dentists, orthodontists, pediatricians, financial advisors, contractors, fitness studios) over national chains.
+7. Spread across categories — no more than ~25% in any one category.
+
+After searching, output ONLY a single JSON code block matching this exact shape:
+\`\`\`json
+{
+  "candidates": [
+    {
+      "business_name": "string",
+      "business_type": "string",
+      "contact_name": "string (empty if unknown)",
+      "contact_phone": "string (empty if not found in search)",
+      "contact_email": "string (empty if not found in search)",
+      "website": "string (empty if not found)",
+      "address": "string (street address if found)",
+      "city_state": "string",
+      "rationale": "1 sentence on sponsor fit"
+    }
+  ]
+}
+\`\`\`
+No prose before or after the JSON block.`;
+
+function extractJson(text: string): any | null {
+  // Try fenced ```json ... ``` first
+  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fence ? fence[1] : text;
+  // Find the outermost { ... }
+  const start = candidate.indexOf("{");
+  const end = candidate.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) return null;
+  try {
+    return JSON.parse(candidate.slice(start, end + 1));
+  } catch {
+    return null;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -61,14 +73,16 @@ serve(async (req) => {
 
     const targetCount = Math.min(40, Math.max(15, Number(count) || 25));
     const catLine = Array.isArray(categories) && categories.length
-      ? `Bias selections toward: ${categories.join(", ")}.`
-      : `Cover a diverse mix of categories.`;
+      ? `Bias toward these categories: ${categories.join(", ")}.`
+      : `Mix of restaurants, auto dealers, real estate agents, dentists/orthodontists, pediatricians, financial advisors, fitness studios, retail, contractors.`;
 
-    const userPrompt = `Generate ${targetCount} sponsorship lead candidates in ${city_state.trim()}.
+    const userPrompt = `Use Google Search to find ${targetCount} REAL local businesses in ${city_state.trim()} that would be sponsorship candidates for a youth travel sports organization.
+
 ${catLine}
-Spread across categories — no more than ~25% in any one category.
-For each, include a one-sentence rationale tying the business to youth/HS travel sports family audiences.
-Mark phone/email as estimated (e.g. prefix with "(est) " or note in rationale).`;
+
+For each business: search Google for the name + city, pull the phone number, address, and website from the actual search results / Google Business listing. Leave any field empty if you can't confirm it from search. Do NOT invent contact info.
+
+Return the JSON block only.`;
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -79,8 +93,8 @@ Mark phone/email as estimated (e.g. prefix with "(est) " or note in rationale).`
           { role: "system", content: SYSTEM },
           { role: "user", content: userPrompt },
         ],
-        tools: [TOOL],
-        tool_choice: { type: "function", function: { name: "return_lead_candidates" } },
+        // Enable Google Search grounding so Gemini queries real listings.
+        tools: [{ type: "google_search" } as any],
       }),
     });
 
@@ -101,16 +115,31 @@ Mark phone/email as estimated (e.g. prefix with "(est) " or note in rationale).`
     }
 
     const data = await resp.json();
-    const tc = data?.choices?.[0]?.message?.tool_calls?.[0];
-    if (!tc?.function?.arguments) {
-      return new Response(JSON.stringify({ error: "AI did not return structured data" }), {
+    const content: string = data?.choices?.[0]?.message?.content ?? "";
+    const parsed = extractJson(content);
+
+    if (!parsed?.candidates || !Array.isArray(parsed.candidates)) {
+      console.error("Could not parse candidates from response", content?.slice(0, 500));
+      return new Response(JSON.stringify({ error: "AI did not return parseable lead data. Try again." }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const parsed = JSON.parse(tc.function.arguments);
-    return new Response(JSON.stringify(parsed), {
+    // Normalize: ensure all expected fields exist as strings
+    const candidates = parsed.candidates.map((c: any) => ({
+      business_name: String(c.business_name ?? "").trim(),
+      business_type: String(c.business_type ?? "").trim(),
+      contact_name: String(c.contact_name ?? "").trim(),
+      contact_phone: String(c.contact_phone ?? "").trim(),
+      contact_email: String(c.contact_email ?? "").trim(),
+      website: String(c.website ?? "").trim(),
+      address: String(c.address ?? "").trim(),
+      city_state: String(c.city_state ?? city_state).trim(),
+      rationale: String(c.rationale ?? "").trim(),
+    })).filter((c: any) => c.business_name);
+
+    return new Response(JSON.stringify({ candidates }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -17,6 +17,8 @@ type Candidate = {
   contact_name: string;
   contact_phone: string;
   contact_email: string;
+  website: string;
+  address: string;
   city_state: string;
   rationale: string;
   selected: boolean;
@@ -57,7 +59,18 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
         body: { city_state: city.trim(), count, categories: Array.from(cats) },
       });
       if (error) throw error;
-      const list = ((data as any)?.candidates ?? []).map((c: any) => ({ ...c, selected: true }));
+      const list: Candidate[] = ((data as any)?.candidates ?? []).map((c: any) => ({
+        business_name: c.business_name ?? "",
+        business_type: c.business_type ?? "",
+        contact_name: c.contact_name ?? "",
+        contact_phone: c.contact_phone ?? "",
+        contact_email: c.contact_email ?? "",
+        website: c.website ?? "",
+        address: c.address ?? "",
+        city_state: c.city_state ?? city.trim(),
+        rationale: c.rationale ?? "",
+        selected: true,
+      }));
       if (list.length === 0) throw new Error("No candidates returned");
       setCandidates(list);
       toast.success(`${list.length} candidates generated — review and import`);
@@ -74,20 +87,25 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
     const picked = candidates.filter(c => c.selected && c.business_name.trim());
     if (picked.length === 0) return toast.error("Select at least one candidate");
     setSubmitBusy(true);
-    const inserts = picked.map(c => ({
-      org_id: orgId,
-      business_name: c.business_name.trim(),
-      contact_name: c.contact_name?.trim() || null,
-      contact_email: c.contact_email?.trim() || null,
-      contact_phone: c.contact_phone?.trim() || null,
-      business_type: c.business_type?.trim() || null,
-      city_state: c.city_state?.trim() || city.trim(),
-      source: "dsf_outreach",
-      stage: "new_lead",
-      created_by: user.id,
-      ai_generated: true,
-      ai_generation_notes: c.rationale ?? null,
-    }));
+    const inserts = picked.map(c => {
+      const notes = [c.rationale, c.website && `Website: ${c.website}`, c.address && `Address: ${c.address}`]
+        .filter(Boolean)
+        .join(" • ");
+      return {
+        org_id: orgId,
+        business_name: c.business_name.trim(),
+        contact_name: c.contact_name?.trim() || null,
+        contact_email: c.contact_email?.trim() || null,
+        contact_phone: c.contact_phone?.trim() || null,
+        business_type: c.business_type?.trim() || null,
+        city_state: c.city_state?.trim() || city.trim(),
+        source: "dsf_outreach",
+        stage: "new_lead",
+        created_by: user.id,
+        ai_generated: true,
+        ai_generation_notes: notes || null,
+      };
+    });
     const { data, error } = await supabase.from("sponsorship_leads").insert(inserts).select("id");
     setSubmitBusy(false);
     if (error) {
@@ -155,8 +173,8 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
             </div>
             <div className="rounded-md border border-warning/30 bg-warning-soft/40 p-3 flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-warning flex-shrink-0 mt-0.5" />
-              <p className="text-xs">
-                <strong>Heads up:</strong> Phone numbers and emails are AI-estimated and should be verified before outreach. Business names, types, and rationale are typically accurate, but contact details may be incorrect.
+              <p className="text-xs leading-relaxed">
+                <strong>Powered by Google Search.</strong> Business names, phones, addresses, and websites come from real Google results — but listings change. Spot-check before outreach. Emails usually aren't on Google; use the website link to find them.
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-2">
@@ -202,10 +220,28 @@ export default function AdminAIGenerateLeadsModal({ open, onOpenChange, orgId, d
                       <p className="text-xs text-muted-foreground italic mt-1">{c.rationale}</p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
                         <Input value={c.business_type} onChange={(e) => updateCand(i, { business_type: e.target.value })} placeholder="Type" className="h-7 text-xs" />
-                        <Input value={c.contact_name} onChange={(e) => updateCand(i, { contact_name: e.target.value })} placeholder="Contact" className="h-7 text-xs" />
-                        <Input value={c.contact_phone} onChange={(e) => updateCand(i, { contact_phone: e.target.value })} placeholder="Phone (verify)" className="h-7 text-xs" />
-                        <Input value={c.contact_email} onChange={(e) => updateCand(i, { contact_email: e.target.value })} placeholder="Email (verify)" className="h-7 text-xs" />
+                        <Input value={c.contact_name} onChange={(e) => updateCand(i, { contact_name: e.target.value })} placeholder="Contact name" className="h-7 text-xs" />
+                        <Input value={c.contact_phone} onChange={(e) => updateCand(i, { contact_phone: e.target.value })} placeholder="Phone" className="h-7 text-xs" />
+                        <Input value={c.contact_email} onChange={(e) => updateCand(i, { contact_email: e.target.value })} placeholder="Email (often blank)" className="h-7 text-xs" />
+                        <Input value={c.address} onChange={(e) => updateCand(i, { address: e.target.value })} placeholder="Address" className="h-7 text-xs sm:col-span-2" />
+                        <Input value={c.website} onChange={(e) => updateCand(i, { website: e.target.value })} placeholder="Website" className="h-7 text-xs sm:col-span-2" />
                       </div>
+                      {(c.website || c.business_name) && (
+                        <div className="flex flex-wrap gap-2 mt-2 text-[11px]">
+                          {c.website && (
+                            <a href={c.website.startsWith("http") ? c.website : `https://${c.website}`} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                              Visit site →
+                            </a>
+                          )}
+                          <a
+                            href={`https://www.google.com/search?q=${encodeURIComponent(`${c.business_name} ${c.city_state} email contact`)}`}
+                            target="_blank" rel="noopener noreferrer"
+                            className="text-muted-foreground hover:text-foreground hover:underline"
+                          >
+                            Find email on Google →
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
