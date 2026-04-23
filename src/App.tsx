@@ -34,6 +34,8 @@ import Plan from "@/pages/Plan";
 import Calculators from "@/pages/Calculators";
 import Communications from "@/pages/Communications";
 import AdminCommunications from "@/pages/admin/AdminCommunications";
+import Settings from "@/pages/Settings";
+import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -45,6 +47,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <BrandingProvider>
           <Routes>
             <Route path="/" element={<RouteResolver />} />
             <Route path="/auth" element={<Auth />} />
@@ -77,8 +80,10 @@ const App = () => (
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/engine/:engine" element={<ProtectedRoute role="admin"><AdminEngineFocus /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </BrandingProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
