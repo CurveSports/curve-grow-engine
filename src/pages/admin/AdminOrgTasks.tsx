@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
-import TaskList from "@/components/tasks/TaskList";
 import TaskDetailPanel from "@/components/tasks/TaskDetailPanel";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
