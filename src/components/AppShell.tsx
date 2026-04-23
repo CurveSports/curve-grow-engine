@@ -152,7 +152,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-nav text-nav-foreground border-t border-nav-border z-40 flex items-stretch">
-        {primary.slice(0, 4).map((item) => {
+        {(role === "admin" ? ADMIN_MOBILE : primary.slice(0, 4)).map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item);
           return (
@@ -170,7 +170,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
             </Link>
           );
         })}
-        {showTeam && (
+        {role !== "admin" && showTeam && (
           <Link to="/team" className={cn(
             "flex-1 flex flex-col items-center justify-center gap-1 min-h-[44px]",
             location.pathname === "/team" ? "text-white" : "text-nav-muted",
