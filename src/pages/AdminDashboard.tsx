@@ -9,6 +9,7 @@ import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
   CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning, FolderKanban,
+  ChevronDown, ChevronUp, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +50,15 @@ type OrgRow = {
   points_to_next_tier: number | null;
   platform_score: number | null;
   marketing_score: number | null;
+  retention_risk: string | null;
+  market_risk: string | null;
+  execution_risk: string | null;
+  strategic_clarity_score: number | null;
+  engagement_approach_recommendation: string | null;
+  revenue_verification: string | null;
 };
+
+type DrillKey = "complex" | "high-alert" | "review" | null;
 
 type Density = "compact" | "standard" | "detailed";
 
@@ -60,6 +69,8 @@ export default function AdminDashboard() {
   const [density, setDensity] = useState<Density>("standard");
   const [awaitingTotal, setAwaitingTotal] = useState(0);
 
+  const [drill, setDrill] = useState<DrillKey>(null);
+
   useEffect(() => {
     (async () => {
       const oneWeekAhead = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
@@ -68,7 +79,7 @@ export default function AdminDashboard() {
       const [orgsRes, tasksRes, activityRes, awaitingProjectsRes] = await Promise.all([
         supabase
           .from("organizations")
-          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier, platform_score, marketing_score)"),
+          .select("id, name, plan_activated_at, active_project_count, draft_project_count, completed_project_count, organization_intake(submitted_at, revenue_needs_review, revenue_verification), derived_metrics(monetization_tier, total_engine_score, revenue_per_player, priority_engine, calculated_total_revenue, total_opportunity_low, total_opportunity_high, overall_health_score, engagement_complexity, admin_alerts, next_tier, points_to_next_tier, platform_score, marketing_score, retention_risk, market_risk, execution_risk, strategic_clarity_score, engagement_approach_recommendation)"),
         supabase.from("org_tasks").select("org_id, status, due_date, completed_at, last_activity_at"),
         supabase.from("task_activity_log").select("id, action, created_at, task_id, org_id, org_tasks(title), organizations(name)").order("created_at", { ascending: false }).limit(10),
         supabase.from("org_projects").select("id, org_id, name").eq("awaiting_completion_approval", true),
@@ -120,6 +131,12 @@ export default function AdminDashboard() {
           points_to_next_tier: metrics?.points_to_next_tier ?? null,
           platform_score: metrics?.platform_score ?? null,
           marketing_score: metrics?.marketing_score ?? null,
+          retention_risk: metrics?.retention_risk ?? null,
+          market_risk: metrics?.market_risk ?? null,
+          execution_risk: metrics?.execution_risk ?? null,
+          strategic_clarity_score: metrics?.strategic_clarity_score ?? null,
+          engagement_approach_recommendation: metrics?.engagement_approach_recommendation ?? null,
+          revenue_verification: intake?.revenue_verification ?? null,
         };
       });
       setOrgs(r);
@@ -196,31 +213,44 @@ export default function AdminDashboard() {
       </div>
 
       {/* Engagement Health Overview */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <StatCard
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <InteractiveStatCard
           icon={<AlertTriangle className={cn("h-4 w-4", stats.complexCount > 0 ? "text-destructive" : "text-accent")} />}
           label="Complex Engagements"
           value={loading ? "—" : stats.complexCount}
           valueClass={stats.complexCount > 0 ? "text-destructive" : "text-accent"}
           subtitle="Require foundational work before revenue activation"
+          active={drill === "complex"}
+          disabled={stats.complexCount === 0}
+          onClick={() => setDrill(drill === "complex" ? null : "complex")}
         />
-        <Link to="/admin?filter=high-alert" className="block">
-          <StatCard
-            icon={<ShieldAlert className={cn("h-4 w-4", stats.highAlertCount > 0 ? "text-destructive" : "text-accent")} />}
-            label="High Risk Alerts"
-            value={loading ? "—" : stats.highAlertCount}
-            valueClass={stats.highAlertCount > 0 ? "text-destructive" : "text-accent"}
-            subtitle="Click to view orgs needing immediate attention"
-          />
-        </Link>
-        <StatCard
+        <InteractiveStatCard
+          icon={<ShieldAlert className={cn("h-4 w-4", stats.highAlertCount > 0 ? "text-destructive" : "text-accent")} />}
+          label="High Risk Alerts"
+          value={loading ? "—" : stats.highAlertCount}
+          valueClass={stats.highAlertCount > 0 ? "text-destructive" : "text-accent"}
+          subtitle="Orgs needing immediate attention"
+          active={drill === "high-alert"}
+          disabled={stats.highAlertCount === 0}
+          onClick={() => setDrill(drill === "high-alert" ? null : "high-alert")}
+        />
+        <InteractiveStatCard
           icon={<FileWarning className={cn("h-4 w-4", stats.reviewCount > 0 ? "text-warning" : "text-accent")} />}
           label="Revenue Review Needed"
           value={loading ? "—" : stats.reviewCount}
           valueClass={stats.reviewCount > 0 ? "text-warning" : "text-accent"}
           subtitle="Intake data flagged for verification"
+          active={drill === "review"}
+          disabled={stats.reviewCount === 0}
+          onClick={() => setDrill(drill === "review" ? null : "review")}
         />
       </div>
+
+      {drill && (
+        <DrillPanel kind={drill} orgs={orgs} onClose={() => setDrill(null)} />
+      )}
+
+      <div className="mb-8" />
 
       <Tabs defaultValue="orgs">
         <TabsList className="mb-6">
@@ -277,6 +307,144 @@ function StatCard({ icon, label, value, subtitle, valueClass = "", extra }: { ic
       {subtitle && <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>}
       {extra}
     </div>
+  );
+}
+
+function InteractiveStatCard({
+  icon, label, value, subtitle, valueClass = "", active, disabled, onClick,
+}: {
+  icon: React.ReactNode; label: string; value: any; subtitle?: string; valueClass?: string;
+  active: boolean; disabled?: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={cn(
+        "curve-card text-left w-full transition-all",
+        !disabled && "hover:border-foreground/30 hover:shadow-md cursor-pointer",
+        active && "ring-2 ring-foreground border-foreground/40",
+        disabled && "opacity-60 cursor-default",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">{icon}<p className="curve-eyebrow truncate">{label}</p></div>
+        {!disabled && (
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            {active ? "Hide" : "View"}
+          </span>
+        )}
+      </div>
+      <p className={cn("curve-stat", valueClass)}>{value}</p>
+      {subtitle && <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>}
+    </button>
+  );
+}
+
+function complexReasons(o: OrgRow): string[] {
+  const reasons: string[] = [];
+  if (o.strategic_clarity_score !== null && o.strategic_clarity_score < 5) {
+    reasons.push(`Low strategic clarity (${o.strategic_clarity_score}/10)`);
+  }
+  if (o.retention_risk === "High") reasons.push("High retention risk");
+  if (o.market_risk === "High") reasons.push("High market risk");
+  if (o.execution_risk === "High") reasons.push("High execution risk");
+  if (o.overall_health_score !== null && o.overall_health_score < 50) {
+    reasons.push(`Low overall health (${o.overall_health_score}/100)`);
+  }
+  return reasons;
+}
+
+function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; orgs: OrgRow[]; onClose: () => void }) {
+  const config = {
+    "complex": {
+      title: "Complex Engagements",
+      description: "These orgs need foundational work — strategy, retention, or execution gaps — before revenue activation efforts will land.",
+      icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
+      filter: (o: OrgRow) => o.engagement_complexity === "Complex",
+    },
+    "high-alert": {
+      title: "High Risk Alerts",
+      description: "Orgs with one or more high-severity admin alerts that need immediate attention.",
+      icon: <ShieldAlert className="h-4 w-4 text-destructive" />,
+      filter: (o: OrgRow) => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high"),
+    },
+    "review": {
+      title: "Revenue Review Needed",
+      description: "Intake data was flagged for verification — totals didn't reconcile or the client wasn't sure of a figure.",
+      icon: <FileWarning className="h-4 w-4 text-warning" />,
+      filter: (o: OrgRow) => o.revenue_needs_review === true,
+    },
+  }[kind];
+
+  const matched = orgs.filter(config.filter);
+
+  return (
+    <div className="curve-card mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="flex items-start justify-between gap-4 mb-4 pb-4 border-b border-border">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="mt-0.5">{config.icon}</div>
+          <div className="min-w-0">
+            <h3 className="font-display font-semibold text-base">{config.title}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          aria-label="Close drill-down"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {matched.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4 text-center">No matching organizations.</p>
+      ) : (
+        <div className="divide-y divide-border -mx-6">
+          {matched.map((o) => (
+            <DrillRow key={o.id} org={o} kind={kind} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DrillRow({ org, kind }: { org: OrgRow; kind: Exclude<DrillKey, null> }) {
+  const reasons = kind === "complex" ? complexReasons(org)
+    : kind === "high-alert" ? (org.admin_alerts ?? []).filter((a: any) => a?.severity === "high").map((a: any) => a?.message ?? a?.title ?? "High-severity alert")
+    : kind === "review" ? [org.revenue_verification ?? "Client did not confirm revenue totals during intake"]
+    : [];
+
+  return (
+    <Link to={`/admin/org/${org.id}`} className="flex items-start justify-between gap-4 px-6 py-3 hover:bg-secondary/40 transition-colors group">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-display font-semibold text-sm group-hover:text-accent transition-colors">{org.name}</span>
+          {org.tier && (
+            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold border", TIER_STYLES[org.tier] ?? "bg-secondary")}>
+              {org.tier}
+            </span>
+          )}
+        </div>
+        {reasons.length > 0 ? (
+          <ul className="text-xs text-muted-foreground space-y-0.5">
+            {reasons.map((r, i) => (
+              <li key={i} className="flex items-start gap-1.5">
+                <span className="text-destructive mt-1">•</span>
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">No specific detail available.</p>
+        )}
+      </div>
+      <span className="text-xs font-semibold text-accent group-hover:underline flex-shrink-0 mt-0.5">View →</span>
+    </Link>
   );
 }
 
