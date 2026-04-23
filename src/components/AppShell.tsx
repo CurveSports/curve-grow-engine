@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, BookOpen, UserCircle2,
 } from "lucide-react";
 
 type NavItem = {
