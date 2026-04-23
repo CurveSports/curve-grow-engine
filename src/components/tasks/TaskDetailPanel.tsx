@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 import { Trash2, Lock } from "lucide-react";
 import OwnerPill from "@/components/tasks/OwnerPill";
+import TaskAssigneePicker from "@/components/tasks/TaskAssigneePicker";
 
 interface Props {
   task: OrgTask | null;
