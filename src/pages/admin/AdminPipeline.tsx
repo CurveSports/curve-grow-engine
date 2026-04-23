@@ -10,11 +10,15 @@ import PipelineList from "@/components/sponsorship/PipelineList";
 import PipelineMetrics from "@/components/sponsorship/PipelineMetrics";
 import AddLeadModal from "@/components/sponsorship/AddLeadModal";
 import LeadDetailPanel from "@/components/sponsorship/LeadDetailPanel";
-import { Plus, LayoutGrid, Rows3, BarChart3, Filter as FilterIcon } from "lucide-react";
+import { Plus, LayoutGrid, Rows3, BarChart3, Filter as FilterIcon, Globe, Building2, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { STAGES, STAGE_LABELS, SOURCES, SOURCE_LABELS, type SponsorshipLead } from "@/lib/sponsorship";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { formatCurrency } from "@/lib/format";
+import { Link } from "react-router-dom";
 
 type View = "pipeline" | "list" | "metrics";
+type Scope = "global" | "by_org";
 
 export default function AdminPipeline() {
   const [view, setView] = useState<View>("pipeline");
