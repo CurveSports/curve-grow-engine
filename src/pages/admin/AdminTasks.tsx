@@ -5,9 +5,21 @@ import AppShell from "@/components/AppShell";
 import { ENGINES } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, ArrowUpDown, ArrowUp, ArrowDown, Lightbulb } from "lucide-react";
 
-type EngineStat = { total: number; completed: number };
+// Map engine -> derived_metrics opportunity_high field
+const ENGINE_OPPORTUNITY_FIELD: Record<string, string> = {
+  Pricing: "pricing_opportunity_high",
+  Sponsorship: "sponsorship_opportunity_high",
+  Apparel: "apparel_opportunity_high",
+  Events: "event_opportunity_high",
+  "Add-Ons": "addon_opportunity_high",
+  Retention: "retention_opportunity_high",
+  Facility: "facility_opportunity_high",
+  Affiliate: "affiliate_fee_opportunity_high",
+};
+
+type EngineStat = { total: number; completed: number; opportunity: number };
 type Row = {
   id: string;
   name: string;
@@ -56,24 +68,35 @@ export default function AdminTasks() {
 
   useEffect(() => {
     (async () => {
+      const metricsCols = "org_id, monetization_tier, " + Object.values(ENGINE_OPPORTUNITY_FIELD).join(", ");
       const [{ data: orgs }, { data: tasks }, { data: metrics }, { data: intakes }] = await Promise.all([
         supabase.from("organizations").select("id, name, plan_activated_at"),
         supabase.from("org_tasks").select("org_id, engine, status, last_activity_at, plan_status"),
-        supabase.from("derived_metrics").select("org_id, monetization_tier"),
+        supabase.from("derived_metrics").select(metricsCols),
         supabase.from("organization_intake").select("org_id, revenue_needs_review"),
       ]);
 
       const tierByOrg = new Map<string, string | null>();
-      for (const m of metrics ?? []) tierByOrg.set((m as any).org_id, (m as any).monetization_tier);
+      const oppByOrg = new Map<string, Record<string, number>>();
+      for (const m of metrics ?? []) {
+        const mm = m as any;
+        tierByOrg.set(mm.org_id, mm.monetization_tier);
+        const opp: Record<string, number> = {};
+        for (const [engine, field] of Object.entries(ENGINE_OPPORTUNITY_FIELD)) {
+          opp[engine] = Number(mm[field]) || 0;
+        }
+        oppByOrg.set(mm.org_id, opp);
+      }
       const reviewByOrg = new Map<string, boolean>();
       for (const i of intakes ?? []) reviewByOrg.set((i as any).org_id, !!(i as any).revenue_needs_review);
 
       const r: Row[] = (orgs ?? []).map((o: any) => {
         const list = (tasks ?? []).filter((t: any) => t.org_id === o.id);
+        const opp = oppByOrg.get(o.id) ?? {};
         const by_engine: Record<string, EngineStat> = {};
-        for (const e of ENGINES) by_engine[e] = { total: 0, completed: 0 };
+        for (const e of ENGINES) by_engine[e] = { total: 0, completed: 0, opportunity: opp[e] ?? 0 };
         for (const t of list) {
-          if (!by_engine[t.engine]) by_engine[t.engine] = { total: 0, completed: 0 };
+          if (!by_engine[t.engine]) by_engine[t.engine] = { total: 0, completed: 0, opportunity: opp[t.engine] ?? 0 };
           by_engine[t.engine].total++;
           if (t.status === "completed") by_engine[t.engine].completed++;
         }
@@ -292,20 +315,35 @@ export default function AdminTasks() {
                     <td className={cellPad}>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 min-w-[260px]">
                         {ENGINES.map(e => {
-                          const eng = o.by_engine[e] ?? { total: 0, completed: 0 };
+                          const eng = o.by_engine[e] ?? { total: 0, completed: 0, opportunity: 0 };
                           const has = eng.total > 0;
                           const ePct = has ? Math.round((eng.completed / eng.total) * 100) : 0;
+                          const showOpportunity = !has && eng.opportunity > 0;
+                          const oppLabel = eng.opportunity >= 1000
+                            ? `$${Math.round(eng.opportunity / 1000)}K`
+                            : `$${Math.round(eng.opportunity)}`;
                           return (
                             <div
                               key={e}
-                              className={`flex items-center gap-1.5 ${has ? "" : "opacity-30"}`}
+                              className={`flex items-center gap-1.5 ${has ? "" : showOpportunity ? "opacity-70" : "opacity-30"}`}
                               title={has ? `${e}: ${eng.completed}/${eng.total} (${ePct}%)` : `${e}: no tasks`}
                             >
                               <span className="text-[10px] text-muted-foreground w-12 truncate">{e.slice(0, 4)}</span>
                               <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden min-w-[24px]">
                                 <div className={`h-full ${engineBarColor(ePct)}`} style={{ width: has ? `${ePct}%` : "0%" }} />
                               </div>
-                              <span className="text-[10px] tabular-nums text-muted-foreground w-7 text-right">{has ? `${ePct}%` : "—"}</span>
+                              {showOpportunity ? (
+                                <Link
+                                  to={`/admin/org/${o.id}?tab=tasks`}
+                                  title={`Untapped opportunity per metrics: up to ${oppLabel}/yr — click to build ${e} tasks`}
+                                  className="inline-flex items-center justify-center w-7 h-4 rounded text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                  onClick={(ev) => ev.stopPropagation()}
+                                >
+                                  <Lightbulb className="h-3 w-3" />
+                                </Link>
+                              ) : (
+                                <span className="text-[10px] tabular-nums text-muted-foreground w-7 text-right">{has ? `${ePct}%` : "—"}</span>
+                              )}
                             </div>
                           );
                         })}
