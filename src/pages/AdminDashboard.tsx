@@ -6,13 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { CheckCheck } from "lucide-react";
+import { weekStartingMonday } from "@/lib/week";
 
 import AdminProjectsCrossOrg from "@/pages/admin/AdminProjectsCrossOrg";
 import { formatCurrency } from "@/lib/format";
 import {
   Building2, DollarSign, ListChecks, Trophy, LayoutGrid, Rows3, Square,
   CheckCircle2, AlertCircle, Clock, Sparkles, FileText, Plus, AlertTriangle, ShieldAlert, FileWarning, FolderKanban,
-  ChevronDown, ChevronUp, X,
+  ChevronDown, ChevronUp, X, Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
