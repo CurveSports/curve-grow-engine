@@ -76,6 +76,7 @@ export default function AdminDashboard() {
   const [reviewed, setReviewed] = useState<Record<string, Partial<Record<"high_alert" | "revenue_review", { reviewed_at: string; reviewed_by: string }>>>>({});
   const [orgsMissingFocus, setOrgsMissingFocus] = useState<{ id: string; name: string }[]>([]);
   const [focusReminderOpen, setFocusReminderOpen] = useState(true);
+  const [activationReminderOpen, setActivationReminderOpen] = useState(true);
 
   const [drill, setDrill] = useState<DrillKey>(null);
 
