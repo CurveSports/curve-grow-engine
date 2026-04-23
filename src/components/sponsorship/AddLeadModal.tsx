@@ -57,6 +57,9 @@ export default function AddLeadModal({ open, onOpenChange, orgId: lockedOrgId, o
   const [proposedValue, setProposedValue] = useState("");
   const [stage, setStage] = useState<"new_lead" | "contacted">("new_lead");
 
+  const [approvedTiers, setApprovedTiers] = useState<ApprovedSponsorshipTiers | null>(null);
+  const [proposedTouched, setProposedTouched] = useState(false);
+
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
