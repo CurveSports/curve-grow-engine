@@ -220,19 +220,24 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
   const tier = metrics?.monetization_tier ?? "—";
   const priorityEngine = metrics?.priority_engine ?? "—";
 
-  // ── First-time setup wizard ──
-  if (!loading && trackSetupStep !== "closed" && !isAdminContext) {
+  // ── First-time setup wizard (org users + admins acting on behalf) ──
+  if (!loading && trackSetupStep !== "closed") {
     return (
       <AppShell title="Communications">
         <div className="max-w-2xl mx-auto">
+          {isAdminContext && (
+            <div className="mb-4 rounded-lg border-2 border-warning/40 bg-warning-soft text-foreground px-4 py-3 text-sm">
+              <strong className="text-warning">Setting up calendar on behalf of {orgName}.</strong>
+            </div>
+          )}
           {trackSetupStep === "select_tracks" && (
             <div className="curve-card text-center">
               <CalIcon className="h-10 w-10 text-accent mx-auto mb-3" />
-              <h1 className="font-display text-2xl font-semibold tracking-tight">Let's set up your Communication Calendar</h1>
+              <h1 className="font-display text-2xl font-semibold tracking-tight">Let's set up the Communication Calendar</h1>
               <p className="text-sm text-muted-foreground mt-2 mb-6">
-                We'll build a personalized communication schedule based on your seasons and program structure.
+                We'll build a personalized communication schedule based on seasons and program structure.
               </p>
-              <p className="text-sm font-semibold mb-3">Which age groups does your program serve?</p>
+              <p className="text-sm font-semibold mb-3">Which age groups does the program serve?</p>
               <div className="flex flex-wrap gap-2 justify-center mb-6">
                 {[
                   { key: "youth", label: "Youth (14U and below)", get: () => selYouth, set: () => setSelYouth(!selYouth) },
@@ -263,9 +268,9 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
           {trackSetupStep === "first_season" && tracks && (
             <>
               <div className="curve-card text-center">
-                <h2 className="font-display text-xl font-semibold">Great — let's add your first season</h2>
+                <h2 className="font-display text-xl font-semibold">Great — let's add the first season</h2>
                 <p className="text-sm text-muted-foreground mt-2">
-                  You can add more seasons at any time as they get confirmed.
+                  More seasons can be added at any time as they get confirmed.
                 </p>
               </div>
               <SeasonSetupModal
@@ -289,13 +294,13 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
       <div className="mb-6">
         <h1 className="font-display text-3xl font-semibold tracking-tight">Communications</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your communication calendar, draft messages, and operate to the Curve standard.
+          Manage the communication calendar, draft messages, and operate to the Curve standard.
         </p>
       </div>
 
       {isAdminContext && (
         <div className="mb-4 rounded-lg border-2 border-warning/40 bg-warning-soft text-foreground px-4 py-3 text-sm">
-          <strong className="text-warning">Drafting on behalf of {orgName}.</strong> The draft will be saved to this organization's communication log.
+          <strong className="text-warning">Acting on behalf of {orgName}.</strong> Calendar changes, drafts, and sent markings will be saved to this organization.
         </div>
       )}
 
@@ -318,13 +323,11 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
               <CalIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="text-sm font-medium mb-1">Calendar not configured yet</p>
               <p className="text-xs text-muted-foreground mb-4">
-                {isAdminContext ? "This org hasn't set up tracks yet." : "Let's set up your tracks to begin."}
+                {isAdminContext ? "This org hasn't set up tracks yet — set them up on their behalf." : "Let's set up your tracks to begin."}
               </p>
-              {!isAdminContext && (
-                <Button onClick={() => setTrackSetupStep("select_tracks")} className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                  Set up calendar
-                </Button>
-              )}
+              <Button onClick={() => setTrackSetupStep("select_tracks")} className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                Set up calendar
+              </Button>
             </div>
           ) : (
             <CalendarTab
