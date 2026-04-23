@@ -183,12 +183,20 @@ export default function AdminPipeline() {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading pipeline…</p>
-      ) : (
+      ) : scope === "global" ? (
         <>
           {view === "pipeline" && <PipelineKanban leads={filtered} onOpenLead={setOpenLeadId} onChanged={load} />}
           {view === "list" && <PipelineList leads={filtered} onOpenLead={setOpenLeadId} />}
           {view === "metrics" && <PipelineMetrics leads={leads} orgs={orgs} />}
         </>
+      ) : (
+        <ByOrgView
+          leads={filtered}
+          orgs={orgs}
+          view={view === "metrics" ? "pipeline" : view}
+          onOpenLead={setOpenLeadId}
+          onChanged={load}
+        />
       )}
 
       <AddLeadModal
