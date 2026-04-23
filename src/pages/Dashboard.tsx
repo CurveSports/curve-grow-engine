@@ -10,6 +10,7 @@ import { OrgTask, ENGINE_SCORE_FIELD } from "@/lib/tasks";
 import { formatDate } from "@/lib/format";
 import { CheckCircle2, AlertCircle, Calendar, ListChecks, Clock, Palette, X } from "lucide-react";
 import { WeeklyFocusCard } from "@/components/admin/WeeklyFocusCard";
+import SponsorshipSummaryCard from "@/components/sponsorship/SponsorshipSummaryCard";
 
 export default function Dashboard() {
   const { profile, isPrimary } = useAuth();
@@ -148,6 +149,10 @@ export default function Dashboard() {
               <WeeklyFocusCard orgId={profile.org_id} tasks={tasks as any} editable={false} />
             </div>
           )}
+
+          <div className="mb-6">
+            <SponsorshipSummaryCard />
+          </div>
 
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading…</p>

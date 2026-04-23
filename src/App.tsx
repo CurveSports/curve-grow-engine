@@ -35,6 +35,7 @@ import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
 import Calculators from "@/pages/Calculators";
 import Communications from "@/pages/Communications";
+import OrgSponsorships from "@/pages/OrgSponsorships";
 import AdminCommunications from "@/pages/admin/AdminCommunications";
 import Settings from "@/pages/Settings";
 import Customize from "@/pages/Customize";
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/calculators/:orgId" element={<ProtectedRoute role="admin"><Calculators /></ProtectedRoute>} />
             <Route path="/communications" element={<ProtectedRoute><Communications /></ProtectedRoute>} />
             <Route path="/communications/:orgId" element={<ProtectedRoute role="admin"><Communications /></ProtectedRoute>} />
+            <Route path="/sponsorships" element={<ProtectedRoute role="org_user"><OrgSponsorships /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin"><AdminTasksPage /></ProtectedRoute>} />
