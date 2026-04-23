@@ -25,8 +25,10 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [planActivatedAt, setPlanActivatedAt] = useState<string | null>(null);
   const [tasks, setTasks] = useState<OrgTask[]>([]);
   const [scores, setScores] = useState<Record<string, number | null>>({});
+  const [priorityEngine, setPriorityEngine] = useState<string | null>(null);
+  const [fastestPathEngines, setFastestPathEngines] = useState<string[]>([]);
+  const [tasksGeneratedAt, setTasksGeneratedAt] = useState<string | null>(null);
   const [templates, setTemplates] = useState<TaskTemplate[]>([]);
-  const [projects, setProjects] = useState<OrgProject[]>([]);
   const [selected, setSelected] = useState<OrgTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [activating, setActivating] = useState(false);
@@ -37,22 +39,24 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
 
   const load = async () => {
     if (!orgId) return;
-    const [{ data: org }, { data: t }, { data: m }, { data: tpl }, { data: pj }] = await Promise.all([
+    const [{ data: org }, { data: t }, { data: m }, { data: tpl }] = await Promise.all([
       supabase.from("organizations").select("name, plan_activated_at").eq("id", orgId).maybeSingle(),
       supabase.from("org_tasks").select("*").eq("org_id", orgId).order("priority").order("due_date"),
       supabase.from("derived_metrics").select("*").eq("org_id", orgId).maybeSingle(),
       supabase.from("task_templates").select("*").order("engine"),
-      supabase.from("org_projects").select("*").eq("org_id", orgId).order("display_order").order("created_at"),
     ]);
     setOrgName((org as any)?.name ?? "");
     setPlanActivatedAt((org as any)?.plan_activated_at ?? null);
     setTasks((t as OrgTask[]) ?? []);
     setTemplates((tpl as TaskTemplate[]) ?? []);
-    setProjects((pj as OrgProject[]) ?? []);
     if (m) {
       const s: Record<string, number | null> = {};
       for (const [eng, field] of Object.entries(ENGINE_SCORE_FIELD)) s[eng] = (m as any)[field];
       setScores(s);
+      setPriorityEngine((m as any).priority_engine ?? null);
+      const fp = (m as any).fastest_path_engines;
+      setFastestPathEngines(Array.isArray(fp) ? fp.filter((x: any) => typeof x === "string") : []);
+      setTasksGeneratedAt((m as any).tasks_generated_at ?? null);
     }
     setLoading(false);
   };
@@ -73,16 +77,6 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   }, [loading, engineParam, tasks]);
 
   const draftCount = useMemo(() => tasks.filter(t => t.plan_status === "draft").length, [tasks]);
-
-  // Per-engine summary (used while reviewing draft plan)
-  const draftByEngine = useMemo(() => {
-    const out: Record<string, number> = {};
-    for (const t of tasks) {
-      if (t.plan_status !== "draft") continue;
-      out[t.engine] = (out[t.engine] ?? 0) + 1;
-    }
-    return out;
-  }, [tasks]);
 
   const handleActivate = async () => {
     setConfirmOpen(false);
