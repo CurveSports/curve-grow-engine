@@ -98,14 +98,23 @@ Deno.serve(async (req) => {
       task_ids: fresh.map((t: any) => t.id),
     });
 
+    // 7. Sponsorship: stale deals (no stage change in 14 days, not closed)
+    const { data: staleSponsorship } = await admin
+      .from("sponsorship_leads")
+      .select("id, business_name, org_id, stage, last_stage_change_at")
+      .eq("is_active", true)
+      .not("stage", "in", "(closed_won,closed_lost)")
+      .lt("last_stage_change_at", fourteenAgo);
+    const stalledDeals = (staleSponsorship ?? []) as any[];
+
     if (RESEND_API_KEY) {
-      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById));
+      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals));
       emailsSent++;
     }
 
     await admin.from("notification_log").insert(logs);
 
-    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent });
+    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length });
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }
@@ -146,14 +155,22 @@ function orgDigestHtml(orgName: string, tasks: any[]): string {
   </div>`;
 }
 
-function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>): string {
+function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = []): string {
   const sections = Array.from(byOrg.entries()).map(([orgId, list]) =>
     `<h3 style="margin-bottom:4px;">${escape(names.get(orgId) ?? orgId)} <span style="color:#666;font-weight:normal;font-size:13px;">(${list.length})</span></h3>
      <ul>${list.map((t) => `<li>${escape(t.title)} <span style="color:#666;font-size:12px;">— ${escape(t.engine)} · ${escape(t.status)}</span></li>`).join("")}</ul>`
   ).join("");
+  const sponsorshipBlock = stalledDeals.length
+    ? `<h2 style="color:#a16207;margin-top:32px;">Stale Sponsorship Deals</h2>
+       <ul>${stalledDeals.map((d) => {
+        const days = Math.floor((Date.now() - new Date(d.last_stage_change_at).getTime()) / 86400000);
+        return `<li><strong>${escape(d.business_name)}</strong> for ${escape(names.get(d.org_id) ?? d.org_id)} — no activity in ${days} days (currently: ${escape(d.stage)})</li>`;
+       }).join("")}</ul>`
+    : "";
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <h2 style="color:#0f5132;">Curve OS daily digest</h2>
     ${sections}
+    ${sponsorshipBlock}
   </div>`;
 }
 

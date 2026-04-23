@@ -27,6 +27,7 @@ import AdminTemplates from "@/pages/admin/AdminTemplates";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
 
 import AdminMyTasks from "@/pages/admin/AdminMyTasks";
+import AdminPipeline from "@/pages/admin/AdminPipeline";
 import AdminWeeklyFocus from "@/pages/admin/AdminWeeklyFocus";
 import AdminRoadmap from "@/pages/admin/AdminRoadmap";
 import Team from "@/pages/Team";
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/admin/task-tracker" element={<ProtectedRoute role="admin"><AdminTaskTracker /></ProtectedRoute>} />
             <Route path="/admin/health" element={<ProtectedRoute role="admin"><AdminHealthReports /></ProtectedRoute>} />
             <Route path="/admin/presentations" element={<ProtectedRoute role="admin"><AdminPresentations /></ProtectedRoute>} />
+            <Route path="/admin/pipeline" element={<ProtectedRoute role="admin"><AdminPipeline /></ProtectedRoute>} />
             <Route path="/admin/templates" element={<ProtectedRoute role="admin"><AdminTemplates /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsersPage /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />

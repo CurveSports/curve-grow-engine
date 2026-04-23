@@ -5,7 +5,7 @@ import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -26,6 +26,7 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
   { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
   { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
+  { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
   { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
   { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
   { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
@@ -33,7 +34,6 @@ const ADMIN_PRIMARY: NavItem[] = [
   { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
 ];
 const ADMIN_SOON: NavItem[] = [
-  { label: "Sponsorship Pipeline", icon: TrendingUp, soon: true },
   { label: "Analytics", icon: BarChart3, soon: true },
 ];
 
