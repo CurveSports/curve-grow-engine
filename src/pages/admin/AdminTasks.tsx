@@ -304,20 +304,35 @@ export default function AdminTasks() {
                     <td className={cellPad}>
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1 min-w-[260px]">
                         {ENGINES.map(e => {
-                          const eng = o.by_engine[e] ?? { total: 0, completed: 0 };
+                          const eng = o.by_engine[e] ?? { total: 0, completed: 0, opportunity: 0 };
                           const has = eng.total > 0;
                           const ePct = has ? Math.round((eng.completed / eng.total) * 100) : 0;
+                          const showOpportunity = !has && eng.opportunity > 0;
+                          const oppLabel = eng.opportunity >= 1000
+                            ? `$${Math.round(eng.opportunity / 1000)}K`
+                            : `$${Math.round(eng.opportunity)}`;
                           return (
                             <div
                               key={e}
-                              className={`flex items-center gap-1.5 ${has ? "" : "opacity-30"}`}
+                              className={`flex items-center gap-1.5 ${has ? "" : showOpportunity ? "opacity-70" : "opacity-30"}`}
                               title={has ? `${e}: ${eng.completed}/${eng.total} (${ePct}%)` : `${e}: no tasks`}
                             >
                               <span className="text-[10px] text-muted-foreground w-12 truncate">{e.slice(0, 4)}</span>
                               <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden min-w-[24px]">
                                 <div className={`h-full ${engineBarColor(ePct)}`} style={{ width: has ? `${ePct}%` : "0%" }} />
                               </div>
-                              <span className="text-[10px] tabular-nums text-muted-foreground w-7 text-right">{has ? `${ePct}%` : "—"}</span>
+                              {showOpportunity ? (
+                                <Link
+                                  to={`/admin/org/${o.id}?tab=tasks`}
+                                  title={`Untapped opportunity per metrics: up to ${oppLabel}/yr — click to build ${e} tasks`}
+                                  className="inline-flex items-center justify-center w-7 h-4 rounded text-amber-600 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                  onClick={(ev) => ev.stopPropagation()}
+                                >
+                                  <Lightbulb className="h-3 w-3" />
+                                </Link>
+                              ) : (
+                                <span className="text-[10px] tabular-nums text-muted-foreground w-7 text-right">{has ? `${ePct}%` : "—"}</span>
+                              )}
                             </div>
                           );
                         })}
