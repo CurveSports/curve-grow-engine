@@ -310,6 +310,144 @@ function StatCard({ icon, label, value, subtitle, valueClass = "", extra }: { ic
   );
 }
 
+function InteractiveStatCard({
+  icon, label, value, subtitle, valueClass = "", active, disabled, onClick,
+}: {
+  icon: React.ReactNode; label: string; value: any; subtitle?: string; valueClass?: string;
+  active: boolean; disabled?: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={active}
+      className={cn(
+        "curve-card text-left w-full transition-all",
+        !disabled && "hover:border-foreground/30 hover:shadow-md cursor-pointer",
+        active && "ring-2 ring-foreground border-foreground/40",
+        disabled && "opacity-60 cursor-default",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2 min-w-0">{icon}<p className="curve-eyebrow truncate">{label}</p></div>
+        {!disabled && (
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+            {active ? "Hide" : "View"}
+          </span>
+        )}
+      </div>
+      <p className={cn("curve-stat", valueClass)}>{value}</p>
+      {subtitle && <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>}
+    </button>
+  );
+}
+
+function complexReasons(o: OrgRow): string[] {
+  const reasons: string[] = [];
+  if (o.strategic_clarity_score !== null && o.strategic_clarity_score < 5) {
+    reasons.push(`Low strategic clarity (${o.strategic_clarity_score}/10)`);
+  }
+  if (o.retention_risk === "High") reasons.push("High retention risk");
+  if (o.market_risk === "High") reasons.push("High market risk");
+  if (o.execution_risk === "High") reasons.push("High execution risk");
+  if (o.overall_health_score !== null && o.overall_health_score < 50) {
+    reasons.push(`Low overall health (${o.overall_health_score}/100)`);
+  }
+  return reasons;
+}
+
+function DrillPanel({ kind, orgs, onClose }: { kind: Exclude<DrillKey, null>; orgs: OrgRow[]; onClose: () => void }) {
+  const config = {
+    "complex": {
+      title: "Complex Engagements",
+      description: "These orgs need foundational work — strategy, retention, or execution gaps — before revenue activation efforts will land.",
+      icon: <AlertTriangle className="h-4 w-4 text-destructive" />,
+      filter: (o: OrgRow) => o.engagement_complexity === "Complex",
+    },
+    "high-alert": {
+      title: "High Risk Alerts",
+      description: "Orgs with one or more high-severity admin alerts that need immediate attention.",
+      icon: <ShieldAlert className="h-4 w-4 text-destructive" />,
+      filter: (o: OrgRow) => (o.admin_alerts ?? []).some((a: any) => a?.severity === "high"),
+    },
+    "review": {
+      title: "Revenue Review Needed",
+      description: "Intake data was flagged for verification — totals didn't reconcile or the client wasn't sure of a figure.",
+      icon: <FileWarning className="h-4 w-4 text-warning" />,
+      filter: (o: OrgRow) => o.revenue_needs_review === true,
+    },
+  }[kind];
+
+  const matched = orgs.filter(config.filter);
+
+  return (
+    <div className="curve-card mb-8 animate-in fade-in slide-in-from-top-2 duration-200">
+      <div className="flex items-start justify-between gap-4 mb-4 pb-4 border-b border-border">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="mt-0.5">{config.icon}</div>
+          <div className="min-w-0">
+            <h3 className="font-display font-semibold text-base">{config.title}</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{config.description}</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          aria-label="Close drill-down"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {matched.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-4 text-center">No matching organizations.</p>
+      ) : (
+        <div className="divide-y divide-border -mx-6">
+          {matched.map((o) => (
+            <DrillRow key={o.id} org={o} kind={kind} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DrillRow({ org, kind }: { org: OrgRow; kind: Exclude<DrillKey, null> }) {
+  const reasons = kind === "complex" ? complexReasons(org)
+    : kind === "high-alert" ? (org.admin_alerts ?? []).filter((a: any) => a?.severity === "high").map((a: any) => a?.message ?? a?.title ?? "High-severity alert")
+    : kind === "review" ? [org.revenue_verification ?? "Client did not confirm revenue totals during intake"]
+    : [];
+
+  return (
+    <Link to={`/admin/org/${org.id}`} className="flex items-start justify-between gap-4 px-6 py-3 hover:bg-secondary/40 transition-colors group">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-display font-semibold text-sm group-hover:text-accent transition-colors">{org.name}</span>
+          {org.tier && (
+            <span className={cn("inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold border", TIER_STYLES[org.tier] ?? "bg-secondary")}>
+              {org.tier}
+            </span>
+          )}
+        </div>
+        {reasons.length > 0 ? (
+          <ul className="text-xs text-muted-foreground space-y-0.5">
+            {reasons.map((r, i) => (
+              <li key={i} className="flex items-start gap-1.5">
+                <span className="text-destructive mt-1">•</span>
+                <span>{r}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs text-muted-foreground">No specific detail available.</p>
+        )}
+      </div>
+      <span className="text-xs font-semibold text-accent group-hover:underline flex-shrink-0 mt-0.5">View →</span>
+    </Link>
+  );
+}
+
 function DensityToggle({ density, onChange }: { density: Density; onChange: (d: Density) => void }) {
   const Btn = ({ d, icon }: { d: Density; icon: React.ReactNode }) => (
     <button
