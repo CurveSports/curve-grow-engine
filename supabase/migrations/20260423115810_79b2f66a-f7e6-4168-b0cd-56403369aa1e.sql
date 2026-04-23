@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public read org logos" ON storage.objects;
