@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle, Calendar as CalIcon, ScrollText, Plus } from "lucide-react";
+import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle, Calendar as CalIcon, ScrollText, Plus, Building2 } from "lucide-react";
 import {
   getCategoriesForOrg, findCard, buildUserPrompt, validateCard, visibleFields,
   type CommCard, type CommField,
@@ -44,6 +45,7 @@ export default function Communications() {
 }
 
 function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string; isAdminContext: boolean; userId: string }) {
+  const navigate = useNavigate();
   const [orgName, setOrgName] = useState("Organization");
   const [intake, setIntake] = useState<any>(null);
   const [metrics, setMetrics] = useState<any>(null);
@@ -53,6 +55,16 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
   const [trackSetupStep, setTrackSetupStep] = useState<"closed" | "select_tracks" | "first_season">("closed");
   const [selYouth, setSelYouth] = useState(false);
   const [selHs, setSelHs] = useState(false);
+  const [allOrgs, setAllOrgs] = useState<{ id: string; name: string }[]>([]);
+
+  // Load org list for admin switcher
+  useEffect(() => {
+    if (!isAdminContext) return;
+    (async () => {
+      const { data } = await supabase.from("organizations").select("id, name").order("name", { ascending: true });
+      setAllOrgs((data ?? []) as { id: string; name: string }[]);
+    })();
+  }, [isAdminContext]);
 
   async function loadAll() {
     setLoading(true);
@@ -299,8 +311,28 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
       </div>
 
       {isAdminContext && (
-        <div className="mb-4 rounded-lg border-2 border-warning/40 bg-warning-soft text-foreground px-4 py-3 text-sm">
-          <strong className="text-warning">Acting on behalf of {orgName}.</strong> Calendar changes, drafts, and sent markings will be saved to this organization.
+        <div className="mb-4 rounded-lg border-2 border-warning/40 bg-warning-soft text-foreground px-4 py-3 text-sm flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <strong className="text-warning">Acting on behalf of {orgName}.</strong> Calendar changes, drafts, and sent markings will be saved to this organization.
+          </div>
+          {allOrgs.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-warning" />
+              <Select
+                value={orgId}
+                onValueChange={(newId) => { if (newId !== orgId) navigate(`/communications/${newId}`); }}
+              >
+                <SelectTrigger className="h-8 w-[240px] bg-card text-xs">
+                  <SelectValue placeholder="Switch organization…" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[320px]">
+                  {allOrgs.map((o) => (
+                    <SelectItem key={o.id} value={o.id} className="text-xs">{o.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
       )}
 
