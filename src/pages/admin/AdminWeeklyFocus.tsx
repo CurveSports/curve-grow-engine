@@ -134,6 +134,7 @@ export default function AdminWeeklyFocus() {
       ...prev,
       [orgId]: { org_id: orgId, week_starting: week, focus_task_ids: ids, focus_note: (draftNote[orgId] ?? "").trim() || null },
     }));
+    setEditing(prev => ({ ...prev, [orgId]: false }));
   };
 
   return (
