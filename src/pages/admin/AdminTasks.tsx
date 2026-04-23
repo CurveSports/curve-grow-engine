@@ -68,24 +68,35 @@ export default function AdminTasks() {
 
   useEffect(() => {
     (async () => {
+      const metricsCols = "org_id, monetization_tier, " + Object.values(ENGINE_OPPORTUNITY_FIELD).join(", ");
       const [{ data: orgs }, { data: tasks }, { data: metrics }, { data: intakes }] = await Promise.all([
         supabase.from("organizations").select("id, name, plan_activated_at"),
         supabase.from("org_tasks").select("org_id, engine, status, last_activity_at, plan_status"),
-        supabase.from("derived_metrics").select("org_id, monetization_tier"),
+        supabase.from("derived_metrics").select(metricsCols),
         supabase.from("organization_intake").select("org_id, revenue_needs_review"),
       ]);
 
       const tierByOrg = new Map<string, string | null>();
-      for (const m of metrics ?? []) tierByOrg.set((m as any).org_id, (m as any).monetization_tier);
+      const oppByOrg = new Map<string, Record<string, number>>();
+      for (const m of metrics ?? []) {
+        const mm = m as any;
+        tierByOrg.set(mm.org_id, mm.monetization_tier);
+        const opp: Record<string, number> = {};
+        for (const [engine, field] of Object.entries(ENGINE_OPPORTUNITY_FIELD)) {
+          opp[engine] = Number(mm[field]) || 0;
+        }
+        oppByOrg.set(mm.org_id, opp);
+      }
       const reviewByOrg = new Map<string, boolean>();
       for (const i of intakes ?? []) reviewByOrg.set((i as any).org_id, !!(i as any).revenue_needs_review);
 
       const r: Row[] = (orgs ?? []).map((o: any) => {
         const list = (tasks ?? []).filter((t: any) => t.org_id === o.id);
+        const opp = oppByOrg.get(o.id) ?? {};
         const by_engine: Record<string, EngineStat> = {};
-        for (const e of ENGINES) by_engine[e] = { total: 0, completed: 0 };
+        for (const e of ENGINES) by_engine[e] = { total: 0, completed: 0, opportunity: opp[e] ?? 0 };
         for (const t of list) {
-          if (!by_engine[t.engine]) by_engine[t.engine] = { total: 0, completed: 0 };
+          if (!by_engine[t.engine]) by_engine[t.engine] = { total: 0, completed: 0, opportunity: opp[t.engine] ?? 0 };
           by_engine[t.engine].total++;
           if (t.status === "completed") by_engine[t.engine].completed++;
         }
