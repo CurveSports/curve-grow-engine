@@ -175,18 +175,13 @@ export default function AdminPipeline() {
       <AddLeadModal
         open={addOpen}
         onOpenChange={setAddOpen}
-        orgs={orgs}
-        admins={admins}
         onCreated={() => { setAddOpen(false); load(); }}
       />
-      {openLeadId && (
-        <LeadDetailPanel
-          leadId={openLeadId}
-          admins={admins}
-          onClose={() => setOpenLeadId(null)}
-          onChanged={load}
-        />
-      )}
+      <LeadDetailPanel
+        leadId={openLeadId}
+        onClose={() => setOpenLeadId(null)}
+        onChanged={load}
+      />
     </AppShell>
   );
 }
