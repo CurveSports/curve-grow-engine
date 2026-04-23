@@ -84,7 +84,29 @@ export default function AddLeadModal({ open, onOpenChange, orgId: lockedOrgId, o
     setIsWarm(false); setWarmFlaggedBy("dsf"); setWarmNotes("");
     setOrgIdSel(lockedOrgId ?? ""); setAssignedTo(user?.id ?? "");
     setTier(""); setProposedValue(""); setStage("new_lead");
+    setProposedTouched(false);
   }, [open, lockedOrgId, user?.id]);
+
+  // Load approved tiers for the selected org so we can prefill proposed value.
+  useEffect(() => {
+    if (!open || !orgIdSel) { setApprovedTiers(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("org_sponsorship_tiers")
+        .select("*")
+        .eq("org_id", orgIdSel)
+        .maybeSingle();
+      setApprovedTiers((data ?? null) as ApprovedSponsorshipTiers | null);
+    })();
+  }, [open, orgIdSel]);
+
+  // When the user picks a tier (and hasn't manually edited proposed value), prefill it.
+  useEffect(() => {
+    if (!tier) return;
+    if (proposedTouched) return;
+    const amt = tierAmount(tier as Tier, approvedTiers);
+    if (amt !== null && amt > 0) setProposedValue(String(amt));
+  }, [tier, approvedTiers, proposedTouched]);
 
   const submit = async () => {
     if (!businessName.trim()) return toast.error("Business name required");
