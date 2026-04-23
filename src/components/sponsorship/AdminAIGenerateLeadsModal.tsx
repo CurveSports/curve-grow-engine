@@ -17,6 +17,8 @@ type Candidate = {
   contact_name: string;
   contact_phone: string;
   contact_email: string;
+  website: string;
+  address: string;
   city_state: string;
   rationale: string;
   selected: boolean;
