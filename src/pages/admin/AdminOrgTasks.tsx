@@ -286,6 +286,14 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <BaselineModal
+        open={baselineOpen}
+        onOpenChange={setBaselineOpen}
+        orgId={orgId!}
+        orgName={orgName}
+        onConfirm={async (baseline, reason) => { await runActivation(baseline, reason); }}
+      />
     </Wrap>
   );
 }
