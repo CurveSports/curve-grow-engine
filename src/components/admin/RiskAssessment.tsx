@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, ChevronRight, X, RotateCcw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import { ExplainButton, type ExplainContent } from "@/components/admin/ExplainDrawer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -118,47 +120,198 @@ export interface AdminAlert {
   message: string;
 }
 
-export function AdminAlertsBanner({ alerts }: { alerts: AdminAlert[] }) {
+function alertSignature(a: AdminAlert): string {
+  return `${a.type}::${a.severity}::${a.message}`;
+}
+
+export function AdminAlertsBanner({ alerts, orgId }: { alerts: AdminAlert[]; orgId?: string }) {
   const [open, setOpen] = useState(true);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [showCleared, setShowCleared] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!orgId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("admin_alert_dismissals")
+        .select("alert_signature")
+        .eq("org_id", orgId);
+      setDismissed(new Set((data ?? []).map((r: any) => r.alert_signature)));
+    })();
+  }, [orgId]);
+
   if (!alerts || alerts.length === 0) return null;
 
-  const hasHigh = alerts.some((a) => a.severity === "high");
+  const active = alerts.filter((a) => !dismissed.has(alertSignature(a)));
+  const cleared = alerts.filter((a) => dismissed.has(alertSignature(a)));
+  const hasHigh = active.some((a) => a.severity === "high");
+
+  const dismissAlert = async (a: AdminAlert) => {
+    if (!orgId) return;
+    const sig = alertSignature(a);
+    setBusy(sig);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setBusy(null); return; }
+    const { error } = await supabase.from("admin_alert_dismissals").upsert(
+      { org_id: orgId, alert_type: a.type, alert_signature: sig, dismissed_by: user.id },
+      { onConflict: "org_id,alert_signature" },
+    );
+    setBusy(null);
+    if (error) { toast({ title: "Couldn't clear alert", description: error.message, variant: "destructive" }); return; }
+    setDismissed((prev) => new Set(prev).add(sig));
+  };
+
+  const restoreAlert = async (a: AdminAlert) => {
+    if (!orgId) return;
+    const sig = alertSignature(a);
+    setBusy(sig);
+    const { error } = await supabase
+      .from("admin_alert_dismissals")
+      .delete()
+      .eq("org_id", orgId)
+      .eq("alert_signature", sig);
+    setBusy(null);
+    if (error) { toast({ title: "Couldn't restore alert", description: error.message, variant: "destructive" }); return; }
+    setDismissed((prev) => { const n = new Set(prev); n.delete(sig); return n; });
+  };
+
+  const clearAll = async () => {
+    if (!orgId || active.length === 0) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const rows = active.map((a) => ({
+      org_id: orgId,
+      alert_type: a.type,
+      alert_signature: alertSignature(a),
+      dismissed_by: user.id,
+    }));
+    const { error } = await supabase
+      .from("admin_alert_dismissals")
+      .upsert(rows, { onConflict: "org_id,alert_signature" });
+    if (error) { toast({ title: "Couldn't clear alerts", description: error.message, variant: "destructive" }); return; }
+    setDismissed((prev) => { const n = new Set(prev); rows.forEach((r) => n.add(r.alert_signature)); return n; });
+  };
+
+  if (active.length === 0 && cleared.length === 0) return null;
+
+  // All cleared — show a compact restore strip
+  if (active.length === 0) {
+    return (
+      <div className="rounded-lg border border-border bg-muted/30 p-3 mb-4 flex items-center justify-between">
+        <span className="text-xs text-muted-foreground">
+          All {cleared.length} alert{cleared.length === 1 ? "" : "s"} cleared
+        </span>
+        <button
+          onClick={() => setShowCleared((v) => !v)}
+          className="text-xs font-medium text-foreground hover:underline"
+        >
+          {showCleared ? "Hide" : "Show cleared"}
+        </button>
+        {showCleared && (
+          <ul className="w-full mt-3 space-y-2 basis-full">
+            {cleared.map((a, i) => (
+              <li key={`${alertSignature(a)}-${i}`} className="flex items-start gap-2 opacity-60">
+                <span className="h-2 w-2 rounded-full bg-muted-foreground/50 mt-1.5" />
+                <p className="flex-1 text-xs text-muted-foreground line-through">{a.message}</p>
+                <button
+                  onClick={() => restoreAlert(a)}
+                  disabled={busy === alertSignature(a)}
+                  className="text-xs text-foreground hover:underline inline-flex items-center gap-1"
+                >
+                  <RotateCcw className="h-3 w-3" /> Restore
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
   const bannerClass = hasHigh
     ? "border-destructive/40 bg-destructive/5"
     : "border-warning/40 bg-warning-soft";
 
   return (
     <div className={cn("rounded-lg border-2 p-4 mb-4", bannerClass)}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between gap-2 text-left"
-      >
-        <div className="flex items-center gap-2">
-          <AlertTriangle className={cn("h-5 w-5", hasHigh ? "text-destructive" : "text-warning")} />
+      <div className="w-full flex items-center justify-between gap-2">
+        <button onClick={() => setOpen(!open)} className="flex items-center gap-2 text-left flex-1 min-w-0">
+          <AlertTriangle className={cn("h-5 w-5 flex-shrink-0", hasHigh ? "text-destructive" : "text-warning")} />
           <span className={cn("font-semibold text-sm", hasHigh ? "text-destructive" : "text-warning")}>
-            Action Required — {alerts.length} item{alerts.length === 1 ? "" : "s"} need your attention
+            Action Required — {active.length} item{active.length === 1 ? "" : "s"} need your attention
           </span>
+        </button>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          {orgId && active.length > 1 && (
+            <button onClick={clearAll} className="text-xs font-medium text-foreground/80 hover:text-foreground hover:underline">
+              Clear all
+            </button>
+          )}
+          <button onClick={() => setOpen(!open)} aria-label="Toggle">
+            {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
         </div>
-        {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-      </button>
+      </div>
 
       {open && (
         <ul className="mt-4 space-y-3">
-          {alerts.map((a, i) => (
-            <li key={`${a.type}-${i}`} className="flex items-start gap-3">
-              <span className={cn(
-                "h-2.5 w-2.5 rounded-full flex-shrink-0 mt-1.5",
-                a.severity === "high" ? "bg-destructive" : "bg-warning",
-              )} />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm text-foreground leading-relaxed">{a.message}</p>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-semibold">
-                  {a.type.replace(/_/g, " ")}
-                </p>
-              </div>
-            </li>
-          ))}
+          {active.map((a, i) => {
+            const sig = alertSignature(a);
+            return (
+              <li key={`${sig}-${i}`} className="flex items-start gap-3 group">
+                <span className={cn(
+                  "h-2.5 w-2.5 rounded-full flex-shrink-0 mt-1.5",
+                  a.severity === "high" ? "bg-destructive" : "bg-warning",
+                )} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-foreground leading-relaxed">{a.message}</p>
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground mt-1 font-semibold">
+                    {a.type.replace(/_/g, " ")}
+                  </p>
+                </div>
+                {orgId && (
+                  <button
+                    onClick={() => dismissAlert(a)}
+                    disabled={busy === sig}
+                    className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-background/60 disabled:opacity-50"
+                    title="Clear this alert"
+                  >
+                    <X className="h-3 w-3" /> Clear
+                  </button>
+                )}
+              </li>
+            );
+          })}
         </ul>
+      )}
+
+      {open && cleared.length > 0 && (
+        <div className="mt-4 pt-3 border-t border-border/50">
+          <button
+            onClick={() => setShowCleared((v) => !v)}
+            className="text-xs font-medium text-muted-foreground hover:text-foreground"
+          >
+            {showCleared ? "Hide" : "Show"} {cleared.length} cleared
+          </button>
+          {showCleared && (
+            <ul className="mt-2 space-y-2">
+              {cleared.map((a, i) => (
+                <li key={`${alertSignature(a)}-${i}`} className="flex items-start gap-2 opacity-60">
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground/50 mt-1.5" />
+                  <p className="flex-1 text-xs text-muted-foreground line-through">{a.message}</p>
+                  <button
+                    onClick={() => restoreAlert(a)}
+                    disabled={busy === alertSignature(a)}
+                    className="text-xs text-foreground hover:underline inline-flex items-center gap-1"
+                  >
+                    <RotateCcw className="h-3 w-3" /> Restore
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );

@@ -76,7 +76,7 @@ export default function OrgDetail() {
           </Link>
         </div>
 
-        <AdminAlertsBanner alerts={alerts} />
+        <AdminAlertsBanner alerts={alerts} orgId={orgId!} />
         <ProjectCompletionBanner key={bannerKey} orgId={orgId!} orgName={orgName} onApproved={() => setBannerKey((k) => k + 1)} />
 
         <OrgHeader orgId={orgId!} onActivate={() => setTab("plan")} onAddNote={() => setTab("notes")} onAddTask={() => setTab("plan")} />
