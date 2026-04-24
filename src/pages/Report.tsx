@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info, Check, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { TierLadder, TierAdvancementBanner, useTierAdvancement } from "@/components/TierLadder";
 import { formatDate as fmtDate } from "@/lib/format";
+import { CountUp } from "@/components/motion/CountUp";
 
 function TierProgressionSection({ orgId, metrics }: { orgId: string; metrics: any }) {
   const storageKey = `tier-ladder-collapsed:${orgId}`;
@@ -69,11 +70,11 @@ function EngineCard({
   opportunityLabel?: string; subtext?: string;
 }) {
   return (
-    <div className="curve-card min-h-[180px] flex flex-col">
+    <div className="curve-card min-h-[180px] flex flex-col transition-all duration-200 hover:border-foreground/25 hover:-translate-y-[1px] hover:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.12)]">
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-display font-semibold text-base">{name}</h3>
         <span className="font-display tabular-nums leading-none">
-          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-4xl font-bold"><CountUp to={score} duration={700} /></span>
           <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
         </span>
       </div>
@@ -81,7 +82,7 @@ function EngineCard({
       <div className="mt-auto pt-4">
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{opportunityLabel ?? "Opportunity"}</p>
         <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">
-          {formatCurrency(low)} – {formatCurrency(high)}
+          <CountUp to={low} format={(n) => formatCurrency(n)} duration={700} /> – <CountUp to={high} format={(n) => formatCurrency(n)} duration={900} />
         </p>
         {subtext && <p className="text-xs text-muted-foreground mt-2 leading-snug">{subtext}</p>}
       </div>
@@ -102,11 +103,11 @@ function RetentionCard({
       ? "bg-warning-soft text-warning border-warning/30"
       : "bg-destructive/10 text-destructive border-destructive/30";
   return (
-    <div className="curve-card min-h-[180px] flex flex-col">
+    <div className="curve-card min-h-[180px] flex flex-col transition-all duration-200 hover:border-foreground/25 hover:-translate-y-[1px] hover:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.12)]">
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-display font-semibold text-base">Retention</h3>
         <span className="font-display tabular-nums leading-none">
-          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-4xl font-bold"><CountUp to={score} duration={700} /></span>
           <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
         </span>
       </div>
@@ -351,11 +352,11 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(totalRevenue)}</p>
+              <p className="font-display text-2xl font-semibold mt-2 tabular-nums"><CountUp to={Number(totalRevenue)} format={(n) => formatCurrency(n)} duration={800} /></p>
             </div>
             <div className="curve-card">
               <p className="text-xs text-muted-foreground">Revenue Per Player</p>
-              <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(data.revenue_per_player)}</p>
+              <p className="font-display text-2xl font-semibold mt-2 tabular-nums"><CountUp to={Number(data.revenue_per_player ?? 0)} format={(n) => formatCurrency(n)} duration={800} /></p>
             </div>
             <div className="curve-card">
               <div className="flex items-start justify-between gap-2">
@@ -373,7 +374,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(data.revenue_benchmark)}</p>
+              <p className="font-display text-2xl font-semibold mt-2 tabular-nums"><CountUp to={Number(data.revenue_benchmark ?? 0)} format={(n) => formatCurrency(n)} duration={800} /></p>
               {data.at_benchmark ? (
                 <p className="text-xs text-accent mt-2 flex items-center gap-1">
                   <Check className="h-3.5 w-3.5" /> On track
@@ -386,7 +387,7 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
             </div>
             <div className="curve-card">
               <p className="text-xs text-muted-foreground">Non-Dues Revenue Per Player</p>
-              <p className="font-display text-2xl font-semibold mt-2">{formatCurrency(data.non_dues_revenue_per_player)}</p>
+              <p className="font-display text-2xl font-semibold mt-2 tabular-nums"><CountUp to={Number(data.non_dues_revenue_per_player ?? 0)} format={(n) => formatCurrency(n)} duration={800} /></p>
             </div>
             {isFacilityOrg && (
               <div className="curve-card">
@@ -493,10 +494,13 @@ export default function Report({ bare = false, orgIdProp }: { bare?: boolean; or
         )}
 
         {/* Revenue Opportunity */}
-        <section id="opportunity" className="scroll-mt-24 text-center py-10 border-y border-border">
-          <p className="curve-eyebrow mb-3">Revenue Opportunity</p>
-          <p className="font-display text-5xl sm:text-6xl font-semibold tracking-tight">
-            {formatCurrency(data.total_opportunity_low)} – {formatCurrency(data.total_opportunity_high)}
+        <section id="opportunity" className="scroll-mt-24 text-center py-10 border-y border-border relative overflow-hidden">
+          <div className="absolute inset-x-0 top-0 h-[3px] bg-[hsl(var(--lime))]" />
+          <p className="curve-eyebrow !text-accent mb-3">Revenue Opportunity</p>
+          <p className="font-display text-5xl sm:text-6xl font-semibold tracking-tight tabular-nums">
+            <CountUp to={Number(data.total_opportunity_low ?? 0)} format={(n) => formatCurrency(n)} duration={1000} />
+            <span className="text-muted-foreground mx-3">–</span>
+            <CountUp to={Number(data.total_opportunity_high ?? 0)} format={(n) => formatCurrency(n)} duration={1200} />
           </p>
           <p className="text-sm text-muted-foreground mt-3 max-w-xl mx-auto">
             Estimated additional annual revenue available based on your current structure and market.
