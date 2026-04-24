@@ -316,6 +316,7 @@ export default function Dashboard() {
         </StaggerList>
       )}
 
+
       <div className="mt-10 pt-6 border-t border-border text-sm text-muted-foreground">
         Need to review your numbers? <Link to="/report" className="text-accent hover:underline">View Revenue Leak Report →</Link>
       </div>
