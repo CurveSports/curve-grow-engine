@@ -313,7 +313,6 @@ export default function Dashboard() {
 
           <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
         </StaggerList>
-      )}
 
 
       <div className="mt-10 pt-6 border-t border-border text-sm text-muted-foreground">
