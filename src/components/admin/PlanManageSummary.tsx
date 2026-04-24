@@ -82,7 +82,7 @@ export default function PlanManageSummary({ orgId, tasks, scores, tasksGenerated
       </div>
 
       {stats.recent.length > 0 && (
-        <div className="curve-card p-5">
+        <div className="curve-card-quiet">
           <p className="curve-eyebrow mb-3">Recently completed</p>
           <ul className="space-y-2">
             {stats.recent.map((t) => (
