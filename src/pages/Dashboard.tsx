@@ -169,33 +169,27 @@ export default function Dashboard() {
         </div>
       )}
 
-      {showHoldingState ? (
-        <div className="curve-card">
-          <p className="text-base leading-relaxed">
-            Your Revenue Leak Report is complete. Your action plan is being prepared by the Curve team and will be available shortly.
-          </p>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <Link
-              to="/report"
-              className="flex items-center gap-3 p-4 rounded-lg border border-accent/30 bg-accent-soft hover:bg-accent-soft/80 transition-colors"
-            >
-              <CheckCircle2 className="h-5 w-5 text-accent flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium">Revenue Leak Report</p>
-                <p className="text-xs text-muted-foreground">Ready · view now</p>
-              </div>
-            </Link>
-            <div className="flex items-center gap-3 p-4 rounded-lg border border-border bg-secondary/30">
-              <Clock className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium">90-Day Action Plan</p>
-                <p className="text-xs text-muted-foreground">Pending — Curve team review</p>
-              </div>
-            </div>
+      {showHoldingState && (
+        <div className="mb-6 rounded-lg border border-accent/30 bg-accent-soft px-4 py-3 flex items-center gap-3 animate-fade-in">
+          <div className="h-9 w-9 rounded-md bg-accent/15 flex items-center justify-center flex-shrink-0">
+            <Clock className="h-4 w-4 text-accent" />
           </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium">Your 90-Day Action Plan is being prepared</p>
+            <p className="text-xs text-muted-foreground">
+              Your Curve consultant is reviewing your report. In the meantime, explore your opportunity below.
+            </p>
+          </div>
+          <Link
+            to="/report"
+            className="text-xs font-medium px-3 py-1.5 rounded-md bg-foreground text-background hover:opacity-90 inline-flex items-center gap-1"
+          >
+            View report <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
-      ) : (
-        <StaggerList className="space-y-6">
+      )}
+
+      <StaggerList className="space-y-6">
           {/* HERO — Opportunity */}
           {hasMetrics && metrics && (
             <StaggerItem>
@@ -295,31 +289,33 @@ export default function Dashboard() {
             </div>
           </StaggerItem>
 
-          {/* TASK LIST */}
-          <StaggerItem>
-            <div className="flex items-center justify-between mb-3 mt-2">
-              <div className="flex items-center gap-2">
-                <ListChecks className="h-4 w-4 text-accent" />
-                <h2 className="curve-eyebrow">Your tasks</h2>
+          {/* TASK LIST — only when plan is activated */}
+          {planActivated && (
+            <StaggerItem>
+              <div className="flex items-center justify-between mb-3 mt-2">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 text-accent" />
+                  <h2 className="curve-eyebrow">Your tasks</h2>
+                </div>
+                <Link to="/plan" className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1">
+                  Full plan <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
-              <Link to="/plan" className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1">
-                Full plan <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : tasks.length === 0 ? (
-              <div className="curve-card text-center py-10">
-                <p className="text-sm text-muted-foreground">No tasks yet — your action plan will appear here when activated.</p>
-              </div>
-            ) : (
-              <TaskList tasks={tasks} scores={scores} onSelect={setSelected} />
-            )}
-          </StaggerItem>
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : tasks.length === 0 ? (
+                <div className="curve-card text-center py-10">
+                  <p className="text-sm text-muted-foreground">No tasks yet — your action plan will appear here when activated.</p>
+                </div>
+              ) : (
+                <TaskList tasks={tasks} scores={scores} onSelect={setSelected} />
+              )}
+            </StaggerItem>
+          )}
 
           <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
         </StaggerList>
-      )}
+
 
       <div className="mt-10 pt-6 border-t border-border text-sm text-muted-foreground">
         Need to review your numbers? <Link to="/report" className="text-accent hover:underline">View Revenue Leak Report →</Link>
