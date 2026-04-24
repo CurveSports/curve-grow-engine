@@ -171,7 +171,7 @@ export default function AdminOrgBranding() {
             <h2 className="font-display text-lg font-semibold flex items-center gap-2">
               <Upload className="h-4 w-4" /> Logo
             </h2>
-            <p className="text-sm text-muted-foreground">PNG with transparent background. Max 2 MB.</p>
+            <p className="text-sm text-muted-foreground">PNG, JPG, WEBP, or SVG. PNG or SVG with a transparent background looks best. Max 2 MB.</p>
           </div>
           <div className="flex items-center gap-6">
             <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden">

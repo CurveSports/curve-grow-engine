@@ -252,7 +252,7 @@ export default function Settings() {
                     <Upload className="h-4 w-4" /> Logo
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Shown in the navigation and on reports. Recommended: PNG with transparent background, 200×60px or larger. Max 2 MB.
+                    Shown in the navigation and on reports. PNG, JPG, WEBP, or SVG accepted — transparent PNG or SVG at 200×60px+ looks best. Max 2 MB.
                   </p>
                 </div>
                 <div className="flex items-center gap-6">
