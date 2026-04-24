@@ -130,7 +130,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         <h1 className="font-display text-base font-semibold tracking-tight text-white">{title ?? "\u00A0"}</h1>
         <div className="flex items-center gap-3 text-sm text-nav-muted">
           <span className="hidden lg:inline">{profile?.email}</span>
-          <div className="h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-xs">
+          <div className="h-8 w-8 rounded-full bg-lime text-lime-foreground flex items-center justify-center font-bold text-xs">
             {(profile?.full_name ?? profile?.email ?? "?").charAt(0).toUpperCase()}
           </div>
         </div>
@@ -163,10 +163,10 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
               to={item.to ?? "#"}
               className={cn(
                 "relative flex-1 flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px]",
-                active ? "text-accent" : "text-nav-muted hover:text-white",
+                active ? "text-lime" : "text-nav-muted hover:text-white",
               )}
             >
-              {active && <span className="absolute top-0 h-0.5 w-10 bg-accent rounded-b-full" />}
+              {active && <span className="absolute top-0 h-0.5 w-10 bg-lime rounded-b-full" />}
               <Icon className="h-5 w-5" />
               <span className="text-[10px] font-semibold">{item.label}</span>
             </Link>
@@ -175,7 +175,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         {role !== "admin" && showTeam && (
           <Link to="/team" className={cn(
             "flex-1 flex flex-col items-center justify-center gap-1 min-h-[44px]",
-            location.pathname === "/team" ? "text-accent" : "text-nav-muted",
+            location.pathname === "/team" ? "text-lime" : "text-nav-muted",
           )}>
             <Users className="h-5 w-5" />
             <span className="text-[10px] font-semibold">Team</span>
@@ -193,9 +193,9 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
       "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-h-[40px]",
       item.soon && "opacity-50 cursor-not-allowed",
       !item.soon && !active && "text-nav-muted hover:text-white hover:bg-nav-hover",
-      active && "bg-accent text-accent-foreground font-semibold",
+      active && "bg-lime text-lime-foreground font-semibold",
     )}>
-      {active && <span className="absolute -left-3 top-1/2 -translate-y-1/2 h-6 w-1 bg-accent rounded-r-full" />}
+      {active && <span className="absolute -left-3 top-1/2 -translate-y-1/2 h-6 w-1 bg-lime rounded-r-full" />}
       <Icon className="h-[18px] w-[18px] flex-shrink-0" />
       <span className="flex-1 truncate">{item.label}</span>
       {item.soon && (
