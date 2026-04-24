@@ -10,8 +10,10 @@ import { OrgProject, buildProjectWithTasks } from "@/lib/projects";
 import { formatDate } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Lock, ListChecks, ChevronDown, ChevronRight, FolderKanban } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Lock, ListChecks, ChevronDown, ChevronRight, Sparkles, CheckCircle2 } from "lucide-react";
+import { ProgressRing } from "@/components/motion/ProgressRing";
+import { CountUp } from "@/components/motion/CountUp";
+import { StaggerList, StaggerItem } from "@/components/motion/PageTransition";
 
 export default function Plan() {
   const { profile } = useAuth();
@@ -54,6 +56,14 @@ export default function Plan() {
   );
   const hasDrafts = projects.some((p) => p.status === "draft");
 
+  // Overall plan completion
+  const overall = useMemo(() => {
+    const total = tasks.length;
+    const done = tasks.filter(t => t.status === "completed").length;
+    const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    return { total, done, pct };
+  }, [tasks]);
+
   if (loading) {
     return <AppShell title="Action Plan"><PlanSkeleton /></AppShell>;
   }
@@ -73,75 +83,112 @@ export default function Plan() {
     );
   }
 
+  const encouragement =
+    overall.pct >= 75 ? "You're crushing it — keep the momentum." :
+    overall.pct >= 50 ? "Over halfway. The compounding starts now." :
+    overall.pct >= 25 ? "Real momentum building." :
+    overall.done > 0 ? "Nice start — pick the next one." :
+    "Pick one task today. Just one.";
+
   return (
     <AppShell title="Action Plan">
-      <div className="mb-6">
-        <p className="curve-eyebrow mb-2">90-Day Plan</p>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Action Plan</h1>
-        {planActivated && <p className="text-sm text-muted-foreground mt-1">Activated {formatDate(planActivated)}</p>}
+      {/* Header with progress ring */}
+      <div className="mb-8 flex items-center gap-5 flex-wrap">
+        <ProgressRing value={overall.pct} size={88} stroke={8}>
+          <span className="font-display text-base font-bold tabular-nums">
+            <CountUp to={overall.pct} format={(n) => `${Math.round(n)}%`} duration={900} />
+          </span>
+        </ProgressRing>
+        <div className="min-w-0">
+          <p className="curve-eyebrow mb-1.5">90-Day Plan</p>
+          <h1 className="font-display text-3xl font-semibold tracking-tight">Action Plan</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            <span className="tabular-nums font-medium text-foreground">{overall.done} of {overall.total}</span> tasks complete
+            {planActivated && <> · activated {formatDate(planActivated)}</>}
+          </p>
+          <p className="text-xs text-accent mt-1.5 font-medium flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3" /> {encouragement}
+          </p>
+        </div>
       </div>
 
       {/* Active project sections */}
-      <div className="space-y-6">
+      <StaggerList className="space-y-6">
         {activeProjects.length === 0 && (
-          <EmptyState
-            icon={<ListChecks className="h-10 w-10 text-muted-foreground" />}
-            title="No active projects right now"
-            description="Your Curve team is preparing your next project."
-          />
+          <StaggerItem>
+            <EmptyState
+              icon={<ListChecks className="h-10 w-10 text-muted-foreground" />}
+              title="No active projects right now"
+              description="Your Curve team is preparing your next project."
+            />
+          </StaggerItem>
         )}
 
         {activeProjects.map((p) => (
-          <div key={p.id} className="curve-card p-0 overflow-hidden">
-            <div className="px-5 py-4 border-b border-border bg-secondary/30">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-display font-semibold text-lg">{p.name}</h3>
-                <span className="text-xs text-muted-foreground tabular-nums">{p.taskComplete}/{p.taskTotal} complete</span>
+          <StaggerItem key={p.id}>
+            <div className="curve-card p-0 overflow-hidden">
+              <div className="px-5 py-4 border-b border-border bg-secondary/30">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-display font-semibold text-lg">{p.name}</h3>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    <CountUp to={p.taskComplete} duration={500} />/{p.taskTotal} complete
+                  </span>
+                </div>
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent rounded-full transition-[width] duration-700 ease-out"
+                    style={{ width: `${p.progressPct}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-accent transition-all" style={{ width: `${p.progressPct}%` }} />
-              </div>
+              {p.tasks.length === 0 ? (
+                <p className="p-5 text-sm text-muted-foreground">No tasks in this project yet.</p>
+              ) : (
+                <TaskList tasks={p.tasks} scores={scores} onSelect={setSelected} />
+              )}
             </div>
-            {p.tasks.length === 0 ? (
-              <p className="p-5 text-sm text-muted-foreground">No tasks in this project yet.</p>
-            ) : (
-              <TaskList tasks={p.tasks} scores={scores} onSelect={setSelected} />
-            )}
-          </div>
+          </StaggerItem>
         ))}
 
         {/* Completed projects (collapsed) */}
         {completedProjects.length > 0 && (
-          <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
-            <CollapsibleTrigger className="w-full curve-card flex items-center justify-between hover:border-accent/50 transition-colors">
-              <span className="font-medium text-sm">Completed Projects ({completedProjects.length})</span>
-              {completedOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 mt-3">
-              {completedProjects.map((p) => (
-                <div key={p.id} className="curve-card opacity-80">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium">{p.name}</h4>
-                    <span className="text-xs text-accent">Completed {p.completion_approved_at ? formatDate(p.completion_approved_at) : ""}</span>
+          <StaggerItem>
+            <Collapsible open={completedOpen} onOpenChange={setCompletedOpen}>
+              <CollapsibleTrigger className="w-full curve-card flex items-center justify-between hover:border-accent/50 transition-colors">
+                <span className="font-medium text-sm flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-accent" />
+                  Completed Projects ({completedProjects.length})
+                </span>
+                {completedOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 mt-3 animate-fade-in">
+                {completedProjects.map((p) => (
+                  <div key={p.id} className="curve-card opacity-80">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium">{p.name}</h4>
+                      <span className="text-xs text-accent">Completed {p.completion_approved_at ? formatDate(p.completion_approved_at) : ""}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{p.taskComplete} of {p.taskTotal} tasks completed</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{p.taskComplete} of {p.taskTotal} tasks completed</p>
-                </div>
-              ))}
-            </CollapsibleContent>
-          </Collapsible>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
+          </StaggerItem>
         )}
 
         {/* More coming soon teaser */}
         {hasDrafts && (
-          <div className="curve-card border-dashed text-center py-8 bg-secondary/30">
-            <Lock className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
-            <p className="font-medium text-sm">More Coming Soon</p>
-            <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
-              Your Curve team is preparing your next project. Stay focused on your current priorities.
-            </p>
-          </div>
+          <StaggerItem>
+            <div className="curve-card border-dashed text-center py-8 bg-secondary/30">
+              <Lock className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+              <p className="font-medium text-sm">More Coming Soon</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Your Curve team is preparing your next project. Stay focused on your current priorities.
+              </p>
+            </div>
+          </StaggerItem>
         )}
-      </div>
+      </StaggerList>
 
       <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
     </AppShell>
