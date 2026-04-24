@@ -5,7 +5,7 @@ import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -88,13 +88,14 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const { logoUrl } = useBranding();
   const location = useLocation();
 
-  const primary = role === "admin" ? ADMIN_PRIMARY : ORG_PRIMARY;
-  const soon = role === "admin" ? ADMIN_SOON : ORG_SOON;
+  const groups = role === "admin" ? ADMIN_GROUPS : ORG_GROUPS;
   const showTeam = role === "org_user" && isPrimary;
 
-  // De-dupe: Organizations + Home both link to /admin in current routing — keep both labels but mark Home active only at exact /admin
   const isItemActive = (item: NavItem) =>
     item.to ? (item.match ? item.match(location.pathname) : location.pathname === item.to) : false;
+
+  // Flat list for mobile bottom-nav fallback (org users)
+  const flatPrimary = groups.flatMap((g) => g.items);
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,29 +111,31 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-5 px-3">
-          <ul className="space-y-1">
-            {primary.map((item) => (
-              <li key={item.label}>
-                <SidebarLink item={item} active={isItemActive(item)} />
-              </li>
-            ))}
-            {showTeam && (
-              <li>
-                <SidebarLink
-                  item={{ to: "/team", label: "Team", icon: Users, match: (p) => p === "/team" }}
-                  active={location.pathname === "/team"}
-                />
-              </li>
-            )}
-          </ul>
-
-          <div className="mt-8 mb-2 px-3 curve-eyebrow text-nav-muted">Coming Soon</div>
-          <ul className="space-y-1">
-            {soon.map((item) => (
-              <li key={item.label}><SidebarLink item={item} active={false} /></li>
-            ))}
-          </ul>
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
+          {groups.map((group, gi) => (
+            <div key={group.label ?? `g-${gi}`} className={gi > 0 ? "mt-5" : ""}>
+              {group.label && (
+                <div className="mb-1.5 px-3 text-[10px] uppercase tracking-[0.18em] text-nav-muted/70 font-bold">
+                  {group.label}
+                </div>
+              )}
+              <ul className="space-y-0.5">
+                {group.items.map((item) => (
+                  <li key={item.label}>
+                    <SidebarLink item={item} active={isItemActive(item)} />
+                  </li>
+                ))}
+                {gi === 0 && showTeam && (
+                  <li>
+                    <SidebarLink
+                      item={{ to: "/team", label: "Team", icon: Users, match: (p) => p === "/team" }}
+                      active={location.pathname === "/team"}
+                    />
+                  </li>
+                )}
+              </ul>
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-nav-border p-3">
@@ -182,7 +185,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-nav text-nav-foreground border-t border-nav-border z-40 flex items-stretch">
-        {(role === "admin" ? ADMIN_MOBILE : primary.slice(0, 4)).map((item) => {
+        {(role === "admin" ? ADMIN_MOBILE : flatPrimary.slice(0, 4)).map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item);
           return (
