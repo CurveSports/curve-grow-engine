@@ -18,23 +18,43 @@ type NavItem = {
   match?: (path: string) => boolean;
 };
 
-const ADMIN_PRIMARY: NavItem[] = [
-  { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p === "/admin" || p.startsWith("/admin/org") },
-  { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
-  { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
-  { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
-  { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
-  { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
-  { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
-  { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
-  { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
-  { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
-  { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
-  
-  { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
-];
-const ADMIN_SOON: NavItem[] = [
-  { label: "Analytics", icon: BarChart3, soon: true },
+type NavGroup = {
+  label?: string; // omit for top group
+  items: NavItem[];
+};
+
+const ADMIN_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p === "/admin" || p.startsWith("/admin/org") },
+      { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
+      { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
+      { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
+      { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
+      { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
+      { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
+      { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
+      { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
+    ],
+  },
 ];
 
 // Mobile bottom-nav for admins (curated 4 highest-frequency tabs)
@@ -45,15 +65,23 @@ const ADMIN_MOBILE: NavItem[] = [
   { to: "/admin/communications", label: "Comms", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
 ];
 
-const ORG_PRIMARY: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
-  { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
-  { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
-  { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
-  { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
-  { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
+const ORG_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
+      { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
+      { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
+      { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
+      { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
+    ],
+  },
 ];
-const ORG_SOON: NavItem[] = [];
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { role, profile, signOut, isPrimary } = useAuth();
