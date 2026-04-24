@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Info, Check, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { TierLadder, TierAdvancementBanner, useTierAdvancement } from "@/components/TierLadder";
 import { formatDate as fmtDate } from "@/lib/format";
+import { CountUp } from "@/components/motion/CountUp";
 
 function TierProgressionSection({ orgId, metrics }: { orgId: string; metrics: any }) {
   const storageKey = `tier-ladder-collapsed:${orgId}`;
