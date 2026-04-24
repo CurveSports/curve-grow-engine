@@ -42,15 +42,16 @@ export default function PlanManageSummary({ orgId, tasks, scores, tasksGenerated
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Stat label="Active tasks" value={stats.active} />
-        <Stat label="Completed" value={stats.completed} icon={<CheckCircle2 className="h-3.5 w-3.5 text-accent" />} />
-        <Stat label="In progress" value={stats.inProgress} icon={<Clock className="h-3.5 w-3.5 text-info" />} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Stat label="Active tasks" value={stats.active} hero />
+        <Stat label="Completed" value={stats.completed} hero icon={<CheckCircle2 className="h-4 w-4 text-accent" />} />
+        <Stat label="In progress" value={stats.inProgress} hero icon={<Clock className="h-4 w-4 text-info" />} />
         <Stat
           label="Overdue"
           value={stats.overdue}
+          hero
           tone={stats.overdue > 0 ? "warning" : undefined}
-          icon={stats.overdue > 0 ? <AlertTriangle className="h-3.5 w-3.5 text-destructive" /> : undefined}
+          icon={stats.overdue > 0 ? <AlertTriangle className="h-4 w-4 text-destructive" /> : undefined}
         />
       </div>
 
@@ -81,7 +82,7 @@ export default function PlanManageSummary({ orgId, tasks, scores, tasksGenerated
       </div>
 
       {stats.recent.length > 0 && (
-        <div className="curve-card p-5">
+        <div className="curve-card-quiet">
           <p className="curve-eyebrow mb-3">Recently completed</p>
           <ul className="space-y-2">
             {stats.recent.map((t) => (
@@ -116,13 +117,14 @@ export default function PlanManageSummary({ orgId, tasks, scores, tasksGenerated
   );
 }
 
-function Stat({ label, value, icon, tone }: { label: string; value: number; icon?: any; tone?: "warning" }) {
+function Stat({ label, value, icon, tone, hero }: { label: string; value: number; icon?: any; tone?: "warning"; hero?: boolean }) {
+  const base = hero ? "curve-card-hero" : "curve-card p-4";
   return (
-    <div className={`curve-card p-4 ${tone === "warning" && value > 0 ? "border-destructive/30" : ""}`}>
-      <p className="text-xs text-muted-foreground mb-1">{label}</p>
+    <div className={`${base} ${tone === "warning" && value > 0 ? "border-destructive/30" : ""}`}>
+      <p className="curve-eyebrow mb-3">{label}</p>
       <div className="flex items-center gap-2">
         {icon}
-        <p className="text-2xl font-semibold tabular-nums">{value}</p>
+        <p className={hero ? "curve-stat-lg" : "text-2xl font-semibold tabular-nums"}>{value}</p>
       </div>
     </div>
   );

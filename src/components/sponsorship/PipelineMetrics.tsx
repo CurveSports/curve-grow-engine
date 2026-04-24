@@ -92,10 +92,10 @@ export default function PipelineMetrics({
     <div className="space-y-8">
       {/* Row 1 — Portfolio summary */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Active Leads" value={stats.activeCount} />
-        <Stat label="Pipeline Value" value={formatCurrency(stats.totalProposed)} />
-        <Stat label="Total Closed Value" value={formatCurrency(stats.totalClosed)} valueClass="text-health" />
-        <Stat label="Curve Share Earned" value={formatCurrency(stats.curveShare)} valueClass="text-health" />
+        <Stat label="Active Leads" value={stats.activeCount} hero />
+        <Stat label="Pipeline Value" value={formatCurrency(stats.totalProposed)} hero />
+        <Stat label="Total Closed Value" value={formatCurrency(stats.totalClosed)} valueClass="text-health" hero />
+        <Stat label="Curve Share Earned" value={formatCurrency(stats.curveShare)} valueClass="text-health" hero />
       </div>
 
       {/* Row 2 — Funnel */}
@@ -208,11 +208,11 @@ export default function PipelineMetrics({
   );
 }
 
-function Stat({ label, value, valueClass }: { label: string; value: any; valueClass?: string }) {
+function Stat({ label, value, valueClass, hero }: { label: string; value: any; valueClass?: string; hero?: boolean }) {
   return (
-    <div className="curve-card">
-      <p className="curve-eyebrow mb-2">{label}</p>
-      <p className={cn("font-display text-2xl font-semibold tracking-tight", valueClass)}>{value}</p>
+    <div className={hero ? "curve-card-hero" : "curve-card"}>
+      <p className="curve-eyebrow mb-3">{label}</p>
+      <p className={cn(hero ? "curve-stat-lg" : "font-display text-2xl font-semibold tracking-tight", valueClass)}>{value}</p>
     </div>
   );
 }
