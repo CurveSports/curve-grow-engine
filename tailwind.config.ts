@@ -27,6 +27,11 @@ export default {
           soft: "hsl(var(--accent-soft))",
           strong: "hsl(var(--accent-strong))",
         },
+        lime: {
+          DEFAULT: "hsl(var(--lime))",
+          foreground: "hsl(var(--lime-foreground))",
+          strong: "hsl(var(--lime-strong))",
+        },
         warning: { DEFAULT: "hsl(var(--warning))", soft: "hsl(var(--warning-soft))", foreground: "hsl(0 0% 100%)" },
         info: { DEFAULT: "hsl(var(--info))", soft: "hsl(var(--info-soft))", foreground: "hsl(0 0% 100%)" },
         health: { DEFAULT: "hsl(var(--health))", soft: "hsl(var(--health-soft))", foreground: "hsl(0 0% 100%)" },
