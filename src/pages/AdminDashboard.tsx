@@ -344,7 +344,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Engagement Health Overview */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
         <InteractiveStatCard
           icon={<AlertTriangle className={cn("h-4 w-4", stats.complexCount > 0 ? "text-destructive" : "text-accent")} />}
           label="Complex Engagements"

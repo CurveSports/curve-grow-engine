@@ -5,7 +5,7 @@ import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, TrendingUp, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -18,23 +18,43 @@ type NavItem = {
   match?: (path: string) => boolean;
 };
 
-const ADMIN_PRIMARY: NavItem[] = [
-  { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p === "/admin" || p.startsWith("/admin/org") },
-  { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
-  { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
-  { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
-  { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
-  { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
-  { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
-  { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
-  { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
-  { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
-  { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
-  
-  { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
-];
-const ADMIN_SOON: NavItem[] = [
-  { label: "Analytics", icon: BarChart3, soon: true },
+type NavGroup = {
+  label?: string; // omit for top group
+  items: NavItem[];
+};
+
+const ADMIN_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { to: "/admin", label: "Organizations", icon: Grid3x3, match: (p) => p === "/admin" || p.startsWith("/admin/org") },
+      { to: "/admin/my-tasks", label: "My Tasks", icon: UserCircle2, match: (p) => p.startsWith("/admin/my-tasks") },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
+      { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
+      { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
+      { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
+      { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
+      { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
+      { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
+      { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
+    ],
+  },
 ];
 
 // Mobile bottom-nav for admins (curated 4 highest-frequency tabs)
@@ -45,28 +65,37 @@ const ADMIN_MOBILE: NavItem[] = [
   { to: "/admin/communications", label: "Comms", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
 ];
 
-const ORG_PRIMARY: NavItem[] = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
-  { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
-  { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
-  { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
-  { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
-  { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
+const ORG_GROUPS: NavGroup[] = [
+  {
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
+      { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
+      { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
+      { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
+      { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
+    ],
+  },
 ];
-const ORG_SOON: NavItem[] = [];
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const { role, profile, signOut, isPrimary } = useAuth();
   const { logoUrl } = useBranding();
   const location = useLocation();
 
-  const primary = role === "admin" ? ADMIN_PRIMARY : ORG_PRIMARY;
-  const soon = role === "admin" ? ADMIN_SOON : ORG_SOON;
+  const groups = role === "admin" ? ADMIN_GROUPS : ORG_GROUPS;
   const showTeam = role === "org_user" && isPrimary;
 
-  // De-dupe: Organizations + Home both link to /admin in current routing — keep both labels but mark Home active only at exact /admin
   const isItemActive = (item: NavItem) =>
     item.to ? (item.match ? item.match(location.pathname) : location.pathname === item.to) : false;
+
+  // Flat list for mobile bottom-nav fallback (org users)
+  const flatPrimary = groups.flatMap((g) => g.items);
 
   return (
     <div className="min-h-screen bg-background">
@@ -82,29 +111,31 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
           </Link>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-5 px-3">
-          <ul className="space-y-1">
-            {primary.map((item) => (
-              <li key={item.label}>
-                <SidebarLink item={item} active={isItemActive(item)} />
-              </li>
-            ))}
-            {showTeam && (
-              <li>
-                <SidebarLink
-                  item={{ to: "/team", label: "Team", icon: Users, match: (p) => p === "/team" }}
-                  active={location.pathname === "/team"}
-                />
-              </li>
-            )}
-          </ul>
-
-          <div className="mt-8 mb-2 px-3 curve-eyebrow text-nav-muted">Coming Soon</div>
-          <ul className="space-y-1">
-            {soon.map((item) => (
-              <li key={item.label}><SidebarLink item={item} active={false} /></li>
-            ))}
-          </ul>
+        <nav className="flex-1 overflow-y-auto py-4 px-3">
+          {groups.map((group, gi) => (
+            <div key={group.label ?? `g-${gi}`} className={gi > 0 ? "mt-5" : ""}>
+              {group.label && (
+                <div className="mb-1.5 px-3 text-[10px] uppercase tracking-[0.18em] text-nav-muted/70 font-bold">
+                  {group.label}
+                </div>
+              )}
+              <ul className="space-y-0.5">
+                {group.items.map((item) => (
+                  <li key={item.label}>
+                    <SidebarLink item={item} active={isItemActive(item)} />
+                  </li>
+                ))}
+                {gi === 0 && showTeam && (
+                  <li>
+                    <SidebarLink
+                      item={{ to: "/team", label: "Team", icon: Users, match: (p) => p === "/team" }}
+                      active={location.pathname === "/team"}
+                    />
+                  </li>
+                )}
+              </ul>
+            </div>
+          ))}
         </nav>
 
         <div className="border-t border-nav-border p-3">
@@ -130,7 +161,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         <h1 className="font-display text-base font-semibold tracking-tight text-white">{title ?? "\u00A0"}</h1>
         <div className="flex items-center gap-3 text-sm text-nav-muted">
           <span className="hidden lg:inline">{profile?.email}</span>
-          <div className="h-8 w-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-bold text-xs">
+          <div className="h-8 w-8 rounded-full bg-lime text-lime-foreground flex items-center justify-center font-bold text-xs">
             {(profile?.full_name ?? profile?.email ?? "?").charAt(0).toUpperCase()}
           </div>
         </div>
@@ -154,7 +185,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 h-16 bg-nav text-nav-foreground border-t border-nav-border z-40 flex items-stretch">
-        {(role === "admin" ? ADMIN_MOBILE : primary.slice(0, 4)).map((item) => {
+        {(role === "admin" ? ADMIN_MOBILE : flatPrimary.slice(0, 4)).map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item);
           return (
@@ -163,10 +194,10 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
               to={item.to ?? "#"}
               className={cn(
                 "relative flex-1 flex flex-col items-center justify-center gap-1 transition-colors min-h-[44px]",
-                active ? "text-accent" : "text-nav-muted hover:text-white",
+                active ? "text-lime" : "text-nav-muted hover:text-white",
               )}
             >
-              {active && <span className="absolute top-0 h-0.5 w-10 bg-accent rounded-b-full" />}
+              {active && <span className="absolute top-0 h-0.5 w-10 bg-lime rounded-b-full" />}
               <Icon className="h-5 w-5" />
               <span className="text-[10px] font-semibold">{item.label}</span>
             </Link>
@@ -175,7 +206,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         {role !== "admin" && showTeam && (
           <Link to="/team" className={cn(
             "flex-1 flex flex-col items-center justify-center gap-1 min-h-[44px]",
-            location.pathname === "/team" ? "text-accent" : "text-nav-muted",
+            location.pathname === "/team" ? "text-lime" : "text-nav-muted",
           )}>
             <Users className="h-5 w-5" />
             <span className="text-[10px] font-semibold">Team</span>
@@ -193,9 +224,9 @@ function SidebarLink({ item, active }: { item: NavItem; active: boolean }) {
       "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all min-h-[40px]",
       item.soon && "opacity-50 cursor-not-allowed",
       !item.soon && !active && "text-nav-muted hover:text-white hover:bg-nav-hover",
-      active && "bg-accent text-accent-foreground font-semibold",
+      active && "bg-lime text-lime-foreground font-semibold",
     )}>
-      {active && <span className="absolute -left-3 top-1/2 -translate-y-1/2 h-6 w-1 bg-accent rounded-r-full" />}
+      {active && <span className="absolute -left-3 top-1/2 -translate-y-1/2 h-6 w-1 bg-lime rounded-r-full" />}
       <Icon className="h-[18px] w-[18px] flex-shrink-0" />
       <span className="flex-1 truncate">{item.label}</span>
       {item.soon && (
