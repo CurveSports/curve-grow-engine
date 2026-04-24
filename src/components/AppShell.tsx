@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
+import { PageTransition } from "@/components/motion/PageTransition";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
@@ -178,9 +179,12 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Main content */}
       <main className="md:ml-[240px] md:pt-[60px] pb-20 md:pb-0 min-h-screen">
-        <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8 animate-in fade-in duration-200">
+        <PageTransition
+          key={location.pathname}
+          className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8"
+        >
           {children}
-        </div>
+        </PageTransition>
       </main>
 
       {/* Mobile bottom tab bar */}

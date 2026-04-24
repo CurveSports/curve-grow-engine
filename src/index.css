@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Archivo:wght@500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -138,32 +138,55 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
   }
   h1, h2, h3, h4 {
-    font-family: 'Archivo', 'Inter', system-ui, sans-serif;
-    letter-spacing: -0.025em;
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    letter-spacing: -0.02em;
     font-weight: 700;
   }
+  h1 { letter-spacing: -0.035em; }
+  /* Numbers should always be tabular for tables/stats */
+  .tabular, [data-numeric="true"] { font-variant-numeric: tabular-nums; }
 }
 
 @layer components {
+  /* ---- Card hierarchy: 3 tiers of elevation ----
+     hero    → headline cards, primary KPIs. Bigger radius, lime border accent, lifted shadow.
+     default → workhorse content cards.
+     quiet   → reference/secondary info. Flat, dashed border, no shadow.
+  */
   .curve-card {
     @apply bg-card border border-border rounded-[var(--radius)] p-6 shadow-[0_1px_2px_rgba(15,23,42,0.04)];
   }
+  .curve-card-hero {
+    @apply bg-card border border-foreground/10 rounded-[calc(var(--radius)+4px)] p-7
+           shadow-[0_20px_50px_-20px_rgba(15,23,42,0.18),0_4px_12px_-4px_rgba(15,23,42,0.06)]
+           relative overflow-hidden
+           before:content-[''] before:absolute before:inset-x-0 before:top-0 before:h-[3px]
+           before:bg-[hsl(var(--lime))];
+  }
+  .curve-card-quiet {
+    @apply bg-transparent border border-dashed border-border rounded-[var(--radius)] p-5;
+  }
   .curve-card-interactive {
-    @apply curve-card transition-all duration-200 hover:border-foreground/20 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.12)] cursor-pointer;
+    @apply curve-card transition-all duration-200 ease-out
+           hover:border-foreground/25 hover:-translate-y-[2px]
+           hover:shadow-[0_12px_32px_-12px_rgba(15,23,42,0.18)] cursor-pointer;
   }
   .curve-container {
     @apply max-w-[1280px] mx-auto px-8;
   }
   .curve-eyebrow {
-    @apply text-[11px] uppercase tracking-[0.2em] text-neutral font-bold;
+    @apply text-[11px] uppercase tracking-[0.22em] text-neutral font-bold font-display;
   }
   .curve-stat {
-    @apply font-display text-3xl font-bold tabular-nums text-foreground;
+    @apply font-display text-4xl font-bold tabular-nums text-foreground tracking-tight;
   }
-  /* Lime CTA — the CURVE signature button. Use for primary marketing CTAs.
-     Always bright lime background with ink text. */
+  .curve-stat-lg {
+    @apply font-display text-5xl md:text-6xl font-bold tabular-nums text-foreground tracking-[-0.04em] leading-[0.95];
+  }
+  /* Lime CTA — the CURVE signature button. */
   .curve-cta {
     @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius)] bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] font-bold px-5 py-2.5 text-sm uppercase tracking-wider transition-all hover:bg-[hsl(var(--lime-strong))] hover:-translate-y-0.5 active:translate-y-0 shadow-[0_4px_14px_-4px_hsl(var(--lime)/0.6)];
   }
