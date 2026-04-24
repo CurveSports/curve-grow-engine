@@ -17,6 +17,7 @@ import {
 import CalendarTab from "@/components/communications/CalendarTab";
 import StandardsTab from "@/components/communications/StandardsTab";
 import SeasonSetupModal from "@/components/communications/SeasonSetupModal";
+import SendHandoffModal from "@/components/communications/SendHandoffModal";
 
 type Personalization = { recipient: string; eventOrDate: string; additionalContext: string };
 type Track = "dsf" | "direct";
