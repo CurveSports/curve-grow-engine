@@ -45,9 +45,9 @@
     --destructive: 358 75% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Burnt amber — muted, mustard-leaning. Replaces the bright tangerine. */
-    --warning: 32 80% 42%;
-    --warning-soft: 36 60% 94%;
+    /* Warning — desaturated stone/ink, no peach. Coordinates with the mono palette. */
+    --warning: 220 15% 35%;
+    --warning-soft: 220 14% 94%;
 
     /* Ink-blue info — neutral, not playful. */
     --info: 215 35% 30%;
@@ -112,8 +112,8 @@
     --lime-strong: 73 95% 45%;
     --destructive: 358 75% 55%;
     --destructive-foreground: 0 0% 100%;
-    --warning: 36 75% 55%;
-    --warning-soft: 36 30% 18%;
+    --warning: 220 12% 70%;
+    --warning-soft: 220 18% 16%;
     --info: 215 30% 70%;
     --info-soft: 215 25% 18%;
     --health: 75 90% 55%;
