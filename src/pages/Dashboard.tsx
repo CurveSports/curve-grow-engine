@@ -289,27 +289,29 @@ export default function Dashboard() {
             </div>
           </StaggerItem>
 
-          {/* TASK LIST */}
-          <StaggerItem>
-            <div className="flex items-center justify-between mb-3 mt-2">
-              <div className="flex items-center gap-2">
-                <ListChecks className="h-4 w-4 text-accent" />
-                <h2 className="curve-eyebrow">Your tasks</h2>
+          {/* TASK LIST — only when plan is activated */}
+          {planActivated && (
+            <StaggerItem>
+              <div className="flex items-center justify-between mb-3 mt-2">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 text-accent" />
+                  <h2 className="curve-eyebrow">Your tasks</h2>
+                </div>
+                <Link to="/plan" className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1">
+                  Full plan <ArrowRight className="h-3 w-3" />
+                </Link>
               </div>
-              <Link to="/plan" className="text-xs font-semibold text-accent hover:underline inline-flex items-center gap-1">
-                Full plan <ArrowRight className="h-3 w-3" />
-              </Link>
-            </div>
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Loading…</p>
-            ) : tasks.length === 0 ? (
-              <div className="curve-card text-center py-10">
-                <p className="text-sm text-muted-foreground">No tasks yet — your action plan will appear here when activated.</p>
-              </div>
-            ) : (
-              <TaskList tasks={tasks} scores={scores} onSelect={setSelected} />
-            )}
-          </StaggerItem>
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Loading…</p>
+              ) : tasks.length === 0 ? (
+                <div className="curve-card text-center py-10">
+                  <p className="text-sm text-muted-foreground">No tasks yet — your action plan will appear here when activated.</p>
+                </div>
+              ) : (
+                <TaskList tasks={tasks} scores={scores} onSelect={setSelected} />
+              )}
+            </StaggerItem>
+          )}
 
           <TaskDetailPanel task={selected} open={!!selected} onClose={() => setSelected(null)} isAdmin={false} onChanged={load} />
         </StaggerList>
