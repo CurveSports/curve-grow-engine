@@ -432,10 +432,10 @@ export default function AdminDashboard() {
 
 function StatCard({ icon, label, value, subtitle, valueClass = "", extra }: { icon: React.ReactNode; label: string; value: any; subtitle?: string; valueClass?: string; extra?: React.ReactNode }) {
   return (
-    <div className="curve-card">
+    <div className="curve-card-hero">
       <div className="flex items-center gap-2 mb-3">{icon}<p className="curve-eyebrow">{label}</p></div>
-      <p className={cn("curve-stat", valueClass)}>{value}</p>
-      {subtitle && <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>}
+      <p className={cn("curve-stat-lg", valueClass)}>{value}</p>
+      {subtitle && <p className="text-xs text-muted-foreground mt-2 truncate">{subtitle}</p>}
       {extra}
     </div>
   );

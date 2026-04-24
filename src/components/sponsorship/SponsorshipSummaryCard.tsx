@@ -32,7 +32,7 @@ export default function SponsorshipSummaryCard() {
   const empty = data.active === 0 && data.closed === 0;
 
   return (
-    <div className="curve-card border-l-4 border-health">
+    <div className="curve-card-hero">
       <p className="curve-eyebrow mb-3">Sponsorship Pipeline</p>
       {empty ? (
         <div className="flex items-center justify-between gap-3 flex-wrap">

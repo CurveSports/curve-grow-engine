@@ -173,10 +173,10 @@ export default function Dashboard() {
 
 function StatCard({ icon, label, value, subtitle, valueClass = "" }: { icon: React.ReactNode; label: string; value: any; subtitle?: string; valueClass?: string; }) {
   return (
-    <div className="curve-card">
-      <div className="flex items-center gap-2 mb-2">{icon}<p className="curve-eyebrow">{label}</p></div>
-      <p className={`font-display text-3xl font-semibold tabular-nums ${valueClass}`}>{value}</p>
-      {subtitle && <p className="text-xs text-muted-foreground mt-1 truncate">{subtitle}</p>}
+    <div className="curve-card-hero">
+      <div className="flex items-center gap-2 mb-3">{icon}<p className="curve-eyebrow">{label}</p></div>
+      <p className={`curve-stat-lg ${valueClass}`}>{value}</p>
+      {subtitle && <p className="text-xs text-muted-foreground mt-2 truncate">{subtitle}</p>}
     </div>
   );
 }
