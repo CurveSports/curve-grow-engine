@@ -60,7 +60,7 @@ export function SavedScenariosCard({ orgId, refreshKey, onView }: Props) {
   };
 
   return (
-    <section className="curve-card">
+    <section className="curve-card-quiet">
       <div className="flex items-baseline justify-between mb-4">
         <p className="curve-eyebrow">Saved Scenarios</p>
         <span className="text-xs text-muted-foreground">{scenarios.length} of 10 max</span>

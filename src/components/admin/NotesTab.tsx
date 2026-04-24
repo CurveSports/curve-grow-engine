@@ -147,7 +147,7 @@ export default function NotesTab({ orgId }: { orgId: string }) {
             const isAuthor = user?.id === n.created_by;
             const isEditing = editingId === n.id;
             return (
-              <div key={n.id} className="curve-card">
+              <div key={n.id} className="curve-card-quiet">
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className="flex items-center gap-2 flex-wrap">
                     {n.tag && (
