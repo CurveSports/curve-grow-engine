@@ -28,11 +28,18 @@
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;     /* slate */
 
-    /* CURVE signature — electric lime. Dark text on lime (matches JOIN US button). */
-    --accent: 75 100% 50%;              /* #C8FF00 electric lime */
-    --accent-foreground: 220 25% 8%;    /* ink-on-lime, NEVER white */
-    --accent-soft: 75 100% 92%;
-    --accent-strong: 73 95% 45%;        /* hover/active state */
+    /* Accent green — readable on white, used for text, borders, soft pills, status.
+       This is the WORKHORSE accent. The bright brand lime is reserved for CTAs only. */
+    --accent: 82 95% 28%;               /* #4F7E07 deep readable green */
+    --accent-foreground: 0 0% 100%;     /* white text on solid accent bg */
+    --accent-soft: 78 70% 94%;          /* very pale green tint for badges */
+    --accent-strong: 82 95% 22%;        /* hover/active state */
+
+    /* Brand lime — CURVE signature. Use ONLY as background with ink text (CTAs, active nav, primary pills).
+       NEVER use as a text color and NEVER pair with white text. */
+    --lime: 75 100% 50%;                /* #C8FF00 electric lime */
+    --lime-foreground: 220 25% 8%;      /* ink-on-lime — always */
+    --lime-strong: 73 95% 45%;          /* hover/active state */
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -53,15 +60,16 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 75 100% 50%;
+    --ring: 82 95% 28%;
 
     --radius: 0.625rem;                 /* 10px — slightly tighter, more athletic */
 
-    /* Dark navigation surface — true CURVE ink (warmer/blacker than slate-900) */
+    /* Dark navigation surface — true CURVE ink (warmer/blacker than slate-900).
+       Lime IS legible on the dark nav, so we use it for active states there. */
     --nav-background: 220 25% 6%;       /* deep ink */
     --nav-foreground: 0 0% 100%;
     --nav-muted: 220 9% 60%;
-    --nav-active-bg: 75 100% 50%;       /* lime pill */
+    --nav-active-bg: 75 100% 50%;       /* lime pill — readable on dark */
     --nav-active-foreground: 220 25% 8%; /* ink on lime — readable */
     --nav-border: 220 18% 14%;
     --nav-hover: 220 18% 12%;
@@ -90,10 +98,14 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 220 18% 14%;
     --muted-foreground: 220 9% 60%;
-    --accent: 75 100% 50%;
+    /* On dark, lime IS readable as text — accent can be the bright lime here. */
+    --accent: 75 100% 55%;
     --accent-foreground: 220 25% 8%;
     --accent-soft: 75 50% 18%;
     --accent-strong: 73 95% 45%;
+    --lime: 75 100% 50%;
+    --lime-foreground: 220 25% 8%;
+    --lime-strong: 73 95% 45%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
@@ -109,6 +121,10 @@
     --input: 220 18% 14%;
     --ring: 75 100% 50%;
   }
+}
+
+@layer base {
+  /* Make sure focus ring uses lime on dark nav surfaces too */
 }
 
 @layer base {
@@ -142,9 +158,10 @@
   .curve-stat {
     @apply font-display text-3xl font-bold tabular-nums text-foreground;
   }
-  /* Lime CTA — the CURVE signature button. Use for primary marketing CTAs. */
+  /* Lime CTA — the CURVE signature button. Use for primary marketing CTAs.
+     Always bright lime background with ink text. */
   .curve-cta {
-    @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius)] bg-accent text-accent-foreground font-bold px-5 py-2.5 text-sm uppercase tracking-wider transition-all hover:bg-[hsl(var(--accent-strong))] hover:-translate-y-0.5 active:translate-y-0 shadow-[0_4px_14px_-4px_hsl(var(--accent)/0.6)];
+    @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius)] bg-[hsl(var(--lime))] text-[hsl(var(--lime-foreground))] font-bold px-5 py-2.5 text-sm uppercase tracking-wider transition-all hover:bg-[hsl(var(--lime-strong))] hover:-translate-y-0.5 active:translate-y-0 shadow-[0_4px_14px_-4px_hsl(var(--lime)/0.6)];
   }
 }
 
