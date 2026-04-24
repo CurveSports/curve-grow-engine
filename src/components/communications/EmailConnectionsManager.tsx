@@ -101,14 +101,13 @@ export default function EmailConnectionsManager({ userId }: { userId: string }) 
           loading={connecting === "gmail"}
           onConnect={() => connect("gmail")}
         />
-        <ProviderCard
-          provider="outlook"
-          label="Outlook / Microsoft 365"
-          emoji="📧"
-          connected={hasOutlook}
-          loading={connecting === "outlook"}
-          onConnect={() => connect("outlook")}
-        />
+        <div className="rounded-lg border border-dashed border-border bg-muted/30 p-4 flex items-center gap-3 opacity-70">
+          <span className="text-2xl" aria-hidden>📧</span>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold">Outlook / Microsoft 365</div>
+            <div className="text-xs text-muted-foreground">Coming soon</div>
+          </div>
+        </div>
       </div>
 
       {loading ? (
