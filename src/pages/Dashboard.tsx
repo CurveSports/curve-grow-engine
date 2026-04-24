@@ -189,8 +189,7 @@ export default function Dashboard() {
         </div>
       )}
 
-      {(
-        <StaggerList className="space-y-6">
+      <StaggerList className="space-y-6">
           {/* HERO — Opportunity */}
           {hasMetrics && metrics && (
             <StaggerItem>
