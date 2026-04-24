@@ -70,11 +70,11 @@ function EngineCard({
   opportunityLabel?: string; subtext?: string;
 }) {
   return (
-    <div className="curve-card min-h-[180px] flex flex-col">
+    <div className="curve-card min-h-[180px] flex flex-col transition-all duration-200 hover:border-foreground/25 hover:-translate-y-[1px] hover:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.12)]">
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-display font-semibold text-base">{name}</h3>
         <span className="font-display tabular-nums leading-none">
-          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-4xl font-bold"><CountUp to={score} duration={700} /></span>
           <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
         </span>
       </div>
@@ -82,7 +82,7 @@ function EngineCard({
       <div className="mt-auto pt-4">
         <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{opportunityLabel ?? "Opportunity"}</p>
         <p className="text-sm font-semibold text-foreground tabular-nums mt-0.5">
-          {formatCurrency(low)} – {formatCurrency(high)}
+          <CountUp to={low} format={(n) => formatCurrency(n)} duration={700} /> – <CountUp to={high} format={(n) => formatCurrency(n)} duration={900} />
         </p>
         {subtext && <p className="text-xs text-muted-foreground mt-2 leading-snug">{subtext}</p>}
       </div>
@@ -103,11 +103,11 @@ function RetentionCard({
       ? "bg-warning-soft text-warning border-warning/30"
       : "bg-destructive/10 text-destructive border-destructive/30";
   return (
-    <div className="curve-card min-h-[180px] flex flex-col">
+    <div className="curve-card min-h-[180px] flex flex-col transition-all duration-200 hover:border-foreground/25 hover:-translate-y-[1px] hover:shadow-[0_8px_20px_-8px_rgba(15,23,42,0.12)]">
       <div className="flex items-baseline justify-between mb-4">
         <h3 className="font-display font-semibold text-base">Retention</h3>
         <span className="font-display tabular-nums leading-none">
-          <span className="text-4xl font-bold">{score}</span>
+          <span className="text-4xl font-bold"><CountUp to={score} duration={700} /></span>
           <span className="text-muted-foreground text-sm font-normal ml-0.5">/10</span>
         </span>
       </div>
