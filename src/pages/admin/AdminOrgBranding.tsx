@@ -105,7 +105,7 @@ export default function AdminOrgBranding() {
     const ext = file.name.split(".").pop() || "png";
     const path = `${orgId}/logo-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("org-logos").upload(path, file, {
-      cacheControl: "3600", upsert: true, contentType: file.type,
+      cacheControl: "3600", contentType: file.type,
     });
     if (upErr) { setUploading(false); return toast.error(upErr.message); }
     const { data: pub } = supabase.storage.from("org-logos").getPublicUrl(path);
