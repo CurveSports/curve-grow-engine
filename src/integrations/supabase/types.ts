@@ -752,7 +752,9 @@ export type Database = {
       }
       org_communication_log: {
         Row: {
+          calendar_item_id: string | null
           communication_type: string
+          external_message_id: string | null
           format: string | null
           generated_at: string
           generated_by: string
@@ -761,11 +763,19 @@ export type Database = {
           org_id: string
           outreach_track: string | null
           prompt_text: string | null
+          send_body_excerpt: string | null
+          send_channel: string | null
+          send_platform_id: string | null
+          send_recipient: string | null
+          send_subject: string | null
+          sent_at: string | null
           tone: string | null
           was_refined: boolean
         }
         Insert: {
+          calendar_item_id?: string | null
           communication_type: string
+          external_message_id?: string | null
           format?: string | null
           generated_at?: string
           generated_by: string
@@ -774,11 +784,19 @@ export type Database = {
           org_id: string
           outreach_track?: string | null
           prompt_text?: string | null
+          send_body_excerpt?: string | null
+          send_channel?: string | null
+          send_platform_id?: string | null
+          send_recipient?: string | null
+          send_subject?: string | null
+          sent_at?: string | null
           tone?: string | null
           was_refined?: boolean
         }
         Update: {
+          calendar_item_id?: string | null
           communication_type?: string
+          external_message_id?: string | null
           format?: string | null
           generated_at?: string
           generated_by?: string
@@ -787,15 +805,35 @@ export type Database = {
           org_id?: string
           outreach_track?: string | null
           prompt_text?: string | null
+          send_body_excerpt?: string | null
+          send_channel?: string | null
+          send_platform_id?: string | null
+          send_recipient?: string | null
+          send_subject?: string | null
+          sent_at?: string | null
           tone?: string | null
           was_refined?: boolean
         }
         Relationships: [
           {
+            foreignKeyName: "org_communication_log_calendar_item_id_fkey"
+            columns: ["calendar_item_id"]
+            isOneToOne: false
+            referencedRelation: "org_calendar_items"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "org_communication_log_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_communication_log_send_platform_id_fkey"
+            columns: ["send_platform_id"]
+            isOneToOne: false
+            referencedRelation: "org_send_platforms"
             referencedColumns: ["id"]
           },
         ]
@@ -1132,6 +1170,50 @@ export type Database = {
             columns: ["suggested_next_project_id"]
             isOneToOne: false
             referencedRelation: "org_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_send_platforms: {
+        Row: {
+          created_at: string
+          created_by: string
+          display_order: number
+          id: string
+          label: string
+          org_id: string
+          platform_type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          display_order?: number
+          id?: string
+          label: string
+          org_id: string
+          platform_type?: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          display_order?: number
+          id?: string
+          label?: string
+          org_id?: string
+          platform_type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_send_platforms_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2226,6 +2308,78 @@ export type Database = {
           suggested_days_to_complete?: number
           task_type?: Database["public"]["Enums"]["task_type"]
           title?: string
+        }
+        Relationships: []
+      }
+      user_email_connections: {
+        Row: {
+          access_token_encrypted: string | null
+          connected_at: string
+          display_name: string | null
+          email_address: string
+          id: string
+          last_error: string | null
+          last_used_at: string | null
+          provider: string
+          refresh_token_encrypted: string
+          scopes: string | null
+          status: string
+          token_expires_at: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted?: string | null
+          connected_at?: string
+          display_name?: string | null
+          email_address: string
+          id?: string
+          last_error?: string | null
+          last_used_at?: string | null
+          provider: string
+          refresh_token_encrypted: string
+          scopes?: string | null
+          status?: string
+          token_expires_at?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string | null
+          connected_at?: string
+          display_name?: string | null
+          email_address?: string
+          id?: string
+          last_error?: string | null
+          last_used_at?: string | null
+          provider?: string
+          refresh_token_encrypted?: string
+          scopes?: string | null
+          status?: string
+          token_expires_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_email_oauth_states: {
+        Row: {
+          created_at: string
+          provider: string
+          redirect_to: string | null
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          provider: string
+          redirect_to?: string | null
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          provider?: string
+          redirect_to?: string | null
+          state?: string
+          user_id?: string
         }
         Relationships: []
       }
