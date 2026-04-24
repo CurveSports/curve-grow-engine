@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle, Calendar as CalIcon, ScrollText, Plus, Building2 } from "lucide-react";
+import { Check, Copy, Loader2, Settings2, Sparkles, X, RefreshCw, FileText, AlertTriangle, Calendar as CalIcon, ScrollText, Plus, Building2, Send } from "lucide-react";
 import {
   getCategoriesForOrg, findCard, buildUserPrompt, validateCard, visibleFields,
   type CommCard, type CommField,
@@ -121,6 +121,7 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
   const [showRefine, setShowRefine] = useState(false);
   const [refineText, setRefineText] = useState("");
   const workspaceRef = useRef<HTMLDivElement | null>(null);
+  const [handoffOpen, setHandoffOpen] = useState(false);
 
   const selectedCard: CommCard | null = useMemo(() => {
     if (!selectedCardId) return null;
@@ -527,8 +528,11 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
                   </div>
                   {error && <div className="rounded-md border border-warning/40 bg-warning-soft px-3 py-2 text-sm text-foreground">{error}</div>}
                   <div className="space-y-3">
-                    <Button onClick={copyToClipboard} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
-                      {copied ? <><Check className="h-4 w-4 mr-2" /> Copied!</> : <><Copy className="h-4 w-4 mr-2" /> Copy to Clipboard</>}
+                    <Button onClick={() => setHandoffOpen(true)} className="w-full bg-accent hover:bg-accent/90 text-accent-foreground">
+                      <Send className="h-4 w-4 mr-2" /> Send this message
+                    </Button>
+                    <Button onClick={copyToClipboard} variant="outline" className="w-full">
+                      {copied ? <><Check className="h-4 w-4 mr-2" /> Copied!</> : <><Copy className="h-4 w-4 mr-2" /> Just copy text</>}
                     </Button>
                     {!refined && !showRefine && (
                       <Button variant="outline" onClick={() => setShowRefine(true)} className="w-full">
@@ -565,6 +569,18 @@ function CommunicationsInner({ orgId, isAdminContext, userId }: { orgId: string;
           <StandardsTab onDraftTemplate={(label) => selectCardByLabel(label)} />
         </TabsContent>
       </Tabs>
+
+      {draft && selectedCard && (
+        <SendHandoffModal
+          open={handoffOpen}
+          onOpenChange={setHandoffOpen}
+          orgId={orgId}
+          userId={userId}
+          draft={draft}
+          communicationType={isSponsorCard ? `${track === "dsf" ? "DSF" : "Direct"} ${selectedCard.label}` : selectedCard.label}
+          defaultRecipient={personal.recipient}
+        />
+      )}
     </AppShell>
   );
 }

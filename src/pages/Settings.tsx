@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { Upload, ImageOff, Palette, RotateCcw, ArrowRight } from "lucide-react";
+import SendPlatformsManager from "@/components/communications/SendPlatformsManager";
+import EmailConnectionsManager from "@/components/communications/EmailConnectionsManager";
 
 // ----- Color helpers -----
 function hexToHsl(hex: string): string | null {
@@ -177,8 +179,16 @@ export default function Settings() {
           <TabsList>
             <TabsTrigger value="profile">Profile</TabsTrigger>
             {role === "org_user" && <TabsTrigger value="organization">Organization</TabsTrigger>}
+            <TabsTrigger value="sending">Sending</TabsTrigger>
             {role === "org_user" && isPrimary && <TabsTrigger value="team">Team</TabsTrigger>}
           </TabsList>
+
+          <TabsContent value="sending" className="space-y-6">
+            {role === "org_user" && profile?.org_id && user && (
+              <SendPlatformsManager orgId={profile.org_id} userId={user.id} canEdit={isPrimary} />
+            )}
+            {user && <EmailConnectionsManager userId={user.id} />}
+          </TabsContent>
 
           {/* ===== PROFILE ===== */}
           <TabsContent value="profile" className="space-y-6">
