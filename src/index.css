@@ -41,20 +41,24 @@
     --lime-foreground: 220 25% 8%;      /* ink-on-lime — always */
     --lime-strong: 73 95% 45%;          /* hover/active state */
 
-    --destructive: 0 84% 60%;
+    /* True red — only for destructive actions / critical errors. No pink hue. */
+    --destructive: 358 75% 48%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-soft: 38 92% 95%;
+    /* Burnt amber — muted, mustard-leaning. Replaces the bright tangerine. */
+    --warning: 32 80% 42%;
+    --warning-soft: 36 60% 94%;
 
-    --info: 217 91% 60%;
-    --info-soft: 217 91% 95%;
+    /* Ink-blue info — neutral, not playful. */
+    --info: 215 35% 30%;
+    --info-soft: 215 30% 95%;
 
-    --health: 258 90% 66%;
-    --health-soft: 258 90% 95%;
+    /* Health & combo re-mapped to the green/ink family so legacy refs harmonize. */
+    --health: 82 95% 28%;
+    --health-soft: 78 70% 94%;
 
-    --combo: 271 81% 56%;
-    --combo-soft: 271 81% 95%;
+    --combo: 220 25% 18%;
+    --combo-soft: 220 14% 94%;
 
     --neutral: 220 9% 60%;
 
@@ -106,16 +110,16 @@
     --lime: 75 100% 50%;
     --lime-foreground: 220 25% 8%;
     --lime-strong: 73 95% 45%;
-    --destructive: 0 84% 60%;
+    --destructive: 358 75% 55%;
     --destructive-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-soft: 38 30% 18%;
-    --info: 217 91% 60%;
-    --info-soft: 217 30% 18%;
-    --health: 258 90% 66%;
-    --health-soft: 258 30% 18%;
-    --combo: 271 81% 66%;
-    --combo-soft: 271 30% 20%;
+    --warning: 36 75% 55%;
+    --warning-soft: 36 30% 18%;
+    --info: 215 30% 70%;
+    --info-soft: 215 25% 18%;
+    --health: 75 90% 55%;
+    --health-soft: 75 40% 16%;
+    --combo: 0 0% 92%;
+    --combo-soft: 220 18% 16%;
     --neutral: 220 9% 55%;
     --border: 220 18% 14%;
     --input: 220 18% 14%;
