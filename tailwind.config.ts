@@ -9,7 +9,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Space Grotesk", "Inter", "system-ui", "sans-serif"],
+        display: ["Archivo", "Inter", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -25,6 +25,7 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
           soft: "hsl(var(--accent-soft))",
+          strong: "hsl(var(--accent-strong))",
         },
         warning: { DEFAULT: "hsl(var(--warning))", soft: "hsl(var(--warning-soft))", foreground: "hsl(0 0% 100%)" },
         info: { DEFAULT: "hsl(var(--info))", soft: "hsl(var(--info-soft))", foreground: "hsl(0 0% 100%)" },
