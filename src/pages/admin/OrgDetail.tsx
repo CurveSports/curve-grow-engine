@@ -105,6 +105,9 @@ export default function OrgDetail() {
             <TabsTrigger value="sponsorship" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <DollarSign className="h-3.5 w-3.5" /> Sponsorship
             </TabsTrigger>
+            <TabsTrigger value="revenue_share" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <DollarSign className="h-3.5 w-3.5" /> Revenue Share
+            </TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <StickyNote className="h-3.5 w-3.5" /> Notes
             </TabsTrigger>
