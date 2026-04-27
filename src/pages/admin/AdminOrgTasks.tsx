@@ -36,6 +36,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [addOpen, setAddOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [baselineOpen, setBaselineOpen] = useState(false);
+  const [contractOpen, setContractOpen] = useState(false);
 
   const load = async () => {
     if (!orgId) return;
