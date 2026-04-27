@@ -267,6 +267,14 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
         orgName={orgName}
         onConfirm={async (baseline, reason) => { await runActivation(baseline, reason); }}
       />
+
+      <ContractSetupModal
+        open={contractOpen}
+        onOpenChange={setContractOpen}
+        orgId={orgId!}
+        orgName={orgName}
+        onSaved={() => { setContractOpen(false); load(); }}
+      />
     </Wrap>
   );
 }
