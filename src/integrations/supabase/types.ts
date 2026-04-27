@@ -116,6 +116,57 @@ export type Database = {
           },
         ]
       }
+      curve_portfolio_summary: {
+        Row: {
+          curve_share_this_month: number
+          curve_share_this_quarter: number
+          id: string
+          last_updated: string
+          new_revenue_this_month: number
+          new_revenue_this_quarter: number
+          total_collected: number
+          total_curve_share_earned: number
+          total_investment_deployed: number
+          total_investment_recovered: number
+          total_invoiced: number
+          total_new_revenue_generated: number
+          total_orgs_active: number
+          total_outstanding: number
+        }
+        Insert: {
+          curve_share_this_month?: number
+          curve_share_this_quarter?: number
+          id?: string
+          last_updated?: string
+          new_revenue_this_month?: number
+          new_revenue_this_quarter?: number
+          total_collected?: number
+          total_curve_share_earned?: number
+          total_investment_deployed?: number
+          total_investment_recovered?: number
+          total_invoiced?: number
+          total_new_revenue_generated?: number
+          total_orgs_active?: number
+          total_outstanding?: number
+        }
+        Update: {
+          curve_share_this_month?: number
+          curve_share_this_quarter?: number
+          id?: string
+          last_updated?: string
+          new_revenue_this_month?: number
+          new_revenue_this_quarter?: number
+          total_collected?: number
+          total_curve_share_earned?: number
+          total_investment_deployed?: number
+          total_investment_recovered?: number
+          total_invoiced?: number
+          total_new_revenue_generated?: number
+          total_orgs_active?: number
+          total_outstanding?: number
+        }
+        Relationships: []
+      }
       derived_metrics: {
         Row: {
           active_project_engines: Json | null
@@ -973,6 +1024,66 @@ export type Database = {
           },
         ]
       }
+      org_contract_installments: {
+        Row: {
+          amount: number
+          contract_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          installment_number: number
+          is_paid: boolean
+          logged_by: string | null
+          org_id: string
+          paid_date: string | null
+          payment_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          contract_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installment_number: number
+          is_paid?: boolean
+          logged_by?: string | null
+          org_id: string
+          paid_date?: string | null
+          payment_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          contract_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          installment_number?: number
+          is_paid?: boolean
+          logged_by?: string | null
+          org_id?: string
+          paid_date?: string | null
+          payment_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contract_installments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "org_engagement_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_contract_installments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_engagement_baselines: {
         Row: {
           adjustment_reason: string | null
@@ -1010,6 +1121,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_engagement_baselines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_engagement_contracts: {
+        Row: {
+          contract_notes: string | null
+          contract_signed_date: string | null
+          contract_status: string
+          contract_value: number
+          created_at: string
+          created_by: string
+          id: string
+          installment_amount: number | null
+          installment_count: number | null
+          installment_frequency: string | null
+          investment_fully_recovered: boolean
+          investment_recovered_at: string | null
+          org_id: string
+          total_paid_to_date: number
+          updated_at: string
+        }
+        Insert: {
+          contract_notes?: string | null
+          contract_signed_date?: string | null
+          contract_status?: string
+          contract_value: number
+          created_at?: string
+          created_by: string
+          id?: string
+          installment_amount?: number | null
+          installment_count?: number | null
+          installment_frequency?: string | null
+          investment_fully_recovered?: boolean
+          investment_recovered_at?: string | null
+          org_id: string
+          total_paid_to_date?: number
+          updated_at?: string
+        }
+        Update: {
+          contract_notes?: string | null
+          contract_signed_date?: string | null
+          contract_status?: string
+          contract_value?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          installment_amount?: number | null
+          installment_count?: number | null
+          installment_frequency?: string | null
+          investment_fully_recovered?: boolean
+          investment_recovered_at?: string | null
+          org_id?: string
+          total_paid_to_date?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_engagement_contracts_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: true
             referencedRelation: "organizations"
@@ -1170,6 +1343,268 @@ export type Database = {
             columns: ["suggested_next_project_id"]
             isOneToOne: false
             referencedRelation: "org_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_revenue_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          engine: string
+          entry_type: string
+          id: string
+          is_verified: boolean
+          logged_by: string
+          org_id: string
+          period_end: string | null
+          period_start: string | null
+          revenue_date: string
+          sponsorship_lead_id: string | null
+          supporting_notes: string | null
+          updated_at: string
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          engine: string
+          entry_type: string
+          id?: string
+          is_verified?: boolean
+          logged_by: string
+          org_id: string
+          period_end?: string | null
+          period_start?: string | null
+          revenue_date: string
+          sponsorship_lead_id?: string | null
+          supporting_notes?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          engine?: string
+          entry_type?: string
+          id?: string
+          is_verified?: boolean
+          logged_by?: string
+          org_id?: string
+          period_end?: string | null
+          period_start?: string | null
+          revenue_date?: string
+          sponsorship_lead_id?: string | null
+          supporting_notes?: string | null
+          updated_at?: string
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_revenue_entries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_revenue_entries_sponsorship_lead_id_fkey"
+            columns: ["sponsorship_lead_id"]
+            isOneToOne: false
+            referencedRelation: "sponsorship_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_revenue_share_invoices: {
+        Row: {
+          created_at: string
+          curve_share_this_period: number
+          due_date: string | null
+          generated_by: string
+          id: string
+          invoice_date: string
+          invoice_notes: string | null
+          invoice_number: string
+          new_revenue_this_period: number
+          org_id: string
+          paid_amount: number | null
+          paid_at: string | null
+          payment_notes: string | null
+          period_end: string
+          period_start: string
+          recovery_threshold: number
+          revenue_above_threshold_this_period: number
+          revenue_entry_ids: Json | null
+          revenue_toward_recovery_after: number
+          revenue_toward_recovery_prior: number
+          sent_at: string | null
+          status: string
+          total_curve_share_to_date: number
+          total_new_revenue_to_date: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          curve_share_this_period: number
+          due_date?: string | null
+          generated_by: string
+          id?: string
+          invoice_date?: string
+          invoice_notes?: string | null
+          invoice_number: string
+          new_revenue_this_period: number
+          org_id: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_notes?: string | null
+          period_end: string
+          period_start: string
+          recovery_threshold: number
+          revenue_above_threshold_this_period: number
+          revenue_entry_ids?: Json | null
+          revenue_toward_recovery_after: number
+          revenue_toward_recovery_prior: number
+          sent_at?: string | null
+          status?: string
+          total_curve_share_to_date: number
+          total_new_revenue_to_date: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          curve_share_this_period?: number
+          due_date?: string | null
+          generated_by?: string
+          id?: string
+          invoice_date?: string
+          invoice_notes?: string | null
+          invoice_number?: string
+          new_revenue_this_period?: number
+          org_id?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_notes?: string | null
+          period_end?: string
+          period_start?: string
+          recovery_threshold?: number
+          revenue_above_threshold_this_period?: number
+          revenue_entry_ids?: Json | null
+          revenue_toward_recovery_after?: number
+          revenue_toward_recovery_prior?: number
+          sent_at?: string | null
+          status?: string
+          total_curve_share_to_date?: number
+          total_new_revenue_to_date?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_revenue_share_invoices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_revenue_share_summary: {
+        Row: {
+          addon_new_revenue: number
+          affiliate_new_revenue: number
+          apparel_new_revenue: number
+          contract_value: number
+          curve_share_earned: number
+          events_new_revenue: number
+          facility_new_revenue: number
+          id: string
+          investment_fully_recovered: boolean
+          investment_recovered_pct: number
+          last_calculated_at: string
+          org_id: string
+          other_new_revenue: number
+          outstanding_balance: number
+          pricing_new_revenue: number
+          recovery_threshold: number
+          retention_new_revenue: number
+          revenue_above_threshold: number
+          revenue_baseline: number
+          revenue_toward_recovery: number
+          sponsorship_new_revenue: number
+          total_collected: number
+          total_invoiced: number
+          total_new_revenue: number
+          total_paid_to_date: number
+          updated_at: string
+        }
+        Insert: {
+          addon_new_revenue?: number
+          affiliate_new_revenue?: number
+          apparel_new_revenue?: number
+          contract_value?: number
+          curve_share_earned?: number
+          events_new_revenue?: number
+          facility_new_revenue?: number
+          id?: string
+          investment_fully_recovered?: boolean
+          investment_recovered_pct?: number
+          last_calculated_at?: string
+          org_id: string
+          other_new_revenue?: number
+          outstanding_balance?: number
+          pricing_new_revenue?: number
+          recovery_threshold?: number
+          retention_new_revenue?: number
+          revenue_above_threshold?: number
+          revenue_baseline?: number
+          revenue_toward_recovery?: number
+          sponsorship_new_revenue?: number
+          total_collected?: number
+          total_invoiced?: number
+          total_new_revenue?: number
+          total_paid_to_date?: number
+          updated_at?: string
+        }
+        Update: {
+          addon_new_revenue?: number
+          affiliate_new_revenue?: number
+          apparel_new_revenue?: number
+          contract_value?: number
+          curve_share_earned?: number
+          events_new_revenue?: number
+          facility_new_revenue?: number
+          id?: string
+          investment_fully_recovered?: boolean
+          investment_recovered_pct?: number
+          last_calculated_at?: string
+          org_id?: string
+          other_new_revenue?: number
+          outstanding_balance?: number
+          pricing_new_revenue?: number
+          recovery_threshold?: number
+          retention_new_revenue?: number
+          revenue_above_threshold?: number
+          revenue_baseline?: number
+          revenue_toward_recovery?: number
+          sponsorship_new_revenue?: number
+          total_collected?: number
+          total_invoiced?: number
+          total_new_revenue?: number
+          total_paid_to_date?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_revenue_share_summary_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2490,6 +2925,10 @@ export type Database = {
       is_org_primary: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
+      }
+      recalculate_revenue_share: {
+        Args: { p_org_id: string }
+        Returns: undefined
       }
       recompute_org_project_counts: {
         Args: { _org_id: string }

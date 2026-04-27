@@ -15,6 +15,7 @@ import PlanManageSummary from "@/components/admin/PlanManageSummary";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, RefreshCw, AlertTriangle } from "lucide-react";
 import BaselineModal from "@/components/sponsorship/BaselineModal";
+import ContractSetupModal from "@/components/revenueShare/ContractSetupModal";
 import { formatDate } from "@/lib/format";
 
 export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: boolean; orgIdProp?: string } = {}) {
