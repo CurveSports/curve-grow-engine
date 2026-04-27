@@ -36,6 +36,7 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
   const [addOpen, setAddOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [baselineOpen, setBaselineOpen] = useState(false);
+  const [contractOpen, setContractOpen] = useState(false);
 
   const load = async () => {
     if (!orgId) return;
@@ -117,6 +118,12 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
       const d = data as any;
       toast.success(`Plan approved · ${d?.draft_count ?? 0} tasks ready to organize into projects`);
       load();
+      // After first-time activation (baseline was just set), prompt for contract setup
+      if (baseline !== undefined && orgId) {
+        const { data: existingContract } = await supabase
+          .from("org_engagement_contracts").select("id").eq("org_id", orgId).maybeSingle();
+        if (!existingContract) setContractOpen(true);
+      }
     }
   };
 
@@ -259,6 +266,14 @@ export default function AdminOrgTasks({ bare = false, orgIdProp }: { bare?: bool
         orgId={orgId!}
         orgName={orgName}
         onConfirm={async (baseline, reason) => { await runActivation(baseline, reason); }}
+      />
+
+      <ContractSetupModal
+        open={contractOpen}
+        onOpenChange={setContractOpen}
+        orgId={orgId!}
+        orgName={orgName}
+        onSaved={() => { setContractOpen(false); load(); }}
       />
     </Wrap>
   );

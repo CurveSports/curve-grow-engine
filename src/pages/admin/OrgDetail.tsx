@@ -37,7 +37,7 @@ const TIER_STYLES: Record<string, string> = {
   Elite: "bg-warning-soft text-warning border-warning/30",
 };
 
-type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "notes";
+type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes";
 
 export default function OrgDetail() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -105,6 +105,9 @@ export default function OrgDetail() {
             <TabsTrigger value="sponsorship" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <DollarSign className="h-3.5 w-3.5" /> Sponsorship
             </TabsTrigger>
+            <TabsTrigger value="revenue_share" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <DollarSign className="h-3.5 w-3.5" /> Revenue Share
+            </TabsTrigger>
             <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <StickyNote className="h-3.5 w-3.5" /> Notes
             </TabsTrigger>
@@ -139,6 +142,16 @@ export default function OrgDetail() {
           </TabsContent>
           <TabsContent value="sponsorship" className="mt-6">
             <OrgSponsorshipTab orgId={orgId!} orgName={orgName} />
+          </TabsContent>
+          <TabsContent value="revenue_share" className="mt-6">
+            <div className="rounded-lg border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Curve-only revenue share tracking for {orgName}.
+              </p>
+              <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Link to={`/admin/revenue-share/${orgId}`}>Open Revenue Share Detail →</Link>
+              </Button>
+            </div>
           </TabsContent>
           <TabsContent value="notes" className="mt-6">
             <NotesTab orgId={orgId!} />

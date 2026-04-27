@@ -77,6 +77,7 @@ export default function AdminDashboard() {
   const [orgsMissingFocus, setOrgsMissingFocus] = useState<{ id: string; name: string }[]>([]);
   const [focusReminderOpen, setFocusReminderOpen] = useState(true);
   const [activationReminderOpen, setActivationReminderOpen] = useState(true);
+  const [portfolio, setPortfolio] = useState<any>(null);
 
   const [drill, setDrill] = useState<DrillKey>(null);
 
@@ -165,6 +166,8 @@ export default function AdminDashboard() {
       setOrgs(r);
       setOrgsMissingFocus(r.filter(o => !!o.plan_activated_at && !focusedOrgIds.has(o.id)).map(o => ({ id: o.id, name: o.name })));
       setActivity(activityRes.data ?? []);
+      const { data: portfolioRow } = await supabase.from("curve_portfolio_summary").select("*").maybeSingle();
+      setPortfolio(portfolioRow ?? null);
       setLoading(false);
     })();
   }, []);
@@ -341,6 +344,40 @@ export default function AdminDashboard() {
           value={loading ? "—" : stats.topTier}
           subtitle="Most common across portfolio"
         />
+      </div>
+
+      {/* Curve Revenue Share — internal only */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display text-sm font-semibold tracking-wide uppercase text-muted-foreground">Curve Revenue Share</h2>
+          <Link to="/admin/revenue-share" className="text-xs text-accent hover:underline">View detail →</Link>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            icon={<DollarSign className="h-4 w-4 text-info" />}
+            label="Investment Deployed"
+            value={loading ? "—" : formatCurrency(Number(portfolio?.total_investment_deployed ?? 0))}
+            subtitle={`${portfolio?.total_orgs_active ?? 0} active engagements`}
+          />
+          <StatCard
+            icon={<DollarSign className="h-4 w-4 text-warning" />}
+            label="Investment Recovered"
+            value={loading ? "—" : formatCurrency(Number(portfolio?.total_investment_recovered ?? 0))}
+            subtitle={`of ${formatCurrency(Number(portfolio?.total_investment_deployed ?? 0))} deployed`}
+          />
+          <StatCard
+            icon={<DollarSign className="h-4 w-4 text-accent" />}
+            label="Curve Share Earned"
+            value={loading ? "—" : formatCurrency(Number(portfolio?.total_curve_share_earned ?? 0))}
+            subtitle="Lifetime, all clients"
+          />
+          <StatCard
+            icon={<DollarSign className="h-4 w-4 text-destructive" />}
+            label="Outstanding"
+            value={loading ? "—" : formatCurrency(Number(portfolio?.total_outstanding ?? 0))}
+            subtitle={`${formatCurrency(Number(portfolio?.total_collected ?? 0))} collected`}
+          />
+        </div>
       </div>
 
       {/* Engagement Health Overview */}
