@@ -166,6 +166,8 @@ export default function AdminDashboard() {
       setOrgs(r);
       setOrgsMissingFocus(r.filter(o => !!o.plan_activated_at && !focusedOrgIds.has(o.id)).map(o => ({ id: o.id, name: o.name })));
       setActivity(activityRes.data ?? []);
+      const { data: portfolioRow } = await supabase.from("curve_portfolio_summary").select("*").maybeSingle();
+      setPortfolio(portfolioRow ?? null);
       setLoading(false);
     })();
   }, []);
