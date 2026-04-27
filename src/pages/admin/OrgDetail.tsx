@@ -144,7 +144,14 @@ export default function OrgDetail() {
             <OrgSponsorshipTab orgId={orgId!} orgName={orgName} />
           </TabsContent>
           <TabsContent value="revenue_share" className="mt-6">
-            <OrgRevenueShareDetail bare orgIdProp={orgId} />
+            <div className="rounded-lg border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground mb-4">
+                Curve-only revenue share tracking for {orgName}.
+              </p>
+              <Button asChild className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                <Link to={`/admin/revenue-share/${orgId}`}>Open Revenue Share Detail →</Link>
+              </Button>
+            </div>
           </TabsContent>
           <TabsContent value="notes" className="mt-6">
             <NotesTab orgId={orgId!} />
