@@ -77,6 +77,7 @@ export default function AdminDashboard() {
   const [orgsMissingFocus, setOrgsMissingFocus] = useState<{ id: string; name: string }[]>([]);
   const [focusReminderOpen, setFocusReminderOpen] = useState(true);
   const [activationReminderOpen, setActivationReminderOpen] = useState(true);
+  const [portfolio, setPortfolio] = useState<any>(null);
 
   const [drill, setDrill] = useState<DrillKey>(null);
 
