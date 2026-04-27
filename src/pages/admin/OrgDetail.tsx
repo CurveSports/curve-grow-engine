@@ -143,6 +143,9 @@ export default function OrgDetail() {
           <TabsContent value="sponsorship" className="mt-6">
             <OrgSponsorshipTab orgId={orgId!} orgName={orgName} />
           </TabsContent>
+          <TabsContent value="revenue_share" className="mt-6">
+            <OrgRevenueShareDetail bare orgIdProp={orgId} />
+          </TabsContent>
           <TabsContent value="notes" className="mt-6">
             <NotesTab orgId={orgId!} />
           </TabsContent>
