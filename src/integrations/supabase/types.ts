@@ -116,6 +116,287 @@ export type Database = {
           },
         ]
       }
+      commv2_calendar_items: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_send_date: string
+          custom_stakeholder_label: string | null
+          draft_due_date: string | null
+          draft_lead_days: number
+          event_type_id: string
+          id: string
+          notes: string | null
+          org_id: string
+          original_send_date: string
+          stakeholder: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_send_date: string
+          custom_stakeholder_label?: string | null
+          draft_due_date?: string | null
+          draft_lead_days?: number
+          event_type_id: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          original_send_date: string
+          stakeholder: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_send_date?: string
+          custom_stakeholder_label?: string | null
+          draft_due_date?: string | null
+          draft_lead_days?: number
+          event_type_id?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          original_send_date?: string
+          stakeholder?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commv2_calendar_items_event_type_id_fkey"
+            columns: ["event_type_id"]
+            isOneToOne: false
+            referencedRelation: "commv2_event_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commv2_drafts: {
+        Row: {
+          ad_hoc_prompt: string | null
+          approved_at: string | null
+          approved_by: string | null
+          body: string | null
+          calendar_item_id: string | null
+          created_at: string
+          created_by: string
+          draft_mode: string
+          facts_snapshot: Json | null
+          format: string
+          generated_at: string | null
+          generation_attempts: number
+          id: string
+          last_error: string | null
+          missing_facts: string[]
+          org_id: string
+          sent_at: string | null
+          sent_by: string | null
+          stakeholder: string
+          status: string
+          subject: string | null
+          tone: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad_hoc_prompt?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string | null
+          calendar_item_id?: string | null
+          created_at?: string
+          created_by: string
+          draft_mode?: string
+          facts_snapshot?: Json | null
+          format?: string
+          generated_at?: string | null
+          generation_attempts?: number
+          id?: string
+          last_error?: string | null
+          missing_facts?: string[]
+          org_id: string
+          sent_at?: string | null
+          sent_by?: string | null
+          stakeholder: string
+          status?: string
+          subject?: string | null
+          tone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad_hoc_prompt?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          body?: string | null
+          calendar_item_id?: string | null
+          created_at?: string
+          created_by?: string
+          draft_mode?: string
+          facts_snapshot?: Json | null
+          format?: string
+          generated_at?: string | null
+          generation_attempts?: number
+          id?: string
+          last_error?: string | null
+          missing_facts?: string[]
+          org_id?: string
+          sent_at?: string | null
+          sent_by?: string | null
+          stakeholder?: string
+          status?: string
+          subject?: string | null
+          tone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commv2_drafts_calendar_item_id_fkey"
+            columns: ["calendar_item_id"]
+            isOneToOne: false
+            referencedRelation: "commv2_calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commv2_event_facts: {
+        Row: {
+          calendar_item_id: string
+          created_at: string
+          id: string
+          is_complete: boolean
+          last_updated_by: string | null
+          missing_required_fields: string[]
+          occurrences: Json
+          org_id: string
+          shared_facts: Json
+          updated_at: string
+        }
+        Insert: {
+          calendar_item_id: string
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          last_updated_by?: string | null
+          missing_required_fields?: string[]
+          occurrences?: Json
+          org_id: string
+          shared_facts?: Json
+          updated_at?: string
+        }
+        Update: {
+          calendar_item_id?: string
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          last_updated_by?: string | null
+          missing_required_fields?: string[]
+          occurrences?: Json
+          org_id?: string
+          shared_facts?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commv2_event_facts_calendar_item_id_fkey"
+            columns: ["calendar_item_id"]
+            isOneToOne: true
+            referencedRelation: "commv2_calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commv2_event_types: {
+        Row: {
+          code: string
+          created_at: string
+          default_lead_days: number
+          default_stakeholder: string | null
+          description: string | null
+          display_name: string
+          display_order: number
+          fact_schema: Json
+          id: string
+          is_active: boolean
+          supports_multiple_occurrences: boolean
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          default_lead_days?: number
+          default_stakeholder?: string | null
+          description?: string | null
+          display_name: string
+          display_order?: number
+          fact_schema?: Json
+          id?: string
+          is_active?: boolean
+          supports_multiple_occurrences?: boolean
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          default_lead_days?: number
+          default_stakeholder?: string | null
+          description?: string | null
+          display_name?: string
+          display_order?: number
+          fact_schema?: Json
+          id?: string
+          is_active?: boolean
+          supports_multiple_occurrences?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      commv2_reschedule_log: {
+        Row: {
+          calendar_item_id: string
+          changed_at: string
+          changed_by: string
+          id: string
+          new_send_date: string
+          org_id: string
+          previous_send_date: string
+          reason: string | null
+        }
+        Insert: {
+          calendar_item_id: string
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_send_date: string
+          org_id: string
+          previous_send_date: string
+          reason?: string | null
+        }
+        Update: {
+          calendar_item_id?: string
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_send_date?: string
+          org_id?: string
+          previous_send_date?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commv2_reschedule_log_calendar_item_id_fkey"
+            columns: ["calendar_item_id"]
+            isOneToOne: false
+            referencedRelation: "commv2_calendar_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       curve_portfolio_summary: {
         Row: {
           curve_share_this_month: number
