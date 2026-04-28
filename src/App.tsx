@@ -39,6 +39,7 @@ import Calculators from "@/pages/Calculators";
 import Communications from "@/pages/Communications";
 import OrgSponsorships from "@/pages/OrgSponsorships";
 import AdminCommunications from "@/pages/admin/AdminCommunications";
+import AdminCommunicationsV2 from "@/pages/admin/AdminCommunicationsV2";
 import Settings from "@/pages/Settings";
 import Customize from "@/pages/Customize";
 import { BrandingProvider } from "@/hooks/useBranding";
@@ -72,6 +73,7 @@ const App = () => (
             <Route path="/communications/:orgId" element={<ProtectedRoute role="admin"><Communications /></ProtectedRoute>} />
             <Route path="/sponsorships" element={<ProtectedRoute role="org_user"><OrgSponsorships /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin"><AdminCommunications /></ProtectedRoute>} />
+            <Route path="/admin/communications-v2" element={<ProtectedRoute role="admin"><AdminCommunicationsV2 /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin"><AdminTasksPage /></ProtectedRoute>} />
             <Route path="/admin/my-tasks" element={<ProtectedRoute role="admin"><AdminMyTasks /></ProtectedRoute>} />
