@@ -47,7 +47,8 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
       { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
       { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
-      { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
+      { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => (p.startsWith("/admin/communications") && !p.startsWith("/admin/communications-v2")) || (p.startsWith("/communications") && !p.startsWith("/communications-v2")) },
+      { to: "/admin/communications-v2", label: "Comms 2.0 (preview)", icon: Sparkles, match: (p) => p.startsWith("/admin/communications-v2") },
     ],
   },
   {
