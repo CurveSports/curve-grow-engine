@@ -167,8 +167,8 @@ function buildUserPayload(audit_type: AuditType, presence: any, scraped: any) {
   lines.push(`AUDIT_TYPE: ${audit_type}`);
   if (presence?.website_url) lines.push(`WEBSITE_URL: ${presence.website_url}`);
   if (presence?.posting_frequency) lines.push(`SELF_REPORTED_POSTING_FREQUENCY: ${presence.posting_frequency}`);
-  if (presence?.brand_voice_notes) lines.push(`BRAND_VOICE_NOTES: ${presence.brand_voice_notes}`);
   if (presence?.primary_audience_notes) lines.push(`PRIMARY_AUDIENCE_NOTES: ${presence.primary_audience_notes}`);
+  lines.push("\nNOTE: Brand voice is NOT self-reported. Infer it from the recent post content scraped below — quote real language, hashtags, and CTA patterns as evidence.");
 
   if (scraped?.website?.length) {
     lines.push("\n=== WEBSITE PAGES SCRAPED ===");
