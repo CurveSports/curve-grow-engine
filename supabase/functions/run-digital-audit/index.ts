@@ -298,7 +298,7 @@ Deno.serve(async (req) => {
     if (pendingErr) throw pendingErr;
 
     try {
-      const scraped: { website: any[]; social: any[] } = { website: [], social: [] };
+      const scraped: { website: any[]; social: any[]; recent_posts: any[] } = { website: [], social: [], recent_posts: [] };
 
       // Website scraping
       if ((auditType === "website" || auditType === "combined") && presence?.website_url && FIRECRAWL_API_KEY) {
@@ -322,6 +322,20 @@ Deno.serve(async (req) => {
           if (!url) continue;
           const r = await firecrawlScrape(url, FIRECRAWL_API_KEY, ["markdown"]);
           scraped.social.push({ platform, url, ...r });
+        }
+
+        // Recent post URLs supplied by the org — strongest brand-voice signal
+        const recent = (presence as any)?.recent_post_urls ?? {};
+        if (recent && typeof recent === "object") {
+          for (const [platformKey, urls] of Object.entries(recent)) {
+            if (!Array.isArray(urls)) continue;
+            for (const rawUrl of (urls as string[]).slice(0, 3)) {
+              const url = (rawUrl ?? "").trim();
+              if (!url) continue;
+              const r = await firecrawlScrape(url, FIRECRAWL_API_KEY, ["markdown"]);
+              scraped.recent_posts.push({ platform: platformKey, url, ...r });
+            }
+          }
         }
       }
 
