@@ -21,6 +21,7 @@ import {
   REVENUE_VERIFICATION,
 } from "@/lib/intakeOptions";
 import { formatCurrency } from "@/lib/format";
+import DigitalPresenceSection, { EMPTY_DIGITAL_PRESENCE, type DigitalPresence } from "@/components/intake/DigitalPresenceSection";
 
 type Form = Record<string, any>;
 
@@ -30,6 +31,7 @@ const SECTION_DESCRIPTIONS = [
   "Help us understand your current revenue structure across all sources.",
   "A quick look at how well your organization keeps players year over year.",
   "How your day-to-day systems, communication, and pricing decisions are run.",
+  "Share your website and social handles so we can run an AI audit of your digital presence.",
 ];
 
 const empty: Form = {
@@ -299,6 +301,7 @@ export default function Intake() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(empty);
+  const [digital, setDigital] = useState<DigitalPresence>(EMPTY_DIGITAL_PRESENCE);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -321,6 +324,25 @@ export default function Intake() {
           city_state: org.city_state ?? "",
           org_type: org.org_type ?? "",
         }));
+      }
+      const { data: dp } = await supabase
+        .from("org_digital_presence")
+        .select("*")
+        .eq("org_id", profile.org_id)
+        .maybeSingle();
+      if (dp) {
+        setDigital({
+          website_url: dp.website_url ?? "",
+          instagram_handle: dp.instagram_handle ?? "",
+          facebook_url: dp.facebook_url ?? "",
+          x_handle: dp.x_handle ?? "",
+          tiktok_handle: dp.tiktok_handle ?? "",
+          youtube_url: dp.youtube_url ?? "",
+          linkedin_url: dp.linkedin_url ?? "",
+          posting_frequency: dp.posting_frequency ?? "",
+          primary_audience_notes: dp.primary_audience_notes ?? "",
+          recent_post_urls: (dp.recent_post_urls as any) ?? {},
+        });
       }
       setLoading(false);
     })();
@@ -345,6 +367,34 @@ export default function Intake() {
       });
       if (error) throw error;
       if (!data?.ok) throw new Error(data?.error ?? "Calculation failed");
+
+      // Save digital presence (best-effort — don't block intake completion)
+      try {
+        const cleanedPosts: Record<string, string[]> = {};
+        Object.entries(digital.recent_post_urls ?? {}).forEach(([k, urls]) => {
+          const filtered = (urls ?? []).map((u) => (u ?? "").trim()).filter(Boolean);
+          if (filtered.length) cleanedPosts[k] = filtered;
+        });
+        await supabase.from("org_digital_presence").upsert(
+          {
+            org_id: profile.org_id,
+            website_url: digital.website_url || null,
+            instagram_handle: digital.instagram_handle || null,
+            facebook_url: digital.facebook_url || null,
+            x_handle: digital.x_handle || null,
+            tiktok_handle: digital.tiktok_handle || null,
+            youtube_url: digital.youtube_url || null,
+            linkedin_url: digital.linkedin_url || null,
+            posting_frequency: digital.posting_frequency || null,
+            primary_audience_notes: digital.primary_audience_notes || null,
+            recent_post_urls: cleanedPosts,
+            updated_by: profile.user_id ?? null,
+          },
+          { onConflict: "org_id" },
+        );
+      } catch (dpErr) {
+        console.warn("digital presence save failed", dpErr);
+      }
 
       await mark("intake_completed_at");
       toast.success("Assessment submitted");
@@ -721,6 +771,10 @@ export default function Intake() {
               <SelectField label="Pricing Approach" value={form.pricing_approach} onChange={(v) => set("pricing_approach", v)} options={PRICING_APPROACH} />
               <SelectField label="Sponsorship Approach" value={form.sponsorship_approach} onChange={(v) => set("sponsorship_approach", v)} options={SPONSORSHIP_APPROACH} />
             </>
+          )}
+
+          {step === 5 && (
+            <DigitalPresenceSection value={digital} onChange={setDigital} />
           )}
         </div>
 
