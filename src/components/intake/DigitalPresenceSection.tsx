@@ -89,10 +89,9 @@ export default function DigitalPresenceSection({ value, onChange }: Props) {
           return (
             <div key={p.key} className="space-y-3 rounded-lg border border-border p-4">
               <TextField
-                label={p.label}
+                label={`${p.label} ${p.placeholder ? `(${p.placeholder})` : ""}`.trim()}
                 value={handleVal}
                 onChange={(v) => set(p.key, v)}
-                placeholder={p.placeholder}
               />
               {handleVal && (
                 <div className="space-y-2 pl-3 border-l-2 border-accent/40">
