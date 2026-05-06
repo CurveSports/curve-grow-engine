@@ -167,8 +167,8 @@ function buildUserPayload(audit_type: AuditType, presence: any, scraped: any) {
   lines.push(`AUDIT_TYPE: ${audit_type}`);
   if (presence?.website_url) lines.push(`WEBSITE_URL: ${presence.website_url}`);
   if (presence?.posting_frequency) lines.push(`SELF_REPORTED_POSTING_FREQUENCY: ${presence.posting_frequency}`);
-  if (presence?.brand_voice_notes) lines.push(`BRAND_VOICE_NOTES: ${presence.brand_voice_notes}`);
   if (presence?.primary_audience_notes) lines.push(`PRIMARY_AUDIENCE_NOTES: ${presence.primary_audience_notes}`);
+  lines.push("\nNOTE: Brand voice is NOT self-reported. Infer it from the recent post content scraped below — quote real language, hashtags, and CTA patterns as evidence.");
 
   if (scraped?.website?.length) {
     lines.push("\n=== WEBSITE PAGES SCRAPED ===");
@@ -184,7 +184,7 @@ function buildUserPayload(audit_type: AuditType, presence: any, scraped: any) {
     for (const s of scraped.social) {
       lines.push(`\n--- ${s.platform} :: ${s.url} ---`);
       if (!s.ok) {
-        lines.push(`SCRAPE_FAILED: ${s.error ?? "unknown"} (use self-reported samples below if relevant).`);
+        lines.push(`SCRAPE_FAILED: ${s.error ?? "unknown"}.`);
       } else {
         if (s.title) lines.push(`TITLE: ${s.title}`);
         if (s.markdown) lines.push(s.markdown.slice(0, 3500));
@@ -192,10 +192,16 @@ function buildUserPayload(audit_type: AuditType, presence: any, scraped: any) {
     }
   }
 
-  if (presence?.social_post_samples?.length) {
-    lines.push("\n=== SELF-REPORTED POST SAMPLES ===");
-    for (const sample of presence.social_post_samples) {
-      lines.push(`[${sample.platform ?? "?"}] ${sample.text ?? ""}`);
+  if (scraped?.recent_posts?.length) {
+    lines.push("\n=== RECENT POSTS (org-supplied URLs — use as evidence for brand voice, content themes, CTA patterns) ===");
+    for (const p of scraped.recent_posts) {
+      lines.push(`\n--- ${p.platform} :: ${p.url} ---`);
+      if (!p.ok) {
+        lines.push(`SCRAPE_FAILED: ${p.error ?? "unknown"}.`);
+      } else {
+        if (p.title) lines.push(`TITLE: ${p.title}`);
+        if (p.markdown) lines.push(p.markdown.slice(0, 2500));
+      }
     }
   }
 
@@ -292,7 +298,7 @@ Deno.serve(async (req) => {
     if (pendingErr) throw pendingErr;
 
     try {
-      const scraped: { website: any[]; social: any[] } = { website: [], social: [] };
+      const scraped: { website: any[]; social: any[]; recent_posts: any[] } = { website: [], social: [], recent_posts: [] };
 
       // Website scraping
       if ((auditType === "website" || auditType === "combined") && presence?.website_url && FIRECRAWL_API_KEY) {
@@ -316,6 +322,20 @@ Deno.serve(async (req) => {
           if (!url) continue;
           const r = await firecrawlScrape(url, FIRECRAWL_API_KEY, ["markdown"]);
           scraped.social.push({ platform, url, ...r });
+        }
+
+        // Recent post URLs supplied by the org — strongest brand-voice signal
+        const recent = (presence as any)?.recent_post_urls ?? {};
+        if (recent && typeof recent === "object") {
+          for (const [platformKey, urls] of Object.entries(recent)) {
+            if (!Array.isArray(urls)) continue;
+            for (const rawUrl of (urls as string[]).slice(0, 3)) {
+              const url = (rawUrl ?? "").trim();
+              if (!url) continue;
+              const r = await firecrawlScrape(url, FIRECRAWL_API_KEY, ["markdown"]);
+              scraped.recent_posts.push({ platform: platformKey, url, ...r });
+            }
+          }
         }
       }
 
@@ -360,7 +380,7 @@ Deno.serve(async (req) => {
           fixes: args.fixes ?? [],
           sponsor_flags: args.sponsor_flags ?? [],
           scraped_pages: scraped.website,
-          social_evidence: scraped.social,
+          social_evidence: { profiles: scraped.social, recent_posts: scraped.recent_posts },
           comparison_to_previous: comparison,
           model_used: "google/gemini-2.5-pro",
         })
