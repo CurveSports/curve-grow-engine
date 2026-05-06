@@ -301,6 +301,7 @@ export default function Intake() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(empty);
+  const [digital, setDigital] = useState<DigitalPresence>(EMPTY_DIGITAL_PRESENCE);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
