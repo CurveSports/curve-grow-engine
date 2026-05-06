@@ -30,6 +30,7 @@ const SECTION_DESCRIPTIONS = [
   "Help us understand your current revenue structure across all sources.",
   "A quick look at how well your organization keeps players year over year.",
   "How your day-to-day systems, communication, and pricing decisions are run.",
+  "Share your website and social handles so we can run an AI audit of your digital presence.",
 ];
 
 const empty: Form = {
