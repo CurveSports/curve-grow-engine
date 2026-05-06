@@ -73,7 +73,7 @@ export default function DigitalPresenceSection({ value, onChange }: Props) {
           label="Website URL"
           value={value.website_url}
           onChange={(v) => set("website_url", v)}
-          placeholder="https://yourclub.com"
+          hint="e.g. https://yourclub.com"
         />
       </div>
 
