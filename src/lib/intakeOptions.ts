@@ -72,6 +72,7 @@ export const SECTION_TITLES = [
   "Revenue",
   "Retention",
   "Operations",
+  "Digital Presence",
 ];
 
 // Dues model
