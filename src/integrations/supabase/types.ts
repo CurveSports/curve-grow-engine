@@ -1169,7 +1169,6 @@ export type Database = {
       }
       org_digital_presence: {
         Row: {
-          brand_voice_notes: string | null
           created_at: string
           facebook_url: string | null
           id: string
@@ -1178,6 +1177,7 @@ export type Database = {
           org_id: string
           posting_frequency: string | null
           primary_audience_notes: string | null
+          recent_post_urls: Json
           social_post_samples: Json | null
           tiktok_handle: string | null
           updated_at: string
@@ -1187,7 +1187,6 @@ export type Database = {
           youtube_url: string | null
         }
         Insert: {
-          brand_voice_notes?: string | null
           created_at?: string
           facebook_url?: string | null
           id?: string
@@ -1196,6 +1195,7 @@ export type Database = {
           org_id: string
           posting_frequency?: string | null
           primary_audience_notes?: string | null
+          recent_post_urls?: Json
           social_post_samples?: Json | null
           tiktok_handle?: string | null
           updated_at?: string
@@ -1205,7 +1205,6 @@ export type Database = {
           youtube_url?: string | null
         }
         Update: {
-          brand_voice_notes?: string | null
           created_at?: string
           facebook_url?: string | null
           id?: string
@@ -1214,6 +1213,7 @@ export type Database = {
           org_id?: string
           posting_frequency?: string | null
           primary_audience_notes?: string | null
+          recent_post_urls?: Json
           social_post_samples?: Json | null
           tiktok_handle?: string | null
           updated_at?: string
