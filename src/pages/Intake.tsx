@@ -772,6 +772,10 @@ export default function Intake() {
               <SelectField label="Sponsorship Approach" value={form.sponsorship_approach} onChange={(v) => set("sponsorship_approach", v)} options={SPONSORSHIP_APPROACH} />
             </>
           )}
+
+          {step === 5 && (
+            <DigitalPresenceSection value={digital} onChange={setDigital} />
+          )}
         </div>
 
         {/* Actions */}
