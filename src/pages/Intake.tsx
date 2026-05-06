@@ -368,6 +368,34 @@ export default function Intake() {
       if (error) throw error;
       if (!data?.ok) throw new Error(data?.error ?? "Calculation failed");
 
+      // Save digital presence (best-effort — don't block intake completion)
+      try {
+        const cleanedPosts: Record<string, string[]> = {};
+        Object.entries(digital.recent_post_urls ?? {}).forEach(([k, urls]) => {
+          const filtered = (urls ?? []).map((u) => (u ?? "").trim()).filter(Boolean);
+          if (filtered.length) cleanedPosts[k] = filtered;
+        });
+        await supabase.from("org_digital_presence").upsert(
+          {
+            org_id: profile.org_id,
+            website_url: digital.website_url || null,
+            instagram_handle: digital.instagram_handle || null,
+            facebook_url: digital.facebook_url || null,
+            x_handle: digital.x_handle || null,
+            tiktok_handle: digital.tiktok_handle || null,
+            youtube_url: digital.youtube_url || null,
+            linkedin_url: digital.linkedin_url || null,
+            posting_frequency: digital.posting_frequency || null,
+            primary_audience_notes: digital.primary_audience_notes || null,
+            recent_post_urls: cleanedPosts,
+            updated_by: profile.user_id ?? null,
+          },
+          { onConflict: "org_id" },
+        );
+      } catch (dpErr) {
+        console.warn("digital presence save failed", dpErr);
+      }
+
       await mark("intake_completed_at");
       toast.success("Assessment submitted");
       navigate("/report");
