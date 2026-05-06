@@ -4,6 +4,9 @@ import AppShell from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
@@ -25,6 +28,21 @@ type Audit = {
   error_message: string | null;
 };
 
+const PLATFORMS: Array<{ key: string; label: string }> = [
+  { key: "instagram", label: "Instagram" },
+  { key: "facebook", label: "Facebook" },
+  { key: "x", label: "X / Twitter" },
+  { key: "tiktok", label: "TikTok" },
+  { key: "youtube", label: "YouTube" },
+  { key: "linkedin", label: "LinkedIn" },
+];
+
+type PostUrls = Record<string, string[]>;
+
+function emptyPostUrls(): PostUrls {
+  return PLATFORMS.reduce((acc, p) => ({ ...acc, [p.key]: ["", "", ""] }), {} as PostUrls);
+}
+
 export default function AdminPresentations() {
   const navigate = useNavigate();
   const [orgs, setOrgs] = useState<Array<{ id: string; name: string }>>([]);
@@ -33,6 +51,11 @@ export default function AdminPresentations() {
   const [running, setRunning] = useState(false);
   const [audits, setAudits] = useState<Audit[]>([]);
   const [loadingAudits, setLoadingAudits] = useState(false);
+
+  // Pre-audit post URL refresh modal
+  const [refreshOpen, setRefreshOpen] = useState(false);
+  const [postUrls, setPostUrls] = useState<PostUrls>(emptyPostUrls());
+  const [savingPosts, setSavingPosts] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -60,6 +83,62 @@ export default function AdminPresentations() {
     if (orgId) loadAudits(orgId);
     else setAudits([]);
   }, [orgId]);
+
+  const openRefreshModal = async () => {
+    if (!orgId) return;
+    const { data } = await supabase
+      .from("org_digital_presence")
+      .select("recent_post_urls")
+      .eq("org_id", orgId)
+      .maybeSingle();
+    const existing = (data?.recent_post_urls ?? {}) as Record<string, string[]>;
+    const seeded: PostUrls = emptyPostUrls();
+    for (const p of PLATFORMS) {
+      const arr = Array.isArray(existing[p.key]) ? existing[p.key] : [];
+      seeded[p.key] = [arr[0] ?? "", arr[1] ?? "", arr[2] ?? ""];
+    }
+    setPostUrls(seeded);
+    setRefreshOpen(true);
+  };
+
+  const setPostUrl = (platform: string, idx: number, value: string) => {
+    setPostUrls((prev) => {
+      const next = { ...prev, [platform]: [...(prev[platform] ?? ["", "", ""])] };
+      next[platform][idx] = value;
+      return next;
+    });
+  };
+
+  const saveAndRun = async () => {
+    if (!orgId) return;
+    setSavingPosts(true);
+    try {
+      // Clean URLs: trim, drop empties, dedupe
+      const cleaned: PostUrls = {};
+      for (const p of PLATFORMS) {
+        const arr = (postUrls[p.key] ?? []).map((u) => u.trim()).filter(Boolean);
+        cleaned[p.key] = Array.from(new Set(arr));
+      }
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error: upErr } = await supabase
+        .from("org_digital_presence")
+        .upsert(
+          {
+            org_id: orgId,
+            recent_post_urls: cleaned,
+            updated_by: userRes.user?.id ?? null,
+          },
+          { onConflict: "org_id" }
+        );
+      if (upErr) throw upErr;
+      setRefreshOpen(false);
+      await runAudit();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save post URLs");
+    } finally {
+      setSavingPosts(false);
+    }
+  };
 
   const runAudit = async () => {
     if (!orgId) return;
@@ -113,7 +192,7 @@ export default function AdminPresentations() {
               </SelectContent>
             </Select>
 
-            <Button onClick={runAudit} disabled={!orgId || running}>
+            <Button onClick={openRefreshModal} disabled={!orgId || running}>
               {running ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
               {running ? "Running…" : "Run Audit Now"}
             </Button>
@@ -183,6 +262,45 @@ export default function AdminPresentations() {
           </div>
         )}
       </div>
+
+      <Dialog open={refreshOpen} onOpenChange={setRefreshOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Refresh recent post URLs</DialogTitle>
+            <DialogDescription>
+              Paste the org's three most recent posts on each platform so the audit reflects current
+              brand voice. Leave blank to skip a platform. Existing values are pre-filled — replace
+              them with fresh links.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5 py-2">
+            {PLATFORMS.map((p) => (
+              <div key={p.key} className="space-y-2">
+                <Label className="text-sm font-semibold">{p.label}</Label>
+                {[0, 1, 2].map((i) => (
+                  <Input
+                    key={i}
+                    placeholder={`https://… (post ${i + 1})`}
+                    value={postUrls[p.key]?.[i] ?? ""}
+                    onChange={(e) => setPostUrl(p.key, i, e.target.value)}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefreshOpen(false)} disabled={savingPosts || running}>
+              Cancel
+            </Button>
+            <Button onClick={saveAndRun} disabled={savingPosts || running}>
+              {(savingPosts || running) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              {running ? "Running audit…" : savingPosts ? "Saving…" : "Save & Run Audit"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
