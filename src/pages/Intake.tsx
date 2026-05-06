@@ -325,6 +325,25 @@ export default function Intake() {
           org_type: org.org_type ?? "",
         }));
       }
+      const { data: dp } = await supabase
+        .from("org_digital_presence")
+        .select("*")
+        .eq("org_id", profile.org_id)
+        .maybeSingle();
+      if (dp) {
+        setDigital({
+          website_url: dp.website_url ?? "",
+          instagram_handle: dp.instagram_handle ?? "",
+          facebook_url: dp.facebook_url ?? "",
+          x_handle: dp.x_handle ?? "",
+          tiktok_handle: dp.tiktok_handle ?? "",
+          youtube_url: dp.youtube_url ?? "",
+          linkedin_url: dp.linkedin_url ?? "",
+          posting_frequency: dp.posting_frequency ?? "",
+          primary_audience_notes: dp.primary_audience_notes ?? "",
+          recent_post_urls: (dp.recent_post_urls as any) ?? {},
+        });
+      }
       setLoading(false);
     })();
   }, [profile?.org_id]);
