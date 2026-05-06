@@ -1084,6 +1084,146 @@ export type Database = {
           },
         ]
       }
+      org_digital_audits: {
+        Row: {
+          ai_summary: string | null
+          audit_type: string
+          comparison_to_previous: Json | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          fixes: Json | null
+          id: string
+          model_used: string | null
+          org_id: string
+          overall_score: number | null
+          previous_audit_id: string | null
+          scores_breakdown: Json | null
+          scraped_pages: Json | null
+          social_evidence: Json | null
+          social_score: number | null
+          sponsor_flags: Json | null
+          status: string
+          trigger_source: string
+          triggered_by: string | null
+          website_score: number | null
+          wins: Json | null
+        }
+        Insert: {
+          ai_summary?: string | null
+          audit_type: string
+          comparison_to_previous?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          fixes?: Json | null
+          id?: string
+          model_used?: string | null
+          org_id: string
+          overall_score?: number | null
+          previous_audit_id?: string | null
+          scores_breakdown?: Json | null
+          scraped_pages?: Json | null
+          social_evidence?: Json | null
+          social_score?: number | null
+          sponsor_flags?: Json | null
+          status?: string
+          trigger_source?: string
+          triggered_by?: string | null
+          website_score?: number | null
+          wins?: Json | null
+        }
+        Update: {
+          ai_summary?: string | null
+          audit_type?: string
+          comparison_to_previous?: Json | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          fixes?: Json | null
+          id?: string
+          model_used?: string | null
+          org_id?: string
+          overall_score?: number | null
+          previous_audit_id?: string | null
+          scores_breakdown?: Json | null
+          scraped_pages?: Json | null
+          social_evidence?: Json | null
+          social_score?: number | null
+          sponsor_flags?: Json | null
+          status?: string
+          trigger_source?: string
+          triggered_by?: string | null
+          website_score?: number | null
+          wins?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_digital_audits_previous_audit_id_fkey"
+            columns: ["previous_audit_id"]
+            isOneToOne: false
+            referencedRelation: "org_digital_audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_digital_presence: {
+        Row: {
+          brand_voice_notes: string | null
+          created_at: string
+          facebook_url: string | null
+          id: string
+          instagram_handle: string | null
+          linkedin_url: string | null
+          org_id: string
+          posting_frequency: string | null
+          primary_audience_notes: string | null
+          social_post_samples: Json | null
+          tiktok_handle: string | null
+          updated_at: string
+          updated_by: string | null
+          website_url: string | null
+          x_handle: string | null
+          youtube_url: string | null
+        }
+        Insert: {
+          brand_voice_notes?: string | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_handle?: string | null
+          linkedin_url?: string | null
+          org_id: string
+          posting_frequency?: string | null
+          primary_audience_notes?: string | null
+          social_post_samples?: Json | null
+          tiktok_handle?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          website_url?: string | null
+          x_handle?: string | null
+          youtube_url?: string | null
+        }
+        Update: {
+          brand_voice_notes?: string | null
+          created_at?: string
+          facebook_url?: string | null
+          id?: string
+          instagram_handle?: string | null
+          linkedin_url?: string | null
+          org_id?: string
+          posting_frequency?: string | null
+          primary_audience_notes?: string | null
+          social_post_samples?: Json | null
+          tiktok_handle?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          website_url?: string | null
+          x_handle?: string | null
+          youtube_url?: string | null
+        }
+        Relationships: []
+      }
       org_engagement_baselines: {
         Row: {
           adjustment_reason: string | null
