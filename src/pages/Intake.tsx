@@ -21,6 +21,7 @@ import {
   REVENUE_VERIFICATION,
 } from "@/lib/intakeOptions";
 import { formatCurrency } from "@/lib/format";
+import DigitalPresenceSection, { EMPTY_DIGITAL_PRESENCE, type DigitalPresence } from "@/components/intake/DigitalPresenceSection";
 
 type Form = Record<string, any>;
 
