@@ -184,7 +184,7 @@ function buildUserPayload(audit_type: AuditType, presence: any, scraped: any) {
     for (const s of scraped.social) {
       lines.push(`\n--- ${s.platform} :: ${s.url} ---`);
       if (!s.ok) {
-        lines.push(`SCRAPE_FAILED: ${s.error ?? "unknown"} (use self-reported samples below if relevant).`);
+        lines.push(`SCRAPE_FAILED: ${s.error ?? "unknown"}.`);
       } else {
         if (s.title) lines.push(`TITLE: ${s.title}`);
         if (s.markdown) lines.push(s.markdown.slice(0, 3500));
@@ -192,10 +192,16 @@ function buildUserPayload(audit_type: AuditType, presence: any, scraped: any) {
     }
   }
 
-  if (presence?.social_post_samples?.length) {
-    lines.push("\n=== SELF-REPORTED POST SAMPLES ===");
-    for (const sample of presence.social_post_samples) {
-      lines.push(`[${sample.platform ?? "?"}] ${sample.text ?? ""}`);
+  if (scraped?.recent_posts?.length) {
+    lines.push("\n=== RECENT POSTS (org-supplied URLs — use as evidence for brand voice, content themes, CTA patterns) ===");
+    for (const p of scraped.recent_posts) {
+      lines.push(`\n--- ${p.platform} :: ${p.url} ---`);
+      if (!p.ok) {
+        lines.push(`SCRAPE_FAILED: ${p.error ?? "unknown"}.`);
+      } else {
+        if (p.title) lines.push(`TITLE: ${p.title}`);
+        if (p.markdown) lines.push(p.markdown.slice(0, 2500));
+      }
     }
   }
 
