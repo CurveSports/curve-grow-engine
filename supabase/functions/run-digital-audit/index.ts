@@ -380,7 +380,7 @@ Deno.serve(async (req) => {
           fixes: args.fixes ?? [],
           sponsor_flags: args.sponsor_flags ?? [],
           scraped_pages: scraped.website,
-          social_evidence: scraped.social,
+          social_evidence: { profiles: scraped.social, recent_posts: scraped.recent_posts },
           comparison_to_previous: comparison,
           model_used: "google/gemini-2.5-pro",
         })
