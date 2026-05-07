@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -7,16 +7,19 @@ import { Loader2, Plus, ArrowLeft } from "lucide-react";
 import { PHASES, WORKSTREAMS, workstreamColor, workstreamLabel, phaseLabel, dayOf100 } from "@/lib/acquisitions";
 import AddTaskModal from "@/components/acquisitions/AddTaskModal";
 import TaskDetailPanel from "@/components/acquisitions/TaskDetailPanel";
+import CompliancePanel from "@/components/acquisitions/CompliancePanel";
 import { toast } from "sonner";
 
 export default function AcquisitionDetail() {
   const { id } = useParams();
   const nav = useNavigate();
+  const [sp, setSp] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [stateTaskCount, setStateTaskCount] = useState(0);
-  const [view, setView] = useState<"timeline" | "workstream">("timeline");
+  const initialView = sp.get("tab") === "compliance" ? "compliance" : sp.get("tab") === "workstream" ? "workstream" : "timeline";
+  const [view, setView] = useState<"timeline" | "workstream" | "compliance">(initialView);
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
@@ -82,17 +85,22 @@ export default function AcquisitionDetail() {
               )}
             </div>
           </div>
-          <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4 mr-1.5" /> Add Task
-          </Button>
+          {view !== "compliance" && (
+            <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-1.5" /> Add Task
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <ToggleBtn active={view === "timeline"} onClick={() => setView("timeline")}>Timeline View</ToggleBtn>
-          <ToggleBtn active={view === "workstream"} onClick={() => setView("workstream")}>Workstream View</ToggleBtn>
+          <ToggleBtn active={view === "timeline"} onClick={() => { setView("timeline"); setSp({}); }}>Timeline View</ToggleBtn>
+          <ToggleBtn active={view === "workstream"} onClick={() => { setView("workstream"); setSp({ tab: "workstream" }); }}>Workstream View</ToggleBtn>
+          <ToggleBtn active={view === "compliance"} onClick={() => { setView("compliance"); setSp({ tab: "compliance" }); }}>Compliance</ToggleBtn>
         </div>
 
-        {view === "timeline" ? (
+        {view === "compliance" ? (
+          <CompliancePanel acquisition={project} />
+        ) : view === "timeline" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {PHASES.map((p) => {
               const phaseTasks = tasksByPhase(p.key);

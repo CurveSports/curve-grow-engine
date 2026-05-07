@@ -35,6 +35,7 @@ import AdminRoadmap from "@/pages/admin/AdminRoadmap";
 import AcquisitionsDashboard from "@/pages/admin/acquisitions/AcquisitionsDashboard";
 import AcquisitionDetail from "@/pages/admin/acquisitions/AcquisitionDetail";
 import AcquisitionsSettings from "@/pages/admin/acquisitions/AcquisitionsSettings";
+import ComplianceOverview from "@/pages/admin/acquisitions/ComplianceOverview";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
@@ -82,6 +83,7 @@ const App = () => (
             <Route path="/admin/roadmap" element={<ProtectedRoute role="admin"><AdminRoadmap /></ProtectedRoute>} />
             <Route path="/admin/acquisitions" element={<ProtectedRoute role="admin"><AcquisitionsDashboard /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/settings" element={<ProtectedRoute role="admin"><AcquisitionsSettings /></ProtectedRoute>} />
+            <Route path="/admin/acquisitions/compliance" element={<ProtectedRoute role="admin"><ComplianceOverview /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/:id" element={<ProtectedRoute role="admin"><AcquisitionDetail /></ProtectedRoute>} />
             <Route path="/admin/tasks-this-week" element={<ProtectedRoute role="admin"><AdminTasksThisWeek /></ProtectedRoute>} />
             <Route path="/admin/task-tracker" element={<ProtectedRoute role="admin"><AdminTaskTracker /></ProtectedRoute>} />

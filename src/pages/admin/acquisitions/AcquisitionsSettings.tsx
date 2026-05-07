@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Shield, ShieldCheck } from "lucide-react";
 import { WORKSTREAMS, PHASES, US_STATES, workstreamLabel, phaseLabel } from "@/lib/acquisitions";
+import { REQUIREMENT_TYPES, ROLE_TYPES } from "@/lib/compliance";
 import { toast } from "sonner";
 
 const ALL_STATES = "__all__";
@@ -193,6 +194,8 @@ export default function AcquisitionsSettings() {
             </div>
           )}
         </div>
+
+        <ComplianceTemplatesSection />
       </div>
 
       {editing && (
@@ -318,5 +321,176 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
       {children}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+type CTpl = {
+  id: string;
+  requirement_type: string;
+  requirement_name: string;
+  description: string | null;
+  applies_to_role_types: string[];
+  state_filter: string | null;
+  default_days_to_complete: number;
+  expires_after_years: number | null;
+  is_active: boolean;
+  display_order: number;
+};
+
+function ComplianceTemplatesSection() {
+  const [rows, setRows] = useState<CTpl[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Partial<CTpl> | null>(null);
+
+  const load = async () => {
+    setLoading(true);
+    const { data } = await supabase.from("compliance_requirement_templates").select("*").order("display_order");
+    setRows((data ?? []) as CTpl[]);
+    setLoading(false);
+  };
+  useEffect(() => { load(); }, []);
+
+  const toggleActive = async (t: CTpl) => {
+    await supabase.from("compliance_requirement_templates").update({ is_active: !t.is_active }).eq("id", t.id);
+    load();
+  };
+
+  return (
+    <div className="curve-card">
+      <div className="flex items-start justify-between gap-3 flex-wrap mb-4">
+        <div>
+          <h2 className="font-display text-xl font-bold flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-emerald-600" /> Compliance Requirement Templates</h2>
+          <p className="text-sm text-muted-foreground">Define which compliance items are auto-generated for staff members. Changes affect future staff additions only.</p>
+        </div>
+        <Button onClick={() => setEditing({})} className="bg-emerald-600 hover:bg-emerald-700">
+          <Plus className="h-4 w-4 mr-1.5" /> Add Requirement
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-10 text-muted-foreground"><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Loading…</div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-[11px] uppercase tracking-wider text-muted-foreground border-b border-border">
+              <tr>
+                <th className="py-2 pr-3">Requirement</th>
+                <th className="py-2 pr-3">Type</th>
+                <th className="py-2 pr-3">Applies To</th>
+                <th className="py-2 pr-3">State</th>
+                <th className="py-2 pr-3">Days</th>
+                <th className="py-2 pr-3">Expires</th>
+                <th className="py-2 pr-3">Active</th>
+                <th className="py-2 pr-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((t) => (
+                <tr key={t.id} className={`border-b border-border/60 hover:bg-muted/30 ${!t.is_active ? "opacity-50" : ""}`}>
+                  <td className="py-2 pr-3 font-medium">{t.requirement_name}</td>
+                  <td className="py-2 pr-3 text-xs text-muted-foreground">{t.requirement_type}</td>
+                  <td className="py-2 pr-3 text-xs capitalize">{t.applies_to_role_types?.join(", ") || "All"}</td>
+                  <td className="py-2 pr-3">{t.state_filter ? <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800">{t.state_filter}</span> : <span className="text-muted-foreground">All states</span>}</td>
+                  <td className="py-2 pr-3">{t.default_days_to_complete}</td>
+                  <td className="py-2 pr-3">{t.expires_after_years ? `${t.expires_after_years}y` : "Never"}</td>
+                  <td className="py-2 pr-3"><button onClick={() => toggleActive(t)} className={`text-xs ${t.is_active ? "text-emerald-700" : "text-muted-foreground"}`}>{t.is_active ? "Active" : "Off"}</button></td>
+                  <td className="py-2 pr-3"><button onClick={() => setEditing(t)} className="p-1 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {editing && <ComplianceTemplateModal initial={editing} onClose={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />}
+    </div>
+  );
+}
+
+function ComplianceTemplateModal({ initial, onClose, onSaved }: { initial: Partial<CTpl>; onClose: () => void; onSaved: () => void }) {
+  const [saving, setSaving] = useState(false);
+  const [f, setF] = useState<any>({
+    requirement_name: initial.requirement_name ?? "",
+    requirement_type: initial.requirement_type ?? "background_check",
+    description: initial.description ?? "",
+    applies_to_role_types: initial.applies_to_role_types ?? [...ROLE_TYPES],
+    state_filter: initial.state_filter ?? ALL_STATES,
+    default_days_to_complete: initial.default_days_to_complete ?? 30,
+    expires_after_years: initial.expires_after_years ?? "",
+    display_order: initial.display_order ?? 100,
+  });
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  const toggleRole = (r: string) => set("applies_to_role_types", f.applies_to_role_types.includes(r) ? f.applies_to_role_types.filter((x: string) => x !== r) : [...f.applies_to_role_types, r]);
+
+  const save = async () => {
+    if (!f.requirement_name.trim()) return toast.error("Name required");
+    setSaving(true);
+    try {
+      const payload: any = {
+        requirement_name: f.requirement_name.trim(),
+        requirement_type: f.requirement_type,
+        description: f.description || null,
+        applies_to_role_types: f.applies_to_role_types,
+        state_filter: f.state_filter === ALL_STATES ? null : f.state_filter,
+        default_days_to_complete: Number(f.default_days_to_complete) || 30,
+        expires_after_years: f.expires_after_years === "" ? null : Number(f.expires_after_years),
+        display_order: Number(f.display_order) || 0,
+      };
+      if (initial.id) {
+        const { error } = await supabase.from("compliance_requirement_templates").update(payload).eq("id", initial.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("compliance_requirement_templates").insert(payload);
+        if (error) throw error;
+      }
+      toast.success("Saved");
+      onSaved();
+    } catch (e: any) { toast.error(e?.message ?? "Could not save"); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>{initial.id ? "Edit Requirement" : "Add Requirement"}</DialogTitle></DialogHeader>
+        <div className="space-y-4 py-2">
+          <Field label="Requirement name *"><Input value={f.requirement_name} onChange={(e) => set("requirement_name", e.target.value)} /></Field>
+          <Field label="Type">
+            <Select value={f.requirement_type} onValueChange={(v) => set("requirement_type", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{REQUIREMENT_TYPES.map((r) => <SelectItem key={r.key} value={r.key}>{r.label}</SelectItem>)}</SelectContent>
+            </Select>
+          </Field>
+          <Field label="Description"><Textarea rows={3} value={f.description} onChange={(e) => set("description", e.target.value)} /></Field>
+          <Field label="Applies to role types">
+            <div className="flex flex-wrap gap-1.5">
+              {ROLE_TYPES.map((r) => (
+                <button key={r} type="button" onClick={() => toggleRole(r)}
+                  className={`px-3 py-1 text-xs font-semibold rounded-full border capitalize ${f.applies_to_role_types.includes(r) ? "bg-emerald-600 text-white border-emerald-600" : "bg-card text-muted-foreground border-border"}`}>
+                  {r}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="State">
+            <Select value={f.state_filter || ALL_STATES} onValueChange={(v) => set("state_filter", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_STATES}>All states</SelectItem>
+                {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Days to complete"><Input type="number" value={f.default_days_to_complete} onChange={(e) => set("default_days_to_complete", e.target.value)} /></Field>
+            <Field label="Expires after (years)"><Input type="number" placeholder="Never" value={f.expires_after_years} onChange={(e) => set("expires_after_years", e.target.value)} /></Field>
+            <Field label="Display order"><Input type="number" value={f.display_order} onChange={(e) => set("display_order", e.target.value)} /></Field>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button onClick={save} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />} Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      acquisition_compliance_items: {
+        Row: {
+          acquisition_id: string
+          completed_date: string | null
+          created_at: string
+          created_by: string | null
+          documentation_notes: string | null
+          documentation_url: string | null
+          due_date: string | null
+          expiration_date: string | null
+          id: string
+          last_reminder_sent_at: string | null
+          notes: string | null
+          ori_number: string | null
+          reference_number: string | null
+          reminder_count: number
+          requirement_name: string
+          requirement_type: string
+          staff_id: string
+          status: string
+          updated_at: string
+          vendor: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          acquisition_id: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          documentation_notes?: string | null
+          documentation_url?: string | null
+          due_date?: string | null
+          expiration_date?: string | null
+          id?: string
+          last_reminder_sent_at?: string | null
+          notes?: string | null
+          ori_number?: string | null
+          reference_number?: string | null
+          reminder_count?: number
+          requirement_name: string
+          requirement_type: string
+          staff_id: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          acquisition_id?: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          documentation_notes?: string | null
+          documentation_url?: string | null
+          due_date?: string | null
+          expiration_date?: string | null
+          id?: string
+          last_reminder_sent_at?: string | null
+          notes?: string | null
+          ori_number?: string | null
+          reference_number?: string | null
+          reminder_count?: number
+          requirement_name?: string
+          requirement_type?: string
+          staff_id?: string
+          status?: string
+          updated_at?: string
+          vendor?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_compliance_items_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_compliance_items_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acquisition_projects: {
         Row: {
           acquisition_notes: string | null
@@ -121,6 +211,77 @@ export type Database = {
           value_creation_summary?: string | null
         }
         Relationships: []
+      }
+      acquisition_staff: {
+        Row: {
+          acquisition_id: string
+          compliance_pct: number
+          compliance_status: string
+          created_at: string
+          created_by: string | null
+          email: string | null
+          employment_type: string | null
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          notes: string | null
+          phone: string | null
+          role: string
+          role_type: string | null
+          start_date: string | null
+          team_or_department: string | null
+          updated_at: string
+        }
+        Insert: {
+          acquisition_id: string
+          compliance_pct?: number
+          compliance_status?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          employment_type?: string | null
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          notes?: string | null
+          phone?: string | null
+          role: string
+          role_type?: string | null
+          start_date?: string | null
+          team_or_department?: string | null
+          updated_at?: string
+        }
+        Update: {
+          acquisition_id?: string
+          compliance_pct?: number
+          compliance_status?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          employment_type?: string | null
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string
+          role_type?: string | null
+          start_date?: string | null
+          team_or_department?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_staff_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       acquisition_task_activity: {
         Row: {
@@ -462,6 +623,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      compliance_requirement_templates: {
+        Row: {
+          applies_to_role_types: string[]
+          created_at: string
+          default_days_to_complete: number
+          description: string | null
+          display_order: number
+          expires_after_years: number | null
+          id: string
+          is_active: boolean
+          requirement_name: string
+          requirement_type: string
+          state_filter: string | null
+        }
+        Insert: {
+          applies_to_role_types?: string[]
+          created_at?: string
+          default_days_to_complete?: number
+          description?: string | null
+          display_order?: number
+          expires_after_years?: number | null
+          id?: string
+          is_active?: boolean
+          requirement_name: string
+          requirement_type: string
+          state_filter?: string | null
+        }
+        Update: {
+          applies_to_role_types?: string[]
+          created_at?: string
+          default_days_to_complete?: number
+          description?: string | null
+          display_order?: number
+          expires_after_years?: number | null
+          id?: string
+          is_active?: boolean
+          requirement_name?: string
+          requirement_type?: string
+          state_filter?: string | null
+        }
+        Relationships: []
       }
       curve_portfolio_summary: {
         Row: {

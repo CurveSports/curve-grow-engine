@@ -23,12 +23,24 @@ export default function AcquisitionsDashboard() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [deals, setDeals] = useState<any[]>([]);
+  const [staffByDeal, setStaffByDeal] = useState<Record<string, { total: number; compliant: number; overdue: number; pct: number }>>({});
 
   const load = async () => {
     setLoading(true);
     try { await (supabase as any).rpc("update_acquisition_phases"); } catch {}
     const { data } = await supabase.from("acquisition_projects").select("*").order("created_at", { ascending: false });
     setDeals(data ?? []);
+    const { data: staff } = await supabase.from("acquisition_staff").select("acquisition_id, compliance_status, compliance_pct").eq("is_active", true);
+    const tmp: Record<string, { total: number; compliant: number; overdue: number; sum: number }> = {};
+    (staff ?? []).forEach((s: any) => {
+      const t = tmp[s.acquisition_id] ?? (tmp[s.acquisition_id] = { total: 0, compliant: 0, overdue: 0, sum: 0 });
+      t.total += 1; t.sum += Number(s.compliance_pct);
+      if (s.compliance_status === "compliant") t.compliant += 1;
+      if (s.compliance_status === "overdue") t.overdue += 1;
+    });
+    const out: Record<string, any> = {};
+    Object.entries(tmp).forEach(([k, v]) => { out[k] = { total: v.total, compliant: v.compliant, overdue: v.overdue, pct: v.total ? Math.round(v.sum / v.total) : 0 }; });
+    setStaffByDeal(out);
     setLoading(false);
   };
 
@@ -140,6 +152,17 @@ export default function AcquisitionsDashboard() {
                       })}
                     </div>
                   </div>
+                  {staffByDeal[d.id] && (
+                    <div className="mt-4 pt-3 border-t border-border/60">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Staff Compliance</span>
+                        <span className="text-xs text-muted-foreground">{staffByDeal[d.id].compliant} / {staffByDeal[d.id].total} compliant {staffByDeal[d.id].overdue > 0 && <span className="text-rose-600 font-semibold">· {staffByDeal[d.id].overdue} overdue</span>}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full ${barColor(staffByDeal[d.id].pct)}`} style={{ width: `${staffByDeal[d.id].pct}%` }} />
+                      </div>
+                    </div>
+                  )}
                 </button>
               );
             })}

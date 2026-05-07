@@ -95,9 +95,9 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const acquisitionsGroup: NavGroup = {
     label: "Acquisitions",
     items: [
-      { to: "/admin/acquisitions", label: "Dashboard", icon: Briefcase, match: (p) => p.startsWith("/admin/acquisitions") && !p.startsWith("/admin/acquisitions/settings") },
+      { to: "/admin/acquisitions", label: "Dashboard", icon: Briefcase, match: (p) => p === "/admin/acquisitions" || (p.startsWith("/admin/acquisitions/") && !p.startsWith("/admin/acquisitions/settings") && !p.startsWith("/admin/acquisitions/compliance")) },
+      { to: "/admin/acquisitions/compliance", label: "Compliance", icon: ListChecks, match: (p) => p.startsWith("/admin/acquisitions/compliance") },
       { label: "Documents", icon: FileText, soon: true },
-      { label: "Compliance", icon: ListChecks, soon: true },
       { label: "Reports", icon: BarChart3, soon: true },
       { to: "/admin/acquisitions/settings", label: "Templates", icon: Settings, match: (p) => p.startsWith("/admin/acquisitions/settings") },
     ],
