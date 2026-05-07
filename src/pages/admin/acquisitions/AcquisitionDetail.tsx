@@ -62,10 +62,24 @@ export default function AcquisitionDetail() {
               {project.club_name}
               {project.codename && <span className="text-muted-foreground font-normal text-xl ml-3">— {project.codename}</span>}
             </h1>
-            <div className="flex items-center gap-3 mt-2 text-sm">
+            <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
               <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-medium">{phaseLabel(project.phase)}</span>
               {day != null && <span className="text-muted-foreground">Day {day} of 100</span>}
               <span className="text-muted-foreground">Overall {Number(project.completion_pct).toFixed(0)}% complete</span>
+              {project.state && (
+                <span className="text-muted-foreground">
+                  State: <span className="text-foreground font-medium">{project.state}</span>
+                  {stateTaskCount > 0 && (
+                    <button
+                      onClick={() => { setView("workstream"); setTimeout(() => document.getElementById("ws-compliance")?.scrollIntoView({ behavior: "smooth" }), 50); }}
+                      className="ml-1.5 inline-flex items-center gap-1 text-xs text-amber-700 hover:underline"
+                      title="View state-specific compliance tasks"
+                    >
+                      🔒 {stateTaskCount} state-specific compliance task{stateTaskCount === 1 ? "" : "s"}
+                    </button>
+                  )}
+                </span>
+              )}
             </div>
           </div>
           <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
