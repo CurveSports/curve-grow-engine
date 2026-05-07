@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Routes the user to the right place based on their onboarding + role state.
 export default function RouteResolver() {
-  const { loading, session, role, profile, user, refresh } = useAuth();
+  const { loading, session, role, profile, user, refresh, hasModule } = useAuth();
   const { state: onboarding, loading: obLoading } = useOnboarding();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
