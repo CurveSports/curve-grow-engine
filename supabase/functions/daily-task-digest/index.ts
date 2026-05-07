@@ -107,14 +107,31 @@ Deno.serve(async (req) => {
       .lt("last_stage_change_at", fourteenAgo);
     const stalledDeals = (staleSponsorship ?? []) as any[];
 
+    // 8. Acquisition follow-ups: due today, tomorrow, or overdue
+    const todayDate = new Date(today);
+    const twoAhead = new Date(todayDate.getTime() + 2 * 86400000).toISOString().slice(0, 10);
+    const { data: dueFollowUps } = await admin
+      .from("acquisition_communications")
+      .select("id, acquisition_id, contact_name, follow_up_date, follow_up_notes")
+      .eq("follow_up_needed", true)
+      .eq("follow_up_completed", false)
+      .lte("follow_up_date", twoAhead);
+    const followUps = (dueFollowUps ?? []) as any[];
+    let acqNameById = new Map<string, string>();
+    if (followUps.length) {
+      const acqIds = Array.from(new Set(followUps.map((f) => f.acquisition_id)));
+      const { data: acqs } = await admin.from("acquisition_projects").select("id, club_name").in("id", acqIds);
+      acqNameById = new Map((acqs ?? []).map((a: any) => [a.id, a.club_name]));
+    }
+
     if (RESEND_API_KEY) {
-      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals));
+      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals, followUps, acqNameById, today));
       emailsSent++;
     }
 
     await admin.from("notification_log").insert(logs);
 
-    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length });
+    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length, follow_ups: followUps.length });
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }
