@@ -124,8 +124,27 @@ Deno.serve(async (req) => {
       acqNameById = new Map((acqs ?? []).map((a: any) => [a.id, a.club_name]));
     }
 
-    if (RESEND_API_KEY) {
-      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals, followUps, acqNameById, today, pendingSuggestions, untaggedTranscripts, acqNameByIdAll));
+    // 9. Meeting intelligence: pending AI suggestions + untagged transcripts
+    const { data: pendingSugRaw } = await admin
+      .from("acquisition_task_suggestions")
+      .select("id, acquisition_id, suggestion_type, suggested_action, existing_task_title, confidence")
+      .eq("resolution", "pending");
+    const pendingSuggestions = (pendingSugRaw ?? []) as any[];
+
+    const { data: untaggedRaw } = await admin
+      .from("acquisition_meeting_transcripts")
+      .select("id, meeting_title, meeting_date, source_type, zoom_meeting_topic")
+      .eq("is_archived", false)
+      .eq("is_tagged", false);
+    const untaggedTranscripts = (untaggedRaw ?? []) as any[];
+
+    const acqNameByIdAll = new Map<string, string>(acqNameById);
+    const missingIds = Array.from(new Set(pendingSuggestions.map((s) => s.acquisition_id).filter((x) => x && !acqNameByIdAll.has(x))));
+    if (missingIds.length) {
+      const { data: more } = await admin.from("acquisition_projects").select("id, club_name").in("id", missingIds);
+      for (const a of more ?? []) acqNameByIdAll.set((a as any).id, (a as any).club_name);
+    }
+
       emailsSent++;
     }
 
