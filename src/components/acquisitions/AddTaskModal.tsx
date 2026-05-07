@@ -55,12 +55,13 @@ export default function AddTaskModal({
         is_custom: true,
         created_by: userRes.user?.id ?? null,
       };
-      const { error } = await supabase.from("acquisition_tasks").insert(payload);
+      const { data: inserted, error } = await supabase.from("acquisition_tasks").insert(payload).select("id").maybeSingle();
       if (error) throw error;
       toast.success("Task added");
       onOpenChange(false);
-      setF({ title: "", description: "", workstream: "integration", phase: "first_30", priority: "medium", lead_person_name: "", target_date: "", dependency: "" });
+      setF(blank);
       onAdded();
+      if (inserted?.id) onCreated?.(inserted.id);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not add task");
     } finally { setSaving(false); }
