@@ -118,6 +118,7 @@ Deno.serve(async (req) => {
         email,
         full_name: fullName,
         org_id: role === "admin" ? null : orgId,
+        module_access: finalModuleAccess,
       },
       { onConflict: "user_id" }
     );
