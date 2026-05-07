@@ -36,6 +36,8 @@ import AcquisitionsDashboard from "@/pages/admin/acquisitions/AcquisitionsDashbo
 import AcquisitionDetail from "@/pages/admin/acquisitions/AcquisitionDetail";
 import AcquisitionsSettings from "@/pages/admin/acquisitions/AcquisitionsSettings";
 import ComplianceOverview from "@/pages/admin/acquisitions/ComplianceOverview";
+import MeetingsInbox from "@/pages/admin/acquisitions/MeetingsInbox";
+import TranscriptDetail from "@/pages/admin/acquisitions/TranscriptDetail";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
