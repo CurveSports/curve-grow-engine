@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Settings } from "lucide-react";
 import { PHASE_PCT_FIELDS, dayOf100 } from "@/lib/acquisitions";
 import NewAcquisitionModal from "@/components/acquisitions/NewAcquisitionModal";
 
