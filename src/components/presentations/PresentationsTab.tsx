@@ -127,7 +127,7 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
           onToggleEdit={setEditing}
           theme="dark"
         />
-      ) : (
+      ) : mode === "client" ? (
         <>
           <div className="flex items-center gap-2">
             <ToggleBtn active={clientMode === "kickoff"} onClick={() => setClientMode("kickoff")} small>Kickoff Presentation</ToggleBtn>
@@ -146,6 +146,20 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
             }
           />
         </>
+      ) : auditLoading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading audit…</div>
+      ) : !audit ? (
+        <div className="curve-card text-center py-16">
+          <p className="font-semibold">No completed audit yet</p>
+          <p className="text-sm text-muted-foreground mt-2">Run a Digital Presence Audit on this org and a shareable presentation will appear here automatically.</p>
+        </div>
+      ) : (
+        <PresentationShell
+          presentationLabel="Digital Audit"
+          orgName={orgName}
+          slides={auditSlides}
+          theme="light"
+        />
       )}
     </div>
   );
