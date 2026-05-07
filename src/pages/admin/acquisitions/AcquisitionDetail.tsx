@@ -13,9 +13,11 @@ import BudgetPanel from "@/components/acquisitions/BudgetPanel";
 import CommunicationsPanel from "@/components/acquisitions/CommunicationsPanel";
 import SentimentPanel from "@/components/acquisitions/SentimentPanel";
 import RollUpPanel from "@/components/acquisitions/RollUpPanel";
+import MeetingsPanel from "@/components/acquisitions/MeetingsPanel";
+import AgendaPanel from "@/components/acquisitions/AgendaPanel";
 import { toast } from "sonner";
 
-type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup";
+type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup" | "meetings" | "agenda";
 
 export default function AcquisitionDetail() {
   const { id } = useParams();
