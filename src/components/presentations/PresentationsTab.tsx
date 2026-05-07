@@ -87,6 +87,16 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
     { id: 6, name: "What Success Looks Like", render: () => <KickoffSlide6 metrics={data.metrics} intake={data.intake} /> },
   ], [data, clientMode, daysIn, showScores]);
 
+  const auditSlides: SlideDef[] = useMemo(() => {
+    if (!audit) return [];
+    return [
+      { id: 1, name: "Audit Overview", render: () => <AuditSlide1 org={data.org} audit={audit} /> },
+      { id: 2, name: "What's Working", render: () => <AuditSlideList title="What's Working" items={audit.wins} accent="#10b981" emptyText="No wins captured in this audit." /> },
+      { id: 3, name: "Suggested Fixes", render: () => <AuditSlideList title="Suggested Fixes" items={audit.fixes} accent="#f59e0b" emptyText="No suggested fixes — your digital presence is solid." /> },
+      { id: 4, name: "Sponsor Readiness", render: () => <AuditSlideList title="Sponsor Readiness Flags" items={audit.sponsor_flags} accent="#8b5cf6" emptyText="No sponsor-readiness concerns flagged." /> },
+    ];
+  }, [audit, data.org]);
+
   if (data.loading || internalEdits.loading || clientEdits.loading) {
     return <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading presentation…</div>;
   }
