@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasModule = (m: "allegiance" | "acquisitions") =>
-    !!profile?.module_access?.includes(m) || role === "admin";
+    !!profile?.module_access?.includes(m);
 
   return (
     <Ctx.Provider value={{ session, user: session?.user ?? null, profile, role, isPrimary, loading, hasModule, signOut, refresh }}>
