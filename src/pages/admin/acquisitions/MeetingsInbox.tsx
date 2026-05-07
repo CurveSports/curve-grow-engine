@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import UploadTranscriptModal from "@/components/acquisitions/UploadTranscriptModal";
 
 export default function MeetingsInbox() {
   const [tab, setTab] = useState<"untagged" | "all">("untagged");
@@ -12,6 +13,7 @@ export default function MeetingsInbox() {
   const [acqs, setAcqs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [pickByT, setPickByT] = useState<Record<string, string>>({});
+  const [uploadOpen, setUploadOpen] = useState(false);
   const nav = useNavigate();
 
   const load = async () => {
