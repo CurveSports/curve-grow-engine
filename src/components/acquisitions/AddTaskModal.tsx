@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,14 +12,28 @@ import { Loader2 } from "lucide-react";
 
 const PRIORITIES = ["low", "medium", "high", "critical"];
 
+export type AddTaskPrefill = Partial<{
+  title: string; description: string; workstream: string; phase: string;
+  priority: string; lead_person_name: string; target_date: string; dependency: string;
+}>;
+
 export default function AddTaskModal({
-  open, onOpenChange, acquisitionId, onAdded,
-}: { open: boolean; onOpenChange: (o: boolean) => void; acquisitionId: string; onAdded: () => void }) {
+  open, onOpenChange, acquisitionId, onAdded, prefill, onCreated,
+}: {
+  open: boolean; onOpenChange: (o: boolean) => void; acquisitionId: string;
+  onAdded: () => void; prefill?: AddTaskPrefill;
+  onCreated?: (taskId: string) => void;
+}) {
   const [saving, setSaving] = useState(false);
-  const [f, setF] = useState<any>({
+  const blank = {
     title: "", description: "", workstream: "integration", phase: "first_30",
     priority: "medium", lead_person_name: "", target_date: "", dependency: "",
-  });
+  };
+  const [f, setF] = useState<any>(blank);
+  useEffect(() => {
+    if (open) setF({ ...blank, ...(prefill ?? {}) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, prefill]);
   const set = (k: string, v: string) => setF((p: any) => ({ ...p, [k]: v }));
 
   const submit = async () => {
@@ -41,12 +55,13 @@ export default function AddTaskModal({
         is_custom: true,
         created_by: userRes.user?.id ?? null,
       };
-      const { error } = await supabase.from("acquisition_tasks").insert(payload);
+      const { data: inserted, error } = await supabase.from("acquisition_tasks").insert(payload).select("id").maybeSingle();
       if (error) throw error;
       toast.success("Task added");
       onOpenChange(false);
-      setF({ title: "", description: "", workstream: "integration", phase: "first_30", priority: "medium", lead_person_name: "", target_date: "", dependency: "" });
+      setF(blank);
       onAdded();
+      if (inserted?.id) onCreated?.(inserted.id);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not add task");
     } finally { setSaving(false); }
