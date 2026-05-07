@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminOrgAssignments from "@/components/admin/AdminOrgAssignments";
+import AdminOrganizationsList from "@/components/admin/AdminOrganizationsList";
 import { Plus } from "lucide-react";
 
 export default function AdminUsersPage() {
@@ -24,6 +25,10 @@ export default function AdminUsersPage() {
       </div>
 
       <AdminOrgAssignments />
+
+      <div className="mt-10">
+        <AdminOrganizationsList />
+      </div>
 
       <div className="mt-10">
         <h2 className="font-display text-xl font-semibold tracking-tight mb-3">All users</h2>
