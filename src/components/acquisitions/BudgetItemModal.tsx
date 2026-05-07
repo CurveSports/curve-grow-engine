@@ -14,9 +14,19 @@ const PAYMENT_METHODS = ["Amex","Rho","Wire","Check","Cash","Other"];
 
 export default function BudgetItemModal({ open, onOpenChange, acquisitionId, item, onSaved }: any) {
   const [f, setF] = useState<any>({});
+  const [docs, setDocs] = useState<any[]>([]);
   useEffect(() => {
     setF(item ? { ...item } : { workstream: "general", category: "other", is_paid: false });
   }, [item, open]);
+  useEffect(() => {
+    if (!open) return;
+    supabase.from("acquisition_documents")
+      .select("id, document_name, document_type, workstream")
+      .eq("acquisition_id", acquisitionId)
+      .eq("is_current_version", true)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => setDocs(data ?? []));
+  }, [open, acquisitionId]);
 
   const submit = async () => {
     if (!f.description || !f.workstream || !f.category) return toast.error("Required fields missing");
@@ -65,6 +75,14 @@ export default function BudgetItemModal({ open, onOpenChange, acquisitionId, ite
             </select>
           </div>
           <Label className="flex items-center gap-2 text-sm"><Switch checked={!!f.is_paid} onCheckedChange={(v) => setF({ ...f, is_paid: v })} /> Paid</Label>
+          <div className="space-y-1">
+            <Label className="text-sm">Receipt (optional)</Label>
+            <select value={f.receipt_document_id ?? ""} onChange={(e) => setF({ ...f, receipt_document_id: e.target.value || null })} className="w-full text-sm rounded-md border bg-background px-2 py-2">
+              <option value="">— No receipt linked —</option>
+              {docs.map((d) => <option key={d.id} value={d.id}>{d.document_name}{d.document_type ? ` · ${d.document_type}` : ""}</option>)}
+            </select>
+            <p className="text-[11px] text-muted-foreground">Upload receipts in the Documents tab first, then link them here.</p>
+          </div>
           <Textarea placeholder="Notes" value={f.notes ?? ""} onChange={(e) => setF({ ...f, notes: e.target.value })} rows={2} />
         </div>
         <DialogFooter>
