@@ -34,6 +34,7 @@ import AdminWeeklyFocus from "@/pages/admin/AdminWeeklyFocus";
 import AdminRoadmap from "@/pages/admin/AdminRoadmap";
 import AcquisitionsDashboard from "@/pages/admin/acquisitions/AcquisitionsDashboard";
 import AcquisitionDetail from "@/pages/admin/acquisitions/AcquisitionDetail";
+import AcquisitionsSettings from "@/pages/admin/acquisitions/AcquisitionsSettings";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
