@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { PresentationsTab } from "@/components/presentations/PresentationsTab";
 
 type AuditType = "website" | "social" | "combined";
 
