@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import AdminUsers from "@/pages/admin/AdminUsers";
 import AdminOrgAssignments from "@/components/admin/AdminOrgAssignments";
+import AdminOrganizationsList from "@/components/admin/AdminOrganizationsList";
 import { Plus } from "lucide-react";
 
 export default function AdminUsersPage() {
