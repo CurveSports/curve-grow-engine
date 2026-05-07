@@ -194,6 +194,8 @@ export default function AcquisitionsSettings() {
             </div>
           )}
         </div>
+
+        <ComplianceTemplatesSection />
       </div>
 
       {editing && (
