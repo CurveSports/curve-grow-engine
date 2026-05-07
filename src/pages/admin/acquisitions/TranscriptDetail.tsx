@@ -23,17 +23,32 @@ export default function TranscriptDetail() {
   const [addPrefill, setAddPrefill] = useState<AddTaskPrefill | undefined>(undefined);
   const [pendingSuggestionId, setPendingSuggestionId] = useState<string | null>(null);
 
+  const [acqs, setAcqs] = useState<any[]>([]);
+  const [assignPick, setAssignPick] = useState<string>("");
+
   const load = async () => {
     setLoading(true);
-    const [{ data: tr }, { data: a }, { data: s }] = await Promise.all([
-      supabase.from("acquisition_meeting_transcripts").select("*").eq("id", transcriptId).maybeSingle(),
-      supabase.from("acquisition_projects").select("*").eq("id", id).maybeSingle(),
+    const { data: tr } = await supabase.from("acquisition_meeting_transcripts").select("*").eq("id", transcriptId).maybeSingle();
+    const acqId = id ?? tr?.acquisition_id ?? null;
+    const [{ data: a }, { data: s }, { data: allAcqs }] = await Promise.all([
+      acqId ? supabase.from("acquisition_projects").select("*").eq("id", acqId).maybeSingle() : Promise.resolve({ data: null } as any),
       supabase.from("acquisition_task_suggestions").select("*").eq("transcript_id", transcriptId).order("created_at"),
+      supabase.from("acquisition_projects").select("id, club_name").eq("status", "active").order("club_name"),
     ]);
-    setT(tr); setAcq(a); setSugs(s ?? []);
+    setT(tr); setAcq(a); setSugs(s ?? []); setAcqs(allAcqs ?? []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [transcriptId]);
+  useEffect(() => { load(); }, [transcriptId, id]);
+
+  const assignToAcq = async () => {
+    if (!assignPick || !t) return;
+    const { error } = await supabase.from("acquisition_meeting_transcripts")
+      .update({ acquisition_id: assignPick, is_tagged: true, ai_status: "pending" }).eq("id", t.id);
+    if (error) { toast.error(error.message); return; }
+    supabase.functions.invoke("process-meeting-transcript", { body: { transcript_id: t.id } }).catch(() => {});
+    toast.success("Assigned. AI processing started.");
+    nav(`/admin/acquisitions/${assignPick}/transcript/${t.id}`);
+  };
 
   // Auto-poll if processing
   useEffect(() => {
