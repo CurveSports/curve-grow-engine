@@ -38,7 +38,14 @@ export default function RouteResolver() {
       }
 
       // Admins skip remaining onboarding gates and go straight to their dashboard
-      if (role === "admin") { navigate("/admin", { replace: true }); return; }
+      if (role === "admin") {
+        if (!hasModule("allegiance") && hasModule("acquisitions")) {
+          navigate("/admin/acquisitions", { replace: true });
+        } else {
+          navigate("/admin", { replace: true });
+        }
+        return;
+      }
 
       // 2. Welcome gate (org users only)
       if (!onboarding?.welcomed_at) {
