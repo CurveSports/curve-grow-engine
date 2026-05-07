@@ -125,7 +125,7 @@ export default function BudgetPanel({ acquisition }: { acquisition: any }) {
                     <td className="px-3 py-2 text-xs">{it.date_incurred ?? "—"}</td>
                     <td className="px-3 py-2 text-xs">{workstreamLabel(it.workstream)}</td>
                     <td className="px-3 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${cat.color}`}>{cat.label}</span></td>
-                    <td className="px-3 py-2">{it.description}</td>
+                    <td className="px-3 py-2">{it.description}{it.receipt_document_id && <span title="Receipt attached" className="ml-1.5 text-emerald-600">📎</span>}</td>
                     <td className="px-3 py-2 text-xs">{it.vendor ?? "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(it.budgeted_amount)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{formatCurrency(it.actual_amount)}</td>
