@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
     const all = tasks ?? [];
 
     const completedThisWeek = all.filter((t: any) => t.completed_date && t.completed_date >= weekStart && t.completed_date <= weekEnd);
-    const startedThisWeek = all.filter((t: any) => t.started_date && t.started_date >= weekStart && t.started_date <= weekEnd);
+    const startedThisWeek = all.filter((t: any) => t.status === "started" && t.updated_at >= weekStart);
     const overdue = all.filter((t: any) => t.target_date && t.target_date < todayStr && t.status !== "done" && t.status !== "blocked");
     const blocked = all.filter((t: any) => t.status === "blocked");
     const done = all.filter((t: any) => t.status === "done");
