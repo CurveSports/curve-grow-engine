@@ -265,6 +265,7 @@ export default function AdminUsers() {
               <th className="px-5 py-3 font-medium">Email</th>
               <th className="px-5 py-3 font-medium">Organization</th>
               <th className="px-5 py-3 font-medium">Role</th>
+              <th className="px-5 py-3 font-medium">Module access</th>
               <th className="px-5 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
