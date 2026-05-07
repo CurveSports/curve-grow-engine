@@ -49,6 +49,8 @@ export default function AdminUsers() {
   const [newFullName, setNewFullName] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "org_user">("admin");
   const [newOrgId, setNewOrgId] = useState<string>("");
+  const [newAllegiance, setNewAllegiance] = useState(true);
+  const [newAcquisitions, setNewAcquisitions] = useState(true);
 
   const load = async () => {
     setLoading(true);
