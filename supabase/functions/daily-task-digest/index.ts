@@ -172,7 +172,7 @@ function orgDigestHtml(orgName: string, tasks: any[]): string {
   </div>`;
 }
 
-function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = []): string {
+function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = [], followUps: any[] = [], acqNames: Map<string, string> = new Map(), today: string = ""): string {
   const sections = Array.from(byOrg.entries()).map(([orgId, list]) =>
     `<h3 style="margin-bottom:4px;">${escape(names.get(orgId) ?? orgId)} <span style="color:#666;font-weight:normal;font-size:13px;">(${list.length})</span></h3>
      <ul>${list.map((t) => `<li>${escape(t.title)} <span style="color:#666;font-size:12px;">— ${escape(t.engine)} · ${escape(t.status)}</span></li>`).join("")}</ul>`
@@ -184,10 +184,20 @@ function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, 
         return `<li><strong>${escape(d.business_name)}</strong> for ${escape(names.get(d.org_id) ?? d.org_id)} — no activity in ${days} days (currently: ${escape(d.stage)})</li>`;
        }).join("")}</ul>`
     : "";
+  const followUpBlock = followUps.length
+    ? `<h2 style="color:#0369a1;margin-top:32px;">Acquisition Follow-Ups Due</h2>
+       <ul>${followUps.map((f) => {
+        const overdueDays = today && f.follow_up_date && f.follow_up_date < today
+          ? Math.floor((new Date(today).getTime() - new Date(f.follow_up_date).getTime()) / 86400000) : 0;
+        const acq = escape(acqNames.get(f.acquisition_id) ?? "Acquisition");
+        return `<li><strong>${acq}</strong>: follow up with ${escape(f.contact_name ?? "contact")} by ${escape(f.follow_up_date ?? "")}${overdueDays > 0 ? ` <span style="color:#dc2626;">(${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue)</span>` : ""}</li>`;
+       }).join("")}</ul>`
+    : "";
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <h2 style="color:#0f5132;">Curve OS daily digest</h2>
     ${sections}
     ${sponsorshipBlock}
+    ${followUpBlock}
   </div>`;
 }
 
