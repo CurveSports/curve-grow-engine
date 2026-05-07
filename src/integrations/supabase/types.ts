@@ -229,6 +229,7 @@ export type Database = {
           lead_role: string | null
           phase: string
           priority: string | null
+          state_filter: string | null
           suggested_days_from_close: number | null
           title: string
           workstream: string
@@ -246,6 +247,7 @@ export type Database = {
           lead_role?: string | null
           phase: string
           priority?: string | null
+          state_filter?: string | null
           suggested_days_from_close?: number | null
           title: string
           workstream: string
@@ -263,6 +265,7 @@ export type Database = {
           lead_role?: string | null
           phase?: string
           priority?: string | null
+          state_filter?: string | null
           suggested_days_from_close?: number | null
           title?: string
           workstream?: string
