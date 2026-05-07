@@ -280,6 +280,26 @@ export default function AdminUsers() {
                   <td className="px-5 py-3 text-xs uppercase tracking-wider text-muted-foreground">
                     {r.roles.join(", ") || "—"}
                   </td>
+                  <td className="px-5 py-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("allegiance")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "allegiance", !!v)}
+                        />
+                        <span>Curve OS</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("acquisitions")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "acquisitions", !!v)}
+                        />
+                        <span>Acquisitions</span>
+                      </label>
+                    </div>
+                  </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {r.org_id && (
