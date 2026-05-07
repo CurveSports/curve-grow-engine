@@ -63,6 +63,22 @@ export default function RollUpPanel({ acquisition }: { acquisition: any }) {
 
 function RollupView({ rollup, acquisition, onBack }: { rollup: any; acquisition: any; onBack: () => void }) {
   const [r, setR] = useState(rollup);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [recipients, setRecipients] = useState("");
+  const [sending, setSending] = useState(false);
+
+  const sendToTeam = async () => {
+    const list = recipients.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean);
+    if (!list.length) return toast.error("Enter at least one email");
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("send-weekly-rollup", { body: { rollup_id: r.id, recipients: list } });
+    setSending(false);
+    if (error || data?.error) return toast.error(data?.error ?? error?.message ?? "Send failed");
+    toast.success(`Sent to ${data.sent_to} recipient${data.sent_to === 1 ? "" : "s"}`);
+    setSendOpen(false);
+    const { data: refreshed } = await supabase.from("acquisition_weekly_rollups").select("*").eq("id", r.id).maybeSingle();
+    if (refreshed) setR(refreshed);
+  };
 
   const markReviewed = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -156,8 +172,31 @@ function RollupView({ rollup, acquisition, onBack }: { rollup: any; acquisition:
       <div className="flex gap-2">
         {r.status === "draft" && <Button onClick={markReviewed} variant="outline"><CheckCircle2 className="h-4 w-4 mr-1" /> Mark as Reviewed</Button>}
         <Button variant="outline" onClick={() => window.print()}>Download / Print</Button>
-        <Button variant="outline" disabled><Send className="h-4 w-4 mr-1" /> Send to Team (coming soon)</Button>
+        <Button variant="outline" onClick={() => setSendOpen(true)}><Send className="h-4 w-4 mr-1" /> Send to Team</Button>
+        {r.sent_at && <span className="text-xs text-muted-foreground self-center">Last sent {new Date(r.sent_at).toLocaleString()}{r.sent_to?.length ? ` to ${r.sent_to.length} recipient${r.sent_to.length === 1 ? "" : "s"}` : ""}</span>}
       </div>
+
+      {sendOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => !sending && setSendOpen(false)}>
+          <div className="bg-background rounded-lg border shadow-lg max-w-md w-full p-5 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h3 className="font-semibold text-lg">Send weekly roll-up</h3>
+            <p className="text-xs text-muted-foreground">Comma-separated emails. They will receive the full report inline.</p>
+            <textarea
+              value={recipients}
+              onChange={(e) => setRecipients(e.target.value)}
+              placeholder="alice@example.com, bob@example.com"
+              rows={3}
+              className="w-full text-sm rounded border px-3 py-2"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setSendOpen(false)} disabled={sending}>Cancel</Button>
+              <Button onClick={sendToTeam} disabled={sending} className="bg-emerald-600 hover:bg-emerald-700">
+                {sending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Send className="h-4 w-4 mr-1" />} Send
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
