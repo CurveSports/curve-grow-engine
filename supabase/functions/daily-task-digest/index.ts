@@ -145,12 +145,15 @@ Deno.serve(async (req) => {
       for (const a of more ?? []) acqNameByIdAll.set((a as any).id, (a as any).club_name);
     }
 
+
+    if (RESEND_API_KEY) {
+      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals, followUps, acqNameByIdAll, today, pendingSuggestions, untaggedTranscripts));
       emailsSent++;
     }
 
     await admin.from("notification_log").insert(logs);
 
-    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length, follow_ups: followUps.length });
+    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length, follow_ups: followUps.length, pending_suggestions: pendingSuggestions.length, untagged_transcripts: untaggedTranscripts.length });
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }
@@ -191,7 +194,7 @@ function orgDigestHtml(orgName: string, tasks: any[]): string {
   </div>`;
 }
 
-function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = [], followUps: any[] = [], acqNames: Map<string, string> = new Map(), today: string = ""): string {
+function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = [], followUps: any[] = [], acqNames: Map<string, string> = new Map(), today: string = "", pendingSuggestions: any[] = [], untaggedTranscripts: any[] = []): string {
   const sections = Array.from(byOrg.entries()).map(([orgId, list]) =>
     `<h3 style="margin-bottom:4px;">${escape(names.get(orgId) ?? orgId)} <span style="color:#666;font-weight:normal;font-size:13px;">(${list.length})</span></h3>
      <ul>${list.map((t) => `<li>${escape(t.title)} <span style="color:#666;font-size:12px;">— ${escape(t.engine)} · ${escape(t.status)}</span></li>`).join("")}</ul>`
@@ -212,11 +215,32 @@ function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, 
         return `<li><strong>${acq}</strong>: follow up with ${escape(f.contact_name ?? "contact")} by ${escape(f.follow_up_date ?? "")}${overdueDays > 0 ? ` <span style="color:#dc2626;">(${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue)</span>` : ""}</li>`;
        }).join("")}</ul>`
     : "";
+
+  // Group pending suggestions by acquisition
+  const sugsByAcq = new Map<string, any[]>();
+  for (const s of pendingSuggestions) {
+    if (!s.acquisition_id) continue;
+    const arr = sugsByAcq.get(s.acquisition_id) ?? [];
+    arr.push(s); sugsByAcq.set(s.acquisition_id, arr);
+  }
+  const meetingBlock = (sugsByAcq.size || untaggedTranscripts.length)
+    ? `<h2 style="color:#7c3aed;margin-top:32px;">Meeting Intelligence</h2>
+       ${sugsByAcq.size ? `<h3 style="margin-bottom:4px;">Pending AI Task Suggestions</h3>
+         ${Array.from(sugsByAcq.entries()).map(([aid, list]) =>
+           `<p style="margin:8px 0 4px 0;"><strong>${escape(acqNames.get(aid) ?? "Acquisition")}</strong> — ${list.length} pending</p>
+            <ul>${list.slice(0, 5).map((s) => `<li>${escape((s.suggestion_type ?? "").replace(/_/g, " "))}: ${escape(s.suggested_action ?? "")} ${s.existing_task_title ? `<span style="color:#666;">(${escape(s.existing_task_title)})</span>` : ""}</li>`).join("")}${list.length > 5 ? `<li style="color:#666;">…and ${list.length - 5} more</li>` : ""}</ul>`
+         ).join("")}` : ""}
+       ${untaggedTranscripts.length ? `<h3 style="margin:16px 0 4px 0;">Untagged Transcripts (${untaggedTranscripts.length})</h3>
+         <p style="color:#666;font-size:13px;margin:0 0 6px 0;">These meeting transcripts need to be assigned to an acquisition.</p>
+         <ul>${untaggedTranscripts.slice(0, 8).map((u) => `<li>${escape(u.meeting_title ?? u.zoom_meeting_topic ?? "Meeting")} <span style="color:#666;font-size:12px;">${u.meeting_date ? new Date(u.meeting_date).toLocaleDateString() : ""} · ${escape(u.source_type ?? "")}</span></li>`).join("")}${untaggedTranscripts.length > 8 ? `<li style="color:#666;">…and ${untaggedTranscripts.length - 8} more</li>` : ""}</ul>` : ""}`
+    : "";
+
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <h2 style="color:#0f5132;">Curve OS daily digest</h2>
     ${sections}
     ${sponsorshipBlock}
     ${followUpBlock}
+    ${meetingBlock}
   </div>`;
 }
 
