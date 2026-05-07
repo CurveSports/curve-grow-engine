@@ -45,11 +45,23 @@ export default function MeetingsInbox() {
   return (
     <AppShell title="Meeting Transcripts">
       <div className="max-w-5xl mx-auto space-y-4">
-        <h1 className="font-display text-2xl font-bold">Meeting Transcripts</h1>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="font-display text-2xl font-bold">Meeting Transcripts</h1>
+          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => setUploadOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Upload Transcript
+          </Button>
+        </div>
         <div className="flex gap-2 border-b">
           <Tab active={tab === "untagged"} onClick={() => setTab("untagged")}>Untagged ({tab === "untagged" ? untaggedCount : "—"})</Tab>
           <Tab active={tab === "all"} onClick={() => setTab("all")}>All Transcripts</Tab>
         </div>
+
+        <UploadTranscriptModal
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          acquisitions={acqs}
+          onUploaded={() => load()}
+        />
 
         {loading ? (
           <div className="flex items-center justify-center py-12 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading…</div>
