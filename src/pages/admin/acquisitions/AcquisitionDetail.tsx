@@ -114,7 +114,7 @@ export default function AcquisitionDetail() {
               const done = wsTasks.filter((t) => t.status === "done").length;
               const pct = wsTasks.length ? Math.round((done / wsTasks.length) * 100) : 0;
               return (
-                <details key={w.key} className="curve-card">
+                <details key={w.key} id={`ws-${w.key}`} className="curve-card" open={w.key === "compliance" && stateTaskCount > 0}>
                   <summary className="cursor-pointer flex items-center gap-3">
                     <div className="h-3 w-3 rounded-sm" style={{ background: w.color }} />
                     <span className="font-semibold flex-1">{w.label}</span>
