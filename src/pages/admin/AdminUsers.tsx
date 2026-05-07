@@ -20,6 +20,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 type Row = {
   user_id: string;
   email: string;
@@ -27,6 +29,7 @@ type Row = {
   org_id: string | null;
   org_name: string | null;
   roles: string[];
+  module_access: string[];
 };
 
 type Org = { id: string; name: string };
@@ -37,6 +40,7 @@ export default function AdminUsers() {
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [savingModulesId, setSavingModulesId] = useState<string | null>(null);
 
   // Create user dialog state
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,11 +49,13 @@ export default function AdminUsers() {
   const [newFullName, setNewFullName] = useState("");
   const [newRole, setNewRole] = useState<"admin" | "org_user">("admin");
   const [newOrgId, setNewOrgId] = useState<string>("");
+  const [newAllegiance, setNewAllegiance] = useState(true);
+  const [newAcquisitions, setNewAcquisitions] = useState(true);
 
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }, { data: orgsData }] = await Promise.all([
-      supabase.from("profiles").select("user_id, email, full_name, org_id"),
+      supabase.from("profiles").select("user_id, email, full_name, org_id, module_access"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("organizations").select("id, name").order("name"),
     ]);
@@ -67,6 +73,7 @@ export default function AdminUsers() {
       org_id: p.org_id,
       org_name: p.org_id ? (orgMap.get(p.org_id) as string ?? null) : null,
       roles: roleMap.get(p.user_id) ?? [],
+      module_access: Array.isArray(p.module_access) ? p.module_access : [],
     }));
     r.sort((a, b) => (a.org_name ?? "zzz").localeCompare(b.org_name ?? "zzz") || a.email.localeCompare(b.email));
     setRows(r);
@@ -96,6 +103,28 @@ export default function AdminUsers() {
     setNewFullName("");
     setNewRole("admin");
     setNewOrgId("");
+    setNewAllegiance(true);
+    setNewAcquisitions(true);
+  };
+
+  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions", checked: boolean) => {
+    const next = checked
+      ? Array.from(new Set([...(row.module_access ?? []), mod]))
+      : (row.module_access ?? []).filter((m) => m !== mod);
+    setSavingModulesId(row.user_id);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ module_access: next })
+        .eq("user_id", row.user_id);
+      if (error) throw error;
+      setRows((prev) => prev.map((r) => (r.user_id === row.user_id ? { ...r, module_access: next } : r)));
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to update access");
+    } finally {
+      setSavingModulesId(null);
+    }
   };
 
   const createUser = async () => {
@@ -115,6 +144,10 @@ export default function AdminUsers() {
           full_name: newFullName.trim() || null,
           role: newRole,
           org_id: newRole === "org_user" ? newOrgId : null,
+          module_access: [
+            ...(newAllegiance ? ["allegiance"] : []),
+            ...(newAcquisitions ? ["acquisitions"] : []),
+          ],
         },
       });
       if (error) throw error;
@@ -195,12 +228,28 @@ export default function AdminUsers() {
                   </Select>
                 </div>
               )}
+              <div>
+                <Label className="text-sm font-medium">Module access</Label>
+                <div className="mt-2 space-y-2 rounded-md border border-border p-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newAllegiance} onCheckedChange={(v) => setNewAllegiance(!!v)} />
+                    <span>Curve OS (Allegiance)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newAcquisitions} onCheckedChange={(v) => setNewAcquisitions(!!v)} />
+                    <span>Curve Acquisitions</span>
+                  </label>
+                  {!newAllegiance && !newAcquisitions && (
+                    <p className="text-xs text-destructive">Select at least one module.</p>
+                  )}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
                 Cancel
               </Button>
-              <Button onClick={createUser} disabled={creating} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions)} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {creating ? "Creating…" : "Create & Invite"}
               </Button>
             </DialogFooter>
@@ -216,6 +265,7 @@ export default function AdminUsers() {
               <th className="px-5 py-3 font-medium">Email</th>
               <th className="px-5 py-3 font-medium">Organization</th>
               <th className="px-5 py-3 font-medium">Role</th>
+              <th className="px-5 py-3 font-medium">Module access</th>
               <th className="px-5 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
@@ -229,6 +279,26 @@ export default function AdminUsers() {
                   <td className="px-5 py-3">{r.org_name ?? <span className="text-muted-foreground">—</span>}</td>
                   <td className="px-5 py-3 text-xs uppercase tracking-wider text-muted-foreground">
                     {r.roles.join(", ") || "—"}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("allegiance")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "allegiance", !!v)}
+                        />
+                        <span>Curve OS</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("acquisitions")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "acquisitions", !!v)}
+                        />
+                        <span>Acquisitions</span>
+                      </label>
+                    </div>
                   </td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
@@ -270,7 +340,7 @@ export default function AdminUsers() {
               );
             })}
             {rows.length === 0 && (
-              <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-muted-foreground">No users.</td></tr>
+              <tr><td colSpan={6} className="px-5 py-12 text-center text-sm text-muted-foreground">No users.</td></tr>
             )}
           </tbody>
         </table>
