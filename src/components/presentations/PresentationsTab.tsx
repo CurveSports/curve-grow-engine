@@ -115,6 +115,7 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
       <div className="flex items-center gap-2">
         <ToggleBtn active={mode === "internal"} onClick={() => setMode("internal")}>Internal Brief</ToggleBtn>
         <ToggleBtn active={mode === "client"} onClick={() => setMode("client")}>Client Presentation</ToggleBtn>
+        <ToggleBtn active={mode === "audit"} onClick={() => setMode("audit")}>Digital Audit</ToggleBtn>
       </div>
 
       {mode === "internal" ? (
