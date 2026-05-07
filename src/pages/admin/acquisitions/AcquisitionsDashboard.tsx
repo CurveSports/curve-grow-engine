@@ -26,7 +26,7 @@ export default function AcquisitionsDashboard() {
 
   const load = async () => {
     setLoading(true);
-    await supabase.rpc("update_acquisition_phases" as any).catch(() => {});
+    try { await (supabase as any).rpc("update_acquisition_phases"); } catch {}
     const { data } = await supabase.from("acquisition_projects").select("*").order("created_at", { ascending: false });
     setDeals(data ?? []);
     setLoading(false);
