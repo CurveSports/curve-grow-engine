@@ -271,7 +271,7 @@ export default function TranscriptDetail() {
       <AddTaskModal
         open={addOpen}
         onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddPrefill(undefined); setPendingSuggestionId(null); } }}
-        acquisitionId={id!}
+        acquisitionId={(id ?? acq?.id) as string}
         prefill={addPrefill}
         onAdded={() => {}}
         onCreated={async () => {
