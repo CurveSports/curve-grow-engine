@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Plus, Pencil, Trash2, Shield } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Shield, ShieldCheck } from "lucide-react";
 import { WORKSTREAMS, PHASES, US_STATES, workstreamLabel, phaseLabel } from "@/lib/acquisitions";
+import { REQUIREMENT_TYPES, ROLE_TYPES } from "@/lib/compliance";
 import { toast } from "sonner";
 
 const ALL_STATES = "__all__";
