@@ -20,6 +20,8 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
+import { Checkbox } from "@/components/ui/checkbox";
+
 type Row = {
   user_id: string;
   email: string;
@@ -27,6 +29,7 @@ type Row = {
   org_id: string | null;
   org_name: string | null;
   roles: string[];
+  module_access: string[];
 };
 
 type Org = { id: string; name: string };
@@ -37,6 +40,7 @@ export default function AdminUsers() {
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [savingModulesId, setSavingModulesId] = useState<string | null>(null);
 
   // Create user dialog state
   const [createOpen, setCreateOpen] = useState(false);
