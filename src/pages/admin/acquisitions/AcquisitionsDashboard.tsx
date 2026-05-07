@@ -203,6 +203,27 @@ export default function AcquisitionsDashboard() {
                       </div>
                     </div>
                   )}
+                  {(budgetByDeal[d.id] || followUpsByDeal[d.id] || sentimentByDeal[d.id]) && (
+                    <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      {budgetByDeal[d.id] && (
+                        <span className={budgetByDeal[d.id].over ? "text-rose-600 font-medium" : "text-muted-foreground"}>
+                          💰 ${Math.round(budgetByDeal[d.id].actual).toLocaleString()} / ${Math.round(budgetByDeal[d.id].budgeted).toLocaleString()}
+                          {budgetByDeal[d.id].over && " · over budget"}
+                        </span>
+                      )}
+                      {followUpsByDeal[d.id] && followUpsByDeal[d.id].pending > 0 && (
+                        <span className={followUpsByDeal[d.id].overdue > 0 ? "text-rose-600 font-medium" : "text-amber-600"}>
+                          📞 {followUpsByDeal[d.id].pending} follow-up{followUpsByDeal[d.id].pending === 1 ? "" : "s"}
+                          {followUpsByDeal[d.id].overdue > 0 && ` · ${followUpsByDeal[d.id].overdue} overdue`}
+                        </span>
+                      )}
+                      {sentimentByDeal[d.id] && (
+                        <span className={sentimentByDeal[d.id].score <= 2 ? "text-rose-600 font-medium" : "text-muted-foreground"}>
+                          {sentimentByDeal[d.id].emoji} Seller: {sentimentByDeal[d.id].label}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               );
             })}
