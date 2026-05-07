@@ -124,19 +124,50 @@ export default function TranscriptDetail() {
   const dismissed = sugs.filter((s) => s.resolution === "dismissed").length;
 
   return (
-    <AppShell title={t.meeting_title}>
+    <AppShell title={t.meeting_title ?? "Transcript"}>
       <div className="max-w-5xl mx-auto space-y-4">
-        <button onClick={() => nav(`/admin/acquisitions/${id}?tab=meetings`)} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Meetings
+        <button
+          onClick={() => nav(acq ? `/admin/acquisitions/${acq.id}?tab=meetings` : "/admin/acquisitions/meetings")}
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" /> {acq ? "Back to Meetings" : "Back to Inbox"}
         </button>
         <div>
-          <h1 className="font-display text-2xl font-bold">{t.meeting_title}</h1>
+          <h1 className="font-display text-2xl font-bold">{t.meeting_title ?? "Untitled meeting"}</h1>
           <p className="text-sm text-muted-foreground">
             {t.meeting_date && new Date(t.meeting_date).toLocaleString()}
             {t.zoom_duration_minutes && ` · ${t.zoom_duration_minutes} min`}
+            {t.zoom_host_email && ` · ${t.zoom_host_email}`}
+            {" · "}Source: {t.source_type}
             {" · "}AI: {t.ai_status}
           </p>
         </div>
+
+        {acq ? (
+          <div className="curve-card flex items-center justify-between gap-3 bg-muted/30">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Linked acquisition</p>
+              <p className="font-semibold truncate">{acq.club_name}</p>
+              <p className="text-xs text-muted-foreground">
+                Phase: {acq.phase ?? "—"} · {acq.completion_pct ?? 0}% complete · {acq.overdue_tasks ?? 0} overdue
+                {acq.close_date ? ` · Close ${acq.close_date}` : ""}
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => nav(`/admin/acquisitions/${acq.id}`)}>Open acquisition</Button>
+          </div>
+        ) : (
+          <div className="curve-card bg-amber-50 border-amber-200 space-y-2">
+            <p className="text-sm font-semibold">This transcript isn't linked to an acquisition yet.</p>
+            <p className="text-xs text-muted-foreground">Assign it to start AI processing and surface task suggestions.</p>
+            <div className="flex items-center gap-2">
+              <select value={assignPick} onChange={(e) => setAssignPick(e.target.value)} className="px-2 py-1 text-sm rounded border">
+                <option value="">Select acquisition…</option>
+                {acqs.map((a) => <option key={a.id} value={a.id}>{a.club_name}</option>)}
+              </select>
+              <Button size="sm" disabled={!assignPick} className="bg-emerald-600 hover:bg-emerald-700" onClick={assignToAcq}>Assign & Process</Button>
+            </div>
+          </div>
+        )}
 
         {(t.ai_status === "pending" || t.ai_status === "processing") && (
           <div className="curve-card flex items-center gap-3 bg-amber-50 border-amber-200">
