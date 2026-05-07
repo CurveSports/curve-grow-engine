@@ -9,6 +9,7 @@ interface Profile {
   org_id: string | null;
   email: string;
   full_name: string | null;
+  module_access: string[];
 }
 
 interface AuthCtx {
@@ -18,6 +19,7 @@ interface AuthCtx {
   role: Role;
   isPrimary: boolean;
   loading: boolean;
+  hasModule: (m: "allegiance" | "acquisitions") => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
