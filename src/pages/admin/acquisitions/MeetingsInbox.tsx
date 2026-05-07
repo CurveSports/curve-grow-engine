@@ -88,6 +88,7 @@ export default function MeetingsInbox() {
                         {acqs.map((a) => <option key={a.id} value={a.id}>{a.club_name}</option>)}
                       </select>
                       <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => assign(t.id)}>Assign</Button>
+                      <Button size="sm" variant="ghost" onClick={() => nav(`/admin/acquisitions/transcript/${t.id}`)}>Preview</Button>
                       <button onClick={() => dismiss(t.id)} className="text-xs text-muted-foreground hover:text-foreground">Dismiss</button>
                     </div>
                   ) : (

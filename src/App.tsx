@@ -88,6 +88,7 @@ const App = () => (
             <Route path="/admin/acquisitions/compliance" element={<ProtectedRoute role="admin" module="acquisitions"><ComplianceOverview /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/meetings" element={<ProtectedRoute role="admin" module="acquisitions"><MeetingsInbox /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/:id/transcript/:transcriptId" element={<ProtectedRoute role="admin" module="acquisitions"><TranscriptDetail /></ProtectedRoute>} />
+            <Route path="/admin/acquisitions/transcript/:transcriptId" element={<ProtectedRoute role="admin" module="acquisitions"><TranscriptDetail /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/:id" element={<ProtectedRoute role="admin" module="acquisitions"><AcquisitionDetail /></ProtectedRoute>} />
             <Route path="/admin/tasks-this-week" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksThisWeek /></ProtectedRoute>} />
             <Route path="/admin/task-tracker" element={<ProtectedRoute role="admin" module="allegiance"><AdminTaskTracker /></ProtectedRoute>} />

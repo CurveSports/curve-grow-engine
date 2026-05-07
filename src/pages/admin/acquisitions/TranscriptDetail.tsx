@@ -23,17 +23,32 @@ export default function TranscriptDetail() {
   const [addPrefill, setAddPrefill] = useState<AddTaskPrefill | undefined>(undefined);
   const [pendingSuggestionId, setPendingSuggestionId] = useState<string | null>(null);
 
+  const [acqs, setAcqs] = useState<any[]>([]);
+  const [assignPick, setAssignPick] = useState<string>("");
+
   const load = async () => {
     setLoading(true);
-    const [{ data: tr }, { data: a }, { data: s }] = await Promise.all([
-      supabase.from("acquisition_meeting_transcripts").select("*").eq("id", transcriptId).maybeSingle(),
-      supabase.from("acquisition_projects").select("*").eq("id", id).maybeSingle(),
+    const { data: tr } = await supabase.from("acquisition_meeting_transcripts").select("*").eq("id", transcriptId).maybeSingle();
+    const acqId = id ?? tr?.acquisition_id ?? null;
+    const [{ data: a }, { data: s }, { data: allAcqs }] = await Promise.all([
+      acqId ? supabase.from("acquisition_projects").select("*").eq("id", acqId).maybeSingle() : Promise.resolve({ data: null } as any),
       supabase.from("acquisition_task_suggestions").select("*").eq("transcript_id", transcriptId).order("created_at"),
+      supabase.from("acquisition_projects").select("id, club_name").eq("status", "active").order("club_name"),
     ]);
-    setT(tr); setAcq(a); setSugs(s ?? []);
+    setT(tr); setAcq(a); setSugs(s ?? []); setAcqs(allAcqs ?? []);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [transcriptId]);
+  useEffect(() => { load(); }, [transcriptId, id]);
+
+  const assignToAcq = async () => {
+    if (!assignPick || !t) return;
+    const { error } = await supabase.from("acquisition_meeting_transcripts")
+      .update({ acquisition_id: assignPick, is_tagged: true, ai_status: "pending" }).eq("id", t.id);
+    if (error) { toast.error(error.message); return; }
+    supabase.functions.invoke("process-meeting-transcript", { body: { transcript_id: t.id } }).catch(() => {});
+    toast.success("Assigned. AI processing started.");
+    nav(`/admin/acquisitions/${assignPick}/transcript/${t.id}`);
+  };
 
   // Auto-poll if processing
   useEffect(() => {
@@ -109,19 +124,50 @@ export default function TranscriptDetail() {
   const dismissed = sugs.filter((s) => s.resolution === "dismissed").length;
 
   return (
-    <AppShell title={t.meeting_title}>
+    <AppShell title={t.meeting_title ?? "Transcript"}>
       <div className="max-w-5xl mx-auto space-y-4">
-        <button onClick={() => nav(`/admin/acquisitions/${id}?tab=meetings`)} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back to Meetings
+        <button
+          onClick={() => nav(acq ? `/admin/acquisitions/${acq.id}?tab=meetings` : "/admin/acquisitions/meetings")}
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" /> {acq ? "Back to Meetings" : "Back to Inbox"}
         </button>
         <div>
-          <h1 className="font-display text-2xl font-bold">{t.meeting_title}</h1>
+          <h1 className="font-display text-2xl font-bold">{t.meeting_title ?? "Untitled meeting"}</h1>
           <p className="text-sm text-muted-foreground">
             {t.meeting_date && new Date(t.meeting_date).toLocaleString()}
             {t.zoom_duration_minutes && ` · ${t.zoom_duration_minutes} min`}
+            {t.zoom_host_email && ` · ${t.zoom_host_email}`}
+            {" · "}Source: {t.source_type}
             {" · "}AI: {t.ai_status}
           </p>
         </div>
+
+        {acq ? (
+          <div className="curve-card flex items-center justify-between gap-3 bg-muted/30">
+            <div className="min-w-0">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Linked acquisition</p>
+              <p className="font-semibold truncate">{acq.club_name}</p>
+              <p className="text-xs text-muted-foreground">
+                Phase: {acq.phase ?? "—"} · {acq.completion_pct ?? 0}% complete · {acq.overdue_tasks ?? 0} overdue
+                {acq.close_date ? ` · Close ${acq.close_date}` : ""}
+              </p>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => nav(`/admin/acquisitions/${acq.id}`)}>Open acquisition</Button>
+          </div>
+        ) : (
+          <div className="curve-card bg-amber-50 border-amber-200 space-y-2">
+            <p className="text-sm font-semibold">This transcript isn't linked to an acquisition yet.</p>
+            <p className="text-xs text-muted-foreground">Assign it to start AI processing and surface task suggestions.</p>
+            <div className="flex items-center gap-2">
+              <select value={assignPick} onChange={(e) => setAssignPick(e.target.value)} className="px-2 py-1 text-sm rounded border">
+                <option value="">Select acquisition…</option>
+                {acqs.map((a) => <option key={a.id} value={a.id}>{a.club_name}</option>)}
+              </select>
+              <Button size="sm" disabled={!assignPick} className="bg-emerald-600 hover:bg-emerald-700" onClick={assignToAcq}>Assign & Process</Button>
+            </div>
+          </div>
+        )}
 
         {(t.ai_status === "pending" || t.ai_status === "processing") && (
           <div className="curve-card flex items-center gap-3 bg-amber-50 border-amber-200">
@@ -225,7 +271,7 @@ export default function TranscriptDetail() {
       <AddTaskModal
         open={addOpen}
         onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddPrefill(undefined); setPendingSuggestionId(null); } }}
-        acquisitionId={id!}
+        acquisitionId={(id ?? acq?.id) as string}
         prefill={addPrefill}
         onAdded={() => {}}
         onCreated={async () => {
