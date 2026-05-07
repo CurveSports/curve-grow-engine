@@ -99,7 +99,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { label: "Documents", icon: FileText, soon: true },
       { label: "Compliance", icon: ListChecks, soon: true },
       { label: "Reports", icon: BarChart3, soon: true },
-      { to: "/admin/acquisitions/settings", label: "Settings", icon: Settings, match: (p) => p.startsWith("/admin/acquisitions/settings") },
+      { to: "/admin/acquisitions/settings", label: "Templates", icon: Settings, match: (p) => p.startsWith("/admin/acquisitions/settings") },
     ],
   };
   const allegianceGroups: NavGroup[] = role === "admin"
