@@ -307,7 +307,10 @@ Deno.serve(async (req) => {
 
         const map = await firecrawlMap(presence.website_url, FIRECRAWL_API_KEY);
         const KEY_HINTS = ["about", "team", "tryout", "register", "program", "sponsor", "contact", "lesson"];
-        const candidates = map.filter((u) => KEY_HINTS.some((h) => u.toLowerCase().includes(h))).slice(0, 5);
+        const candidates = map
+          .filter((u): u is string => typeof u === "string" && !!u)
+          .filter((u) => KEY_HINTS.some((h) => u.toLowerCase().includes(h)))
+          .slice(0, 5);
         for (const u of candidates) {
           if (u === presence.website_url) continue;
           const p = await firecrawlScrape(u, FIRECRAWL_API_KEY, ["markdown"]);
