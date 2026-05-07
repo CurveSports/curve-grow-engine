@@ -14,6 +14,350 @@ export type Database = {
   }
   public: {
     Tables: {
+      acquisition_projects: {
+        Row: {
+          acquisition_notes: string | null
+          blocked_tasks: number
+          city: string | null
+          close_date: string | null
+          club_name: string
+          codename: string | null
+          completed_tasks: number
+          completion_pct: number
+          compliance_pct: number
+          created_at: string
+          created_by: string | null
+          data_assets_pct: number
+          entity_name: string | null
+          financial_pct: number
+          hr_culture_pct: number
+          id: string
+          integration_pct: number
+          it_pct: number
+          legal_pct: number
+          marketing_pct: number
+          overdue_tasks: number
+          phase: string
+          seller_primary_email: string | null
+          seller_primary_name: string | null
+          seller_primary_phone: string | null
+          seller_secondary_email: string | null
+          seller_secondary_name: string | null
+          state: string | null
+          status: string
+          testing_pct: number
+          total_tasks: number
+          updated_at: string
+          value_creation_summary: string | null
+        }
+        Insert: {
+          acquisition_notes?: string | null
+          blocked_tasks?: number
+          city?: string | null
+          close_date?: string | null
+          club_name: string
+          codename?: string | null
+          completed_tasks?: number
+          completion_pct?: number
+          compliance_pct?: number
+          created_at?: string
+          created_by?: string | null
+          data_assets_pct?: number
+          entity_name?: string | null
+          financial_pct?: number
+          hr_culture_pct?: number
+          id?: string
+          integration_pct?: number
+          it_pct?: number
+          legal_pct?: number
+          marketing_pct?: number
+          overdue_tasks?: number
+          phase?: string
+          seller_primary_email?: string | null
+          seller_primary_name?: string | null
+          seller_primary_phone?: string | null
+          seller_secondary_email?: string | null
+          seller_secondary_name?: string | null
+          state?: string | null
+          status?: string
+          testing_pct?: number
+          total_tasks?: number
+          updated_at?: string
+          value_creation_summary?: string | null
+        }
+        Update: {
+          acquisition_notes?: string | null
+          blocked_tasks?: number
+          city?: string | null
+          close_date?: string | null
+          club_name?: string
+          codename?: string | null
+          completed_tasks?: number
+          completion_pct?: number
+          compliance_pct?: number
+          created_at?: string
+          created_by?: string | null
+          data_assets_pct?: number
+          entity_name?: string | null
+          financial_pct?: number
+          hr_culture_pct?: number
+          id?: string
+          integration_pct?: number
+          it_pct?: number
+          legal_pct?: number
+          marketing_pct?: number
+          overdue_tasks?: number
+          phase?: string
+          seller_primary_email?: string | null
+          seller_primary_name?: string | null
+          seller_primary_phone?: string | null
+          seller_secondary_email?: string | null
+          seller_secondary_name?: string | null
+          state?: string | null
+          status?: string
+          testing_pct?: number
+          total_tasks?: number
+          updated_at?: string
+          value_creation_summary?: string | null
+        }
+        Relationships: []
+      }
+      acquisition_task_activity: {
+        Row: {
+          acquisition_id: string
+          action: string
+          created_at: string
+          id: string
+          new_value: string | null
+          old_value: string | null
+          performed_by: string | null
+          task_id: string
+        }
+        Insert: {
+          acquisition_id: string
+          action: string
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          task_id: string
+        }
+        Update: {
+          acquisition_id?: string
+          action?: string
+          created_at?: string
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          performed_by?: string | null
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_task_activity_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_task_activity_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_task_notes: {
+        Row: {
+          acquisition_id: string
+          created_at: string
+          created_by: string
+          id: string
+          is_seller_visible: boolean
+          note_text: string
+          task_id: string
+        }
+        Insert: {
+          acquisition_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          is_seller_visible?: boolean
+          note_text: string
+          task_id: string
+        }
+        Update: {
+          acquisition_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_seller_visible?: boolean
+          note_text?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_task_notes_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_task_notes_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_task_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          florida_only: boolean
+          id: string
+          is_seller_visible: boolean
+          is_staff_visible: boolean
+          is_system_template: boolean
+          lead_role: string | null
+          phase: string
+          priority: string | null
+          suggested_days_from_close: number | null
+          title: string
+          workstream: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          florida_only?: boolean
+          id?: string
+          is_seller_visible?: boolean
+          is_staff_visible?: boolean
+          is_system_template?: boolean
+          lead_role?: string | null
+          phase: string
+          priority?: string | null
+          suggested_days_from_close?: number | null
+          title: string
+          workstream: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          florida_only?: boolean
+          id?: string
+          is_seller_visible?: boolean
+          is_staff_visible?: boolean
+          is_system_template?: boolean
+          lead_role?: string | null
+          phase?: string
+          priority?: string | null
+          suggested_days_from_close?: number | null
+          title?: string
+          workstream?: string
+        }
+        Relationships: []
+      }
+      acquisition_tasks: {
+        Row: {
+          acquisition_id: string
+          completed_date: string | null
+          created_at: string
+          created_by: string | null
+          curve_notes: string | null
+          days_in_current_status: number | null
+          dependency: string | null
+          description: string | null
+          display_order: number
+          id: string
+          is_custom: boolean
+          is_seller_visible: boolean
+          is_staff_visible: boolean
+          lead_person_id: string | null
+          lead_person_name: string | null
+          phase: string
+          priority: string | null
+          seller_notes: string | null
+          status: string
+          target_date: string | null
+          template_id: string | null
+          title: string
+          updated_at: string
+          workstream: string
+        }
+        Insert: {
+          acquisition_id: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          curve_notes?: string | null
+          days_in_current_status?: number | null
+          dependency?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_custom?: boolean
+          is_seller_visible?: boolean
+          is_staff_visible?: boolean
+          lead_person_id?: string | null
+          lead_person_name?: string | null
+          phase: string
+          priority?: string | null
+          seller_notes?: string | null
+          status?: string
+          target_date?: string | null
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          workstream: string
+        }
+        Update: {
+          acquisition_id?: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          curve_notes?: string | null
+          days_in_current_status?: number | null
+          dependency?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_custom?: boolean
+          is_seller_visible?: boolean
+          is_staff_visible?: boolean
+          lead_person_id?: string | null
+          lead_person_name?: string | null
+          phase?: string
+          priority?: string | null
+          seller_notes?: string | null
+          status?: string
+          target_date?: string | null
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          workstream?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_tasks_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_alert_dismissals: {
         Row: {
           alert_signature: string
@@ -2525,6 +2869,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          module_access: string[]
           org_id: string | null
           updated_at: string
           user_id: string
@@ -2534,6 +2879,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          module_access?: string[]
           org_id?: string | null
           updated_at?: string
           user_id: string
@@ -2543,6 +2889,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          module_access?: string[]
           org_id?: string | null
           updated_at?: string
           user_id?: string
@@ -3055,6 +3402,10 @@ export type Database = {
           warm_reasons: string[]
         }[]
       }
+      has_module_access: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -3082,6 +3433,7 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      update_acquisition_phases: { Args: never; Returns: undefined }
     }
     Enums: {
       admin_review_kind: "high_alert" | "revenue_review"
