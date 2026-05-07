@@ -27,6 +27,10 @@ export default function AdminUsersPage() {
       <AdminOrgAssignments />
 
       <div className="mt-10">
+        <AdminOrganizationsList />
+      </div>
+
+      <div className="mt-10">
         <h2 className="font-display text-xl font-semibold tracking-tight mb-3">All users</h2>
         <AdminUsers />
       </div>
