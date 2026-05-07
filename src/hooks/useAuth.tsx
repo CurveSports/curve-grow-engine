@@ -9,6 +9,7 @@ interface Profile {
   org_id: string | null;
   email: string;
   full_name: string | null;
+  module_access: string[];
 }
 
 interface AuthCtx {
@@ -18,6 +19,7 @@ interface AuthCtx {
   role: Role;
   isPrimary: boolean;
   loading: boolean;
+  hasModule: (m: "allegiance" | "acquisitions") => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -33,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadUserData = async (uid: string) => {
     const [{ data: prof }, { data: roles }] = await Promise.all([
-      supabase.from("profiles").select("user_id, org_id, email, full_name").eq("user_id", uid).maybeSingle(),
+      supabase.from("profiles").select("user_id, org_id, email, full_name, module_access").eq("user_id", uid).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", uid),
     ]);
     setProfile(prof as Profile | null);
@@ -81,8 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) await loadUserData(session.user.id);
   };
 
+  const hasModule = (m: "allegiance" | "acquisitions") =>
+    !!profile?.module_access?.includes(m) || role === "admin";
+
   return (
-    <Ctx.Provider value={{ session, user: session?.user ?? null, profile, role, isPrimary, loading, signOut, refresh }}>
+    <Ctx.Provider value={{ session, user: session?.user ?? null, profile, role, isPrimary, loading, hasModule, signOut, refresh }}>
       {children}
     </Ctx.Provider>
   );

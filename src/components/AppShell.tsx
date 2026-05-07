@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -90,7 +90,24 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const { logoUrl } = useBranding();
   const location = useLocation();
 
-  const groups = role === "admin" ? ADMIN_GROUPS : ORG_GROUPS;
+  const { hasModule } = useAuth();
+  const baseGroups = role === "admin" ? ADMIN_GROUPS : ORG_GROUPS;
+  const acquisitionsGroup: NavGroup = {
+    label: "Acquisitions",
+    items: [
+      { to: "/admin/acquisitions", label: "Dashboard", icon: Briefcase, match: (p) => p.startsWith("/admin/acquisitions") && !p.startsWith("/admin/acquisitions/settings") },
+      { label: "Documents", icon: FileText, soon: true },
+      { label: "Compliance", icon: ListChecks, soon: true },
+      { label: "Reports", icon: BarChart3, soon: true },
+      { to: "/admin/acquisitions/settings", label: "Settings", icon: Settings, match: (p) => p.startsWith("/admin/acquisitions/settings") },
+    ],
+  };
+  const allegianceGroups: NavGroup[] = role === "admin"
+    ? [{ ...baseGroups[0] }, ...baseGroups.slice(1).map((g, i) => i === 0 ? { ...g, label: "Allegiance" } : g)]
+    : baseGroups;
+  const groups = role === "admin" && hasModule("acquisitions")
+    ? [...allegianceGroups, acquisitionsGroup]
+    : baseGroups;
   const showTeam = role === "org_user" && isPrimary;
 
   const isItemActive = (item: NavItem) =>
