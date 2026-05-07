@@ -103,6 +103,28 @@ export default function AdminUsers() {
     setNewFullName("");
     setNewRole("admin");
     setNewOrgId("");
+    setNewAllegiance(true);
+    setNewAcquisitions(true);
+  };
+
+  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions", checked: boolean) => {
+    const next = checked
+      ? Array.from(new Set([...(row.module_access ?? []), mod]))
+      : (row.module_access ?? []).filter((m) => m !== mod);
+    setSavingModulesId(row.user_id);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ module_access: next })
+        .eq("user_id", row.user_id);
+      if (error) throw error;
+      setRows((prev) => prev.map((r) => (r.user_id === row.user_id ? { ...r, module_access: next } : r)));
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to update access");
+    } finally {
+      setSavingModulesId(null);
+    }
   };
 
   const createUser = async () => {
