@@ -14,6 +14,156 @@ export type Database = {
   }
   public: {
     Tables: {
+      acquisition_budget_items: {
+        Row: {
+          acquisition_id: string
+          actual_amount: number | null
+          budgeted_amount: number | null
+          category: string
+          created_at: string
+          created_by: string | null
+          date_incurred: string | null
+          description: string
+          id: string
+          is_paid: boolean
+          notes: string | null
+          payment_method: string | null
+          receipt_document_id: string | null
+          updated_at: string
+          vendor: string | null
+          workstream: string
+        }
+        Insert: {
+          acquisition_id: string
+          actual_amount?: number | null
+          budgeted_amount?: number | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          date_incurred?: string | null
+          description: string
+          id?: string
+          is_paid?: boolean
+          notes?: string | null
+          payment_method?: string | null
+          receipt_document_id?: string | null
+          updated_at?: string
+          vendor?: string | null
+          workstream: string
+        }
+        Update: {
+          acquisition_id?: string
+          actual_amount?: number | null
+          budgeted_amount?: number | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          date_incurred?: string | null
+          description?: string
+          id?: string
+          is_paid?: boolean
+          notes?: string | null
+          payment_method?: string | null
+          receipt_document_id?: string | null
+          updated_at?: string
+          vendor?: string | null
+          workstream?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_budget_items_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_budget_items_receipt_document_id_fkey"
+            columns: ["receipt_document_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_communications: {
+        Row: {
+          acquisition_id: string
+          communication_date: string
+          communication_type: string
+          contact_name: string | null
+          contact_organization: string | null
+          contact_role: string | null
+          created_at: string
+          follow_up_completed: boolean
+          follow_up_date: string | null
+          follow_up_needed: boolean
+          follow_up_notes: string | null
+          id: string
+          logged_by: string | null
+          method: string | null
+          related_document_ids: string[] | null
+          related_task_id: string | null
+          subject: string
+          summary: string | null
+        }
+        Insert: {
+          acquisition_id: string
+          communication_date?: string
+          communication_type: string
+          contact_name?: string | null
+          contact_organization?: string | null
+          contact_role?: string | null
+          created_at?: string
+          follow_up_completed?: boolean
+          follow_up_date?: string | null
+          follow_up_needed?: boolean
+          follow_up_notes?: string | null
+          id?: string
+          logged_by?: string | null
+          method?: string | null
+          related_document_ids?: string[] | null
+          related_task_id?: string | null
+          subject: string
+          summary?: string | null
+        }
+        Update: {
+          acquisition_id?: string
+          communication_date?: string
+          communication_type?: string
+          contact_name?: string | null
+          contact_organization?: string | null
+          contact_role?: string | null
+          created_at?: string
+          follow_up_completed?: boolean
+          follow_up_date?: string | null
+          follow_up_needed?: boolean
+          follow_up_notes?: string | null
+          id?: string
+          logged_by?: string | null
+          method?: string | null
+          related_document_ids?: string[] | null
+          related_task_id?: string | null
+          subject?: string
+          summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_communications_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_communications_related_task_id_fkey"
+            columns: ["related_task_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acquisition_compliance_items: {
         Row: {
           acquisition_id: string
@@ -100,6 +250,99 @@ export type Database = {
             columns: ["staff_id"]
             isOneToOne: false
             referencedRelation: "acquisition_staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_documents: {
+        Row: {
+          acquisition_id: string
+          created_at: string
+          document_description: string | null
+          document_name: string
+          document_type: string | null
+          external_url: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
+          id: string
+          is_current_version: boolean
+          is_seller_visible: boolean
+          previous_version_id: string | null
+          requires_review: boolean
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          storage_type: string
+          updated_at: string
+          uploaded_by: string | null
+          version: number
+          version_notes: string | null
+          workstream: string | null
+        }
+        Insert: {
+          acquisition_id: string
+          created_at?: string
+          document_description?: string | null
+          document_name: string
+          document_type?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_current_version?: boolean
+          is_seller_visible?: boolean
+          previous_version_id?: string | null
+          requires_review?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          storage_type: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: number
+          version_notes?: string | null
+          workstream?: string | null
+        }
+        Update: {
+          acquisition_id?: string
+          created_at?: string
+          document_description?: string | null
+          document_name?: string
+          document_type?: string | null
+          external_url?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          is_current_version?: boolean
+          is_seller_visible?: boolean
+          previous_version_id?: string | null
+          requires_review?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          storage_type?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          version?: number
+          version_notes?: string | null
+          workstream?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_documents_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_documents_previous_version_id_fkey"
+            columns: ["previous_version_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_documents"
             referencedColumns: ["id"]
           },
         ]
@@ -211,6 +454,47 @@ export type Database = {
           value_creation_summary?: string | null
         }
         Relationships: []
+      }
+      acquisition_seller_sentiment: {
+        Row: {
+          acquisition_id: string
+          custom_milestone_name: string | null
+          id: string
+          milestone: string
+          notes: string | null
+          recorded_at: string
+          recorded_by: string | null
+          sentiment_score: number
+        }
+        Insert: {
+          acquisition_id: string
+          custom_milestone_name?: string | null
+          id?: string
+          milestone: string
+          notes?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          sentiment_score: number
+        }
+        Update: {
+          acquisition_id?: string
+          custom_milestone_name?: string | null
+          id?: string
+          milestone?: string
+          notes?: string | null
+          recorded_at?: string
+          recorded_by?: string | null
+          sentiment_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_seller_sentiment_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       acquisition_staff: {
         Row: {
@@ -515,6 +799,104 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "acquisition_tasks_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_weekly_rollups: {
+        Row: {
+          acquisition_id: string
+          blocked_tasks: number | null
+          completed_tasks: number | null
+          completion_pct: number | null
+          compliance_pct: number | null
+          compliant_staff: number | null
+          created_at: string
+          days_since_close: number | null
+          executive_summary: string | null
+          generated_by: string | null
+          id: string
+          next_week_priorities: Json | null
+          overdue_tasks: number | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_flags: Json | null
+          sent_at: string | null
+          sent_to: string[] | null
+          status: string
+          tasks_completed_this_week: number | null
+          tasks_started_this_week: number | null
+          total_staff: number | null
+          total_tasks: number | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          workstream_data: Json | null
+        }
+        Insert: {
+          acquisition_id: string
+          blocked_tasks?: number | null
+          completed_tasks?: number | null
+          completion_pct?: number | null
+          compliance_pct?: number | null
+          compliant_staff?: number | null
+          created_at?: string
+          days_since_close?: number | null
+          executive_summary?: string | null
+          generated_by?: string | null
+          id?: string
+          next_week_priorities?: Json | null
+          overdue_tasks?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_flags?: Json | null
+          sent_at?: string | null
+          sent_to?: string[] | null
+          status?: string
+          tasks_completed_this_week?: number | null
+          tasks_started_this_week?: number | null
+          total_staff?: number | null
+          total_tasks?: number | null
+          week_end_date: string
+          week_number: number
+          week_start_date: string
+          workstream_data?: Json | null
+        }
+        Update: {
+          acquisition_id?: string
+          blocked_tasks?: number | null
+          completed_tasks?: number | null
+          completion_pct?: number | null
+          compliance_pct?: number | null
+          compliant_staff?: number | null
+          created_at?: string
+          days_since_close?: number | null
+          executive_summary?: string | null
+          generated_by?: string | null
+          id?: string
+          next_week_priorities?: Json | null
+          overdue_tasks?: number | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_flags?: Json | null
+          sent_at?: string | null
+          sent_to?: string[] | null
+          status?: string
+          tasks_completed_this_week?: number | null
+          tasks_started_this_week?: number | null
+          total_staff?: number | null
+          total_tasks?: number | null
+          week_end_date?: string
+          week_number?: number
+          week_start_date?: string
+          workstream_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_weekly_rollups_acquisition_id_fkey"
             columns: ["acquisition_id"]
             isOneToOne: false
             referencedRelation: "acquisition_projects"
