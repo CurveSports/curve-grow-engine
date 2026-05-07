@@ -15,6 +15,7 @@ export default function AcquisitionDetail() {
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [stateTaskCount, setStateTaskCount] = useState(0);
   const [view, setView] = useState<"timeline" | "workstream">("timeline");
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -26,7 +27,14 @@ export default function AcquisitionDetail() {
       supabase.from("acquisition_projects").select("*").eq("id", id).maybeSingle(),
       supabase.from("acquisition_tasks").select("*").eq("acquisition_id", id).order("display_order"),
     ]);
-    setProject(p); setTasks(t ?? []); setLoading(false);
+    setProject(p); setTasks(t ?? []);
+    if (p?.state) {
+      const { data: stateTpls } = await supabase
+        .from("acquisition_task_templates").select("id").eq("state_filter", p.state);
+      const ids = new Set((stateTpls ?? []).map((x: any) => x.id));
+      setStateTaskCount((t ?? []).filter((x: any) => x.template_id && ids.has(x.template_id)).length);
+    } else { setStateTaskCount(0); }
+    setLoading(false);
   };
   useEffect(() => { load(); }, [id]);
 
