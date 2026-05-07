@@ -41,7 +41,7 @@ export default function NewAcquisitionModal({
         .order("workstream").order("display_order");
 
       const tasks = (templates ?? [])
-        .filter((t: any) => !t.florida_only || project.state === "Florida")
+        .filter((t: any) => !t.state_filter || t.state_filter === project.state)
         .map((t: any) => ({
           acquisition_id: project.id,
           title: t.title,

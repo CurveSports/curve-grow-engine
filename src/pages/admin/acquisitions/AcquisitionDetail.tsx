@@ -15,6 +15,7 @@ export default function AcquisitionDetail() {
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [stateTaskCount, setStateTaskCount] = useState(0);
   const [view, setView] = useState<"timeline" | "workstream">("timeline");
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -26,7 +27,14 @@ export default function AcquisitionDetail() {
       supabase.from("acquisition_projects").select("*").eq("id", id).maybeSingle(),
       supabase.from("acquisition_tasks").select("*").eq("acquisition_id", id).order("display_order"),
     ]);
-    setProject(p); setTasks(t ?? []); setLoading(false);
+    setProject(p); setTasks(t ?? []);
+    if (p?.state) {
+      const { data: stateTpls } = await supabase
+        .from("acquisition_task_templates").select("id").eq("state_filter", p.state);
+      const ids = new Set((stateTpls ?? []).map((x: any) => x.id));
+      setStateTaskCount((t ?? []).filter((x: any) => x.template_id && ids.has(x.template_id)).length);
+    } else { setStateTaskCount(0); }
+    setLoading(false);
   };
   useEffect(() => { load(); }, [id]);
 
@@ -54,10 +62,24 @@ export default function AcquisitionDetail() {
               {project.club_name}
               {project.codename && <span className="text-muted-foreground font-normal text-xl ml-3">— {project.codename}</span>}
             </h1>
-            <div className="flex items-center gap-3 mt-2 text-sm">
+            <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
               <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 font-medium">{phaseLabel(project.phase)}</span>
               {day != null && <span className="text-muted-foreground">Day {day} of 100</span>}
               <span className="text-muted-foreground">Overall {Number(project.completion_pct).toFixed(0)}% complete</span>
+              {project.state && (
+                <span className="text-muted-foreground">
+                  State: <span className="text-foreground font-medium">{project.state}</span>
+                  {stateTaskCount > 0 && (
+                    <button
+                      onClick={() => { setView("workstream"); setTimeout(() => document.getElementById("ws-compliance")?.scrollIntoView({ behavior: "smooth" }), 50); }}
+                      className="ml-1.5 inline-flex items-center gap-1 text-xs text-amber-700 hover:underline"
+                      title="View state-specific compliance tasks"
+                    >
+                      🔒 {stateTaskCount} state-specific compliance task{stateTaskCount === 1 ? "" : "s"}
+                    </button>
+                  )}
+                </span>
+              )}
             </div>
           </div>
           <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
@@ -92,7 +114,7 @@ export default function AcquisitionDetail() {
               const done = wsTasks.filter((t) => t.status === "done").length;
               const pct = wsTasks.length ? Math.round((done / wsTasks.length) * 100) : 0;
               return (
-                <details key={w.key} className="curve-card">
+                <details key={w.key} id={`ws-${w.key}`} className="curve-card" open={w.key === "compliance" && stateTaskCount > 0}>
                   <summary className="cursor-pointer flex items-center gap-3">
                     <div className="h-3 w-3 rounded-sm" style={{ background: w.color }} />
                     <span className="font-semibold flex-1">{w.label}</span>
