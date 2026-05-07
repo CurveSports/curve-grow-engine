@@ -28,7 +28,7 @@ export default function AcquisitionDetail() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [stateTaskCount, setStateTaskCount] = useState(0);
   const tabParam = sp.get("tab") as DealView | null;
-  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup"].includes(tabParam) ? tabParam : "timeline";
+  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup","meetings","agenda"].includes(tabParam) ? tabParam : "timeline";
   const [view, setView] = useState<DealView>(initialView);
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
