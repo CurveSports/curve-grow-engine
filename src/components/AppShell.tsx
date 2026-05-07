@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -97,6 +97,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     items: [
       { to: "/admin/acquisitions", label: "Dashboard", icon: Briefcase, match: (p) => p === "/admin/acquisitions" || (p.startsWith("/admin/acquisitions/") && !p.startsWith("/admin/acquisitions/settings") && !p.startsWith("/admin/acquisitions/compliance")) },
       { to: "/admin/acquisitions/compliance", label: "Compliance", icon: ListChecks, match: (p) => p.startsWith("/admin/acquisitions/compliance") },
+      { to: "/admin/acquisitions/meetings", label: "Meetings", icon: Mic, match: (p) => p.startsWith("/admin/acquisitions/meetings") },
       { label: "Documents", icon: FileText, soon: true },
       { label: "Reports", icon: BarChart3, soon: true },
       { to: "/admin/acquisitions/settings", label: "Templates", icon: Settings, match: (p) => p.startsWith("/admin/acquisitions/settings") },

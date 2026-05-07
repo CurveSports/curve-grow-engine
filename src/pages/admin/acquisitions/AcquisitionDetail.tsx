@@ -13,9 +13,11 @@ import BudgetPanel from "@/components/acquisitions/BudgetPanel";
 import CommunicationsPanel from "@/components/acquisitions/CommunicationsPanel";
 import SentimentPanel from "@/components/acquisitions/SentimentPanel";
 import RollUpPanel from "@/components/acquisitions/RollUpPanel";
+import MeetingsPanel from "@/components/acquisitions/MeetingsPanel";
+import AgendaPanel from "@/components/acquisitions/AgendaPanel";
 import { toast } from "sonner";
 
-type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup";
+type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup" | "meetings" | "agenda";
 
 export default function AcquisitionDetail() {
   const { id } = useParams();
@@ -26,7 +28,7 @@ export default function AcquisitionDetail() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [stateTaskCount, setStateTaskCount] = useState(0);
   const tabParam = sp.get("tab") as DealView | null;
-  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup"].includes(tabParam) ? tabParam : "timeline";
+  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup","meetings","agenda"].includes(tabParam) ? tabParam : "timeline";
   const [view, setView] = useState<DealView>(initialView);
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export default function AcquisitionDetail() {
               )}
             </div>
           </div>
-          {view !== "compliance" && view !== "documents" && view !== "budget" && view !== "communications" && view !== "sentiment" && view !== "rollup" && (
+          {(view === "timeline" || view === "workstream") && (
             <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="h-4 w-4 mr-1.5" /> Add Task
             </Button>
@@ -109,6 +111,8 @@ export default function AcquisitionDetail() {
           <ToggleBtn active={view === "communications"} onClick={() => { setView("communications"); setSp({ tab: "communications" }); }}>Communications</ToggleBtn>
           <ToggleBtn active={view === "sentiment"} onClick={() => { setView("sentiment"); setSp({ tab: "sentiment" }); }}>Sentiment</ToggleBtn>
           <ToggleBtn active={view === "rollup"} onClick={() => { setView("rollup"); setSp({ tab: "rollup" }); }}>Roll-Up</ToggleBtn>
+          <ToggleBtn active={view === "meetings"} onClick={() => { setView("meetings"); setSp({ tab: "meetings" }); }}>Meetings</ToggleBtn>
+          <ToggleBtn active={view === "agenda"} onClick={() => { setView("agenda"); setSp({ tab: "agenda" }); }}>Agenda</ToggleBtn>
         </div>
 
         {view === "compliance" ? (
@@ -123,6 +127,10 @@ export default function AcquisitionDetail() {
           <SentimentPanel acquisition={project} />
         ) : view === "rollup" ? (
           <RollUpPanel acquisition={project} />
+        ) : view === "meetings" ? (
+          <MeetingsPanel acquisition={project} />
+        ) : view === "agenda" ? (
+          <AgendaPanel acquisition={project} />
         ) : view === "timeline" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {PHASES.map((p) => {

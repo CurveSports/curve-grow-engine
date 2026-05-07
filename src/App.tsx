@@ -36,6 +36,8 @@ import AcquisitionsDashboard from "@/pages/admin/acquisitions/AcquisitionsDashbo
 import AcquisitionDetail from "@/pages/admin/acquisitions/AcquisitionDetail";
 import AcquisitionsSettings from "@/pages/admin/acquisitions/AcquisitionsSettings";
 import ComplianceOverview from "@/pages/admin/acquisitions/ComplianceOverview";
+import MeetingsInbox from "@/pages/admin/acquisitions/MeetingsInbox";
+import TranscriptDetail from "@/pages/admin/acquisitions/TranscriptDetail";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
@@ -84,6 +86,8 @@ const App = () => (
             <Route path="/admin/acquisitions" element={<ProtectedRoute role="admin"><AcquisitionsDashboard /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/settings" element={<ProtectedRoute role="admin"><AcquisitionsSettings /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/compliance" element={<ProtectedRoute role="admin"><ComplianceOverview /></ProtectedRoute>} />
+            <Route path="/admin/acquisitions/meetings" element={<ProtectedRoute role="admin"><MeetingsInbox /></ProtectedRoute>} />
+            <Route path="/admin/acquisitions/:id/transcript/:transcriptId" element={<ProtectedRoute role="admin"><TranscriptDetail /></ProtectedRoute>} />
             <Route path="/admin/acquisitions/:id" element={<ProtectedRoute role="admin"><AcquisitionDetail /></ProtectedRoute>} />
             <Route path="/admin/tasks-this-week" element={<ProtectedRoute role="admin"><AdminTasksThisWeek /></ProtectedRoute>} />
             <Route path="/admin/task-tracker" element={<ProtectedRoute role="admin"><AdminTaskTracker /></ProtectedRoute>} />
