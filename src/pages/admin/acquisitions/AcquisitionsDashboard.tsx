@@ -152,6 +152,17 @@ export default function AcquisitionsDashboard() {
                       })}
                     </div>
                   </div>
+                  {staffByDeal[d.id] && (
+                    <div className="mt-4 pt-3 border-t border-border/60">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Staff Compliance</span>
+                        <span className="text-xs text-muted-foreground">{staffByDeal[d.id].compliant} / {staffByDeal[d.id].total} compliant {staffByDeal[d.id].overdue > 0 && <span className="text-rose-600 font-semibold">· {staffByDeal[d.id].overdue} overdue</span>}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full ${barColor(staffByDeal[d.id].pct)}`} style={{ width: `${staffByDeal[d.id].pct}%` }} />
+                      </div>
+                    </div>
+                  )}
                 </button>
               );
             })}
