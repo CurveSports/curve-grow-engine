@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Check, X, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { workstreamLabel } from "@/lib/acquisitions";
+import AddTaskModal, { type AddTaskPrefill } from "@/components/acquisitions/AddTaskModal";
 
 type Tab = "summary" | "suggestions" | "transcript";
 
@@ -18,6 +19,9 @@ export default function TranscriptDetail() {
   const [tab, setTab] = useState<Tab>("summary");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [addPrefill, setAddPrefill] = useState<AddTaskPrefill | undefined>(undefined);
+  const [pendingSuggestionId, setPendingSuggestionId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -68,8 +72,19 @@ export default function TranscriptDetail() {
         break;
       }
       case "new_task": {
-        toast.info("Open the deal and use Add Task — pre-fill not yet wired");
-        nav(`/admin/acquisitions/${id}`);
+        const guessPhase = (() => {
+          const days = acq?.close_date ? Math.floor((Date.now() - new Date(acq.close_date).getTime()) / 86400000) : 0;
+          if (days <= 30) return "first_30"; if (days <= 60) return "first_60"; if (days <= 100) return "first_100"; return "post_100";
+        })();
+        setAddPrefill({
+          title: s.existing_task_title || s.suggested_action?.slice(0, 80) || "",
+          description: [s.suggested_action, s.context_from_transcript ? `From transcript: ${s.context_from_transcript}` : ""].filter(Boolean).join("\n\n"),
+          workstream: "integration",
+          phase: guessPhase,
+          priority: s.confidence === "high" ? "high" : "medium",
+        });
+        setPendingSuggestionId(s.id);
+        setAddOpen(true);
         return;
       }
     }
