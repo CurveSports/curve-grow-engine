@@ -24,18 +24,39 @@ import { KickoffSlide4 } from "./client/KickoffSlide4";
 import { KickoffSlide5 } from "./client/KickoffSlide5";
 import { KickoffSlide6 } from "./client/KickoffSlide6";
 
-type TopMode = "internal" | "client";
+type TopMode = "internal" | "client" | "audit";
 type ClientMode = "kickoff" | "progress";
 
 export function PresentationsTab({ orgId }: { orgId: string }) {
   const [mode, setMode] = useState<TopMode>("internal");
   const [clientMode, setClientMode] = useState<ClientMode>("kickoff");
   const [editing, setEditing] = useState(false);
+  const [audit, setAudit] = useState<any | null>(null);
+  const [auditLoading, setAuditLoading] = useState(true);
 
   const data = usePresentationData(orgId);
   const internalEdits = usePresentationEdits(orgId, "internal_brief");
   const clientType = clientMode === "kickoff" ? "client_kickoff" : "client_progress";
   const clientEdits = usePresentationEdits(orgId, clientType);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAuditLoading(true);
+    (async () => {
+      const { data: rows } = await supabase
+        .from("org_digital_audits")
+        .select("*")
+        .eq("org_id", orgId)
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      setAudit(rows?.[0] ?? null);
+      setAuditLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   const orgName = data.org?.name ?? "Organization";
 
