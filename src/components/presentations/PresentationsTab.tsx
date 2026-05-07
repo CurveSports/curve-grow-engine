@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PresentationShell, type SlideDef } from "./PresentationShell";
 import { usePresentationData } from "./usePresentationData";
 import { usePresentationEdits } from "./usePresentationEdits";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { AuditSlide1 } from "./audit/AuditSlide1";
+import { AuditSlideList } from "./audit/AuditSlideList";
 
 import { Slide1Snapshot } from "./internal/Slide1Snapshot";
 import { Slide2Health } from "./internal/Slide2Health";
