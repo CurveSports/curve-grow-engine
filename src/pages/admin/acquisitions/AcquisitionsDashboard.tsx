@@ -23,12 +23,24 @@ export default function AcquisitionsDashboard() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [deals, setDeals] = useState<any[]>([]);
+  const [staffByDeal, setStaffByDeal] = useState<Record<string, { total: number; compliant: number; overdue: number; pct: number }>>({});
 
   const load = async () => {
     setLoading(true);
     try { await (supabase as any).rpc("update_acquisition_phases"); } catch {}
     const { data } = await supabase.from("acquisition_projects").select("*").order("created_at", { ascending: false });
     setDeals(data ?? []);
+    const { data: staff } = await supabase.from("acquisition_staff").select("acquisition_id, compliance_status, compliance_pct").eq("is_active", true);
+    const tmp: Record<string, { total: number; compliant: number; overdue: number; sum: number }> = {};
+    (staff ?? []).forEach((s: any) => {
+      const t = tmp[s.acquisition_id] ?? (tmp[s.acquisition_id] = { total: 0, compliant: 0, overdue: 0, sum: 0 });
+      t.total += 1; t.sum += Number(s.compliance_pct);
+      if (s.compliance_status === "compliant") t.compliant += 1;
+      if (s.compliance_status === "overdue") t.overdue += 1;
+    });
+    const out: Record<string, any> = {};
+    Object.entries(tmp).forEach(([k, v]) => { out[k] = { total: v.total, compliant: v.compliant, overdue: v.overdue, pct: v.total ? Math.round(v.sum / v.total) : 0 }; });
+    setStaffByDeal(out);
     setLoading(false);
   };
 
