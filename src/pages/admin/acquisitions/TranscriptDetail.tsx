@@ -58,7 +58,13 @@ export default function TranscriptDetail() {
         break;
       }
       case "add_note": {
-        await supabase.from("acquisition_task_notes").insert({ task_id: s.existing_task_id, body: s.suggested_action + (s.context_from_transcript ? `\n\nFrom transcript: ${s.context_from_transcript}` : "") });
+        const { data: u } = await supabase.auth.getUser();
+        await supabase.from("acquisition_task_notes").insert({
+          task_id: s.existing_task_id,
+          acquisition_id: id!,
+          note_text: s.suggested_action + (s.context_from_transcript ? `\n\nFrom transcript: ${s.context_from_transcript}` : ""),
+          created_by: u.user!.id,
+        });
         break;
       }
       case "new_task": {
