@@ -1,10 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PresentationShell, type SlideDef } from "./PresentationShell";
 import { usePresentationData } from "./usePresentationData";
 import { usePresentationEdits } from "./usePresentationEdits";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { AuditSlide1 } from "./audit/AuditSlide1";
+import { AuditSlideList } from "./audit/AuditSlideList";
 
 import { Slide1Snapshot } from "./internal/Slide1Snapshot";
 import { Slide2Health } from "./internal/Slide2Health";
@@ -21,18 +24,39 @@ import { KickoffSlide4 } from "./client/KickoffSlide4";
 import { KickoffSlide5 } from "./client/KickoffSlide5";
 import { KickoffSlide6 } from "./client/KickoffSlide6";
 
-type TopMode = "internal" | "client";
+type TopMode = "internal" | "client" | "audit";
 type ClientMode = "kickoff" | "progress";
 
 export function PresentationsTab({ orgId }: { orgId: string }) {
   const [mode, setMode] = useState<TopMode>("internal");
   const [clientMode, setClientMode] = useState<ClientMode>("kickoff");
   const [editing, setEditing] = useState(false);
+  const [audit, setAudit] = useState<any | null>(null);
+  const [auditLoading, setAuditLoading] = useState(true);
 
   const data = usePresentationData(orgId);
   const internalEdits = usePresentationEdits(orgId, "internal_brief");
   const clientType = clientMode === "kickoff" ? "client_kickoff" : "client_progress";
   const clientEdits = usePresentationEdits(orgId, clientType);
+
+  useEffect(() => {
+    let cancelled = false;
+    setAuditLoading(true);
+    (async () => {
+      const { data: rows } = await supabase
+        .from("org_digital_audits")
+        .select("*")
+        .eq("org_id", orgId)
+        .eq("status", "completed")
+        .order("completed_at", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      setAudit(rows?.[0] ?? null);
+      setAuditLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [orgId]);
 
   const orgName = data.org?.name ?? "Organization";
 
@@ -63,6 +87,16 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
     { id: 6, name: "What Success Looks Like", render: () => <KickoffSlide6 metrics={data.metrics} intake={data.intake} /> },
   ], [data, clientMode, daysIn, showScores]);
 
+  const auditSlides: SlideDef[] = useMemo(() => {
+    if (!audit) return [];
+    return [
+      { id: 1, name: "Audit Overview", render: () => <AuditSlide1 org={data.org} audit={audit} /> },
+      { id: 2, name: "What's Working", render: () => <AuditSlideList title="What's Working" items={audit.wins} accent="#10b981" emptyText="No wins captured in this audit." /> },
+      { id: 3, name: "Suggested Fixes", render: () => <AuditSlideList title="Suggested Fixes" items={audit.fixes} accent="#f59e0b" emptyText="No suggested fixes — your digital presence is solid." /> },
+      { id: 4, name: "Sponsor Readiness", render: () => <AuditSlideList title="Sponsor Readiness Flags" items={audit.sponsor_flags} accent="#8b5cf6" emptyText="No sponsor-readiness concerns flagged." /> },
+    ];
+  }, [audit, data.org]);
+
   if (data.loading || internalEdits.loading || clientEdits.loading) {
     return <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading presentation…</div>;
   }
@@ -81,6 +115,7 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
       <div className="flex items-center gap-2">
         <ToggleBtn active={mode === "internal"} onClick={() => setMode("internal")}>Internal Brief</ToggleBtn>
         <ToggleBtn active={mode === "client"} onClick={() => setMode("client")}>Client Presentation</ToggleBtn>
+        <ToggleBtn active={mode === "audit"} onClick={() => setMode("audit")}>Digital Audit</ToggleBtn>
       </div>
 
       {mode === "internal" ? (
@@ -92,7 +127,7 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
           onToggleEdit={setEditing}
           theme="dark"
         />
-      ) : (
+      ) : mode === "client" ? (
         <>
           <div className="flex items-center gap-2">
             <ToggleBtn active={clientMode === "kickoff"} onClick={() => setClientMode("kickoff")} small>Kickoff Presentation</ToggleBtn>
@@ -111,6 +146,20 @@ export function PresentationsTab({ orgId }: { orgId: string }) {
             }
           />
         </>
+      ) : auditLoading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Loading audit…</div>
+      ) : !audit ? (
+        <div className="curve-card text-center py-16">
+          <p className="font-semibold">No completed audit yet</p>
+          <p className="text-sm text-muted-foreground mt-2">Run a Digital Presence Audit on this org and a shareable presentation will appear here automatically.</p>
+        </div>
+      ) : (
+        <PresentationShell
+          presentationLabel="Digital Audit"
+          orgName={orgName}
+          slides={auditSlides}
+          theme="light"
+        />
       )}
     </div>
   );
