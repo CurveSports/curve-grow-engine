@@ -228,6 +228,22 @@ export default function AdminUsers() {
                   </Select>
                 </div>
               )}
+              <div>
+                <Label className="text-sm font-medium">Module access</Label>
+                <div className="mt-2 space-y-2 rounded-md border border-border p-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newAllegiance} onCheckedChange={(v) => setNewAllegiance(!!v)} />
+                    <span>Curve OS (Allegiance)</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newAcquisitions} onCheckedChange={(v) => setNewAcquisitions(!!v)} />
+                    <span>Curve Acquisitions</span>
+                  </label>
+                  {!newAllegiance && !newAcquisitions && (
+                    <p className="text-xs text-destructive">Select at least one module.</p>
+                  )}
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
