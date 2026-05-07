@@ -93,21 +93,36 @@ export default function AcquisitionDetail() {
               )}
             </div>
           </div>
-          {view !== "compliance" && (
+          {view !== "compliance" && view !== "documents" && view !== "budget" && view !== "communications" && view !== "sentiment" && view !== "rollup" && (
             <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="h-4 w-4 mr-1.5" /> Add Task
             </Button>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <ToggleBtn active={view === "timeline"} onClick={() => { setView("timeline"); setSp({}); }}>Timeline View</ToggleBtn>
-          <ToggleBtn active={view === "workstream"} onClick={() => { setView("workstream"); setSp({ tab: "workstream" }); }}>Workstream View</ToggleBtn>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ToggleBtn active={view === "timeline"} onClick={() => { setView("timeline"); setSp({}); }}>Timeline</ToggleBtn>
+          <ToggleBtn active={view === "workstream"} onClick={() => { setView("workstream"); setSp({ tab: "workstream" }); }}>Workstream</ToggleBtn>
           <ToggleBtn active={view === "compliance"} onClick={() => { setView("compliance"); setSp({ tab: "compliance" }); }}>Compliance</ToggleBtn>
+          <ToggleBtn active={view === "documents"} onClick={() => { setView("documents"); setSp({ tab: "documents" }); }}>Documents</ToggleBtn>
+          <ToggleBtn active={view === "budget"} onClick={() => { setView("budget"); setSp({ tab: "budget" }); }}>Budget</ToggleBtn>
+          <ToggleBtn active={view === "communications"} onClick={() => { setView("communications"); setSp({ tab: "communications" }); }}>Communications</ToggleBtn>
+          <ToggleBtn active={view === "sentiment"} onClick={() => { setView("sentiment"); setSp({ tab: "sentiment" }); }}>Sentiment</ToggleBtn>
+          <ToggleBtn active={view === "rollup"} onClick={() => { setView("rollup"); setSp({ tab: "rollup" }); }}>Roll-Up</ToggleBtn>
         </div>
 
         {view === "compliance" ? (
           <CompliancePanel acquisition={project} />
+        ) : view === "documents" ? (
+          <DocumentsPanel acquisition={project} />
+        ) : view === "budget" ? (
+          <BudgetPanel acquisition={project} />
+        ) : view === "communications" ? (
+          <CommunicationsPanel acquisition={project} />
+        ) : view === "sentiment" ? (
+          <SentimentPanel acquisition={project} />
+        ) : view === "rollup" ? (
+          <RollUpPanel acquisition={project} />
         ) : view === "timeline" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {PHASES.map((p) => {
