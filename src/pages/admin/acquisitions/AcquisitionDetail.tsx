@@ -8,7 +8,14 @@ import { PHASES, WORKSTREAMS, workstreamColor, workstreamLabel, phaseLabel, dayO
 import AddTaskModal from "@/components/acquisitions/AddTaskModal";
 import TaskDetailPanel from "@/components/acquisitions/TaskDetailPanel";
 import CompliancePanel from "@/components/acquisitions/CompliancePanel";
+import DocumentsPanel from "@/components/acquisitions/DocumentsPanel";
+import BudgetPanel from "@/components/acquisitions/BudgetPanel";
+import CommunicationsPanel from "@/components/acquisitions/CommunicationsPanel";
+import SentimentPanel from "@/components/acquisitions/SentimentPanel";
+import RollUpPanel from "@/components/acquisitions/RollUpPanel";
 import { toast } from "sonner";
+
+type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup";
 
 export default function AcquisitionDetail() {
   const { id } = useParams();
