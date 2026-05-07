@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Routes the user to the right place based on their onboarding + role state.
 export default function RouteResolver() {
-  const { loading, session, role, profile, user, refresh } = useAuth();
+  const { loading, session, role, profile, user, refresh, hasModule } = useAuth();
   const { state: onboarding, loading: obLoading } = useOnboarding();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
@@ -38,7 +38,14 @@ export default function RouteResolver() {
       }
 
       // Admins skip remaining onboarding gates and go straight to their dashboard
-      if (role === "admin") { navigate("/admin", { replace: true }); return; }
+      if (role === "admin") {
+        if (!hasModule("allegiance") && hasModule("acquisitions")) {
+          navigate("/admin/acquisitions", { replace: true });
+        } else {
+          navigate("/admin", { replace: true });
+        }
+        return;
+      }
 
       // 2. Welcome gate (org users only)
       if (!onboarding?.welcomed_at) {
