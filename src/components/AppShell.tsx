@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
