@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
     }
 
     if (RESEND_API_KEY) {
-      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals, followUps, acqNameById, today));
+      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals, followUps, acqNameById, today, pendingSuggestions, untaggedTranscripts, acqNameByIdAll));
       emailsSent++;
     }
 
