@@ -43,6 +43,11 @@ Deno.serve(async (req) => {
     const role: "admin" | "org_user" = body?.role;
     const orgId: string | null = body?.org_id ?? null;
     const isPrimary: boolean = !!body?.is_primary;
+    const moduleAccessIn: string[] = Array.isArray(body?.module_access) ? body.module_access : [];
+    const moduleAccess = moduleAccessIn.filter((m) => m === "allegiance" || m === "acquisitions");
+    const finalModuleAccess = moduleAccess.length > 0
+      ? Array.from(new Set(moduleAccess))
+      : (role === "admin" ? ["allegiance", "acquisitions"] : ["allegiance"]);
 
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Valid email is required" }), {
