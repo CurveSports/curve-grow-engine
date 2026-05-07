@@ -144,6 +144,10 @@ export default function AdminUsers() {
           full_name: newFullName.trim() || null,
           role: newRole,
           org_id: newRole === "org_user" ? newOrgId : null,
+          module_access: [
+            ...(newAllegiance ? ["allegiance"] : []),
+            ...(newAcquisitions ? ["acquisitions"] : []),
+          ],
         },
       });
       if (error) throw error;
