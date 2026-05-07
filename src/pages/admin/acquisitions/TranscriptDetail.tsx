@@ -222,6 +222,21 @@ export default function TranscriptDetail() {
           </div>
         )}
       </div>
+      <AddTaskModal
+        open={addOpen}
+        onOpenChange={(o) => { setAddOpen(o); if (!o) { setAddPrefill(undefined); setPendingSuggestionId(null); } }}
+        acquisitionId={id!}
+        prefill={addPrefill}
+        onAdded={() => {}}
+        onCreated={async () => {
+          if (pendingSuggestionId) {
+            await supabase.from("acquisition_task_suggestions").update({ resolution: "accepted", resolved_at: new Date().toISOString() }).eq("id", pendingSuggestionId);
+            await supabase.from("acquisition_meeting_transcripts").update({ suggestions_applied_count: (t.suggestions_applied_count ?? 0) + 1 }).eq("id", t.id);
+            setPendingSuggestionId(null);
+          }
+          load();
+        }}
+      />
     </AppShell>
   );
 }
