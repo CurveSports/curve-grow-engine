@@ -85,17 +85,22 @@ export default function AcquisitionDetail() {
               )}
             </div>
           </div>
-          <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4 mr-1.5" /> Add Task
-          </Button>
+          {view !== "compliance" && (
+            <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-1.5" /> Add Task
+            </Button>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
-          <ToggleBtn active={view === "timeline"} onClick={() => setView("timeline")}>Timeline View</ToggleBtn>
-          <ToggleBtn active={view === "workstream"} onClick={() => setView("workstream")}>Workstream View</ToggleBtn>
+          <ToggleBtn active={view === "timeline"} onClick={() => { setView("timeline"); setSp({}); }}>Timeline View</ToggleBtn>
+          <ToggleBtn active={view === "workstream"} onClick={() => { setView("workstream"); setSp({ tab: "workstream" }); }}>Workstream View</ToggleBtn>
+          <ToggleBtn active={view === "compliance"} onClick={() => { setView("compliance"); setSp({ tab: "compliance" }); }}>Compliance</ToggleBtn>
         </div>
 
-        {view === "timeline" ? (
+        {view === "compliance" ? (
+          <CompliancePanel acquisition={project} />
+        ) : view === "timeline" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {PHASES.map((p) => {
               const phaseTasks = tasksByPhase(p.key);
