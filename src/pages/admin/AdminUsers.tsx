@@ -53,7 +53,7 @@ export default function AdminUsers() {
   const load = async () => {
     setLoading(true);
     const [{ data: profiles }, { data: roles }, { data: orgsData }] = await Promise.all([
-      supabase.from("profiles").select("user_id, email, full_name, org_id"),
+      supabase.from("profiles").select("user_id, email, full_name, org_id, module_access"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("organizations").select("id, name").order("name"),
     ]);
@@ -71,6 +71,7 @@ export default function AdminUsers() {
       org_id: p.org_id,
       org_name: p.org_id ? (orgMap.get(p.org_id) as string ?? null) : null,
       roles: roleMap.get(p.user_id) ?? [],
+      module_access: Array.isArray(p.module_access) ? p.module_access : [],
     }));
     r.sort((a, b) => (a.org_name ?? "zzz").localeCompare(b.org_name ?? "zzz") || a.email.localeCompare(b.email));
     setRows(r);
