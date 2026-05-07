@@ -347,6 +347,197 @@ export type Database = {
           },
         ]
       }
+      acquisition_meeting_agendas: {
+        Row: {
+          acquisition_id: string
+          ai_talking_points: string | null
+          compliance_status: Json | null
+          created_at: string
+          custom_items: Json | null
+          decisions_needed: Json | null
+          documents_for_review: Json | null
+          edited_by: string | null
+          generated_by: string | null
+          id: string
+          items_needing_discussion: Json | null
+          meeting_date: string | null
+          next_week_priorities: Json | null
+          pending_follow_ups: Json | null
+          previous_action_items: Json | null
+          previous_transcript_id: string | null
+          status: string
+          status_updates: Json | null
+          updated_at: string
+          week_number: number | null
+          workstream_status: Json | null
+        }
+        Insert: {
+          acquisition_id: string
+          ai_talking_points?: string | null
+          compliance_status?: Json | null
+          created_at?: string
+          custom_items?: Json | null
+          decisions_needed?: Json | null
+          documents_for_review?: Json | null
+          edited_by?: string | null
+          generated_by?: string | null
+          id?: string
+          items_needing_discussion?: Json | null
+          meeting_date?: string | null
+          next_week_priorities?: Json | null
+          pending_follow_ups?: Json | null
+          previous_action_items?: Json | null
+          previous_transcript_id?: string | null
+          status?: string
+          status_updates?: Json | null
+          updated_at?: string
+          week_number?: number | null
+          workstream_status?: Json | null
+        }
+        Update: {
+          acquisition_id?: string
+          ai_talking_points?: string | null
+          compliance_status?: Json | null
+          created_at?: string
+          custom_items?: Json | null
+          decisions_needed?: Json | null
+          documents_for_review?: Json | null
+          edited_by?: string | null
+          generated_by?: string | null
+          id?: string
+          items_needing_discussion?: Json | null
+          meeting_date?: string | null
+          next_week_priorities?: Json | null
+          pending_follow_ups?: Json | null
+          previous_action_items?: Json | null
+          previous_transcript_id?: string | null
+          status?: string
+          status_updates?: Json | null
+          updated_at?: string
+          week_number?: number | null
+          workstream_status?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_meeting_agendas_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_meeting_agendas_previous_transcript_id_fkey"
+            columns: ["previous_transcript_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_meeting_transcripts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_meeting_transcripts: {
+        Row: {
+          acquisition_id: string | null
+          action_items: Json | null
+          ai_error: string | null
+          ai_status: string
+          created_at: string
+          created_by: string | null
+          follow_ups: Json | null
+          id: string
+          is_archived: boolean
+          is_tagged: boolean
+          key_decisions: Json | null
+          meeting_date: string | null
+          meeting_summary: string | null
+          meeting_title: string | null
+          open_issues: Json | null
+          processed_at: string | null
+          raw_transcript: string | null
+          risk_flags: Json | null
+          source_type: string
+          suggestions_applied_count: number
+          suggestions_dismissed_count: number
+          suggestions_reviewed: boolean
+          updated_at: string
+          zoom_duration_minutes: number | null
+          zoom_host_email: string | null
+          zoom_meeting_id: string | null
+          zoom_meeting_topic: string | null
+          zoom_participants: Json | null
+          zoom_recording_url: string | null
+        }
+        Insert: {
+          acquisition_id?: string | null
+          action_items?: Json | null
+          ai_error?: string | null
+          ai_status?: string
+          created_at?: string
+          created_by?: string | null
+          follow_ups?: Json | null
+          id?: string
+          is_archived?: boolean
+          is_tagged?: boolean
+          key_decisions?: Json | null
+          meeting_date?: string | null
+          meeting_summary?: string | null
+          meeting_title?: string | null
+          open_issues?: Json | null
+          processed_at?: string | null
+          raw_transcript?: string | null
+          risk_flags?: Json | null
+          source_type: string
+          suggestions_applied_count?: number
+          suggestions_dismissed_count?: number
+          suggestions_reviewed?: boolean
+          updated_at?: string
+          zoom_duration_minutes?: number | null
+          zoom_host_email?: string | null
+          zoom_meeting_id?: string | null
+          zoom_meeting_topic?: string | null
+          zoom_participants?: Json | null
+          zoom_recording_url?: string | null
+        }
+        Update: {
+          acquisition_id?: string | null
+          action_items?: Json | null
+          ai_error?: string | null
+          ai_status?: string
+          created_at?: string
+          created_by?: string | null
+          follow_ups?: Json | null
+          id?: string
+          is_archived?: boolean
+          is_tagged?: boolean
+          key_decisions?: Json | null
+          meeting_date?: string | null
+          meeting_summary?: string | null
+          meeting_title?: string | null
+          open_issues?: Json | null
+          processed_at?: string | null
+          raw_transcript?: string | null
+          risk_flags?: Json | null
+          source_type?: string
+          suggestions_applied_count?: number
+          suggestions_dismissed_count?: number
+          suggestions_reviewed?: boolean
+          updated_at?: string
+          zoom_duration_minutes?: number | null
+          zoom_host_email?: string | null
+          zoom_meeting_id?: string | null
+          zoom_meeting_topic?: string | null
+          zoom_participants?: Json | null
+          zoom_recording_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_meeting_transcripts_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acquisition_projects: {
         Row: {
           acquisition_notes: string | null
@@ -656,6 +847,76 @@ export type Database = {
             columns: ["task_id"]
             isOneToOne: false
             referencedRelation: "acquisition_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_task_suggestions: {
+        Row: {
+          acquisition_id: string
+          confidence: string | null
+          context_from_transcript: string | null
+          created_at: string
+          existing_task_id: string | null
+          existing_task_title: string | null
+          id: string
+          resolution: string
+          resolved_at: string | null
+          resolved_by: string | null
+          suggested_action: string
+          suggestion_type: string
+          transcript_id: string
+        }
+        Insert: {
+          acquisition_id: string
+          confidence?: string | null
+          context_from_transcript?: string | null
+          created_at?: string
+          existing_task_id?: string | null
+          existing_task_title?: string | null
+          id?: string
+          resolution?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          suggested_action: string
+          suggestion_type: string
+          transcript_id: string
+        }
+        Update: {
+          acquisition_id?: string
+          confidence?: string | null
+          context_from_transcript?: string | null
+          created_at?: string
+          existing_task_id?: string | null
+          existing_task_title?: string | null
+          id?: string
+          resolution?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          suggested_action?: string
+          suggestion_type?: string
+          transcript_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_task_suggestions_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_task_suggestions_existing_task_id_fkey"
+            columns: ["existing_task_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_task_suggestions_transcript_id_fkey"
+            columns: ["transcript_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_meeting_transcripts"
             referencedColumns: ["id"]
           },
         ]
