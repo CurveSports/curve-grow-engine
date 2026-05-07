@@ -8,7 +8,14 @@ import { PHASES, WORKSTREAMS, workstreamColor, workstreamLabel, phaseLabel, dayO
 import AddTaskModal from "@/components/acquisitions/AddTaskModal";
 import TaskDetailPanel from "@/components/acquisitions/TaskDetailPanel";
 import CompliancePanel from "@/components/acquisitions/CompliancePanel";
+import DocumentsPanel from "@/components/acquisitions/DocumentsPanel";
+import BudgetPanel from "@/components/acquisitions/BudgetPanel";
+import CommunicationsPanel from "@/components/acquisitions/CommunicationsPanel";
+import SentimentPanel from "@/components/acquisitions/SentimentPanel";
+import RollUpPanel from "@/components/acquisitions/RollUpPanel";
 import { toast } from "sonner";
+
+type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup";
 
 export default function AcquisitionDetail() {
   const { id } = useParams();
@@ -18,8 +25,9 @@ export default function AcquisitionDetail() {
   const [project, setProject] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
   const [stateTaskCount, setStateTaskCount] = useState(0);
-  const initialView = sp.get("tab") === "compliance" ? "compliance" : sp.get("tab") === "workstream" ? "workstream" : "timeline";
-  const [view, setView] = useState<"timeline" | "workstream" | "compliance">(initialView);
+  const tabParam = sp.get("tab") as DealView | null;
+  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup"].includes(tabParam) ? tabParam : "timeline";
+  const [view, setView] = useState<DealView>(initialView);
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
@@ -85,21 +93,36 @@ export default function AcquisitionDetail() {
               )}
             </div>
           </div>
-          {view !== "compliance" && (
+          {view !== "compliance" && view !== "documents" && view !== "budget" && view !== "communications" && view !== "sentiment" && view !== "rollup" && (
             <Button onClick={() => setAddOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
               <Plus className="h-4 w-4 mr-1.5" /> Add Task
             </Button>
           )}
         </div>
 
-        <div className="flex items-center gap-2">
-          <ToggleBtn active={view === "timeline"} onClick={() => { setView("timeline"); setSp({}); }}>Timeline View</ToggleBtn>
-          <ToggleBtn active={view === "workstream"} onClick={() => { setView("workstream"); setSp({ tab: "workstream" }); }}>Workstream View</ToggleBtn>
+        <div className="flex items-center gap-2 flex-wrap">
+          <ToggleBtn active={view === "timeline"} onClick={() => { setView("timeline"); setSp({}); }}>Timeline</ToggleBtn>
+          <ToggleBtn active={view === "workstream"} onClick={() => { setView("workstream"); setSp({ tab: "workstream" }); }}>Workstream</ToggleBtn>
           <ToggleBtn active={view === "compliance"} onClick={() => { setView("compliance"); setSp({ tab: "compliance" }); }}>Compliance</ToggleBtn>
+          <ToggleBtn active={view === "documents"} onClick={() => { setView("documents"); setSp({ tab: "documents" }); }}>Documents</ToggleBtn>
+          <ToggleBtn active={view === "budget"} onClick={() => { setView("budget"); setSp({ tab: "budget" }); }}>Budget</ToggleBtn>
+          <ToggleBtn active={view === "communications"} onClick={() => { setView("communications"); setSp({ tab: "communications" }); }}>Communications</ToggleBtn>
+          <ToggleBtn active={view === "sentiment"} onClick={() => { setView("sentiment"); setSp({ tab: "sentiment" }); }}>Sentiment</ToggleBtn>
+          <ToggleBtn active={view === "rollup"} onClick={() => { setView("rollup"); setSp({ tab: "rollup" }); }}>Roll-Up</ToggleBtn>
         </div>
 
         {view === "compliance" ? (
           <CompliancePanel acquisition={project} />
+        ) : view === "documents" ? (
+          <DocumentsPanel acquisition={project} />
+        ) : view === "budget" ? (
+          <BudgetPanel acquisition={project} />
+        ) : view === "communications" ? (
+          <CommunicationsPanel acquisition={project} />
+        ) : view === "sentiment" ? (
+          <SentimentPanel acquisition={project} />
+        ) : view === "rollup" ? (
+          <RollUpPanel acquisition={project} />
         ) : view === "timeline" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {PHASES.map((p) => {
