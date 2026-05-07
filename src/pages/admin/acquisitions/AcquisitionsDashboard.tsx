@@ -24,13 +24,22 @@ export default function AcquisitionsDashboard() {
   const [open, setOpen] = useState(false);
   const [deals, setDeals] = useState<any[]>([]);
   const [staffByDeal, setStaffByDeal] = useState<Record<string, { total: number; compliant: number; overdue: number; pct: number }>>({});
+  const [budgetByDeal, setBudgetByDeal] = useState<Record<string, { budgeted: number; actual: number; over: boolean }>>({});
+  const [followUpsByDeal, setFollowUpsByDeal] = useState<Record<string, { pending: number; overdue: number }>>({});
+  const [sentimentByDeal, setSentimentByDeal] = useState<Record<string, { score: number; label: string; emoji: string }>>({});
 
   const load = async () => {
     setLoading(true);
     try { await (supabase as any).rpc("update_acquisition_phases"); } catch {}
     const { data } = await supabase.from("acquisition_projects").select("*").order("created_at", { ascending: false });
     setDeals(data ?? []);
-    const { data: staff } = await supabase.from("acquisition_staff").select("acquisition_id, compliance_status, compliance_pct").eq("is_active", true);
+    const today = new Date().toISOString().slice(0, 10);
+    const [{ data: staff }, { data: budget }, { data: comms }, { data: sentiment }] = await Promise.all([
+      supabase.from("acquisition_staff").select("acquisition_id, compliance_status, compliance_pct").eq("is_active", true),
+      supabase.from("acquisition_budget_items").select("acquisition_id, budgeted_amount, actual_amount"),
+      supabase.from("acquisition_communications").select("acquisition_id, follow_up_date, follow_up_needed, follow_up_completed").eq("follow_up_needed", true).eq("follow_up_completed", false),
+      supabase.from("acquisition_seller_sentiment").select("acquisition_id, score, recorded_at").order("recorded_at", { ascending: false }),
+    ]);
     const tmp: Record<string, { total: number; compliant: number; overdue: number; sum: number }> = {};
     (staff ?? []).forEach((s: any) => {
       const t = tmp[s.acquisition_id] ?? (tmp[s.acquisition_id] = { total: 0, compliant: 0, overdue: 0, sum: 0 });
@@ -41,6 +50,37 @@ export default function AcquisitionsDashboard() {
     const out: Record<string, any> = {};
     Object.entries(tmp).forEach(([k, v]) => { out[k] = { total: v.total, compliant: v.compliant, overdue: v.overdue, pct: v.total ? Math.round(v.sum / v.total) : 0 }; });
     setStaffByDeal(out);
+
+    const bTmp: Record<string, { budgeted: number; actual: number }> = {};
+    (budget ?? []).forEach((b: any) => {
+      const t = bTmp[b.acquisition_id] ?? (bTmp[b.acquisition_id] = { budgeted: 0, actual: 0 });
+      t.budgeted += Number(b.budgeted_amount ?? 0);
+      t.actual += Number(b.actual_amount ?? 0);
+    });
+    const bOut: Record<string, any> = {};
+    Object.entries(bTmp).forEach(([k, v]) => { bOut[k] = { ...v, over: v.actual > v.budgeted && v.budgeted > 0 }; });
+    setBudgetByDeal(bOut);
+
+    const fTmp: Record<string, { pending: number; overdue: number }> = {};
+    (comms ?? []).forEach((c: any) => {
+      const t = fTmp[c.acquisition_id] ?? (fTmp[c.acquisition_id] = { pending: 0, overdue: 0 });
+      t.pending += 1;
+      if (c.follow_up_date && c.follow_up_date < today) t.overdue += 1;
+    });
+    setFollowUpsByDeal(fTmp);
+
+    const sTmp: Record<string, any> = {};
+    (sentiment ?? []).forEach((s: any) => {
+      if (sTmp[s.acquisition_id]) return; // first (latest) wins
+      const score = Number(s.score);
+      const meta: Record<number, { emoji: string; label: string }> = {
+        1: { emoji: "😟", label: "Very Concerned" }, 2: { emoji: "😕", label: "Concerned" },
+        3: { emoji: "😐", label: "Neutral" }, 4: { emoji: "🙂", label: "Positive" }, 5: { emoji: "😊", label: "Very Positive" },
+      };
+      sTmp[s.acquisition_id] = { score, ...(meta[score] ?? { emoji: "•", label: "" }) };
+    });
+    setSentimentByDeal(sTmp);
+
     setLoading(false);
   };
 
@@ -161,6 +201,27 @@ export default function AcquisitionsDashboard() {
                       <div className="h-1.5 rounded-full bg-muted overflow-hidden">
                         <div className={`h-full ${barColor(staffByDeal[d.id].pct)}`} style={{ width: `${staffByDeal[d.id].pct}%` }} />
                       </div>
+                    </div>
+                  )}
+                  {(budgetByDeal[d.id] || followUpsByDeal[d.id] || sentimentByDeal[d.id]) && (
+                    <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      {budgetByDeal[d.id] && (
+                        <span className={budgetByDeal[d.id].over ? "text-rose-600 font-medium" : "text-muted-foreground"}>
+                          💰 ${Math.round(budgetByDeal[d.id].actual).toLocaleString()} / ${Math.round(budgetByDeal[d.id].budgeted).toLocaleString()}
+                          {budgetByDeal[d.id].over && " · over budget"}
+                        </span>
+                      )}
+                      {followUpsByDeal[d.id] && followUpsByDeal[d.id].pending > 0 && (
+                        <span className={followUpsByDeal[d.id].overdue > 0 ? "text-rose-600 font-medium" : "text-amber-600"}>
+                          📞 {followUpsByDeal[d.id].pending} follow-up{followUpsByDeal[d.id].pending === 1 ? "" : "s"}
+                          {followUpsByDeal[d.id].overdue > 0 && ` · ${followUpsByDeal[d.id].overdue} overdue`}
+                        </span>
+                      )}
+                      {sentimentByDeal[d.id] && (
+                        <span className={sentimentByDeal[d.id].score <= 2 ? "text-rose-600 font-medium" : "text-muted-foreground"}>
+                          {sentimentByDeal[d.id].emoji} Seller: {sentimentByDeal[d.id].label}
+                        </span>
+                      )}
                     </div>
                   )}
                 </button>

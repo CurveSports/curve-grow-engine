@@ -107,14 +107,31 @@ Deno.serve(async (req) => {
       .lt("last_stage_change_at", fourteenAgo);
     const stalledDeals = (staleSponsorship ?? []) as any[];
 
+    // 8. Acquisition follow-ups: due today, tomorrow, or overdue
+    const todayDate = new Date(today);
+    const twoAhead = new Date(todayDate.getTime() + 2 * 86400000).toISOString().slice(0, 10);
+    const { data: dueFollowUps } = await admin
+      .from("acquisition_communications")
+      .select("id, acquisition_id, contact_name, follow_up_date, follow_up_notes")
+      .eq("follow_up_needed", true)
+      .eq("follow_up_completed", false)
+      .lte("follow_up_date", twoAhead);
+    const followUps = (dueFollowUps ?? []) as any[];
+    let acqNameById = new Map<string, string>();
+    if (followUps.length) {
+      const acqIds = Array.from(new Set(followUps.map((f) => f.acquisition_id)));
+      const { data: acqs } = await admin.from("acquisition_projects").select("id, club_name").in("id", acqIds);
+      acqNameById = new Map((acqs ?? []).map((a: any) => [a.id, a.club_name]));
+    }
+
     if (RESEND_API_KEY) {
-      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals));
+      await sendEmail([ADMIN_EMAIL], `Curve OS digest: ${fresh.length} stalled tasks across ${byOrg.size} orgs`, adminDigestHtml(byOrg, orgNameById, stalledDeals, followUps, acqNameById, today));
       emailsSent++;
     }
 
     await admin.from("notification_log").insert(logs);
 
-    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length });
+    return json({ success: true, alerts: fresh.length, orgs_notified: byOrg.size, emails_sent: emailsSent, stale_deals: stalledDeals.length, follow_ups: followUps.length });
   } catch (e: any) {
     return json({ error: e.message ?? "unknown error" }, 500);
   }
@@ -155,7 +172,7 @@ function orgDigestHtml(orgName: string, tasks: any[]): string {
   </div>`;
 }
 
-function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = []): string {
+function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, stalledDeals: any[] = [], followUps: any[] = [], acqNames: Map<string, string> = new Map(), today: string = ""): string {
   const sections = Array.from(byOrg.entries()).map(([orgId, list]) =>
     `<h3 style="margin-bottom:4px;">${escape(names.get(orgId) ?? orgId)} <span style="color:#666;font-weight:normal;font-size:13px;">(${list.length})</span></h3>
      <ul>${list.map((t) => `<li>${escape(t.title)} <span style="color:#666;font-size:12px;">— ${escape(t.engine)} · ${escape(t.status)}</span></li>`).join("")}</ul>`
@@ -167,10 +184,20 @@ function adminDigestHtml(byOrg: Map<string, any[]>, names: Map<string, string>, 
         return `<li><strong>${escape(d.business_name)}</strong> for ${escape(names.get(d.org_id) ?? d.org_id)} — no activity in ${days} days (currently: ${escape(d.stage)})</li>`;
        }).join("")}</ul>`
     : "";
+  const followUpBlock = followUps.length
+    ? `<h2 style="color:#0369a1;margin-top:32px;">Acquisition Follow-Ups Due</h2>
+       <ul>${followUps.map((f) => {
+        const overdueDays = today && f.follow_up_date && f.follow_up_date < today
+          ? Math.floor((new Date(today).getTime() - new Date(f.follow_up_date).getTime()) / 86400000) : 0;
+        const acq = escape(acqNames.get(f.acquisition_id) ?? "Acquisition");
+        return `<li><strong>${acq}</strong>: follow up with ${escape(f.contact_name ?? "contact")} by ${escape(f.follow_up_date ?? "")}${overdueDays > 0 ? ` <span style="color:#dc2626;">(${overdueDays} day${overdueDays === 1 ? "" : "s"} overdue)</span>` : ""}</li>`;
+       }).join("")}</ul>`
+    : "";
   return `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;">
     <h2 style="color:#0f5132;">Curve OS daily digest</h2>
     ${sections}
     ${sponsorshipBlock}
+    ${followUpBlock}
   </div>`;
 }
 
