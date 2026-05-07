@@ -83,8 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) await loadUserData(session.user.id);
   };
 
+  const hasModule = (m: "allegiance" | "acquisitions") =>
+    !!profile?.module_access?.includes(m) || role === "admin";
+
   return (
-    <Ctx.Provider value={{ session, user: session?.user ?? null, profile, role, isPrimary, loading, signOut, refresh }}>
+    <Ctx.Provider value={{ session, user: session?.user ?? null, profile, role, isPrimary, loading, hasModule, signOut, refresh }}>
       {children}
     </Ctx.Provider>
   );
