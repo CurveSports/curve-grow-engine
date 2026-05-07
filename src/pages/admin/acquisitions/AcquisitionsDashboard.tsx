@@ -50,9 +50,14 @@ export default function AcquisitionsDashboard() {
             <h1 className="font-display text-2xl font-semibold">Acquisitions</h1>
             <p className="text-sm text-muted-foreground mt-1">Post-acquisition integration management</p>
           </div>
-          <Button onClick={() => setOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
-            <Plus className="h-4 w-4 mr-1.5" /> New Acquisition
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => nav("/admin/acquisitions/settings")}>
+              <Settings className="h-4 w-4 mr-1.5" /> Templates
+            </Button>
+            <Button onClick={() => setOpen(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              <Plus className="h-4 w-4 mr-1.5" /> New Acquisition
+            </Button>
+          </div>
         </div>
 
         {portfolio && (
