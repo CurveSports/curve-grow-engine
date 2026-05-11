@@ -10,7 +10,7 @@ export default function ProtectedRoute({
   module: requiredModule,
 }: {
   children: ReactNode;
-  role?: "admin" | "org_user";
+  role?: "admin" | "org_user" | "seller_portal";
   module?: ModuleName;
 }) {
   const { loading, session, role: userRole, hasModule } = useAuth();
@@ -25,6 +25,7 @@ export default function ProtectedRoute({
   if (role && userRole !== role) {
     if (userRole === "admin") return <Navigate to="/admin" replace />;
     if (userRole === "org_user") return <Navigate to="/intake" replace />;
+    if (userRole === "seller_portal") return <Navigate to="/" replace />;
     return <Navigate to="/auth" replace />;
   }
   if (requiredModule && !hasModule(requiredModule)) {
