@@ -2,3 +2,6 @@ project_id = "qjcjimesqwtrvligbtla"
 
 [functions.zoom-recording-webhook]
 verify_jwt = false
+
+[functions.onboard-portal]
+verify_jwt = false

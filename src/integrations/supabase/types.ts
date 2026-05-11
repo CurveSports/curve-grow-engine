@@ -538,6 +538,199 @@ export type Database = {
           },
         ]
       }
+      acquisition_portal_activity: {
+        Row: {
+          acquisition_id: string
+          action: string
+          actor_name: string | null
+          created_at: string
+          detail: string | null
+          id: string
+          portal_user_id: string | null
+          staff_token_id: string | null
+        }
+        Insert: {
+          acquisition_id: string
+          action: string
+          actor_name?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          portal_user_id?: string | null
+          staff_token_id?: string | null
+        }
+        Update: {
+          acquisition_id?: string
+          action?: string
+          actor_name?: string | null
+          created_at?: string
+          detail?: string | null
+          id?: string
+          portal_user_id?: string | null
+          staff_token_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_portal_activity_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_portal_activity_portal_user_id_fkey"
+            columns: ["portal_user_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_portal_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_portal_activity_staff_token_id_fkey"
+            columns: ["staff_token_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_staff_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_portal_config: {
+        Row: {
+          acquisition_id: string
+          config_key: string
+          config_label: string | null
+          config_value: string | null
+          display_order: number
+          id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acquisition_id: string
+          config_key: string
+          config_label?: string | null
+          config_value?: string | null
+          display_order?: number
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acquisition_id?: string
+          config_key?: string
+          config_label?: string | null
+          config_value?: string | null
+          display_order?: number
+          id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_portal_config_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_portal_content: {
+        Row: {
+          acquisition_id: string
+          content_key: string
+          content_text: string | null
+          display_order: number
+          id: string
+          is_visible: boolean
+          portal_type: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acquisition_id: string
+          content_key: string
+          content_text?: string | null
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          portal_type: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acquisition_id?: string
+          content_key?: string
+          content_text?: string | null
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          portal_type?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_portal_content_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_portal_users: {
+        Row: {
+          access_expires_at: string | null
+          access_granted_at: string
+          acquisition_id: string
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          invited_by: string | null
+          is_active: boolean
+          last_login_at: string | null
+          portal_type: string
+          user_id: string
+        }
+        Insert: {
+          access_expires_at?: string | null
+          access_granted_at?: string
+          acquisition_id: string
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          invited_by?: string | null
+          is_active?: boolean
+          last_login_at?: string | null
+          portal_type?: string
+          user_id: string
+        }
+        Update: {
+          access_expires_at?: string | null
+          access_granted_at?: string
+          acquisition_id?: string
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          invited_by?: string | null
+          is_active?: boolean
+          last_login_at?: string | null
+          portal_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_portal_users_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       acquisition_projects: {
         Row: {
           acquisition_notes: string | null
@@ -754,6 +947,60 @@ export type Database = {
             columns: ["acquisition_id"]
             isOneToOne: false
             referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acquisition_staff_tokens: {
+        Row: {
+          access_count: number
+          acquisition_id: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          last_accessed_at: string | null
+          link_sent_at: string | null
+          staff_id: string
+          token: string
+        }
+        Insert: {
+          access_count?: number
+          acquisition_id: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          link_sent_at?: string | null
+          staff_id: string
+          token: string
+        }
+        Update: {
+          access_count?: number
+          acquisition_id?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          last_accessed_at?: string | null
+          link_sent_at?: string | null
+          staff_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acquisition_staff_tokens_acquisition_id_fkey"
+            columns: ["acquisition_id"]
+            isOneToOne: false
+            referencedRelation: "acquisition_projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "acquisition_staff_tokens_staff_id_fkey"
+            columns: ["staff_id"]
+            isOneToOne: true
+            referencedRelation: "acquisition_staff"
             referencedColumns: ["id"]
           },
         ]
@@ -4228,6 +4475,7 @@ export type Database = {
         }[]
       }
       current_org_id: { Args: never; Returns: string }
+      generate_staff_token: { Args: never; Returns: string }
       get_org_sponsorship_view: {
         Args: { p_org_id: string }
         Returns: {
@@ -4282,11 +4530,15 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      seed_portal_config: {
+        Args: { _acq_id: string; _state: string }
+        Returns: undefined
+      }
       update_acquisition_phases: { Args: never; Returns: undefined }
     }
     Enums: {
       admin_review_kind: "high_alert" | "revenue_review"
-      app_role: "admin" | "org_user"
+      app_role: "admin" | "org_user" | "seller_portal"
       invitation_status: "pending" | "accepted" | "revoked" | "expired"
       monetization_tier:
         | "Foundational"
@@ -4473,7 +4725,7 @@ export const Constants = {
   public: {
     Enums: {
       admin_review_kind: ["high_alert", "revenue_review"],
-      app_role: ["admin", "org_user"],
+      app_role: ["admin", "org_user", "seller_portal"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       monetization_tier: [
         "Foundational",
