@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Bell } from "lucide-react";
+import { Loader2, Bell, Copy, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { isOverdue, statusPillClass, STATUS_LABEL } from "@/lib/compliance";
 
@@ -13,18 +13,42 @@ export default function StaffDetailPanel({ staffId, onClose, onChanged }: {
 }) {
   const [staff, setStaff] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
+  const [token, setToken] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: s }, { data: it }] = await Promise.all([
+    const [{ data: s }, { data: it }, { data: tk }] = await Promise.all([
       supabase.from("acquisition_staff").select("*").eq("id", staffId).maybeSingle(),
       supabase.from("acquisition_compliance_items").select("*").eq("staff_id", staffId).order("requirement_type"),
+      supabase.from("acquisition_staff_tokens").select("*").eq("staff_id", staffId).maybeSingle(),
     ]);
-    setStaff(s); setItems(it ?? []);
+    setStaff(s); setItems(it ?? []); setToken(tk);
     setLoading(false);
   };
   useEffect(() => { load(); }, [staffId]);
+
+  const generateToken = async () => {
+    if (!staff) return;
+    const tok = Array.from({ length: 32 }, () => "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".charAt(Math.floor(Math.random() * 62))).join("");
+    const { error } = await supabase.from("acquisition_staff_tokens").insert({
+      acquisition_id: staff.acquisition_id, staff_id: staff.id, token: tok, is_active: true,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Onboarding link generated"); load();
+  };
+
+  const copyLink = () => {
+    if (!token?.token) return;
+    navigator.clipboard.writeText(`${window.location.origin}/onboard/${token.token}`);
+    toast.success("Link copied");
+  };
+
+  const markSent = async () => {
+    if (!token) return;
+    await supabase.from("acquisition_staff_tokens").update({ link_sent_at: new Date().toISOString() }).eq("id", token.id);
+    toast.success("Marked as sent"); load();
+  };
 
   const updateItem = async (id: string, patch: any) => {
     const { error } = await supabase.from("acquisition_compliance_items").update(patch).eq("id", id);
@@ -86,6 +110,22 @@ export default function StaffDetailPanel({ staffId, onClose, onChanged }: {
                 </span>
               </div>
             </SheetHeader>
+
+            <div className="mt-5 p-3 rounded-lg border border-border bg-muted/30">
+              <p className="text-[11px] uppercase font-bold text-muted-foreground mb-2">Onboarding Link</p>
+              {!token ? (
+                <Button size="sm" variant="outline" onClick={generateToken}><Link2 className="h-3.5 w-3.5 mr-1" /> Generate onboarding link</Button>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={copyLink}><Copy className="h-3.5 w-3.5 mr-1" /> Copy link</Button>
+                  {!token.link_sent_at && <Button size="sm" variant="outline" onClick={markSent}>Mark sent</Button>}
+                  <span className="text-xs text-muted-foreground">
+                    {token.last_accessed_at ? `Accessed ${new Date(token.last_accessed_at).toLocaleDateString()} (${token.access_count}×)` :
+                      token.link_sent_at ? `Sent ${new Date(token.link_sent_at).toLocaleDateString()}` : "Not sent"}
+                  </span>
+                </div>
+              )}
+            </div>
 
             <div className="mt-6 space-y-3">
               {items.length === 0 && <p className="text-sm text-muted-foreground italic">No compliance items.</p>}
