@@ -4286,7 +4286,7 @@ export type Database = {
     }
     Enums: {
       admin_review_kind: "high_alert" | "revenue_review"
-      app_role: "admin" | "org_user"
+      app_role: "admin" | "org_user" | "seller_portal"
       invitation_status: "pending" | "accepted" | "revoked" | "expired"
       monetization_tier:
         | "Foundational"
@@ -4473,7 +4473,7 @@ export const Constants = {
   public: {
     Enums: {
       admin_review_kind: ["high_alert", "revenue_review"],
-      app_role: ["admin", "org_user"],
+      app_role: ["admin", "org_user", "seller_portal"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       monetization_tier: [
         "Foundational",
