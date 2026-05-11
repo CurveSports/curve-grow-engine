@@ -31,6 +31,24 @@ export default function RouteResolver() {
 
       if (!role) { setChecking(false); return; }
 
+      // Seller portal users — route to their (most recent active) acquisition portal
+      if (role === "seller_portal") {
+        const { data: pu } = await supabase
+          .from("acquisition_portal_users")
+          .select("acquisition_id, access_granted_at")
+          .eq("user_id", session.user.id)
+          .eq("is_active", true)
+          .order("access_granted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (pu?.acquisition_id) {
+          navigate(`/portal/seller/${pu.acquisition_id}`, { replace: true });
+        } else {
+          setChecking(false);
+        }
+        return;
+      }
+
       // 1. Password gate — applies to ALL users (admins and org users) before anything else
       if (!onboarding?.password_set_at) {
         navigate("/set-password", { replace: true });

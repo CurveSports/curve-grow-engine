@@ -15,9 +15,10 @@ import SentimentPanel from "@/components/acquisitions/SentimentPanel";
 import RollUpPanel from "@/components/acquisitions/RollUpPanel";
 import MeetingsPanel from "@/components/acquisitions/MeetingsPanel";
 import AgendaPanel from "@/components/acquisitions/AgendaPanel";
+import PortalsPanel from "@/components/acquisitions/PortalsPanel";
 import { toast } from "sonner";
 
-type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup" | "meetings" | "agenda";
+type DealView = "timeline" | "workstream" | "compliance" | "documents" | "budget" | "communications" | "sentiment" | "rollup" | "meetings" | "agenda" | "portals";
 
 export default function AcquisitionDetail() {
   const { id } = useParams();
@@ -28,7 +29,7 @@ export default function AcquisitionDetail() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [stateTaskCount, setStateTaskCount] = useState(0);
   const tabParam = sp.get("tab") as DealView | null;
-  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup","meetings","agenda"].includes(tabParam) ? tabParam : "timeline";
+  const initialView: DealView = tabParam && ["timeline","workstream","compliance","documents","budget","communications","sentiment","rollup","meetings","agenda","portals"].includes(tabParam) ? tabParam : "timeline";
   const [view, setView] = useState<DealView>(initialView);
   const [addOpen, setAddOpen] = useState(false);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
@@ -113,6 +114,7 @@ export default function AcquisitionDetail() {
           <ToggleBtn active={view === "rollup"} onClick={() => { setView("rollup"); setSp({ tab: "rollup" }); }}>Roll-Up</ToggleBtn>
           <ToggleBtn active={view === "meetings"} onClick={() => { setView("meetings"); setSp({ tab: "meetings" }); }}>Meetings</ToggleBtn>
           <ToggleBtn active={view === "agenda"} onClick={() => { setView("agenda"); setSp({ tab: "agenda" }); }}>Agenda</ToggleBtn>
+          <ToggleBtn active={view === "portals"} onClick={() => { setView("portals"); setSp({ tab: "portals" }); }}>Portals</ToggleBtn>
         </div>
 
         {view === "compliance" ? (
@@ -131,6 +133,8 @@ export default function AcquisitionDetail() {
           <MeetingsPanel acquisition={project} />
         ) : view === "agenda" ? (
           <AgendaPanel acquisition={project} />
+        ) : view === "portals" ? (
+          <PortalsPanel acquisition={project} />
         ) : view === "timeline" ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {PHASES.map((p) => {

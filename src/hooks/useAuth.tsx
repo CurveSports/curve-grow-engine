@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 
-type Role = "admin" | "org_user" | null;
+type Role = "admin" | "org_user" | "seller_portal" | null;
 
 interface Profile {
   user_id: string;
@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
     setProfile(prof as Profile | null);
     const r = (roles ?? []).map((x: any) => x.role);
-    setRole(r.includes("admin") ? "admin" : r.includes("org_user") ? "org_user" : null);
+    setRole(r.includes("admin") ? "admin" : r.includes("org_user") ? "org_user" : r.includes("seller_portal") ? "seller_portal" : null);
 
     if (prof?.org_id) {
       const { data: org } = await supabase.from("organizations").select("primary_user_id").eq("id", prof.org_id).maybeSingle();

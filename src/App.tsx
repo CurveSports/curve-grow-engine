@@ -38,6 +38,8 @@ import AcquisitionsSettings from "@/pages/admin/acquisitions/AcquisitionsSetting
 import ComplianceOverview from "@/pages/admin/acquisitions/ComplianceOverview";
 import MeetingsInbox from "@/pages/admin/acquisitions/MeetingsInbox";
 import TranscriptDetail from "@/pages/admin/acquisitions/TranscriptDetail";
+import StaffOnboard from "@/pages/StaffOnboard";
+import SellerPortal from "@/pages/seller/SellerPortal";
 import Team from "@/pages/Team";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
@@ -64,6 +66,8 @@ const App = () => (
             <Route path="/" element={<RouteResolver />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/onboard/:token" element={<StaffOnboard />} />
+            <Route path="/portal/seller/:acquisitionId" element={<ProtectedRoute role="seller_portal"><SellerPortal /></ProtectedRoute>} />
             <Route path="/set-password" element={<ProtectedRoute><SetPassword /></ProtectedRoute>} />
             <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
             <Route path="/customize" element={<ProtectedRoute role="org_user"><Customize /></ProtectedRoute>} />
