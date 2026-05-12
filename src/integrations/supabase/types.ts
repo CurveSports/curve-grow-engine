@@ -1714,6 +1714,145 @@ export type Database = {
           },
         ]
       }
+      campaign_sequence_assets: {
+        Row: {
+          asset_label: string | null
+          asset_type: string | null
+          channel: string | null
+          copy_template: string | null
+          days_from_anchor: number | null
+          design_template_id: string | null
+          email_template_id: string | null
+          id: string
+          notes: string | null
+          order_in_sequence: number | null
+          preview_text_template: string | null
+          required: boolean | null
+          sequence_template_id: string | null
+          subject_template: string | null
+          target_segment_filter: Json | null
+          time_of_day: string | null
+        }
+        Insert: {
+          asset_label?: string | null
+          asset_type?: string | null
+          channel?: string | null
+          copy_template?: string | null
+          days_from_anchor?: number | null
+          design_template_id?: string | null
+          email_template_id?: string | null
+          id?: string
+          notes?: string | null
+          order_in_sequence?: number | null
+          preview_text_template?: string | null
+          required?: boolean | null
+          sequence_template_id?: string | null
+          subject_template?: string | null
+          target_segment_filter?: Json | null
+          time_of_day?: string | null
+        }
+        Update: {
+          asset_label?: string | null
+          asset_type?: string | null
+          channel?: string | null
+          copy_template?: string | null
+          days_from_anchor?: number | null
+          design_template_id?: string | null
+          email_template_id?: string | null
+          id?: string
+          notes?: string | null
+          order_in_sequence?: number | null
+          preview_text_template?: string | null
+          required?: boolean | null
+          sequence_template_id?: string | null
+          subject_template?: string | null
+          target_segment_filter?: Json | null
+          time_of_day?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sequence_assets_sequence_template_id_fkey"
+            columns: ["sequence_template_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_sequence_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_sequence_templates: {
+        Row: {
+          active: boolean | null
+          anchor_event: string | null
+          anchor_label: string | null
+          best_for: string | null
+          category: string | null
+          created_at: string | null
+          default_goal_target: number | null
+          description: string | null
+          duration_days: number | null
+          goal_metric: string | null
+          id: string
+          is_system: boolean | null
+          name: string
+          owner_org_id: string | null
+          preview_summary: string | null
+          sort_order: number | null
+          thumbnail_url: string | null
+          tier: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          anchor_event?: string | null
+          anchor_label?: string | null
+          best_for?: string | null
+          category?: string | null
+          created_at?: string | null
+          default_goal_target?: number | null
+          description?: string | null
+          duration_days?: number | null
+          goal_metric?: string | null
+          id?: string
+          is_system?: boolean | null
+          name: string
+          owner_org_id?: string | null
+          preview_summary?: string | null
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          tier?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          anchor_event?: string | null
+          anchor_label?: string | null
+          best_for?: string | null
+          category?: string | null
+          created_at?: string | null
+          default_goal_target?: number | null
+          description?: string | null
+          duration_days?: number | null
+          goal_metric?: string | null
+          id?: string
+          is_system?: boolean | null
+          name?: string
+          owner_org_id?: string | null
+          preview_summary?: string | null
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          tier?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_sequence_templates_owner_org_id_fkey"
+            columns: ["owner_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           brand_color: string | null
@@ -1831,6 +1970,93 @@ export type Database = {
           requirement_name?: string
           requirement_type?: string
           state_filter?: string | null
+        }
+        Relationships: []
+      }
+      curve_marketing_portfolio_summary: {
+        Row: {
+          avg_click_rate: number | null
+          avg_open_rate: number | null
+          calculated_at: string | null
+          id: string
+          period_end: string | null
+          period_start: string | null
+          period_type: string | null
+          portfolio_nps_score: number | null
+          total_ai_cost_cents: number | null
+          total_campaigns_active: number | null
+          total_campaigns_completed: number | null
+          total_designs_approved: number | null
+          total_designs_created: number | null
+          total_email_cost_cents: number | null
+          total_emails_clicked: number | null
+          total_emails_delivered: number | null
+          total_emails_opened: number | null
+          total_emails_sent: number | null
+          total_nps_responses: number | null
+          total_orgs_active: number | null
+          total_sms_cost_cents: number | null
+          total_sms_delivered: number | null
+          total_sms_opt_outs: number | null
+          total_sms_sent: number | null
+          total_social_engagement: number | null
+          total_social_posts: number | null
+        }
+        Insert: {
+          avg_click_rate?: number | null
+          avg_open_rate?: number | null
+          calculated_at?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          period_type?: string | null
+          portfolio_nps_score?: number | null
+          total_ai_cost_cents?: number | null
+          total_campaigns_active?: number | null
+          total_campaigns_completed?: number | null
+          total_designs_approved?: number | null
+          total_designs_created?: number | null
+          total_email_cost_cents?: number | null
+          total_emails_clicked?: number | null
+          total_emails_delivered?: number | null
+          total_emails_opened?: number | null
+          total_emails_sent?: number | null
+          total_nps_responses?: number | null
+          total_orgs_active?: number | null
+          total_sms_cost_cents?: number | null
+          total_sms_delivered?: number | null
+          total_sms_opt_outs?: number | null
+          total_sms_sent?: number | null
+          total_social_engagement?: number | null
+          total_social_posts?: number | null
+        }
+        Update: {
+          avg_click_rate?: number | null
+          avg_open_rate?: number | null
+          calculated_at?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          period_type?: string | null
+          portfolio_nps_score?: number | null
+          total_ai_cost_cents?: number | null
+          total_campaigns_active?: number | null
+          total_campaigns_completed?: number | null
+          total_designs_approved?: number | null
+          total_designs_created?: number | null
+          total_email_cost_cents?: number | null
+          total_emails_clicked?: number | null
+          total_emails_delivered?: number | null
+          total_emails_opened?: number | null
+          total_emails_sent?: number | null
+          total_nps_responses?: number | null
+          total_orgs_active?: number | null
+          total_sms_cost_cents?: number | null
+          total_sms_delivered?: number | null
+          total_sms_opt_outs?: number | null
+          total_sms_sent?: number | null
+          total_social_engagement?: number | null
+          total_social_posts?: number | null
         }
         Relationships: []
       }
@@ -3973,6 +4199,80 @@ export type Database = {
           },
         ]
       }
+      org_marketing_summary: {
+        Row: {
+          avg_click_rate_l30: number | null
+          avg_open_rate_l30: number | null
+          campaigns_active: number | null
+          campaigns_completed_l30: number | null
+          contacts_email_subscribed: number | null
+          contacts_sms_subscribed: number | null
+          contacts_total: number | null
+          current_nps_score: number | null
+          designs_created_l30: number | null
+          emails_sent_l30: number | null
+          emails_sent_l90: number | null
+          last_activity_at: string | null
+          marketing_health_score: number | null
+          nps_trend: string | null
+          org_id: string
+          refreshed_at: string | null
+          sms_sent_l30: number | null
+          social_posts_l30: number | null
+          total_social_engagement_l30: number | null
+        }
+        Insert: {
+          avg_click_rate_l30?: number | null
+          avg_open_rate_l30?: number | null
+          campaigns_active?: number | null
+          campaigns_completed_l30?: number | null
+          contacts_email_subscribed?: number | null
+          contacts_sms_subscribed?: number | null
+          contacts_total?: number | null
+          current_nps_score?: number | null
+          designs_created_l30?: number | null
+          emails_sent_l30?: number | null
+          emails_sent_l90?: number | null
+          last_activity_at?: string | null
+          marketing_health_score?: number | null
+          nps_trend?: string | null
+          org_id: string
+          refreshed_at?: string | null
+          sms_sent_l30?: number | null
+          social_posts_l30?: number | null
+          total_social_engagement_l30?: number | null
+        }
+        Update: {
+          avg_click_rate_l30?: number | null
+          avg_open_rate_l30?: number | null
+          campaigns_active?: number | null
+          campaigns_completed_l30?: number | null
+          contacts_email_subscribed?: number | null
+          contacts_sms_subscribed?: number | null
+          contacts_total?: number | null
+          current_nps_score?: number | null
+          designs_created_l30?: number | null
+          emails_sent_l30?: number | null
+          emails_sent_l90?: number | null
+          last_activity_at?: string | null
+          marketing_health_score?: number | null
+          nps_trend?: string | null
+          org_id?: string
+          refreshed_at?: string | null
+          sms_sent_l30?: number | null
+          social_posts_l30?: number | null
+          total_social_engagement_l30?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_marketing_summary_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_notes: {
         Row: {
           created_at: string
@@ -4004,6 +4304,171 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_nps_responses: {
+        Row: {
+          category: string | null
+          contact_id: string | null
+          flagged_for_followup: boolean | null
+          followup_completed_at: string | null
+          followup_completed_by: string | null
+          followup_notes: string | null
+          followup_response: string | null
+          id: string
+          ip_address: string | null
+          responded_at: string | null
+          responded_via: string | null
+          score: number | null
+          survey_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          category?: string | null
+          contact_id?: string | null
+          flagged_for_followup?: boolean | null
+          followup_completed_at?: string | null
+          followup_completed_by?: string | null
+          followup_notes?: string | null
+          followup_response?: string | null
+          id?: string
+          ip_address?: string | null
+          responded_at?: string | null
+          responded_via?: string | null
+          score?: number | null
+          survey_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          category?: string | null
+          contact_id?: string | null
+          flagged_for_followup?: boolean | null
+          followup_completed_at?: string | null
+          followup_completed_by?: string | null
+          followup_notes?: string | null
+          followup_response?: string | null
+          id?: string
+          ip_address?: string | null
+          responded_at?: string | null
+          responded_via?: string | null
+          score?: number | null
+          survey_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_nps_responses_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_nps_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "org_nps_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_nps_surveys: {
+        Row: {
+          audience_segment_id: string | null
+          closed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          detractor_count: number | null
+          followup_question_detractor: string | null
+          followup_question_passive: string | null
+          followup_question_promoter: string | null
+          id: string
+          name: string | null
+          nps_score: number | null
+          org_id: string | null
+          passive_count: number | null
+          promoter_count: number | null
+          question: string | null
+          recipient_count: number | null
+          response_count: number | null
+          scale_max: number | null
+          scale_min: number | null
+          scheduled_for: string | null
+          send_channel: string | null
+          sent_at: string | null
+          status: string | null
+          trigger_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          audience_segment_id?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          detractor_count?: number | null
+          followup_question_detractor?: string | null
+          followup_question_passive?: string | null
+          followup_question_promoter?: string | null
+          id?: string
+          name?: string | null
+          nps_score?: number | null
+          org_id?: string | null
+          passive_count?: number | null
+          promoter_count?: number | null
+          question?: string | null
+          recipient_count?: number | null
+          response_count?: number | null
+          scale_max?: number | null
+          scale_min?: number | null
+          scheduled_for?: string | null
+          send_channel?: string | null
+          sent_at?: string | null
+          status?: string | null
+          trigger_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          audience_segment_id?: string | null
+          closed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          detractor_count?: number | null
+          followup_question_detractor?: string | null
+          followup_question_passive?: string | null
+          followup_question_promoter?: string | null
+          id?: string
+          name?: string | null
+          nps_score?: number | null
+          org_id?: string | null
+          passive_count?: number | null
+          promoter_count?: number | null
+          question?: string | null
+          recipient_count?: number | null
+          response_count?: number | null
+          scale_max?: number | null
+          scale_min?: number | null
+          scheduled_for?: string | null
+          send_channel?: string | null
+          sent_at?: string | null
+          status?: string | null
+          trigger_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_nps_surveys_audience_segment_id_fkey"
+            columns: ["audience_segment_id"]
+            isOneToOne: false
+            referencedRelation: "org_contact_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_nps_surveys_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4598,6 +5063,249 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      org_sms_events: {
+        Row: {
+          contact_id: string | null
+          error_code: string | null
+          error_message: string | null
+          event_type: string | null
+          id: string
+          occurred_at: string | null
+          send_id: string | null
+          twilio_message_sid: string | null
+        }
+        Insert: {
+          contact_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          occurred_at?: string | null
+          send_id?: string | null
+          twilio_message_sid?: string | null
+        }
+        Update: {
+          contact_id?: string | null
+          error_code?: string | null
+          error_message?: string | null
+          event_type?: string | null
+          id?: string
+          occurred_at?: string | null
+          send_id?: string | null
+          twilio_message_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_sms_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_sms_events_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: false
+            referencedRelation: "org_sms_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_sms_inbound: {
+        Row: {
+          action_taken: string | null
+          body: string | null
+          contact_id: string | null
+          from_number: string | null
+          id: string
+          org_id: string | null
+          received_at: string | null
+          to_number: string | null
+          twilio_message_sid: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          body?: string | null
+          contact_id?: string | null
+          from_number?: string | null
+          id?: string
+          org_id?: string | null
+          received_at?: string | null
+          to_number?: string | null
+          twilio_message_sid?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          body?: string | null
+          contact_id?: string | null
+          from_number?: string | null
+          id?: string
+          org_id?: string | null
+          received_at?: string | null
+          to_number?: string | null
+          twilio_message_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_sms_inbound_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_sms_inbound_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_sms_numbers: {
+        Row: {
+          active: boolean | null
+          area_code: string | null
+          display_name: string | null
+          id: string
+          monthly_cost_cents: number | null
+          org_id: string | null
+          provisioned_at: string | null
+          released_at: string | null
+          tcpa_consent_attested: boolean | null
+          tcpa_consent_attested_at: string | null
+          tcpa_consent_attested_by: string | null
+          twilio_phone_number: string | null
+          twilio_phone_sid: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          area_code?: string | null
+          display_name?: string | null
+          id?: string
+          monthly_cost_cents?: number | null
+          org_id?: string | null
+          provisioned_at?: string | null
+          released_at?: string | null
+          tcpa_consent_attested?: boolean | null
+          tcpa_consent_attested_at?: string | null
+          tcpa_consent_attested_by?: string | null
+          twilio_phone_number?: string | null
+          twilio_phone_sid?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          area_code?: string | null
+          display_name?: string | null
+          id?: string
+          monthly_cost_cents?: number | null
+          org_id?: string | null
+          provisioned_at?: string | null
+          released_at?: string | null
+          tcpa_consent_attested?: boolean | null
+          tcpa_consent_attested_at?: string | null
+          tcpa_consent_attested_by?: string | null
+          twilio_phone_number?: string | null
+          twilio_phone_sid?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_sms_numbers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_sms_sends: {
+        Row: {
+          ab_test_id: string | null
+          ab_variant: string | null
+          campaign_id: string | null
+          cost_cents: number | null
+          created_at: string | null
+          created_by: string | null
+          delivered_count: number | null
+          failed_count: number | null
+          from_number_id: string | null
+          id: string
+          include_opt_out: boolean | null
+          message_body: string
+          opt_out_count: number | null
+          org_id: string | null
+          recipient_count: number | null
+          scheduled_for: string | null
+          segment_id: string | null
+          sent_at: string | null
+          status: string | null
+        }
+        Insert: {
+          ab_test_id?: string | null
+          ab_variant?: string | null
+          campaign_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          delivered_count?: number | null
+          failed_count?: number | null
+          from_number_id?: string | null
+          id?: string
+          include_opt_out?: boolean | null
+          message_body: string
+          opt_out_count?: number | null
+          org_id?: string | null
+          recipient_count?: number | null
+          scheduled_for?: string | null
+          segment_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          ab_test_id?: string | null
+          ab_variant?: string | null
+          campaign_id?: string | null
+          cost_cents?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          delivered_count?: number | null
+          failed_count?: number | null
+          from_number_id?: string | null
+          id?: string
+          include_opt_out?: boolean | null
+          message_body?: string
+          opt_out_count?: number | null
+          org_id?: string | null
+          recipient_count?: number | null
+          scheduled_for?: string | null
+          segment_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_sms_sends_from_number_id_fkey"
+            columns: ["from_number_id"]
+            isOneToOne: false
+            referencedRelation: "org_sms_numbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_sms_sends_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_sms_sends_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "org_contact_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       org_social_accounts: {
         Row: {

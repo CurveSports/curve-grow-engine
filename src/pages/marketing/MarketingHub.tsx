@@ -1,9 +1,21 @@
 import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2, Link2, FlaskConical, Clock, MessageSquare, Share2 } from "lucide-react";
+import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2, Link2, FlaskConical, Clock, MessageSquare, Share2, Calendar, Heart } from "lucide-react";
 
 const TILES = [
+  {
+    to: "/marketing/sequences",
+    label: "Campaign Sequences",
+    desc: "Pick a proven multi-week campaign, plug in your dates, watch it run.",
+    icon: Calendar,
+  },
+  {
+    to: "/marketing/nps",
+    label: "NPS Surveys",
+    desc: "Track parent satisfaction. Auto-flag detractors for personal followup.",
+    icon: Heart,
+  },
   {
     to: "/marketing/campaigns",
     label: "Campaigns",
@@ -48,8 +60,8 @@ const TILES = [
   },
   {
     to: "/marketing/sms",
-    label: "SMS Companions",
-    desc: "Generate short SMS versions of your emails. Sending wires in next round.",
+    label: "SMS",
+    desc: "Send TCPA-compliant text campaigns. Dedicated number per club.",
     icon: MessageSquare,
   },
   {
