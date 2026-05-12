@@ -45,7 +45,7 @@ export default function Emails() {
   const [params] = useSearchParams();
   const presetDesignId = params.get("design");
 
-  const [sends, setSends] = useState<Send[]>([]);
+  const [sends, setSends] = useState<EmailSend[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [designs, setDesigns] = useState<Design[]>([]);
@@ -53,7 +53,7 @@ export default function Emails() {
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [composing, setComposing] = useState(false);
-  const [draft, setDraft] = useState<Partial<Send & { from_email: string; from_name: string; html_body: string; preview_text: string }>>({});
+  const [draft, setDraft] = useState<Partial<EmailSend & { from_email: string; from_name: string; html_body: string; preview_text: string }>>({});
 
   const load = async () => {
     if (!orgId) return;
@@ -64,7 +64,7 @@ export default function Emails() {
       supabase.from("org_email_domains").select("id,from_email,from_name,is_default").eq("org_id", orgId),
       supabase.from("designs").select("id,name,generated_html,status,preview_url").eq("org_id", orgId).eq("status", "approved").order("created_at", { ascending: false }).limit(50),
     ]);
-    setSends((s.data ?? []) as Send[]);
+    setSends((s.data ?? []) as EmailSend[]);
     setSegments((seg.data ?? []) as Segment[]);
     setDomains((dom.data ?? []) as Domain[]);
     setDesigns((des.data ?? []) as Design[]);
@@ -254,7 +254,7 @@ export default function Emails() {
             <Button variant="outline" onClick={() => setComposeOpen(false)}>Cancel</Button>
             <Button variant="outline" onClick={() => saveDraft(false)} disabled={composing}>Save draft</Button>
             <Button onClick={() => saveDraft(true)} disabled={composing}>
-              {composing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}Send now
+              {composing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <SendIcon className="h-4 w-4 mr-2" />}Send now
             </Button>
           </DialogFooter>
         </DialogContent>
