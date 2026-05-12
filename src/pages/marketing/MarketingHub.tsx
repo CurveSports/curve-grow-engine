@@ -29,6 +29,12 @@ const TILES = [
     icon: CheckCircle2,
   },
   {
+    to: "/marketing/shortlinks",
+    label: "Shortlinks & QR",
+    desc: "Branded trackable links with one-click QR codes for flyers and posts.",
+    icon: Link2,
+  },
+  {
     to: "/marketing/contacts",
     label: "Contacts & Segments",
     desc: "Upload your roster, organize families, build reusable audience segments.",
