@@ -68,6 +68,17 @@ import SendTimes from "@/pages/marketing/SendTimes";
 import SmsCompanion from "@/pages/marketing/SmsCompanion";
 import SocialAccounts from "@/pages/marketing/SocialAccounts";
 import SystemIntegrations from "@/pages/admin/system/SystemIntegrations";
+import SequenceLibrary from "@/pages/marketing/SequenceLibrary";
+import SequencePreview from "@/pages/marketing/SequencePreview";
+import SequenceLaunch from "@/pages/marketing/SequenceLaunch";
+import SmsSetup from "@/pages/marketing/SmsSetup";
+import SmsComposer from "@/pages/marketing/SmsComposer";
+import SmsSends from "@/pages/marketing/SmsSends";
+import NpsSurveys from "@/pages/marketing/NpsSurveys";
+import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
+import NpsResponse from "@/pages/NpsResponse";
+import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
+import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -119,6 +130,17 @@ const App = () => (
             <Route path="/marketing/social" element={<ProtectedRoute><SocialAccounts /></ProtectedRoute>} />
             <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin"><AdminDesignTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin"><AdminEmailTemplates /></ProtectedRoute>} />
+            <Route path="/marketing/sequences" element={<ProtectedRoute><SequenceLibrary /></ProtectedRoute>} />
+            <Route path="/marketing/sequences/:id" element={<ProtectedRoute><SequencePreview /></ProtectedRoute>} />
+            <Route path="/marketing/sequences/:id/launch" element={<ProtectedRoute><SequenceLaunch /></ProtectedRoute>} />
+            <Route path="/marketing/sms-setup" element={<ProtectedRoute><SmsSetup /></ProtectedRoute>} />
+            <Route path="/marketing/sms" element={<ProtectedRoute><SmsSends /></ProtectedRoute>} />
+            <Route path="/marketing/sms/new" element={<ProtectedRoute><SmsComposer /></ProtectedRoute>} />
+            <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
+            <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/nps/:token" element={<NpsResponse />} />
+            <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin"><PortfolioAnalytics /></ProtectedRoute>} />
+            <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
