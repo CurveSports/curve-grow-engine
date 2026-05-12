@@ -37,6 +37,7 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
       { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
       { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
+      { to: "/admin/marketing/approvals", label: "Marketing Approvals", icon: Megaphone, match: (p) => p.startsWith("/admin/marketing/approvals") },
       { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
       { to: "/admin/revenue-share", label: "Revenue Share", icon: Calculator, match: (p) => p.startsWith("/admin/revenue-share") },
     ],
