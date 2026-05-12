@@ -56,7 +56,9 @@ import EmailSetup from "@/pages/marketing/EmailSetup";
 import Designs from "@/pages/marketing/Designs";
 import DesignEditor from "@/pages/marketing/DesignEditor";
 import Emails from "@/pages/marketing/Emails";
+import EmailComposer from "@/pages/marketing/EmailComposer";
 import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
+import AdminEmailTemplates from "@/pages/admin/marketing/AdminEmailTemplates";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -96,7 +98,9 @@ const App = () => (
             <Route path="/marketing/designs" element={<ProtectedRoute><Designs /></ProtectedRoute>} />
             <Route path="/marketing/designs/:id" element={<ProtectedRoute><DesignEditor /></ProtectedRoute>} />
             <Route path="/marketing/emails" element={<ProtectedRoute><Emails /></ProtectedRoute>} />
+            <Route path="/marketing/emails/new" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
             <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin"><AdminDesignTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin"><AdminEmailTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />

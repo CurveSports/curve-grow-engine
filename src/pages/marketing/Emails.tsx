@@ -159,7 +159,7 @@ export default function Emails() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Email campaigns</h1>
           <p className="text-muted-foreground mt-1">Send approved designs to your segments and watch engagement.</p>
         </div>
-        <Button onClick={() => setComposeOpen(true)}><Plus className="h-4 w-4 mr-2" />New email</Button>
+        <Button asChild><Link to="/marketing/emails/new"><Plus className="h-4 w-4 mr-2" />New email</Link></Button>
       </div>
 
       {loading ? (

@@ -2154,6 +2154,71 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          input_fields: Json | null
+          is_system: boolean
+          jsx_source: string | null
+          mjml_source: string | null
+          name: string
+          owner_org_id: string | null
+          preview_props: Json | null
+          rendering_engine: string
+          sort_order: number | null
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          input_fields?: Json | null
+          is_system?: boolean
+          jsx_source?: string | null
+          mjml_source?: string | null
+          name: string
+          owner_org_id?: string | null
+          preview_props?: Json | null
+          rendering_engine?: string
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          input_fields?: Json | null
+          is_system?: boolean
+          jsx_source?: string | null
+          mjml_source?: string | null
+          name?: string
+          owner_org_id?: string | null
+          preview_props?: Json | null
+          rendering_engine?: string
+          sort_order?: number | null
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_owner_org_id_fkey"
+            columns: ["owner_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -3258,23 +3323,31 @@ export type Database = {
           clicked_count: number | null
           created_at: string
           created_by: string | null
+          dark_mode_optimized: boolean | null
           delivered_count: number | null
           design_id: string | null
           from_email: string | null
           from_name: string | null
           html_body: string | null
           id: string
+          jsx_source: string | null
           opened_count: number | null
           org_id: string
           preview_text: string | null
           provider_batch_id: string | null
           recipient_count: number | null
+          rendering_engine: string | null
           reply_to: string | null
           scheduled_for: string | null
           segment_id: string | null
           sent_at: string | null
+          spam_check_at: string | null
+          spam_check_details: Json | null
+          spam_score: number | null
           status: string
           subject: string | null
+          template_id: string | null
+          template_props: Json | null
           text_body: string | null
           unsubscribed_count: number | null
         }
@@ -3283,23 +3356,31 @@ export type Database = {
           clicked_count?: number | null
           created_at?: string
           created_by?: string | null
+          dark_mode_optimized?: boolean | null
           delivered_count?: number | null
           design_id?: string | null
           from_email?: string | null
           from_name?: string | null
           html_body?: string | null
           id?: string
+          jsx_source?: string | null
           opened_count?: number | null
           org_id: string
           preview_text?: string | null
           provider_batch_id?: string | null
           recipient_count?: number | null
+          rendering_engine?: string | null
           reply_to?: string | null
           scheduled_for?: string | null
           segment_id?: string | null
           sent_at?: string | null
+          spam_check_at?: string | null
+          spam_check_details?: Json | null
+          spam_score?: number | null
           status?: string
           subject?: string | null
+          template_id?: string | null
+          template_props?: Json | null
           text_body?: string | null
           unsubscribed_count?: number | null
         }
@@ -3308,23 +3389,31 @@ export type Database = {
           clicked_count?: number | null
           created_at?: string
           created_by?: string | null
+          dark_mode_optimized?: boolean | null
           delivered_count?: number | null
           design_id?: string | null
           from_email?: string | null
           from_name?: string | null
           html_body?: string | null
           id?: string
+          jsx_source?: string | null
           opened_count?: number | null
           org_id?: string
           preview_text?: string | null
           provider_batch_id?: string | null
           recipient_count?: number | null
+          rendering_engine?: string | null
           reply_to?: string | null
           scheduled_for?: string | null
           segment_id?: string | null
           sent_at?: string | null
+          spam_check_at?: string | null
+          spam_check_details?: Json | null
+          spam_score?: number | null
           status?: string
           subject?: string | null
+          template_id?: string | null
+          template_props?: Json | null
           text_body?: string | null
           unsubscribed_count?: number | null
         }
@@ -3341,6 +3430,13 @@ export type Database = {
             columns: ["segment_id"]
             isOneToOne: false
             referencedRelation: "org_contact_segments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_email_sends_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "email_templates"
             referencedColumns: ["id"]
           },
         ]
