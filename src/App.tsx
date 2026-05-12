@@ -49,6 +49,10 @@ import OrgSponsorships from "@/pages/OrgSponsorships";
 import AdminCommunications from "@/pages/admin/AdminCommunications";
 import Settings from "@/pages/Settings";
 import Customize from "@/pages/Customize";
+import MarketingHub from "@/pages/marketing/MarketingHub";
+import BrandKit from "@/pages/marketing/BrandKit";
+import Contacts from "@/pages/marketing/Contacts";
+import EmailSetup from "@/pages/marketing/EmailSetup";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -81,6 +85,10 @@ const App = () => (
             <Route path="/communications" element={<ProtectedRoute module="allegiance"><Communications /></ProtectedRoute>} />
             <Route path="/communications/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><Communications /></ProtectedRoute>} />
             <Route path="/sponsorships" element={<ProtectedRoute role="org_user" module="allegiance"><OrgSponsorships /></ProtectedRoute>} />
+            <Route path="/marketing" element={<ProtectedRoute role="org_user"><MarketingHub /></ProtectedRoute>} />
+            <Route path="/marketing/brand-kit" element={<ProtectedRoute role="org_user"><BrandKit /></ProtectedRoute>} />
+            <Route path="/marketing/contacts" element={<ProtectedRoute role="org_user"><Contacts /></ProtectedRoute>} />
+            <Route path="/marketing/email-setup" element={<ProtectedRoute role="org_user"><EmailSetup /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
