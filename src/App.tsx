@@ -62,6 +62,7 @@ import AdminEmailTemplates from "@/pages/admin/marketing/AdminEmailTemplates";
 import Campaigns from "@/pages/marketing/Campaigns";
 import CampaignDetail from "@/pages/marketing/CampaignDetail";
 import ApprovalsQueue from "@/pages/marketing/ApprovalsQueue";
+import Shortlinks from "@/pages/marketing/Shortlinks";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
