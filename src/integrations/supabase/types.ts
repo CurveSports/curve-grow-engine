@@ -5726,6 +5726,72 @@ export type Database = {
           },
         ]
       }
+      system_integrations: {
+        Row: {
+          activate_when: string | null
+          category: string | null
+          created_at: string
+          display_name: string
+          env_var_names: string[]
+          estimated_cost_monthly: string | null
+          id: string
+          integration_key: string
+          last_health_check_at: string | null
+          last_health_check_result: Json | null
+          notes: string | null
+          provider_docs_url: string | null
+          setup_instructions: string | null
+          sort_order: number
+          status: string
+          updated_at: string
+          used_by_features: string[]
+          what_unlocks_when_wired: string | null
+          what_works_when_stubbed: string | null
+        }
+        Insert: {
+          activate_when?: string | null
+          category?: string | null
+          created_at?: string
+          display_name: string
+          env_var_names?: string[]
+          estimated_cost_monthly?: string | null
+          id?: string
+          integration_key: string
+          last_health_check_at?: string | null
+          last_health_check_result?: Json | null
+          notes?: string | null
+          provider_docs_url?: string | null
+          setup_instructions?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          used_by_features?: string[]
+          what_unlocks_when_wired?: string | null
+          what_works_when_stubbed?: string | null
+        }
+        Update: {
+          activate_when?: string | null
+          category?: string | null
+          created_at?: string
+          display_name?: string
+          env_var_names?: string[]
+          estimated_cost_monthly?: string | null
+          id?: string
+          integration_key?: string
+          last_health_check_at?: string | null
+          last_health_check_result?: Json | null
+          notes?: string | null
+          provider_docs_url?: string | null
+          setup_instructions?: string | null
+          sort_order?: number
+          status?: string
+          updated_at?: string
+          used_by_features?: string[]
+          what_unlocks_when_wired?: string | null
+          what_works_when_stubbed?: string | null
+        }
+        Relationships: []
+      }
       task_activity_log: {
         Row: {
           action: Database["public"]["Enums"]["task_action"]

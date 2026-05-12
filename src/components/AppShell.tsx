@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
-  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic,
+  Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -110,9 +110,17 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const allegianceGroups: NavGroup[] = role === "admin"
     ? [{ ...baseGroups[0] }, ...baseGroups.slice(1).map((g, i) => i === 0 ? { ...g, label: "Allegiance" } : g)]
     : baseGroups;
-  const groups = role === "admin" && hasModule("acquisitions")
+  const isCurveOwner = role === "admin" && profile?.email?.toLowerCase() === "matt.gerber@curvesports.com";
+  const systemGroup: NavGroup = {
+    label: "System",
+    items: [
+      { to: "/admin/system/wiring-status", label: "Integrations", icon: Plug, match: (p) => p.startsWith("/admin/system") },
+    ],
+  };
+  let groups = role === "admin" && hasModule("acquisitions")
     ? [...allegianceGroups, acquisitionsGroup]
     : baseGroups;
+  if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
   const isItemActive = (item: NavItem) =>
