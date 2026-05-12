@@ -59,6 +59,9 @@ import Emails from "@/pages/marketing/Emails";
 import EmailComposer from "@/pages/marketing/EmailComposer";
 import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
 import AdminEmailTemplates from "@/pages/admin/marketing/AdminEmailTemplates";
+import Campaigns from "@/pages/marketing/Campaigns";
+import CampaignDetail from "@/pages/marketing/CampaignDetail";
+import ApprovalsQueue from "@/pages/marketing/ApprovalsQueue";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
