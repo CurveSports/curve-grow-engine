@@ -5,10 +5,16 @@ import { Palette, Users, Mail, Sparkles, ArrowRight } from "lucide-react";
 
 const TILES = [
   {
-    to: "/marketing/brand-kit",
-    label: "Brand Kit",
-    desc: "Logos, colors, fonts and voice — the foundation every design pulls from.",
-    icon: Palette,
+    to: "/marketing/designs",
+    label: "Designs",
+    desc: "Generate flyers, social posts and emails from your brand kit using AI.",
+    icon: Sparkles,
+  },
+  {
+    to: "/marketing/emails",
+    label: "Email campaigns",
+    desc: "Send approved designs to a segment and track opens, clicks, bounces.",
+    icon: Mail,
   },
   {
     to: "/marketing/contacts",
@@ -17,17 +23,16 @@ const TILES = [
     icon: Users,
   },
   {
+    to: "/marketing/brand-kit",
+    label: "Brand Kit",
+    desc: "Logos, colors, fonts and voice — the foundation every design pulls from.",
+    icon: Palette,
+  },
+  {
     to: "/marketing/email-setup",
     label: "Email Setup",
     desc: "Verify your sending domain and set defaults for outgoing campaigns.",
     icon: Mail,
-  },
-  {
-    to: "#",
-    label: "Designs (coming)",
-    desc: "Generate flyers, social posts and emails from your brand kit using AI.",
-    icon: Sparkles,
-    soon: true,
   },
 ];
 
