@@ -53,6 +53,10 @@ import MarketingHub from "@/pages/marketing/MarketingHub";
 import BrandKit from "@/pages/marketing/BrandKit";
 import Contacts from "@/pages/marketing/Contacts";
 import EmailSetup from "@/pages/marketing/EmailSetup";
+import Designs from "@/pages/marketing/Designs";
+import DesignEditor from "@/pages/marketing/DesignEditor";
+import Emails from "@/pages/marketing/Emails";
+import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -89,6 +93,10 @@ const App = () => (
             <Route path="/marketing/brand-kit" element={<ProtectedRoute role="org_user"><BrandKit /></ProtectedRoute>} />
             <Route path="/marketing/contacts" element={<ProtectedRoute role="org_user"><Contacts /></ProtectedRoute>} />
             <Route path="/marketing/email-setup" element={<ProtectedRoute role="org_user"><EmailSetup /></ProtectedRoute>} />
+            <Route path="/marketing/designs" element={<ProtectedRoute><Designs /></ProtectedRoute>} />
+            <Route path="/marketing/designs/:id" element={<ProtectedRoute><DesignEditor /></ProtectedRoute>} />
+            <Route path="/marketing/emails" element={<ProtectedRoute><Emails /></ProtectedRoute>} />
+            <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin"><AdminDesignTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
