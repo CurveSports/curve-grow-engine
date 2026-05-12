@@ -1966,6 +1966,194 @@ export type Database = {
           },
         ]
       }
+      design_refinements: {
+        Row: {
+          created_at: string
+          design_id: string
+          id: string
+          new_html: string | null
+          previous_html: string | null
+          refined_by: string | null
+          refinement_prompt: string
+        }
+        Insert: {
+          created_at?: string
+          design_id: string
+          id?: string
+          new_html?: string | null
+          previous_html?: string | null
+          refined_by?: string | null
+          refinement_prompt: string
+        }
+        Update: {
+          created_at?: string
+          design_id?: string
+          id?: string
+          new_html?: string | null
+          previous_html?: string | null
+          refined_by?: string | null
+          refinement_prompt?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_refinements_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_templates: {
+        Row: {
+          active: boolean
+          base_prompt: string
+          category: string
+          created_at: string
+          design_type: string
+          dimensions: Json
+          example_output: string | null
+          id: string
+          input_fields: Json
+          is_system: boolean
+          name: string
+          owner_org_id: string | null
+          sort_order: number
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          base_prompt: string
+          category?: string
+          created_at?: string
+          design_type: string
+          dimensions?: Json
+          example_output?: string | null
+          id?: string
+          input_fields?: Json
+          is_system?: boolean
+          name: string
+          owner_org_id?: string | null
+          sort_order?: number
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          base_prompt?: string
+          category?: string
+          created_at?: string
+          design_type?: string
+          dimensions?: Json
+          example_output?: string | null
+          id?: string
+          input_fields?: Json
+          is_system?: boolean
+          name?: string
+          owner_org_id?: string | null
+          sort_order?: number
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_templates_owner_org_id_fkey"
+            columns: ["owner_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      designs: {
+        Row: {
+          ai_model_used: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          created_by_role: string | null
+          design_type: string
+          export_urls: Json | null
+          generated_html: string | null
+          generation_cost_cents: number | null
+          id: string
+          name: string | null
+          org_id: string
+          parent_design_id: string | null
+          preview_url: string | null
+          prompt_input: Json | null
+          status: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          ai_model_used?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_role?: string | null
+          design_type: string
+          export_urls?: Json | null
+          generated_html?: string | null
+          generation_cost_cents?: number | null
+          id?: string
+          name?: string | null
+          org_id: string
+          parent_design_id?: string | null
+          preview_url?: string | null
+          prompt_input?: Json | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ai_model_used?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_role?: string | null
+          design_type?: string
+          export_urls?: Json | null
+          generated_html?: string | null
+          generation_cost_cents?: number | null
+          id?: string
+          name?: string | null
+          org_id?: string
+          parent_design_id?: string | null
+          preview_url?: string | null
+          prompt_input?: Json | null
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "designs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "designs_parent_design_id_fkey"
+            columns: ["parent_design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "designs_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "design_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -2040,6 +2228,124 @@ export type Database = {
             foreignKeyName: "notification_log_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_brand_assets: {
+        Row: {
+          alt_text: string | null
+          archived: boolean
+          asset_type: string
+          filename: string | null
+          id: string
+          org_id: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+          url: string
+        }
+        Insert: {
+          alt_text?: string | null
+          archived?: boolean
+          asset_type?: string
+          filename?: string | null
+          id?: string
+          org_id: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          url: string
+        }
+        Update: {
+          alt_text?: string | null
+          archived?: boolean
+          asset_type?: string
+          filename?: string | null
+          id?: string
+          org_id?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_brand_assets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_brand_kits: {
+        Row: {
+          brand_voice_notes: string | null
+          color_accent: string | null
+          color_dark: string | null
+          color_light: string | null
+          color_primary: string | null
+          color_secondary: string | null
+          created_at: string
+          font_body: string | null
+          font_heading: string | null
+          hashtags: string[] | null
+          id: string
+          logo_mark_url: string | null
+          logo_primary_url: string | null
+          logo_secondary_url: string | null
+          org_id: string
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          brand_voice_notes?: string | null
+          color_accent?: string | null
+          color_dark?: string | null
+          color_light?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
+          created_at?: string
+          font_body?: string | null
+          font_heading?: string | null
+          hashtags?: string[] | null
+          id?: string
+          logo_mark_url?: string | null
+          logo_primary_url?: string | null
+          logo_secondary_url?: string | null
+          org_id: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          brand_voice_notes?: string | null
+          color_accent?: string | null
+          color_dark?: string | null
+          color_light?: string | null
+          color_primary?: string | null
+          color_secondary?: string | null
+          created_at?: string
+          font_body?: string | null
+          font_heading?: string | null
+          hashtags?: string[] | null
+          id?: string
+          logo_mark_url?: string | null
+          logo_primary_url?: string | null
+          logo_secondary_url?: string | null
+          org_id?: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_brand_kits_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -2464,6 +2770,190 @@ export type Database = {
           },
         ]
       }
+      org_contact_segments: {
+        Row: {
+          contact_count: number
+          created_at: string
+          description: string | null
+          filter_rules: Json
+          id: string
+          is_system: boolean
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          contact_count?: number
+          created_at?: string
+          description?: string | null
+          filter_rules?: Json
+          id?: string
+          is_system?: boolean
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          contact_count?: number
+          created_at?: string
+          description?: string | null
+          filter_rules?: Json
+          id?: string
+          is_system?: boolean
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contact_segments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_contact_uploads: {
+        Row: {
+          created_at: string
+          duplicates_merged: number | null
+          error_details: Json | null
+          errors: number | null
+          filename: string | null
+          id: string
+          org_id: string
+          status: string
+          successful_imports: number | null
+          total_rows: number | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          duplicates_merged?: number | null
+          error_details?: Json | null
+          errors?: number | null
+          filename?: string | null
+          id?: string
+          org_id: string
+          status?: string
+          successful_imports?: number | null
+          total_rows?: number | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          duplicates_merged?: number | null
+          error_details?: Json | null
+          errors?: number | null
+          filename?: string | null
+          id?: string
+          org_id?: string
+          status?: string
+          successful_imports?: number | null
+          total_rows?: number | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contact_uploads_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_contacts: {
+        Row: {
+          contact_type: string
+          created_at: string
+          custom_fields: Json | null
+          email: string | null
+          first_name: string | null
+          hard_bounce: boolean
+          id: string
+          last_engaged_at: string | null
+          last_name: string | null
+          org_id: string
+          parent_of_contact_id: string | null
+          phone: string | null
+          player_grad_year: number | null
+          season: string | null
+          sms_opt_in: boolean
+          sms_opt_in_date: string | null
+          source: string | null
+          source_batch_id: string | null
+          team_assignments: string[] | null
+          unsubscribed: boolean
+          unsubscribed_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          contact_type?: string
+          created_at?: string
+          custom_fields?: Json | null
+          email?: string | null
+          first_name?: string | null
+          hard_bounce?: boolean
+          id?: string
+          last_engaged_at?: string | null
+          last_name?: string | null
+          org_id: string
+          parent_of_contact_id?: string | null
+          phone?: string | null
+          player_grad_year?: number | null
+          season?: string | null
+          sms_opt_in?: boolean
+          sms_opt_in_date?: string | null
+          source?: string | null
+          source_batch_id?: string | null
+          team_assignments?: string[] | null
+          unsubscribed?: boolean
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          contact_type?: string
+          created_at?: string
+          custom_fields?: Json | null
+          email?: string | null
+          first_name?: string | null
+          hard_bounce?: boolean
+          id?: string
+          last_engaged_at?: string | null
+          last_name?: string | null
+          org_id?: string
+          parent_of_contact_id?: string | null
+          phone?: string | null
+          player_grad_year?: number | null
+          season?: string | null
+          sms_opt_in?: boolean
+          sms_opt_in_date?: string | null
+          source?: string | null
+          source_batch_id?: string | null
+          team_assignments?: string[] | null
+          unsubscribed?: boolean
+          unsubscribed_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_contacts_parent_of_contact_id_fkey"
+            columns: ["parent_of_contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_contract_installments: {
         Row: {
           amount: number
@@ -2663,6 +3153,197 @@ export type Database = {
           youtube_url?: string | null
         }
         Relationships: []
+      }
+      org_email_domains: {
+        Row: {
+          created_at: string
+          dkim_verified: boolean
+          domain: string
+          from_email: string | null
+          from_name: string | null
+          id: string
+          is_default: boolean
+          org_id: string
+          provider_domain_id: string | null
+          spf_verified: boolean
+          verification_records: Json | null
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          dkim_verified?: boolean
+          domain: string
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          is_default?: boolean
+          org_id: string
+          provider_domain_id?: string | null
+          spf_verified?: boolean
+          verification_records?: Json | null
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          dkim_verified?: boolean
+          domain?: string
+          from_email?: string | null
+          from_name?: string | null
+          id?: string
+          is_default?: boolean
+          org_id?: string
+          provider_domain_id?: string | null
+          spf_verified?: boolean
+          verification_records?: Json | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_email_domains_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_email_events: {
+        Row: {
+          contact_id: string | null
+          email: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          occurred_at: string
+          send_id: string
+        }
+        Insert: {
+          contact_id?: string | null
+          email?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          occurred_at?: string
+          send_id: string
+        }
+        Update: {
+          contact_id?: string | null
+          email?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          send_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_email_events_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_email_events_send_id_fkey"
+            columns: ["send_id"]
+            isOneToOne: false
+            referencedRelation: "org_email_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_email_sends: {
+        Row: {
+          bounced_count: number | null
+          clicked_count: number | null
+          created_at: string
+          created_by: string | null
+          delivered_count: number | null
+          design_id: string | null
+          from_email: string | null
+          from_name: string | null
+          html_body: string | null
+          id: string
+          opened_count: number | null
+          org_id: string
+          preview_text: string | null
+          provider_batch_id: string | null
+          recipient_count: number | null
+          reply_to: string | null
+          scheduled_for: string | null
+          segment_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string | null
+          text_body: string | null
+          unsubscribed_count: number | null
+        }
+        Insert: {
+          bounced_count?: number | null
+          clicked_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number | null
+          design_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          html_body?: string | null
+          id?: string
+          opened_count?: number | null
+          org_id: string
+          preview_text?: string | null
+          provider_batch_id?: string | null
+          recipient_count?: number | null
+          reply_to?: string | null
+          scheduled_for?: string | null
+          segment_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          text_body?: string | null
+          unsubscribed_count?: number | null
+        }
+        Update: {
+          bounced_count?: number | null
+          clicked_count?: number | null
+          created_at?: string
+          created_by?: string | null
+          delivered_count?: number | null
+          design_id?: string | null
+          from_email?: string | null
+          from_name?: string | null
+          html_body?: string | null
+          id?: string
+          opened_count?: number | null
+          org_id?: string
+          preview_text?: string | null
+          provider_batch_id?: string | null
+          recipient_count?: number | null
+          reply_to?: string | null
+          scheduled_for?: string | null
+          segment_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string | null
+          text_body?: string | null
+          unsubscribed_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_email_sends_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_email_sends_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "org_contact_segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       org_engagement_baselines: {
         Row: {
@@ -4474,6 +5155,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"]
         }[]
       }
+      count_segment_contacts: { Args: { _segment_id: string }; Returns: number }
       current_org_id: { Args: never; Returns: string }
       generate_staff_token: { Args: never; Returns: string }
       get_org_sponsorship_view: {
@@ -4522,11 +5204,19 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      recompute_org_segment_counts: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
       recompute_platform_marketing_scores: {
         Args: { _org_id: string }
         Returns: undefined
       }
       recompute_sponsorship_summary: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
+      seed_org_system_segments: {
         Args: { _org_id: string }
         Returns: undefined
       }
