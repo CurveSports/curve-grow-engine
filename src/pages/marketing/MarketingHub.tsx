@@ -1,9 +1,15 @@
 import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { Palette, Users, Mail, Sparkles, ArrowRight } from "lucide-react";
+import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2 } from "lucide-react";
 
 const TILES = [
+  {
+    to: "/marketing/campaigns",
+    label: "Campaigns",
+    desc: "Coordinate flyers, emails and posts under one goal with a shared approval flow.",
+    icon: Megaphone,
+  },
   {
     to: "/marketing/designs",
     label: "Designs",
@@ -15,6 +21,12 @@ const TILES = [
     label: "Email campaigns",
     desc: "Send approved designs to a segment and track opens, clicks, bounces.",
     icon: Mail,
+  },
+  {
+    to: "/marketing/approvals",
+    label: "Approvals",
+    desc: "Final sign-off on assets that have cleared Curve review.",
+    icon: CheckCircle2,
   },
   {
     to: "/marketing/contacts",

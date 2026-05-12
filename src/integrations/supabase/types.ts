@@ -1514,6 +1514,284 @@ export type Database = {
           },
         ]
       }
+      approval_comments: {
+        Row: {
+          approval_id: string
+          author_id: string | null
+          author_role: string | null
+          comment_text: string
+          comment_type: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          approval_id: string
+          author_id?: string | null
+          author_role?: string | null
+          comment_text: string
+          comment_type?: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          approval_id?: string
+          author_id?: string | null
+          author_role?: string | null
+          comment_text?: string
+          comment_type?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_comments_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approval_queue"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      approval_queue: {
+        Row: {
+          campaign_id: string | null
+          created_at: string
+          current_stage: string
+          curve_decision: string | null
+          curve_review_notes: string | null
+          curve_reviewed_at: string | null
+          curve_reviewer_id: string | null
+          design_id: string | null
+          email_send_id: string | null
+          finalized_at: string | null
+          id: string
+          org_decision: string | null
+          org_id: string
+          org_review_notes: string | null
+          org_reviewed_at: string | null
+          org_reviewer_id: string | null
+          priority: string
+          status: string
+          subject_type: string
+          submitted_at: string
+          submitted_by: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string
+          current_stage?: string
+          curve_decision?: string | null
+          curve_review_notes?: string | null
+          curve_reviewed_at?: string | null
+          curve_reviewer_id?: string | null
+          design_id?: string | null
+          email_send_id?: string | null
+          finalized_at?: string | null
+          id?: string
+          org_decision?: string | null
+          org_id: string
+          org_review_notes?: string | null
+          org_reviewed_at?: string | null
+          org_reviewer_id?: string | null
+          priority?: string
+          status?: string
+          subject_type: string
+          submitted_at?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string
+          current_stage?: string
+          curve_decision?: string | null
+          curve_review_notes?: string | null
+          curve_reviewed_at?: string | null
+          curve_reviewer_id?: string | null
+          design_id?: string | null
+          email_send_id?: string | null
+          finalized_at?: string | null
+          id?: string
+          org_decision?: string | null
+          org_id?: string
+          org_review_notes?: string | null
+          org_reviewed_at?: string | null
+          org_reviewer_id?: string | null
+          priority?: string
+          status?: string
+          subject_type?: string
+          submitted_at?: string
+          submitted_by?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approval_queue_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_queue_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_queue_email_send_id_fkey"
+            columns: ["email_send_id"]
+            isOneToOne: false
+            referencedRelation: "org_email_sends"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approval_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_assets: {
+        Row: {
+          asset_type: string
+          campaign_id: string
+          created_at: string
+          design_id: string | null
+          email_send_id: string | null
+          id: string
+          label: string | null
+          notes: string | null
+          sort_order: number
+        }
+        Insert: {
+          asset_type: string
+          campaign_id: string
+          created_at?: string
+          design_id?: string | null
+          email_send_id?: string | null
+          id?: string
+          label?: string | null
+          notes?: string | null
+          sort_order?: number
+        }
+        Update: {
+          asset_type?: string
+          campaign_id?: string
+          created_at?: string
+          design_id?: string | null
+          email_send_id?: string | null
+          id?: string
+          label?: string | null
+          notes?: string | null
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_assets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_assets_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_assets_email_send_id_fkey"
+            columns: ["email_send_id"]
+            isOneToOne: false
+            referencedRelation: "org_email_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaigns: {
+        Row: {
+          brand_color: string | null
+          campaign_type: string
+          cover_image_url: string | null
+          created_at: string
+          created_by: string | null
+          created_by_role: string | null
+          description: string | null
+          end_date: string | null
+          goal: string | null
+          id: string
+          metrics: Json | null
+          name: string
+          org_id: string
+          segment_id: string | null
+          start_date: string | null
+          status: string
+          target_audience: Json | null
+          updated_at: string
+        }
+        Insert: {
+          brand_color?: string | null
+          campaign_type?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_role?: string | null
+          description?: string | null
+          end_date?: string | null
+          goal?: string | null
+          id?: string
+          metrics?: Json | null
+          name: string
+          org_id: string
+          segment_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_audience?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          brand_color?: string | null
+          campaign_type?: string
+          cover_image_url?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_role?: string | null
+          description?: string | null
+          end_date?: string | null
+          goal?: string | null
+          id?: string
+          metrics?: Json | null
+          name?: string
+          org_id?: string
+          segment_id?: string | null
+          start_date?: string | null
+          status?: string
+          target_audience?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "org_contact_segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_requirement_templates: {
         Row: {
           applies_to_role_types: string[]
