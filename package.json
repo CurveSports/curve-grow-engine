@@ -58,7 +58,6 @@
     "framer-motion": "^12.38.0",
     "html2canvas": "1.4.1",
     "input-otp": "^1.4.2",
-    "jspdf": "2.5.2",
     "lucide-react": "^0.462.0",
     "mjml-browser": "^5.2.1",
     "mustache": "^4.2.0",
