@@ -2541,6 +2541,73 @@ export type Database = {
           },
         ]
       }
+      magic_links: {
+        Row: {
+          action: string
+          campaign_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          org_id: string
+          payload: Json
+          token: string
+          used_at: string | null
+          used_by_email: string | null
+        }
+        Insert: {
+          action: string
+          campaign_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          org_id: string
+          payload?: Json
+          token: string
+          used_at?: string | null
+          used_by_email?: string | null
+        }
+        Update: {
+          action?: string
+          campaign_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          org_id?: string
+          payload?: Json
+          token?: string
+          used_at?: string | null
+          used_by_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "magic_links_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magic_links_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "magic_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_log: {
         Row: {
           id: string
@@ -4288,6 +4355,82 @@ export type Database = {
           },
         ]
       }
+      org_shortlinks: {
+        Row: {
+          active: boolean
+          brand_color: string | null
+          campaign_id: string | null
+          click_count: number
+          created_at: string
+          created_by: string | null
+          design_id: string | null
+          expires_at: string | null
+          id: string
+          label: string | null
+          org_id: string
+          slug: string
+          target_url: string
+          unique_click_count: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          brand_color?: string | null
+          campaign_id?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          design_id?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          org_id: string
+          slug: string
+          target_url: string
+          unique_click_count?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          brand_color?: string | null
+          campaign_id?: string | null
+          click_count?: number
+          created_at?: string
+          created_by?: string | null
+          design_id?: string | null
+          expires_at?: string | null
+          id?: string
+          label?: string | null
+          org_id?: string
+          slug?: string
+          target_url?: string
+          unique_click_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_shortlinks_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_shortlinks_design_id_fkey"
+            columns: ["design_id"]
+            isOneToOne: false
+            referencedRelation: "designs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_shortlinks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_sponsorship_summary: {
         Row: {
           cold_leads: number
@@ -5051,6 +5194,44 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shortlink_clicks: {
+        Row: {
+          country: string | null
+          id: string
+          ip_hash: string | null
+          occurred_at: string
+          referer: string | null
+          shortlink_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          country?: string | null
+          id?: string
+          ip_hash?: string | null
+          occurred_at?: string
+          referer?: string | null
+          shortlink_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          country?: string | null
+          id?: string
+          ip_hash?: string | null
+          occurred_at?: string
+          referer?: string | null
+          shortlink_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shortlink_clicks_shortlink_id_fkey"
+            columns: ["shortlink_id"]
+            isOneToOne: false
+            referencedRelation: "org_shortlinks"
             referencedColumns: ["id"]
           },
         ]

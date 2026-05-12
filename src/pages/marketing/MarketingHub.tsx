@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2 } from "lucide-react";
+import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2, Link2 } from "lucide-react";
 
 const TILES = [
   {
@@ -27,6 +27,12 @@ const TILES = [
     label: "Approvals",
     desc: "Final sign-off on assets that have cleared Curve review.",
     icon: CheckCircle2,
+  },
+  {
+    to: "/marketing/shortlinks",
+    label: "Shortlinks & QR",
+    desc: "Branded trackable links with one-click QR codes for flyers and posts.",
+    icon: Link2,
   },
   {
     to: "/marketing/contacts",
