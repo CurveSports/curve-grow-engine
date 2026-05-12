@@ -98,7 +98,9 @@ const App = () => (
             <Route path="/marketing/designs" element={<ProtectedRoute><Designs /></ProtectedRoute>} />
             <Route path="/marketing/designs/:id" element={<ProtectedRoute><DesignEditor /></ProtectedRoute>} />
             <Route path="/marketing/emails" element={<ProtectedRoute><Emails /></ProtectedRoute>} />
+            <Route path="/marketing/emails/new" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
             <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin"><AdminDesignTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin"><AdminEmailTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
