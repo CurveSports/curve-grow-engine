@@ -10,9 +10,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Mail, Send, Loader2, Eye, MousePointer, AlertTriangle } from "lucide-react";
+import { Plus, Mail, Send as SendIcon, Loader2, Eye, MousePointer, AlertTriangle } from "lucide-react";
 
-type Send = {
+type EmailSend = {
   id: string;
   subject: string | null;
   status: string;
