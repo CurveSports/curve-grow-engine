@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2 } from "lucide-react";
+import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2, Link2 } from "lucide-react";
 
 const TILES = [
   {
