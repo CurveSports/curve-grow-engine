@@ -35,12 +35,9 @@ Deno.serve(async (req) => {
   const country = req.headers.get("cf-ipcountry") ?? null;
   const ipHash = await hashIp(ip);
 
-  // Increment counter and insert click row
+  // Increment counter and insert click row (best-effort, non-blocking)
   await Promise.all([
-    supabase.rpc("increment_shortlink_click", { _link_id: link.id, _ip_hash: ipHash }).catch(() =>
-      // Fallback if RPC not present: do plain update + insert
-      supabase.from("org_shortlinks").update({ click_count: link.click_count + 1 }).eq("id", link.id)
-    ),
+    supabase.from("org_shortlinks").update({ click_count: (link.click_count ?? 0) + 1 }).eq("id", link.id),
     supabase.from("shortlink_clicks").insert({
       shortlink_id: link.id,
       user_agent: ua,
@@ -48,7 +45,7 @@ Deno.serve(async (req) => {
       ip_hash: ipHash,
       country,
     }),
-  ]);
+  ]).catch((e) => console.error("click logging failed", e));
 
   return Response.redirect(link.target_url, 302);
 });
