@@ -67,6 +67,7 @@ import AbTests from "@/pages/marketing/AbTests";
 import SendTimes from "@/pages/marketing/SendTimes";
 import SmsCompanion from "@/pages/marketing/SmsCompanion";
 import SocialAccounts from "@/pages/marketing/SocialAccounts";
+import SystemIntegrations from "@/pages/admin/system/SystemIntegrations";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -141,6 +142,7 @@ const App = () => (
             <Route path="/admin/templates" element={<ProtectedRoute role="admin" module="allegiance"><AdminTemplates /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsersPage /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />
+            <Route path="/admin/system/wiring-status" element={<ProtectedRoute role="admin"><SystemIntegrations /></ProtectedRoute>} />
             
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
