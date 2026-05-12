@@ -78,6 +78,7 @@ const ORG_GROUPS: NavGroup[] = [
   {
     label: "Tools",
     items: [
+      { to: "/marketing", label: "Marketing", icon: Sparkles, match: (p) => p.startsWith("/marketing") },
       { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
       { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
       { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
