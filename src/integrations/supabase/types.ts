@@ -3564,6 +3564,87 @@ export type Database = {
         }
         Relationships: []
       }
+      org_email_ab_tests: {
+        Row: {
+          campaign_asset_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          email_id: string | null
+          id: string
+          org_id: string
+          split_pct: number
+          started_at: string | null
+          status: string
+          test_window_hours: number
+          updated_at: string
+          variant_a_clicks: number
+          variant_a_opens: number
+          variant_a_preview: string | null
+          variant_a_sent: number
+          variant_a_subject: string
+          variant_b_clicks: number
+          variant_b_opens: number
+          variant_b_preview: string | null
+          variant_b_sent: number
+          variant_b_subject: string
+          winner_metric: string
+          winner_variant: string | null
+        }
+        Insert: {
+          campaign_asset_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email_id?: string | null
+          id?: string
+          org_id: string
+          split_pct?: number
+          started_at?: string | null
+          status?: string
+          test_window_hours?: number
+          updated_at?: string
+          variant_a_clicks?: number
+          variant_a_opens?: number
+          variant_a_preview?: string | null
+          variant_a_sent?: number
+          variant_a_subject: string
+          variant_b_clicks?: number
+          variant_b_opens?: number
+          variant_b_preview?: string | null
+          variant_b_sent?: number
+          variant_b_subject: string
+          winner_metric?: string
+          winner_variant?: string | null
+        }
+        Update: {
+          campaign_asset_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email_id?: string | null
+          id?: string
+          org_id?: string
+          split_pct?: number
+          started_at?: string | null
+          status?: string
+          test_window_hours?: number
+          updated_at?: string
+          variant_a_clicks?: number
+          variant_a_opens?: number
+          variant_a_preview?: string | null
+          variant_a_sent?: number
+          variant_a_subject?: string
+          variant_b_clicks?: number
+          variant_b_opens?: number
+          variant_b_preview?: string | null
+          variant_b_sent?: number
+          variant_b_subject?: string
+          winner_metric?: string
+          winner_variant?: string | null
+        }
+        Relationships: []
+      }
       org_email_domains: {
         Row: {
           created_at: string
@@ -4355,6 +4436,48 @@ export type Database = {
           },
         ]
       }
+      org_send_time_recommendations: {
+        Row: {
+          audience_segment: string | null
+          click_rate: number
+          computed_at: string
+          confidence: string
+          day_of_week: number
+          hour_of_day: number
+          id: string
+          is_recommended: boolean
+          open_rate: number
+          org_id: string
+          sample_size: number
+        }
+        Insert: {
+          audience_segment?: string | null
+          click_rate?: number
+          computed_at?: string
+          confidence?: string
+          day_of_week: number
+          hour_of_day: number
+          id?: string
+          is_recommended?: boolean
+          open_rate?: number
+          org_id: string
+          sample_size?: number
+        }
+        Update: {
+          audience_segment?: string | null
+          click_rate?: number
+          computed_at?: string
+          confidence?: string
+          day_of_week?: number
+          hour_of_day?: number
+          id?: string
+          is_recommended?: boolean
+          open_rate?: number
+          org_id?: string
+          sample_size?: number
+        }
+        Relationships: []
+      }
       org_shortlinks: {
         Row: {
           active: boolean
@@ -4427,6 +4550,176 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_sms_drafts: {
+        Row: {
+          body: string
+          campaign_asset_id: string | null
+          created_at: string
+          created_by: string | null
+          estimated_recipients: number
+          id: string
+          org_id: string
+          segment_id: string | null
+          shortlink_id: string | null
+          source_email_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          campaign_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimated_recipients?: number
+          id?: string
+          org_id: string
+          segment_id?: string | null
+          shortlink_id?: string | null
+          source_email_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          campaign_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          estimated_recipients?: number
+          id?: string
+          org_id?: string
+          segment_id?: string | null
+          shortlink_id?: string | null
+          source_email_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      org_social_accounts: {
+        Row: {
+          buffer_profile_id: string | null
+          created_at: string
+          created_by: string | null
+          display_name: string | null
+          external_id: string | null
+          handle: string
+          id: string
+          last_synced_at: string | null
+          org_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          buffer_profile_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          external_id?: string | null
+          handle: string
+          id?: string
+          last_synced_at?: string | null
+          org_id: string
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          buffer_profile_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          display_name?: string | null
+          external_id?: string | null
+          handle?: string
+          id?: string
+          last_synced_at?: string | null
+          org_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      org_social_posts: {
+        Row: {
+          body: string
+          buffer_update_id: string | null
+          campaign_asset_id: string | null
+          comments_count: number
+          created_at: string
+          created_by: string | null
+          design_id: string | null
+          error_message: string | null
+          external_post_id: string | null
+          id: string
+          impressions_count: number
+          likes_count: number
+          media_urls: string[]
+          org_id: string
+          posted_at: string | null
+          scheduled_for: string | null
+          shares_count: number
+          shortlink_id: string | null
+          social_account_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          buffer_update_id?: string | null
+          campaign_asset_id?: string | null
+          comments_count?: number
+          created_at?: string
+          created_by?: string | null
+          design_id?: string | null
+          error_message?: string | null
+          external_post_id?: string | null
+          id?: string
+          impressions_count?: number
+          likes_count?: number
+          media_urls?: string[]
+          org_id: string
+          posted_at?: string | null
+          scheduled_for?: string | null
+          shares_count?: number
+          shortlink_id?: string | null
+          social_account_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          buffer_update_id?: string | null
+          campaign_asset_id?: string | null
+          comments_count?: number
+          created_at?: string
+          created_by?: string | null
+          design_id?: string | null
+          error_message?: string | null
+          external_post_id?: string | null
+          id?: string
+          impressions_count?: number
+          likes_count?: number
+          media_urls?: string[]
+          org_id?: string
+          posted_at?: string | null
+          scheduled_for?: string | null
+          shares_count?: number
+          shortlink_id?: string | null
+          social_account_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_social_posts_social_account_id_fkey"
+            columns: ["social_account_id"]
+            isOneToOne: false
+            referencedRelation: "org_social_accounts"
             referencedColumns: ["id"]
           },
         ]

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
-import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2, Link2 } from "lucide-react";
+import { Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2, Link2, FlaskConical, Clock, MessageSquare, Share2 } from "lucide-react";
 
 const TILES = [
   {
@@ -33,6 +33,30 @@ const TILES = [
     label: "Shortlinks & QR",
     desc: "Branded trackable links with one-click QR codes for flyers and posts.",
     icon: Link2,
+  },
+  {
+    to: "/marketing/ab-tests",
+    label: "A/B Tests",
+    desc: "Test two subject lines on a slice of your audience and auto-send the winner.",
+    icon: FlaskConical,
+  },
+  {
+    to: "/marketing/send-times",
+    label: "Send-time Optimization",
+    desc: "Recommended windows based on when your audience actually opens email.",
+    icon: Clock,
+  },
+  {
+    to: "/marketing/sms",
+    label: "SMS Companions",
+    desc: "Generate short SMS versions of your emails. Sending wires in next round.",
+    icon: MessageSquare,
+  },
+  {
+    to: "/marketing/social",
+    label: "Social Accounts",
+    desc: "Connect Instagram, Facebook, X, LinkedIn and more via Buffer (stub).",
+    icon: Share2,
   },
   {
     to: "/marketing/contacts",

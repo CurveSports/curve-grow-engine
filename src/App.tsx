@@ -63,6 +63,10 @@ import Campaigns from "@/pages/marketing/Campaigns";
 import CampaignDetail from "@/pages/marketing/CampaignDetail";
 import ApprovalsQueue from "@/pages/marketing/ApprovalsQueue";
 import Shortlinks from "@/pages/marketing/Shortlinks";
+import AbTests from "@/pages/marketing/AbTests";
+import SendTimes from "@/pages/marketing/SendTimes";
+import SmsCompanion from "@/pages/marketing/SmsCompanion";
+import SocialAccounts from "@/pages/marketing/SocialAccounts";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -108,6 +112,10 @@ const App = () => (
             <Route path="/marketing/approvals" element={<ProtectedRoute role="org_user"><ApprovalsQueue mode="org" /></ProtectedRoute>} />
             <Route path="/admin/marketing/approvals" element={<ProtectedRoute role="admin"><ApprovalsQueue mode="curve" /></ProtectedRoute>} />
             <Route path="/marketing/shortlinks" element={<ProtectedRoute><Shortlinks /></ProtectedRoute>} />
+            <Route path="/marketing/ab-tests" element={<ProtectedRoute><AbTests /></ProtectedRoute>} />
+            <Route path="/marketing/send-times" element={<ProtectedRoute><SendTimes /></ProtectedRoute>} />
+            <Route path="/marketing/sms" element={<ProtectedRoute><SmsCompanion /></ProtectedRoute>} />
+            <Route path="/marketing/social" element={<ProtectedRoute><SocialAccounts /></ProtectedRoute>} />
             <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin"><AdminDesignTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin"><AdminEmailTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
