@@ -1,0 +1,276 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import AppShell from "@/components/AppShell";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { ArrowLeft, Sparkles, Loader2, Wand2, Copy, Download, CheckCircle2, XCircle, Send, Mail } from "lucide-react";
+
+type Design = {
+  id: string;
+  org_id: string;
+  name: string | null;
+  design_type: string;
+  status: string;
+  generated_html: string | null;
+  preview_url: string | null;
+  export_urls: any;
+  template_id: string | null;
+  parent_design_id: string | null;
+  created_at: string;
+};
+
+type Template = { id: string; name: string; dimensions: any };
+type Refinement = { id: string; refinement_prompt: string; created_at: string };
+
+export default function DesignEditor() {
+  const { id } = useParams<{ id: string }>();
+  const { profile, role } = useAuth();
+  const navigate = useNavigate();
+  const isAdmin = role === "admin";
+
+  const [design, setDesign] = useState<Design | null>(null);
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [refinements, setRefinements] = useState<Refinement[]>([]);
+  const [variations, setVariations] = useState<Design[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [refinePrompt, setRefinePrompt] = useState("");
+  const [refining, setRefining] = useState(false);
+  const [varying, setVarying] = useState(false);
+  const [exporting, setExporting] = useState<string | null>(null);
+  const [name, setName] = useState("");
+
+  const load = async () => {
+    if (!id) return;
+    setLoading(true);
+    const { data: d } = await supabase.from("designs").select("*").eq("id", id).single();
+    if (!d) { setLoading(false); return; }
+    setDesign(d as Design);
+    setName(d.name || "");
+    const promises: any[] = [
+      supabase.from("design_refinements").select("id,refinement_prompt,created_at").eq("design_id", id).order("created_at", { ascending: false }),
+      supabase.from("designs").select("id,name,preview_url,status,design_type,created_at,template_id,parent_design_id,generated_html,org_id,export_urls").eq("parent_design_id", id),
+    ];
+    if (d.template_id) promises.push(supabase.from("design_templates").select("id,name,dimensions").eq("id", d.template_id).single());
+    const [refRes, varRes, tplRes] = await Promise.all(promises);
+    setRefinements((refRes.data ?? []) as Refinement[]);
+    setVariations((varRes.data ?? []) as Design[]);
+    if (tplRes?.data) setTemplate(tplRes.data as Template);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
+
+  const previewSrc = useMemo(() => {
+    if (!design?.generated_html) return "";
+    return `data:text/html;charset=utf-8,${encodeURIComponent(design.generated_html)}`;
+  }, [design?.generated_html]);
+
+  const handleRefine = async () => {
+    if (!refinePrompt.trim() || !id) return;
+    setRefining(true);
+    try {
+      const { error } = await supabase.functions.invoke("refine-design", {
+        body: { design_id: id, refinement_prompt: refinePrompt.trim() },
+      });
+      if (error) throw error;
+      toast.success("Refinement applied");
+      setRefinePrompt("");
+      load();
+    } catch (e: any) {
+      toast.error(e.message || "Refinement failed");
+    } finally {
+      setRefining(false);
+    }
+  };
+
+  const handleVariations = async () => {
+    if (!id) return;
+    setVarying(true);
+    try {
+      const { error } = await supabase.functions.invoke("generate-variations", {
+        body: { design_id: id, count: 3 },
+      });
+      if (error) throw error;
+      toast.success("Variations created");
+      load();
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    } finally {
+      setVarying(false);
+    }
+  };
+
+  const handleExport = async (format: "png" | "jpg" | "pdf", scale = 1) => {
+    if (!id) return;
+    setExporting(`${format}_${scale}x`);
+    try {
+      const { data, error } = await supabase.functions.invoke("render-design", {
+        body: { design_id: id, format, scale },
+      });
+      if (error) throw error;
+      window.open(data.url, "_blank");
+      load();
+    } catch (e: any) {
+      toast.error(e.message || "Export failed (renderer pending — Browserless token will enable PNG/PDF export)");
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const updateStatus = async (status: string) => {
+    if (!id) return;
+    const updates: any = { status };
+    if (status === "approved") {
+      updates.approved_by = profile?.user_id;
+      updates.approved_at = new Date().toISOString();
+    }
+    const { error } = await supabase.from("designs").update(updates).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(`Status: ${status.replace("_", " ")}`);
+    load();
+  };
+
+  const saveName = async () => {
+    if (!id) return;
+    await supabase.from("designs").update({ name }).eq("id", id);
+    toast.success("Name updated");
+  };
+
+  if (loading) return <AppShell title="Design"><div className="p-8 text-muted-foreground">Loading…</div></AppShell>;
+  if (!design) return <AppShell title="Design"><div className="p-8">Design not found.</div></AppShell>;
+
+  const w = template?.dimensions?.width || 1080;
+  const h = template?.dimensions?.height || 1080;
+
+  return (
+    <AppShell title="Design">
+      <div className="flex items-center gap-3 mb-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/marketing/designs")}><ArrowLeft className="h-4 w-4 mr-1" />All designs</Button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Preview */}
+        <div className="lg:col-span-2">
+          <Card className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={saveName} className="font-display text-lg font-semibold border-0 bg-transparent shadow-none px-0 focus-visible:ring-0 max-w-md" />
+              <span className={`text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded ${design.status === "approved" ? "bg-green-100 text-green-800" : design.status === "pending_approval" ? "bg-amber-100 text-amber-800" : design.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>{design.status.replace("_", " ")}</span>
+            </div>
+            <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center overflow-auto" style={{ minHeight: 400 }}>
+              <iframe
+                srcDoc={design.generated_html || ""}
+                title="Design preview"
+                style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white" }}
+                sandbox="allow-same-origin"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-center mt-2">{w} × {h}px</p>
+          </Card>
+
+          {/* Variations */}
+          {variations.length > 0 && (
+            <Card className="p-4 mt-4">
+              <h3 className="font-display font-semibold mb-3">Variations</h3>
+              <div className="grid grid-cols-3 gap-3">
+                {variations.map((v) => (
+                  <Link key={v.id} to={`/marketing/designs/${v.id}`}>
+                    <div className="aspect-square bg-muted rounded overflow-hidden hover:ring-2 hover:ring-primary transition-all">
+                      {v.preview_url ? <img src={v.preview_url} alt={v.name || ""} className="w-full h-full object-cover" /> : (
+                        <iframe srcDoc={v.generated_html || ""} className="w-full h-full pointer-events-none" sandbox="allow-same-origin" title={v.name || ""} />
+                      )}
+                    </div>
+                    <p className="text-xs mt-1 truncate">{v.name}</p>
+                  </Link>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* Side panel */}
+        <div className="space-y-4">
+          {/* Refine */}
+          <Card className="p-4">
+            <h3 className="font-display font-semibold mb-2 flex items-center gap-2"><Wand2 className="h-4 w-4" />Refine with AI</h3>
+            <Textarea
+              rows={3}
+              placeholder="e.g. Make the headline bigger and add more energy"
+              value={refinePrompt}
+              onChange={(e) => setRefinePrompt(e.target.value)}
+            />
+            <Button onClick={handleRefine} disabled={refining || !refinePrompt.trim()} className="w-full mt-2">
+              {refining ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Refining…</> : <><Sparkles className="h-4 w-4 mr-2" />Apply refinement</>}
+            </Button>
+            <Button variant="outline" onClick={handleVariations} disabled={varying} className="w-full mt-2">
+              {varying ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating…</> : <><Copy className="h-4 w-4 mr-2" />Generate 3 variations</>}
+            </Button>
+          </Card>
+
+          {/* Approval */}
+          <Card className="p-4">
+            <h3 className="font-display font-semibold mb-3">Approval</h3>
+            <div className="space-y-2">
+              {design.status === "draft" && (
+                <Button onClick={() => updateStatus("pending_approval")} className="w-full" variant="outline">
+                  <Send className="h-4 w-4 mr-2" />Submit for approval
+                </Button>
+              )}
+              {isAdmin && design.status === "pending_approval" && (
+                <>
+                  <Button onClick={() => updateStatus("approved")} className="w-full">
+                    <CheckCircle2 className="h-4 w-4 mr-2" />Approve
+                  </Button>
+                  <Button onClick={() => updateStatus("rejected")} variant="outline" className="w-full">
+                    <XCircle className="h-4 w-4 mr-2" />Reject
+                  </Button>
+                </>
+              )}
+              {design.status === "approved" && (
+                <Button onClick={() => navigate(`/marketing/emails/new?design=${design.id}`)} className="w-full">
+                  <Mail className="h-4 w-4 mr-2" />Use in email
+                </Button>
+              )}
+            </div>
+          </Card>
+
+          {/* Export */}
+          <Card className="p-4">
+            <h3 className="font-display font-semibold mb-3">Export</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {(["png", "jpg", "pdf"] as const).flatMap((fmt) =>
+                (fmt === "pdf" ? [1] : [1, 2]).map((scale) => (
+                  <Button key={`${fmt}_${scale}`} variant="outline" size="sm" onClick={() => handleExport(fmt, scale)} disabled={exporting !== null}>
+                    {exporting === `${fmt}_${scale}x` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+                    {fmt.toUpperCase()}{scale > 1 ? ` ${scale}×` : ""}
+                  </Button>
+                ))
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">Renderer is currently a stub — exports return a placeholder until the Browserless token is configured.</p>
+          </Card>
+
+          {/* Refinement history */}
+          {refinements.length > 0 && (
+            <Card className="p-4">
+              <h3 className="font-display font-semibold mb-2">Refinement history</h3>
+              <ul className="space-y-2 text-xs">
+                {refinements.map((r) => (
+                  <li key={r.id} className="border-l-2 border-border pl-2">
+                    <p>{r.refinement_prompt}</p>
+                    <p className="text-muted-foreground">{new Date(r.created_at).toLocaleString()}</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+        </div>
+      </div>
+    </AppShell>
+  );
+}
