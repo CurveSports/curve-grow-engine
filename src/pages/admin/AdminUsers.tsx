@@ -51,6 +51,7 @@ export default function AdminUsers() {
   const [newOrgId, setNewOrgId] = useState<string>("");
   const [newAllegiance, setNewAllegiance] = useState(true);
   const [newAcquisitions, setNewAcquisitions] = useState(true);
+  const [newMarketing, setNewMarketing] = useState(true);
 
   const load = async () => {
     setLoading(true);
@@ -105,9 +106,10 @@ export default function AdminUsers() {
     setNewOrgId("");
     setNewAllegiance(true);
     setNewAcquisitions(true);
+    setNewMarketing(true);
   };
 
-  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions", checked: boolean) => {
+  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing", checked: boolean) => {
     const next = checked
       ? Array.from(new Set([...(row.module_access ?? []), mod]))
       : (row.module_access ?? []).filter((m) => m !== mod);
@@ -147,6 +149,7 @@ export default function AdminUsers() {
           module_access: [
             ...(newAllegiance ? ["allegiance"] : []),
             ...(newAcquisitions ? ["acquisitions"] : []),
+            ...(newMarketing ? ["marketing"] : []),
           ],
         },
       });
@@ -239,7 +242,11 @@ export default function AdminUsers() {
                     <Checkbox checked={newAcquisitions} onCheckedChange={(v) => setNewAcquisitions(!!v)} />
                     <span>Curve Acquisitions</span>
                   </label>
-                  {!newAllegiance && !newAcquisitions && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newMarketing} onCheckedChange={(v) => setNewMarketing(!!v)} />
+                    <span>Curve Marketing</span>
+                  </label>
+                  {!newAllegiance && !newAcquisitions && !newMarketing && (
                     <p className="text-xs text-destructive">Select at least one module.</p>
                   )}
                 </div>
@@ -249,7 +256,7 @@ export default function AdminUsers() {
               <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
                 Cancel
               </Button>
-              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions && !newMarketing)} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {creating ? "Creating…" : "Create & Invite"}
               </Button>
             </DialogFooter>
@@ -297,6 +304,14 @@ export default function AdminUsers() {
                           onCheckedChange={(v) => toggleModule(r, "acquisitions", !!v)}
                         />
                         <span>Acquisitions</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("marketing")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "marketing", !!v)}
+                        />
+                        <span>Marketing</span>
                       </label>
                     </div>
                   </td>

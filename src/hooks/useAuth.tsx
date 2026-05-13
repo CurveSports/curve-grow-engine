@@ -19,7 +19,7 @@ interface AuthCtx {
   role: Role;
   isPrimary: boolean;
   loading: boolean;
-  hasModule: (m: "allegiance" | "acquisitions") => boolean;
+  hasModule: (m: "allegiance" | "acquisitions" | "marketing") => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) await loadUserData(session.user.id);
   };
 
-  const hasModule = (m: "allegiance" | "acquisitions") =>
+  const hasModule = (m: "allegiance" | "acquisitions" | "marketing") =>
     !!profile?.module_access?.includes(m);
 
   return (

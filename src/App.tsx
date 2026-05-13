@@ -122,14 +122,14 @@ const App = () => (
             <Route path="/marketing/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
             <Route path="/marketing/campaigns/:id" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
             <Route path="/marketing/approvals" element={<ProtectedRoute role="org_user"><ApprovalsQueue mode="org" /></ProtectedRoute>} />
-            <Route path="/admin/marketing/approvals" element={<ProtectedRoute role="admin"><ApprovalsQueue mode="curve" /></ProtectedRoute>} />
+            <Route path="/admin/marketing/approvals" element={<ProtectedRoute role="admin" module="marketing"><ApprovalsQueue mode="curve" /></ProtectedRoute>} />
             <Route path="/marketing/shortlinks" element={<ProtectedRoute><Shortlinks /></ProtectedRoute>} />
             <Route path="/marketing/ab-tests" element={<ProtectedRoute><AbTests /></ProtectedRoute>} />
             <Route path="/marketing/send-times" element={<ProtectedRoute><SendTimes /></ProtectedRoute>} />
             <Route path="/marketing/sms" element={<ProtectedRoute><SmsCompanion /></ProtectedRoute>} />
             <Route path="/marketing/social" element={<ProtectedRoute><SocialAccounts /></ProtectedRoute>} />
-            <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin"><AdminDesignTemplates /></ProtectedRoute>} />
-            <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin"><AdminEmailTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin" module="marketing"><AdminDesignTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminEmailTemplates /></ProtectedRoute>} />
             <Route path="/marketing/sequences" element={<ProtectedRoute><SequenceLibrary /></ProtectedRoute>} />
             <Route path="/marketing/sequences/:id" element={<ProtectedRoute><SequencePreview /></ProtectedRoute>} />
             <Route path="/marketing/sequences/:id/launch" element={<ProtectedRoute><SequenceLaunch /></ProtectedRoute>} />
@@ -139,8 +139,8 @@ const App = () => (
             <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
             <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
-            <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin"><PortfolioAnalytics /></ProtectedRoute>} />
-            <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin"><AdminSequenceTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
+            <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
