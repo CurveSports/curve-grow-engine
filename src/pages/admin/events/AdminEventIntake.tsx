@@ -390,6 +390,11 @@ export default function AdminEventIntake() {
               <option value="zelle">Zelle</option>
               <option value="echeck">E-check</option>
             </select>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="h-10 rounded-md border border-border bg-background px-3 text-sm">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name">By last name</option>
+            </select>
           </div>
 
           <div className="overflow-x-auto -mx-5">
