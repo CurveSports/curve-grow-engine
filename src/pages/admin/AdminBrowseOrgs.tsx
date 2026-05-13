@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Building2, ArrowRight } from "lucide-react";
 
-type Org = { id: string; name: string; logo_url: string | null };
+type Org = { id: string; name: string };
 
 export default function AdminBrowseOrgs() {
   const [orgs, setOrgs] = useState<Org[]>([]);
@@ -15,7 +15,7 @@ export default function AdminBrowseOrgs() {
   useEffect(() => {
     supabase
       .from("organizations")
-      .select("id, name, logo_url")
+      .select("id, name")
       .order("name", { ascending: true })
       .then(({ data }) => setOrgs((data ?? []) as Org[]));
   }, []);
@@ -52,17 +52,9 @@ export default function AdminBrowseOrgs() {
               <Card className="transition hover:border-primary hover:shadow-md">
                 <CardHeader className="flex-row items-center justify-between gap-3 py-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    {o.logo_url ? (
-                      <img
-                        src={o.logo_url}
-                        alt=""
-                        className="h-9 w-9 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="h-9 w-9 rounded bg-muted flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    )}
+                    <div className="h-9 w-9 rounded bg-muted flex items-center justify-center">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
                     <CardTitle className="text-base truncate">
                       {o.name}
                     </CardTitle>
