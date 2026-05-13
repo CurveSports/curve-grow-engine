@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -41,7 +42,7 @@ type Comment = {
 
 export default function ApprovalsQueue({ mode }: { mode: "curve" | "org" }) {
   const { profile, user, role } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
 
   const [items, setItems] = useState<Approval[]>([]);
   const [loading, setLoading] = useState(true);

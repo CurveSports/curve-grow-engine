@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -30,7 +31,7 @@ export default function CampaignDetail() {
   const { id } = useParams();
   const { profile, user, role } = useAuth();
   const navigate = useNavigate();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [assets, setAssets] = useState<AssetRow[]>([]);
