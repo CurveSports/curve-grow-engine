@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Image as ImageIcon, Mail, Trash2, Send, Save } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Campaign = any;
 type AssetRow = {
@@ -30,7 +32,8 @@ export default function CampaignDetail() {
   const { id } = useParams();
   const { profile, user, role } = useAuth();
   const navigate = useNavigate();
-  const orgId = profile?.org_id;
+  const ml = useMarketingLink();
+  const { orgId } = useEffectiveOrg();
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [assets, setAssets] = useState<AssetRow[]>([]);
@@ -158,7 +161,7 @@ export default function CampaignDetail() {
   return (
     <AppShell title={campaign.name}>
       <div className="mb-6">
-        <Link to="/marketing/campaigns" className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
+        <Link to={ml("/marketing/campaigns")} className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1">
           <ArrowLeft className="h-4 w-4" /> Back to campaigns
         </Link>
       </div>
@@ -230,7 +233,7 @@ export default function CampaignDetail() {
                       <p className="text-xs text-muted-foreground capitalize">{a.asset_type} · {a.design?.status ?? a.email?.status ?? "—"}</p>
                     </div>
                     {a.design_id && (
-                      <Button size="sm" variant="ghost" onClick={() => navigate(`/marketing/designs/${a.design_id}`)}>Open</Button>
+                      <Button size="sm" variant="ghost" onClick={() => navigate(ml(`/marketing/designs/${a.design_id}`))}>Open</Button>
                     )}
                     <Button size="sm" variant="ghost" onClick={() => removeAsset(a.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                   </div>
@@ -250,7 +253,7 @@ export default function CampaignDetail() {
               <Send className="h-4 w-4 mr-2" />
               {campaign.status === "in_review" ? "In review" : "Submit for Curve review"}
             </Button>
-            <Link to="/marketing/approvals" className="block text-center text-sm text-primary hover:underline mt-3">
+            <Link to={ml("/marketing/approvals")} className="block text-center text-sm text-primary hover:underline mt-3">
               View approval queue →
             </Link>
           </Card>

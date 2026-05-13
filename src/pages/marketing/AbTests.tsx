@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ type AbTest = {
 
 export default function AbTests() {
   const { profile } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
   const [items, setItems] = useState<AbTest[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);

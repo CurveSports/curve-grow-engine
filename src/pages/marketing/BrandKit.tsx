@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -42,7 +43,7 @@ const FONT_OPTIONS = ["Inter", "Poppins", "Montserrat", "Oswald", "Playfair Disp
 
 export default function BrandKit() {
   const { profile } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
 
   const [kit, setKit] = useState<BrandKit>({});
   const [assets, setAssets] = useState<BrandAsset[]>([]);

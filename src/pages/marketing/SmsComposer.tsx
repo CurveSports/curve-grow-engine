@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,7 +13,8 @@ import { toast } from "sonner";
 
 export default function SmsComposer() {
   const navigate = useNavigate();
-  const [orgId, setOrgId] = useState("");
+  const ml = useMarketingLink();
+  const { orgId } = useEffectiveOrg();
   const [smsNumber, setSmsNumber] = useState<any>(null);
   const [segments, setSegments] = useState<any[]>([]);
   const [segmentId, setSegmentId] = useState("");
@@ -19,27 +22,23 @@ export default function SmsComposer() {
   const [recipientCount, setRecipientCount] = useState(0);
 
   useEffect(() => {
+    if (!orgId) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from("profiles").select("org_id").eq("user_id", user!.id).single();
-      if (!profile?.org_id) return;
-      setOrgId(profile.org_id);
-
-      const { data: sn } = await (supabase as any).from("org_sms_numbers").select("*").eq("org_id", profile.org_id).maybeSingle();
+      const { data: sn } = await (supabase as any).from("org_sms_numbers").select("*").eq("org_id", orgId).maybeSingle();
       setSmsNumber(sn);
 
-      const { data: segs } = await supabase.from("org_contact_segments").select("*").eq("org_id", profile.org_id);
+      const { data: segs } = await supabase.from("org_contact_segments").select("*").eq("org_id", orgId);
       setSegments(segs || []);
 
       const { count } = await (supabase as any)
         .from("org_contacts")
         .select("*", { count: "exact", head: true })
-        .eq("org_id", profile.org_id)
+        .eq("org_id", orgId)
         .eq("sms_opt_in", true)
         .eq("unsubscribed", false);
       setRecipientCount(count || 0);
     })();
-  }, []);
+  }, [orgId]);
 
   const fullBody = body + (body && !body.includes("STOP") ? "\nReply STOP to unsubscribe" : "");
   const segments_count = Math.max(1, Math.ceil(fullBody.length / 160));
@@ -60,7 +59,7 @@ export default function SmsComposer() {
     }).select().single();
     if (error) { toast.error(error.message); return; }
     toast.success(`SMS queued to ${recipientCount} recipients (Twilio not wired — stub)`);
-    navigate("/marketing/sms");
+    navigate(ml("/marketing/sms"));
   };
 
   if (!smsNumber) {
@@ -71,7 +70,7 @@ export default function SmsComposer() {
             <CardHeader><CardTitle>SMS not configured</CardTitle></CardHeader>
             <CardContent>
               <p className="mb-4">You need to provision an SMS number first.</p>
-              <Button onClick={() => navigate("/marketing/sms-setup")}>Go to SMS Setup</Button>
+              <Button onClick={() => navigate(ml("/marketing/sms-setup"))}>Go to SMS Setup</Button>
             </CardContent>
           </Card>
         </div>
@@ -117,7 +116,7 @@ export default function SmsComposer() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/marketing/sms")}>Cancel</Button>
+            <Button variant="outline" onClick={() => navigate(ml("/marketing/sms"))}>Cancel</Button>
             <Button onClick={send} disabled={!body}>Send Now</Button>
           </div>
         </div>

@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 export default function SmsSends() {
   const navigate = useNavigate();
+  const ml = useMarketingLink();
   const [sends, setSends] = useState<any[]>([]);
 
   useEffect(() => {
@@ -31,8 +33,8 @@ export default function SmsSends() {
             <p className="text-muted-foreground mt-1">All SMS sends and inbound replies</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/marketing/sms-setup")}>Setup</Button>
-            <Button onClick={() => navigate("/marketing/sms/new")}><Plus className="h-4 w-4 mr-2" />New SMS</Button>
+            <Button variant="outline" onClick={() => navigate(ml("/marketing/sms-setup"))}>Setup</Button>
+            <Button onClick={() => navigate(ml("/marketing/sms/new"))}><Plus className="h-4 w-4 mr-2" />New SMS</Button>
           </div>
         </div>
 
@@ -41,7 +43,7 @@ export default function SmsSends() {
             <CardContent className="p-12 text-center">
               <MessageSquare className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">No SMS sends yet</p>
-              <Button className="mt-4" onClick={() => navigate("/marketing/sms/new")}>Send your first SMS</Button>
+              <Button className="mt-4" onClick={() => navigate(ml("/marketing/sms/new"))}>Send your first SMS</Button>
             </CardContent>
           </Card>
         ) : (

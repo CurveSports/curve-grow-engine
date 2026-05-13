@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,7 +24,7 @@ type Domain = {
 
 export default function EmailSetup() {
   const { profile } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);

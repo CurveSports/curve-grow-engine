@@ -5,6 +5,7 @@ import {
   Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2,
   Link2, FlaskConical, Clock, MessageSquare, Share2, Calendar, Heart,
 } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Tile = { to: string; label: string; desc: string; icon: typeof Mail };
 
@@ -56,6 +57,7 @@ const SECTIONS: { title: string; blurb: string; tiles: Tile[] }[] = [
 ];
 
 export default function MarketingHub() {
+  const ml = useMarketingLink();
   return (
     <AppShell title="Marketing">
       <div className="mb-10">
@@ -77,7 +79,7 @@ export default function MarketingHub() {
               {section.tiles.map((t) => {
                 const Icon = t.icon;
                 return (
-                  <Link key={t.label} to={t.to}>
+                  <Link key={t.label} to={ml(t.to)}>
                     <Card className="p-5 h-full transition-all hover:shadow-md hover:-translate-y-0.5 group">
                       <div className="flex items-start gap-4">
                         <div className="h-11 w-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,7 +34,7 @@ const PROVIDERS = [
 
 export default function SocialAccounts() {
   const { profile } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
   const [items, setItems] = useState<SocialAccount[]>([]);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ provider: "instagram", handle: "", display_name: "" });

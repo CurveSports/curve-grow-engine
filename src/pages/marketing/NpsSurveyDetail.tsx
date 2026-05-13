@@ -9,10 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Heart, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 export default function NpsSurveyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const ml = useMarketingLink();
   const [survey, setSurvey] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [followupNotes, setFollowupNotes] = useState<Record<string, string>>({});
@@ -55,7 +57,7 @@ export default function NpsSurveyDetail() {
   return (
     <AppShell>
       <div className="p-6 max-w-6xl mx-auto space-y-6">
-        <Button variant="ghost" onClick={() => navigate("/marketing/nps")}>
+        <Button variant="ghost" onClick={() => navigate(ml("/marketing/nps"))}>
           <ArrowLeft className="h-4 w-4 mr-2" />Back to surveys
         </Button>
 

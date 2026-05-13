@@ -4,10 +4,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
+import ImpersonationBanner from "@/components/marketing/ImpersonationBanner";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
-  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2,
+  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -136,6 +137,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const adminMarketingGroup: NavGroup = {
     label: "Marketing",
     items: [
+      { to: "/admin/orgs", label: "Browse Orgs", icon: Building2, match: (p) => p === "/admin/orgs" || /^\/admin\/orgs\/[0-9a-fA-F-]{36}/.test(p) },
       { to: "/admin/marketing/approvals", label: "Approvals", icon: Megaphone, match: (p) => p.startsWith("/admin/marketing/approvals") },
       { to: "/admin/marketing/portfolio", label: "Analytics", icon: BarChart2, match: (p) => p.startsWith("/admin/marketing/portfolio") },
       { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
@@ -151,6 +153,27 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     ? [...allegianceGroups, acquisitionsGroup]
     : (role === "admin" ? allegianceGroups : filteredBaseGroups);
   if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
+
+  // When an admin is impersonating an org (URL: /admin/orgs/:orgId/marketing/...),
+  // swap the sidebar to the ORG marketing nav, but rewrite every link to the
+  // admin-scoped URL so navigation stays inside the impersonation context.
+  const impersonateMatch = location.pathname.match(/^\/admin\/orgs\/([0-9a-fA-F-]{36})(?:\/|$)/);
+  const impersonatedOrgId = role === "admin" && impersonateMatch ? impersonateMatch[1] : null;
+  if (impersonatedOrgId) {
+    const prefix = `/admin/orgs/${impersonatedOrgId}`;
+    const rewriteItem = (it: NavItem): NavItem => {
+      if (!it.to || !it.to.startsWith("/marketing")) return it;
+      const newTo = `${prefix}${it.to}`;
+      return {
+        ...it,
+        to: newTo,
+        match: (p) => p === newTo || p.startsWith(newTo + "/") || p.startsWith(newTo + "?"),
+      };
+    };
+    groups = ORG_GROUPS
+      .filter((g) => g.label === "Marketing")
+      .map((g) => ({ ...g, items: g.items.map(rewriteItem) }));
+  }
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
@@ -252,6 +275,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Main content */}
       <main className="md:ml-[240px] md:pt-[60px] pb-20 md:pb-0 min-h-screen">
+        <ImpersonationBanner />
         <PageTransition
           key={location.pathname}
           className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8"

@@ -79,6 +79,7 @@ import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
 import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
+import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -139,6 +140,33 @@ const App = () => (
             <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
             <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
+
+            {/* Admin "act on behalf of org" — same components, scoped via URL :orgId */}
+            <Route path="/admin/orgs" element={<ProtectedRoute role="admin" module="marketing"><AdminBrowseOrgs /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing" element={<ProtectedRoute role="admin" module="marketing"><MarketingHub /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/brand-kit" element={<ProtectedRoute role="admin" module="marketing"><BrandKit /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/contacts" element={<ProtectedRoute role="admin" module="marketing"><Contacts /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/email-setup" element={<ProtectedRoute role="admin" module="marketing"><EmailSetup /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/designs" element={<ProtectedRoute role="admin" module="marketing"><Designs /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/designs/:id" element={<ProtectedRoute role="admin" module="marketing"><DesignEditor /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/emails" element={<ProtectedRoute role="admin" module="marketing"><Emails /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/emails/new" element={<ProtectedRoute role="admin" module="marketing"><EmailComposer /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/campaigns" element={<ProtectedRoute role="admin" module="marketing"><Campaigns /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/campaigns/:id" element={<ProtectedRoute role="admin" module="marketing"><CampaignDetail /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/approvals" element={<ProtectedRoute role="admin" module="marketing"><ApprovalsQueue mode="org" /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/shortlinks" element={<ProtectedRoute role="admin" module="marketing"><Shortlinks /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/ab-tests" element={<ProtectedRoute role="admin" module="marketing"><AbTests /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/send-times" element={<ProtectedRoute role="admin" module="marketing"><SendTimes /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sms-companion" element={<ProtectedRoute role="admin" module="marketing"><SmsCompanion /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/social" element={<ProtectedRoute role="admin" module="marketing"><SocialAccounts /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sequences" element={<ProtectedRoute role="admin" module="marketing"><SequenceLibrary /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sequences/:id" element={<ProtectedRoute role="admin" module="marketing"><SequencePreview /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sequences/:id/launch" element={<ProtectedRoute role="admin" module="marketing"><SequenceLaunch /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sms-setup" element={<ProtectedRoute role="admin" module="marketing"><SmsSetup /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sms" element={<ProtectedRoute role="admin" module="marketing"><SmsSends /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/sms/new" element={<ProtectedRoute role="admin" module="marketing"><SmsComposer /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/nps" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveys /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveyDetail /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />

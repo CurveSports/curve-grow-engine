@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Sparkles, Loader2, Image as ImageIcon, Search } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Template = {
   id: string;
@@ -42,7 +44,8 @@ const STATUS_BADGE: Record<string, string> = {
 export default function Designs() {
   const { profile } = useAuth();
   const navigate = useNavigate();
-  const orgId = profile?.org_id;
+  const ml = useMarketingLink();
+  const { orgId } = useEffectiveOrg();
 
   const [designs, setDesigns] = useState<Design[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -96,7 +99,7 @@ export default function Designs() {
       setPickOpen(false);
       setPicked(null);
       setInputs({});
-      navigate(`/marketing/designs/${data.design_id}`);
+      navigate(ml(`/marketing/designs/${data.design_id}`));
     } catch (e: any) {
       toast.error(e.message || "Generation failed");
     } finally {
@@ -144,7 +147,7 @@ export default function Designs() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((d) => (
-            <Link key={d.id} to={`/marketing/designs/${d.id}`}>
+            <Link key={d.id} to={ml(`/marketing/designs/${d.id}`)}>
               <Card className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
                 <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
                   {d.preview_url ? (

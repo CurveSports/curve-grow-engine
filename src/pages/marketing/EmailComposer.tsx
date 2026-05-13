@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 import { Loader2, Send, Save, Smartphone, Tablet, Monitor, Moon, FileText, Shield } from "lucide-react";
 import { renderEmail, htmlToText, type BrandContext, DEFAULT_BRAND } from "@/emails/render";
 import { localSpamCheck } from "@/lib/spamCheck";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Template = {
   id: string;
@@ -32,8 +34,9 @@ const WIDTHS: Record<Preview, number | undefined> = { desktop: 800, tablet: 600,
 
 export default function EmailComposer() {
   const { profile } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
   const navigate = useNavigate();
+  const ml = useMarketingLink();
   const [params] = useSearchParams();
   const presetTemplateId = params.get("template");
 
@@ -140,7 +143,7 @@ export default function EmailComposer() {
       } else {
         toast.success("Draft saved");
       }
-      navigate("/marketing/emails");
+      navigate(ml("/marketing/emails"));
     } catch (e: any) {
       toast.error(e.message || "Failed");
     } finally { setSaving(false); }
@@ -265,7 +268,7 @@ export default function EmailComposer() {
             <Button onClick={() => save(true)} disabled={saving} className="w-full">
               {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}Send now
             </Button>
-            <Button onClick={() => navigate("/marketing/emails")} variant="ghost" className="w-full">Cancel</Button>
+            <Button onClick={() => navigate(ml("/marketing/emails"))} variant="ghost" className="w-full">Cancel</Button>
           </div>
 
           {rendered.errors.length > 0 && (

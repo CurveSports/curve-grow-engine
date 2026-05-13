@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Mail, Image, MessageSquare, Sparkles } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Template = {
   id: string;
@@ -27,6 +28,7 @@ const TIER_LABEL: Record<number, string> = { 1: "Most Popular", 2: "Recommended"
 
 export default function SequenceLibrary() {
   const navigate = useNavigate();
+  const ml = useMarketingLink();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [assetCounts, setAssetCounts] = useState<Record<string, { total: number; email: number; social: number; sms: number }>>({});
   const [loading, setLoading] = useState(true);
@@ -144,13 +146,13 @@ export default function SequenceLibrary() {
                           <div className="flex gap-2">
                             <Button
                               className="flex-1"
-                              onClick={() => navigate(`/marketing/sequences/${tpl.id}/launch`)}
+                              onClick={() => navigate(ml(`/marketing/sequences/${tpl.id}/launch`))}
                             >
                               Launch
                             </Button>
                             <Button
                               variant="outline"
-                              onClick={() => navigate(`/marketing/sequences/${tpl.id}`)}
+                              onClick={() => navigate(ml(`/marketing/sequences/${tpl.id}`))}
                             >
                               Preview
                             </Button>

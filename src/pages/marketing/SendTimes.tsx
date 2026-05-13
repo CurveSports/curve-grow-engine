@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +10,7 @@ import { ensureSendTimeSeed, formatSlot, type SendTimeRec } from "@/lib/sendTime
 
 export default function SendTimes() {
   const { profile } = useAuth();
-  const orgId = profile?.org_id;
+  const { orgId } = useEffectiveOrg();
   const [items, setItems] = useState<SendTimeRec[]>([]);
 
   useEffect(() => {
