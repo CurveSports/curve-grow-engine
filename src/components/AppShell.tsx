@@ -1,14 +1,16 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useBranding } from "@/hooks/useBranding";
 import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
 import ImpersonationBanner from "@/components/marketing/ImpersonationBanner";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
   Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap,
+  Menu,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -110,6 +112,10 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const { role, profile, signOut, isPrimary } = useAuth();
   const { logoUrl } = useBranding();
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Auto-close drawer on route change
+  useEffect(() => { setMobileNavOpen(false); }, [location.pathname]);
 
   const { hasModule } = useAuth();
   const baseGroups = role === "admin" ? ADMIN_GROUPS : ORG_GROUPS;
@@ -266,12 +272,71 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       </header>
 
       {/* Mobile top bar */}
-      <header className="md:hidden sticky top-0 h-14 bg-nav text-white flex items-center justify-between px-4 z-30 border-b border-nav-border">
-        <Link to="/" className="flex items-center gap-2.5" aria-label="Home">
-          <img src={logoUrl ?? logoIconWhite} alt="" className="h-6 w-6 max-w-[120px] object-contain" />
-          <span className="font-display font-semibold text-sm tracking-tight">{title ?? "Curve OS"}</span>
-        </Link>
-        <button onClick={signOut} className="text-xs text-nav-muted hover:text-white" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
+      <header className="md:hidden sticky top-0 h-14 bg-nav text-white flex items-center justify-between px-3 z-30 border-b border-nav-border">
+        <div className="flex items-center gap-1">
+          <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+            <SheetTrigger asChild>
+              <button
+                className="p-2 -ml-1 rounded-md hover:bg-nav-hover text-white"
+                aria-label="Open navigation"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[280px] p-0 bg-nav text-nav-foreground border-nav-border">
+              <div className="h-[60px] flex items-center px-5 border-b border-nav-border">
+                <img
+                  src={logoUrl ?? logoFullWhite}
+                  alt="Organization logo"
+                  className="h-7 w-auto max-w-[180px] object-contain"
+                />
+              </div>
+              <nav className="flex-1 overflow-y-auto py-4 px-3 max-h-[calc(100vh-60px-100px)]">
+                {groups.map((group, gi) => (
+                  <div key={group.label ?? `mg-${gi}`} className={gi > 0 ? "mt-5" : ""}>
+                    {group.label && (
+                      <div className="mb-1.5 px-3 text-[10px] uppercase tracking-[0.18em] text-nav-muted/70 font-bold">
+                        {group.label}
+                      </div>
+                    )}
+                    <ul className="space-y-0.5">
+                      {group.items.map((item) => (
+                        <li key={item.label}>
+                          <SidebarLink item={item} active={isItemActive(item)} />
+                        </li>
+                      ))}
+                      {gi === 0 && showTeam && (
+                        <li>
+                          <SidebarLink
+                            item={{ to: "/team", label: "Team", icon: Users, match: (p) => p === "/team" }}
+                            active={location.pathname === "/team"}
+                          />
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                ))}
+              </nav>
+              <div className="border-t border-nav-border p-3">
+                <SidebarLink
+                  item={{ to: "/settings", label: "Settings", icon: Settings, match: (p) => p.startsWith("/settings") }}
+                  active={location.pathname.startsWith("/settings")}
+                />
+                <button
+                  onClick={signOut}
+                  className="mt-2 w-full flex items-center gap-2 px-3 py-2 text-xs text-nav-muted hover:text-white"
+                >
+                  <LogOut className="h-3.5 w-3.5" /> Sign out
+                </button>
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Link to="/" className="flex items-center gap-2.5" aria-label="Home">
+            <img src={logoUrl ?? logoIconWhite} alt="" className="h-6 w-6 max-w-[120px] object-contain" />
+            <span className="font-display font-semibold text-sm tracking-tight truncate max-w-[160px]">{title ?? "Curve OS"}</span>
+          </Link>
+        </div>
+        <button onClick={signOut} className="text-xs text-nav-muted hover:text-white p-2" aria-label="Sign out"><LogOut className="h-4 w-4" /></button>
       </header>
 
       {/* Main content */}
