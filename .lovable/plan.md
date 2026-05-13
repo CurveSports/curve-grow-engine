@@ -1,65 +1,75 @@
-# Admin "Act on behalf of Org" — Marketing
 
-Goal: from the Curve admin side, an admin picks an organization and gets the **exact** org-side experience (Brand Kit, Designs, Emails, Campaigns, Sequences, SMS, Social, NPS, Contacts, Short Links, A/B Tests, Send Times) scoped to that org. No duplicate pages — one codebase, two entry points.
+# Mobile-friendly client + marketing surfaces
 
-## How it will work (UX)
+Goal: every org-user page and every /marketing page should feel "Apple easy" on a phone — one obvious back button, one obvious primary CTA reachable with the thumb, and content that stacks cleanly without horizontal scroll.
 
-1. New admin page **`/admin/orgs/:orgId/marketing`** — same layout as the org `/marketing` Hub (the cards/tools grid), but every link is prefixed with `/admin/orgs/:orgId`.
-2. Each tool page is mounted **twice** in the router:
-   - `/marketing/*` → org user, scoped to their own org
-   - `/admin/orgs/:orgId/marketing/*` → admin, scoped to the URL `:orgId`
-3. While inside an admin org-context route, AppShell shows a sticky **"Acting as: {Org Name} — Exit"** banner at the top so it is impossible to forget you're operating on someone else's data. "Exit" returns to the org's admin detail page.
-4. Entry points for admins:
-   - Org detail page → new "Open Marketing Tools" button
-   - The admin Marketing sidebar gets a new top item **"Browse Orgs"** that lists orgs and links each to their `/admin/orgs/:orgId/marketing` hub
-5. The existing **admin-only** Marketing pages (Approvals, Portfolio Analytics, Design/Email/Sequence Templates) stay where they are at `/admin/marketing/*` — those are cross-portfolio, not per-org.
+## Approach: build 3 small primitives, then apply them
 
-## How it will work (technically)
+Rather than touching ~30 pages individually with custom code, we add three reusable building blocks and then sweep each page to use them. This keeps the result consistent (which is what makes it feel Apple-like) and keeps the diff manageable.
 
-### 1. Effective-org context
-Create `useEffectiveOrg()` hook + `<EffectiveOrgProvider>`:
-- If route matches `/admin/orgs/:orgId/...` → `effectiveOrgId = params.orgId`, `isImpersonating = true`, fetch and expose org name/logo
-- Else → `effectiveOrgId = profile?.org_id`, `isImpersonating = false`
-- Guards: only `role === "admin"` can resolve an admin org-context; org_users hitting an admin URL are bounced
+### 1. `<MobilePageHeader>` — back button + title + optional action
+Used at the top of every detail/sub page on mobile. Desktop is unchanged.
 
-### 2. Refactor org marketing pages
-Replace every `const orgId = profile?.org_id` (~14 files listed in research) with `const { orgId } = useEffectiveOrg()`. No other logic changes — Supabase queries already filter by `eq("org_id", orgId)`, which works identically for admins because RLS already grants admins full access via `has_role(uid,'admin')` on these tables (verify each table's policy in a follow-up; add admin-bypass policies where missing).
+- Left: chevron back button (uses `navigate(-1)`, falls back to a `backTo` prop)
+- Center: page title (truncates)
+- Right: optional single icon action (e.g. share, edit)
+- 44px tall, sticky under the existing top bar so it stays put while scrolling
+- Hidden on `md+` so desktop still uses the existing header
 
-### 3. Routing
-In `App.tsx`, wrap the existing org marketing route subtree in a small helper and mount it twice:
-- `<Route path="/marketing/*" element={<OrgMarketingRoutes />} />` (org user guard)
-- `<Route path="/admin/orgs/:orgId/marketing/*" element={<AdminOrgMarketingRoutes />} />` (admin guard, wraps children in `EffectiveOrgProvider`)
+### 2. `<MobileActionBar>` — sticky bottom CTA bar
+For pages with a primary action (Send, Save, Approve, Add, Schedule, etc.).
 
-`OrgMarketingRoutes` is just the existing `<Routes>` block extracted into one component so both mount points share it.
+- Fixed at the bottom, above the existing 4-tab nav (so `bottom: 64px` on mobile)
+- Full-width primary button, optional secondary ghost button beside it
+- Safe-area padding for notched devices
+- Hidden on `md+`
+- When present, the page's main content gets `pb-32` so nothing is covered
 
-### 4. Internal links
-Org-side pages currently hard-code links like `/marketing/emails/new`. Add a `useMarketingLink(path)` helper that prefixes with `/admin/orgs/:orgId` when impersonating. Find/replace `to="/marketing/...` and `navigate("/marketing/...` to use it (~30-ish occurrences).
+### 3. `<ResponsiveList>` pattern — table on desktop, card list on mobile
+Most marketing list pages currently use a `<table>` that overflows on mobile. We add a small CSS pattern (not a new component to avoid a heavy refactor): each list page renders `<div className="hidden md:block">{table}</div>` plus `<div className="md:hidden space-y-2">{cards}</div>` where cards are simple stacked rows with the 1–2 most important fields and a chevron link.
 
-### 5. AppShell
-- When `isImpersonating`, render the **org** sidebar groups (Hub, Brand Kit, Designs, Emails, …) instead of the admin sidebar, all with rewritten links
-- Sticky top banner: `Acting as {org.name} · Exit →`
+## Page sweep — what gets the treatment
 
-### 6. Audit trail
-Any insert/update done while `isImpersonating` includes `acting_admin_user_id = session.user.id` so we have a clean record. Add an `acting_admin_user_id uuid` column to a few key tables now (campaigns, sequences, sms_messages, contacts) — non-breaking, nullable.
+Client (org user):
+- Dashboard, Report, Plan, Plan detail, Team, Settings, Communications, Sponsorships, Calculators
+- All get `MobilePageHeader` (back + title)
+- Plan detail, Settings, Sponsorship lead detail get `MobileActionBar` for their primary save/CTA
 
-## Files to add
-- `src/hooks/useEffectiveOrg.tsx`
-- `src/hooks/useMarketingLink.ts`
-- `src/components/marketing/ImpersonationBanner.tsx`
-- `src/pages/admin/AdminOrgMarketingHub.tsx` (thin wrapper around existing `MarketingHub` reading effective org)
-- `src/pages/admin/AdminBrowseOrgs.tsx` (list orgs → link to their marketing hub)
-- `src/routes/OrgMarketingRoutes.tsx` (extracted `<Routes>` shared by both mount points)
+Marketing (`/marketing/*`):
+- Hub, Brand Kit, Designs, Design Editor, Emails, Email Composer, Email Setup, Campaigns, Campaign Detail, Sequences (Library/Preview/Launch), SMS (list/Composer/Setup/Companion), Social Accounts, NPS Surveys, NPS Survey Detail, Approvals Queue, Contacts, Shortlinks, A/B Tests, Send Times
+- All get `MobilePageHeader`
+- Composers (Email, SMS, Design Editor) and Setup pages get `MobileActionBar` with the primary "Send / Save / Continue" action
+- List pages with tables (Designs, Emails, Campaigns, Sequences, SMS Sends, Contacts, Shortlinks, A/B Tests, NPS, Approvals) get the responsive list pattern
 
-## Files to edit
-- `src/App.tsx` — add admin org-context route subtree
-- `src/components/AppShell.tsx` — banner, sidebar swap when impersonating, "Browse Orgs" entry
-- All `src/pages/marketing/*.tsx` files that read `profile?.org_id` (~14 files) — switch to `useEffectiveOrg`
-- Internal `/marketing/...` links in those pages — switch to `useMarketingLink`
-- One DB migration adding `acting_admin_user_id` columns + ensuring admin-bypass RLS on all marketing tables
+## Other mobile cleanups (small, batched)
 
-## Out of scope (for this PR)
-- Admin-only "preview as org" read-only mode (we're going straight to full edit access since the user said admins must be able to *do* everything)
-- Per-tool permission granularity for non-admin Curve staff (everyone with the `marketing` admin module gets full impersonation)
+- Force all `<Dialog>` content to `max-h-[90vh] overflow-y-auto` and `w-[95vw]` on small screens (one-line className update where missing) so modals never trap content off-screen
+- Buttons that are currently `size="sm"` on primary actions get bumped to default size on mobile for thumb reach
+- Filter/tab rows that overflow get `overflow-x-auto` with snap so they scroll horizontally instead of wrapping awkwardly
+- Replace any `text-xs` primary CTAs on mobile with `text-sm` minimum
 
-## Open question (one)
-When an admin sends an email/SMS while impersonating, should the **From / reply-to** be the org's configured sender (recommended, true two-sided behavior) or should we tag it internally? I'll go with **org's sender** unless you say otherwise — the audit column tracks who actually clicked send.
+## What stays out of scope (this pass)
+
+- Admin (`/admin/*`) pages — separate effort
+- Visual redesign / new color or typography work
+- New features or business logic — this is purely presentation
+- Keyboard / accessibility audit beyond the touch-target sizing already in the primitives
+
+## Technical notes
+
+- New files:
+  - `src/components/mobile/MobilePageHeader.tsx`
+  - `src/components/mobile/MobileActionBar.tsx`
+- Both render `null` on `md+` (Tailwind `md:hidden`) so desktop is byte-for-byte unchanged
+- `MobilePageHeader` uses `useNavigate(-1)` from react-router; pages that need a specific destination pass `backTo="/marketing"` etc.
+- `MobileActionBar` uses `position: fixed; bottom: 64px` to sit above the existing mobile bottom nav (`h-16` in `AppShell`); on pages without the bottom nav (composers/full-screen flows) it sits at `bottom: 0`
+- Page sweep is mechanical: import primitive, drop it in at the top/bottom of the page's JSX, wrap any tables with the `hidden md:block` / `md:hidden` pair where needed
+- No DB / RLS / edge-function changes
+- No design-system token changes
+
+## Order of work
+
+1. Build the two primitives + responsive-list pattern doc
+2. Sweep client (org user) pages — ~9 files
+3. Sweep marketing pages — ~22 files
+4. Quick visual pass at 390x844 to confirm nothing is hidden behind the bottom CTA bar
