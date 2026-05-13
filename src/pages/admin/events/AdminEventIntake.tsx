@@ -115,13 +115,20 @@ export default function AdminEventIntake() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return responses.filter((r) => {
+    const out = responses.filter((r) => {
       if (paymentFilter !== "all" && r.payment_method !== paymentFilter) return false;
       if (!q) return true;
       const hay = `${r.first_name} ${r.last_name} ${r.organization} ${r.personal_email} ${r.phone} ${r.zelle_id ?? ""} ${r.check_payable_to ?? ""}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [responses, search, paymentFilter]);
+    out.sort((a, b) => {
+      if (sortBy === "name") return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
+      const da = new Date(a.submitted_at).getTime();
+      const db = new Date(b.submitted_at).getTime();
+      return sortBy === "oldest" ? da - db : db - da;
+    });
+    return out;
+  }, [responses, search, paymentFilter, sortBy]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(publicUrl);
