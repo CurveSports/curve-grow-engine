@@ -497,12 +497,10 @@ export default function EventIntake() {
               </div>
             ) : (
               <div className="space-y-3 pt-2">
-                {survey.w9_template_url && (
-                  <a href={survey.w9_template_url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline">
-                    <FileDown className="h-3.5 w-3.5" /> Download blank W-9
-                  </a>
-                )}
+                <a href={survey.w9_template_url || W9_TEMPLATE_URL} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline">
+                  <FileDown className="h-3.5 w-3.5" /> Download blank IRS W-9 (Rev. March 2024)
+                </a>
                 <label className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-dashed border-border hover:border-accent cursor-pointer text-sm">
                   <Upload className="h-4 w-4 text-muted-foreground" />
                   <span className="flex-1 truncate">{w9File ? w9File.name : "Choose file (PDF, JPG, PNG)"}</span>
