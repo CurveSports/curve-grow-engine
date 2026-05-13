@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { PageTransition } from "@/components/motion/PageTransition";
 import ImpersonationBanner from "@/components/marketing/ImpersonationBanner";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { MobilePageHeader } from "@/components/mobile/MobilePageHeader";
+import { resolveMobileRoute } from "@/components/mobile/mobileRoutes";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
@@ -346,6 +348,11 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
           key={location.pathname}
           className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8"
         >
+          {(() => {
+            const r = resolveMobileRoute(location.pathname);
+            if (!r) return null;
+            return <MobilePageHeader title={r.title} hideBack={r.top} backTo={r.backTo} />;
+          })()}
           {children}
         </PageTransition>
       </main>
