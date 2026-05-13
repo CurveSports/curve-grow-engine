@@ -185,20 +185,31 @@ export default function EventIntake() {
     if (form.payment_method === "echeck" && (!form.check_payable_to.trim() || !form.check_delivery_email.trim())) {
       toast.error("Enter check payable name and delivery email"); return;
     }
+    if (w9Mode === "upload" && !w9File) {
+      toast.error("Please upload your completed W-9"); return;
+    }
+    if (w9Mode === "online") {
+      const err = validateW9Online();
+      if (err) { toast.error(err); return; }
+    }
+
+    // Show feedback IMMEDIATELY before heavy work
+    setSubmitting(true);
+    const toastId = toast.loading("Submitting your information…");
+
+    // Yield to the browser so the spinner/toast can paint before blocking PDF generation
+    await new Promise((r) => setTimeout(r, 50));
 
     let uploadFile: Blob;
     let uploadName: string;
     let uploadType: string;
     let extra: Record<string, unknown> | null = null;
 
-    if (w9Mode === "upload") {
-      if (!w9File) { toast.error("Please upload your completed W-9"); return; }
+    if (w9Mode === "upload" && w9File) {
       uploadFile = w9File;
       uploadName = w9File.name;
       uploadType = w9File.type || "application/pdf";
     } else {
-      const err = validateW9Online();
-      if (err) { toast.error(err); return; }
       uploadFile = generateW9Pdf();
       uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
       uploadType = "application/pdf";
@@ -248,10 +259,11 @@ export default function EventIntake() {
         extra: extra as any,
       });
       if (insErr) throw insErr;
+      toast.success("Submission received", { id: toastId });
       setDone(true);
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.message ?? "Submission failed");
+      console.error("Event intake submit failed:", err);
+      toast.error(err?.message ?? "Submission failed. Please try again.", { id: toastId });
     } finally {
       setSubmitting(false);
     }
@@ -497,8 +509,20 @@ export default function EventIntake() {
           </Field>
 
           <Button onClick={submit} disabled={submitting} className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90">
-            {submitting ? "Submitting…" : "Submit"}
+            {submitting ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                Submitting your information…
+              </span>
+            ) : (
+              "Submit"
+            )}
           </Button>
+          {submitting && (
+            <p className="text-xs text-center text-muted-foreground -mt-2">
+              Generating your W-9 and uploading — this can take a few seconds. Please don't close this tab.
+            </p>
+          )}
         </div>
       </div>
     </div>
