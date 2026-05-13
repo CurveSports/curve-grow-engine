@@ -10,7 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CheckCircle2, FileDown, Upload, PenLine } from "lucide-react";
-import { jsPDF } from "jspdf";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+
+const W9_TEMPLATE_URL = "/forms/fw9.pdf";
 
 type Survey = {
   id: string;
@@ -93,70 +95,77 @@ export default function EventIntake() {
   const set = <K extends keyof typeof form>(k: K, v: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const generateW9Pdf = (): Blob => {
-    const doc = new jsPDF({ unit: "pt", format: "letter" });
-    const pageW = doc.internal.pageSize.getWidth();
-    let y = 50;
-    doc.setFont("helvetica", "bold").setFontSize(16);
-    doc.text("Form W-9 — Request for Taxpayer ID & Certification", pageW / 2, y, { align: "center" });
-    y += 24;
-    doc.setFont("helvetica", "normal").setFontSize(10);
-    doc.text("Submitted via Curve Sports event intake form", pageW / 2, y, { align: "center" });
-    y += 30;
+  const generateW9Pdf = async (): Promise<Blob> => {
+    const res = await fetch(W9_TEMPLATE_URL);
+    if (!res.ok) throw new Error("Could not load the W-9 template");
+    const templateBytes = await res.arrayBuffer();
+    const pdf = await PDFDocument.load(templateBytes);
+    const form = pdf.getForm();
 
-    const row = (label: string, value: string) => {
-      doc.setFont("helvetica", "bold").setFontSize(10);
-      doc.text(label, 50, y);
-      doc.setFont("helvetica", "normal");
-      const lines = doc.splitTextToSize(value || "—", pageW - 250);
-      doc.text(lines, 220, y);
-      y += Math.max(18, lines.length * 14);
+    const setText = (name: string, value: string) => {
+      try { form.getTextField(name).setText(value || ""); } catch { /* ignore */ }
     };
+    const check = (name: string) => { try { form.getCheckBox(name).check(); } catch { /* ignore */ } };
 
-    row("1. Name (as shown on tax return)", w9.legal_name);
-    row("2. Business / disregarded entity name", w9.business_name);
-    const classText = w9.tax_class === "llc"
-      ? `LLC (tax classification: ${w9.llc_class || "—"})`
-      : w9.tax_class === "other"
-      ? `Other: ${w9.other_class || "—"}`
-      : labelForClass(w9.tax_class);
-    row("3. Federal tax classification", classText);
-    row("5. Address", w9.address);
-    row("6. City, state, ZIP", w9.city_state_zip);
-    row(`Part I — TIN (${w9.tin_type.toUpperCase()})`, w9.tin);
+    const P = "topmostSubform[0].Page1[0]";
+    const B = `${P}.Boxes3a-b_ReadOrder[0]`;
+    const A = `${P}.Address_ReadOrder[0]`;
 
-    y += 10;
-    doc.setFont("helvetica", "bold").setFontSize(11);
-    doc.text("Part II — Certification", 50, y);
-    y += 16;
-    doc.setFont("helvetica", "normal").setFontSize(9);
-    const cert = doc.splitTextToSize(
-      "Under penalties of perjury, I certify that: (1) The number shown on this form is my correct taxpayer identification number; (2) I am not subject to backup withholding; (3) I am a U.S. citizen or other U.S. person; and (4) The FATCA code(s) entered on this form (if any) indicating exemption from FATCA reporting is correct.",
-      pageW - 100
+    // Line 1 & 2
+    setText(`${P}.f1_01[0]`, w9.legal_name);
+    setText(`${P}.f1_02[0]`, w9.business_name);
+
+    // Line 3a — federal tax classification (one box)
+    const classBox: Record<W9Class, string> = {
+      individual: `${B}.c1_1[0]`,
+      c_corp: `${B}.c1_1[1]`,
+      s_corp: `${B}.c1_1[2]`,
+      partnership: `${B}.c1_1[3]`,
+      trust: `${B}.c1_1[4]`,
+      llc: `${B}.c1_1[5]`,
+      other: `${B}.c1_1[6]`,
+    };
+    check(classBox[w9.tax_class]);
+    if (w9.tax_class === "llc") setText(`${B}.f1_03[0]`, w9.llc_class);
+    if (w9.tax_class === "other") setText(`${B}.f1_04[0]`, w9.other_class);
+
+    // Address (lines 5 & 6)
+    setText(`${A}.f1_07[0]`, w9.address);
+    setText(`${A}.f1_08[0]`, w9.city_state_zip);
+
+    // Part I — TIN
+    const digits = w9.tin.replace(/\D/g, "");
+    if (w9.tin_type === "ssn" && digits.length === 9) {
+      setText(`${P}.f1_11[0]`, digits.slice(0, 3));
+      setText(`${P}.f1_12[0]`, digits.slice(3, 5));
+      setText(`${P}.f1_13[0]`, digits.slice(5, 9));
+    } else if (w9.tin_type === "ein" && digits.length === 9) {
+      setText(`${P}.f1_14[0]`, digits.slice(0, 2));
+      setText(`${P}.f1_15[0]`, digits.slice(2, 9));
+    }
+
+    // Part II — Sign Here (no form fields here, draw on page)
+    const page = pdf.getPage(0);
+    const italic = await pdf.embedFont(StandardFonts.HelveticaOblique);
+    const helv = await pdf.embedFont(StandardFonts.Helvetica);
+    // Signature line is in the "Sign Here" block — coordinates calibrated for the
+    // March 2024 W-9 (letter, origin bottom-left).
+    page.drawText(w9.signature, { x: 150, y: 235, size: 12, font: italic });
+    const formattedDate = (() => {
+      const [y, m, d] = w9.sign_date.split("-");
+      return y && m && d ? `${m}/${d}/${y}` : w9.sign_date;
+    })();
+    page.drawText(formattedDate, { x: 470, y: 235, size: 11, font: helv });
+
+    // Audit footer on page 1
+    page.drawText(
+      `Electronically completed via curvesports.com on ${new Date().toLocaleString()}`,
+      { x: 36, y: 18, size: 7, font: helv, opacity: 0.6 }
     );
-    doc.text(cert, 50, y);
-    y += cert.length * 12 + 16;
 
-    doc.setFont("helvetica", "bold").setFontSize(10);
-    doc.text("Signature of U.S. person:", 50, y);
-    doc.setFont("times", "italic").setFontSize(14);
-    doc.text(w9.signature, 220, y);
-    doc.line(220, y + 4, 450, y + 4);
-    y += 24;
-    doc.setFont("helvetica", "bold").setFontSize(10);
-    doc.text("Date:", 50, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(w9.sign_date, 220, y);
-
-    y += 36;
-    doc.setFont("helvetica", "italic").setFontSize(8).setTextColor(120);
-    doc.text(
-      `Electronically completed and signed on ${new Date().toLocaleString()} via curvesports.com.`,
-      50,
-      y
-    );
-
-    return doc.output("blob");
+    form.flatten();
+    const out = await pdf.save();
+    return new Blob([out as BlobPart], { type: "application/pdf" });
   };
 
   const validateW9Online = (): string | null => {
@@ -210,7 +219,7 @@ export default function EventIntake() {
       uploadName = w9File.name;
       uploadType = w9File.type || "application/pdf";
     } else {
-      uploadFile = generateW9Pdf();
+      uploadFile = await generateW9Pdf();
       uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
       uploadType = "application/pdf";
       extra = {
@@ -488,12 +497,10 @@ export default function EventIntake() {
               </div>
             ) : (
               <div className="space-y-3 pt-2">
-                {survey.w9_template_url && (
-                  <a href={survey.w9_template_url} target="_blank" rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline">
-                    <FileDown className="h-3.5 w-3.5" /> Download blank W-9
-                  </a>
-                )}
+                <a href={survey.w9_template_url || W9_TEMPLATE_URL} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-accent hover:underline">
+                  <FileDown className="h-3.5 w-3.5" /> Download blank IRS W-9 (Rev. March 2024)
+                </a>
                 <label className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-dashed border-border hover:border-accent cursor-pointer text-sm">
                   <Upload className="h-4 w-4 text-muted-foreground" />
                   <span className="flex-1 truncate">{w9File ? w9File.name : "Choose file (PDF, JPG, PNG)"}</span>
