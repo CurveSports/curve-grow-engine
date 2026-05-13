@@ -185,20 +185,31 @@ export default function EventIntake() {
     if (form.payment_method === "echeck" && (!form.check_payable_to.trim() || !form.check_delivery_email.trim())) {
       toast.error("Enter check payable name and delivery email"); return;
     }
+    if (w9Mode === "upload" && !w9File) {
+      toast.error("Please upload your completed W-9"); return;
+    }
+    if (w9Mode === "online") {
+      const err = validateW9Online();
+      if (err) { toast.error(err); return; }
+    }
+
+    // Show feedback IMMEDIATELY before heavy work
+    setSubmitting(true);
+    const toastId = toast.loading("Submitting your information…");
+
+    // Yield to the browser so the spinner/toast can paint before blocking PDF generation
+    await new Promise((r) => setTimeout(r, 50));
 
     let uploadFile: Blob;
     let uploadName: string;
     let uploadType: string;
     let extra: Record<string, unknown> | null = null;
 
-    if (w9Mode === "upload") {
-      if (!w9File) { toast.error("Please upload your completed W-9"); return; }
+    if (w9Mode === "upload" && w9File) {
       uploadFile = w9File;
       uploadName = w9File.name;
       uploadType = w9File.type || "application/pdf";
     } else {
-      const err = validateW9Online();
-      if (err) { toast.error(err); return; }
       uploadFile = generateW9Pdf();
       uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
       uploadType = "application/pdf";
