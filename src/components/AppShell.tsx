@@ -8,7 +8,7 @@ import ImpersonationBanner from "@/components/marketing/ImpersonationBanner";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
-  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2,
+  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
 import logoFullWhite from "@/assets/curve-logo-full-white.png";
@@ -143,6 +143,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
       { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Mail, match: (p) => p.startsWith("/admin/marketing/email-templates") },
       { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
+      { to: "/admin/marketing/schools", label: "Schools Library", icon: GraduationCap, match: (p) => p.startsWith("/admin/marketing/schools") },
     ],
   };
   // Org users without marketing module shouldn't see the Marketing group

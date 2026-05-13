@@ -79,6 +79,7 @@ import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
 import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
+import AdminSchools from "@/pages/admin/marketing/AdminSchools";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
@@ -169,6 +170,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveyDetail /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/schools" element={<ProtectedRoute role="admin" module="marketing"><AdminSchools /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
