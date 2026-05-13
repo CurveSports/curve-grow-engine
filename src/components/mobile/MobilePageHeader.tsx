@@ -35,7 +35,7 @@ export function MobilePageHeader({
   return (
     <div
       className={cn(
-        "md:hidden sticky top-0 z-30 -mx-4 mb-3 flex h-12 items-center justify-between gap-2 border-b border-border bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80",
+        "md:hidden sticky top-14 z-20 -mx-4 mb-3 flex h-12 items-center justify-between gap-2 border-b border-border bg-background/95 px-3 backdrop-blur supports-[backdrop-filter]:bg-background/80",
         className
       )}
     >
