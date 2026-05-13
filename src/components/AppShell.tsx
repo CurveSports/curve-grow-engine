@@ -139,13 +139,23 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     ],
   };
   // Admin marketing items are gated by the "marketing" module
-  const marketingPaths = ["/admin/marketing/approvals", "/admin/marketing/templates", "/admin/marketing/email-templates"];
+  const marketingPaths = [
+    "/admin/marketing/approvals",
+    "/admin/marketing/portfolio",
+    "/admin/marketing/templates",
+    "/admin/marketing/email-templates",
+    "/admin/marketing/sequence-templates",
+  ];
   const filteredAllegianceGroups: NavGroup[] = role === "admin" && !hasModule("marketing")
     ? allegianceGroups.map((g) => ({ ...g, items: g.items.filter((it) => !it.to || !marketingPaths.includes(it.to)) }))
     : allegianceGroups;
+  // Org users without marketing module shouldn't see the Marketing group
+  const filteredBaseGroups: NavGroup[] = role === "org_user" && !hasModule("marketing")
+    ? baseGroups.filter((g) => g.label !== "Marketing")
+    : baseGroups;
   let groups = role === "admin" && hasModule("acquisitions")
     ? [...filteredAllegianceGroups, acquisitionsGroup]
-    : (role === "admin" ? filteredAllegianceGroups : baseGroups);
+    : (role === "admin" ? filteredAllegianceGroups : filteredBaseGroups);
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
