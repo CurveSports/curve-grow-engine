@@ -219,7 +219,7 @@ export default function EventIntake() {
       uploadName = w9File.name;
       uploadType = w9File.type || "application/pdf";
     } else {
-      uploadFile = generateW9Pdf();
+      uploadFile = await generateW9Pdf();
       uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
       uploadType = "application/pdf";
       extra = {
