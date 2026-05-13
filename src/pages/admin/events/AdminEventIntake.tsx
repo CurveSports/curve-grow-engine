@@ -288,7 +288,7 @@ export default function AdminEventIntake() {
                   </div>
                   <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {new Date(s.created_at).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {s.id === survey?.id ? responses.length : "—"}</span>
+                    <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {counts[s.id] ?? 0} response{(counts[s.id] ?? 0) === 1 ? "" : "s"}</span>
                   </div>
                   <div className="mt-3 flex items-center text-accent text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                     Open responses <ChevronRight className="h-3.5 w-3.5 ml-1" />
