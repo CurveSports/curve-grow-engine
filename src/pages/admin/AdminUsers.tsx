@@ -250,7 +250,11 @@ export default function AdminUsers() {
                     <Checkbox checked={newMarketing} onCheckedChange={(v) => setNewMarketing(!!v)} />
                     <span>Curve Marketing</span>
                   </label>
-                  {!newAllegiance && !newAcquisitions && !newMarketing && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newEvents} onCheckedChange={(v) => setNewEvents(!!v)} />
+                    <span>Curve Events</span>
+                  </label>
+                  {!newAllegiance && !newAcquisitions && !newMarketing && !newEvents && (
                     <p className="text-xs text-destructive">Select at least one module.</p>
                   )}
                 </div>
