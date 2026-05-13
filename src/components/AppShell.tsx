@@ -82,9 +82,27 @@ const ORG_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Marketing",
+    items: [
+      { to: "/marketing", label: "Hub", icon: Sparkles, match: (p) => p === "/marketing" },
+      { to: "/marketing/brand-kit", label: "Brand Kit", icon: Palette, match: (p) => p.startsWith("/marketing/brand-kit") },
+      { to: "/marketing/designs", label: "Designs", icon: ImageIcon, match: (p) => p.startsWith("/marketing/designs") },
+      { to: "/marketing/emails", label: "Emails", icon: Send, match: (p) => p.startsWith("/marketing/emails") || p.startsWith("/marketing/email-setup") },
+      { to: "/marketing/campaigns", label: "Campaigns", icon: Megaphone, match: (p) => p.startsWith("/marketing/campaigns") },
+      { to: "/marketing/sequences", label: "Sequences", icon: Workflow, match: (p) => p.startsWith("/marketing/sequences") },
+      { to: "/marketing/sms", label: "SMS", icon: MessageSquare, match: (p) => p.startsWith("/marketing/sms") },
+      { to: "/marketing/social", label: "Social", icon: Share2, match: (p) => p.startsWith("/marketing/social") },
+      { to: "/marketing/nps", label: "NPS Surveys", icon: Smile, match: (p) => p.startsWith("/marketing/nps") },
+      { to: "/marketing/approvals", label: "Approvals", icon: CheckSquare, match: (p) => p.startsWith("/marketing/approvals") },
+      { to: "/marketing/contacts", label: "Contacts", icon: UsersRound, match: (p) => p.startsWith("/marketing/contacts") },
+      { to: "/marketing/shortlinks", label: "Short Links", icon: Link2, match: (p) => p.startsWith("/marketing/shortlinks") },
+      { to: "/marketing/ab-tests", label: "A/B Tests", icon: FlaskConical, match: (p) => p.startsWith("/marketing/ab-tests") },
+      { to: "/marketing/send-times", label: "Send Times", icon: Clock, match: (p) => p.startsWith("/marketing/send-times") },
+    ],
+  },
+  {
     label: "Tools",
     items: [
-      { to: "/marketing", label: "Marketing", icon: Sparkles, match: (p) => p.startsWith("/marketing") },
       { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p === "/calculators" },
       { to: "/communications", label: "Communications", icon: Mail, match: (p) => p === "/communications" },
       { to: "/sponsorships", label: "Sponsorships", icon: Megaphone, match: (p) => p.startsWith("/sponsorships") },
