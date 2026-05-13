@@ -79,6 +79,7 @@ import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
 import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
+import AdminSchools from "@/pages/admin/marketing/AdminSchools";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
