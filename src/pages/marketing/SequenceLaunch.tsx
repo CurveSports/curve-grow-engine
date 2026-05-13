@@ -10,10 +10,14 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Sparkles } from "lucide-react";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 export default function SequenceLaunch() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const ml = useMarketingLink();
+  const { orgId: effectiveOrgId } = useEffectiveOrg();
   const [template, setTemplate] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);
   const [campaignName, setCampaignName] = useState("");
