@@ -159,8 +159,19 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
-  const isItemActive = (item: NavItem) =>
-    item.to ? (item.match ? item.match(location.pathname) : location.pathname === item.to) : false;
+  // Pick the single best-matching nav item across ALL groups: prefer custom
+  // match() hits, then fall back to the longest `to` that prefixes the path.
+  // This guarantees sub-routes (e.g. /marketing/sms-companion) light up the
+  // most specific item and never highlight two items at once.
+  const activeKey = (() => {
+    const all = groups.flatMap((g) => g.items);
+    const path = location.pathname;
+    const matched = all.filter((it) => it.to && (it.match ? it.match(path) : path === it.to));
+    if (matched.length === 0) return null;
+    matched.sort((a, b) => (b.to?.length ?? 0) - (a.to?.length ?? 0));
+    return matched[0].label;
+  })();
+  const isItemActive = (item: NavItem) => !!item.to && item.label === activeKey;
 
   // Flat list for mobile bottom-nav fallback (org users)
   const flatPrimary = groups.flatMap((g) => g.items);
