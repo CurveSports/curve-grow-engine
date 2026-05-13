@@ -321,6 +321,14 @@ export default function AdminUsers() {
                         />
                         <span>Marketing</span>
                       </label>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("events")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "events", !!v)}
+                        />
+                        <span>Events</span>
+                      </label>
                     </div>
                   </td>
                   <td className="px-5 py-3 text-right">
