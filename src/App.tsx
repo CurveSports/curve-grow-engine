@@ -126,7 +126,7 @@ const App = () => (
             <Route path="/marketing/shortlinks" element={<ProtectedRoute><Shortlinks /></ProtectedRoute>} />
             <Route path="/marketing/ab-tests" element={<ProtectedRoute><AbTests /></ProtectedRoute>} />
             <Route path="/marketing/send-times" element={<ProtectedRoute><SendTimes /></ProtectedRoute>} />
-            <Route path="/marketing/sms" element={<ProtectedRoute><SmsCompanion /></ProtectedRoute>} />
+            <Route path="/marketing/sms-companion" element={<ProtectedRoute><SmsCompanion /></ProtectedRoute>} />
             <Route path="/marketing/social" element={<ProtectedRoute><SocialAccounts /></ProtectedRoute>} />
             <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin" module="marketing"><AdminDesignTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminEmailTemplates /></ProtectedRoute>} />
