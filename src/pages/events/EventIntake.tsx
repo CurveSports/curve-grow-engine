@@ -259,10 +259,11 @@ export default function EventIntake() {
         extra: extra as any,
       });
       if (insErr) throw insErr;
+      toast.success("Submission received", { id: toastId });
       setDone(true);
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.message ?? "Submission failed");
+      console.error("Event intake submit failed:", err);
+      toast.error(err?.message ?? "Submission failed. Please try again.", { id: toastId });
     } finally {
       setSubmitting(false);
     }
