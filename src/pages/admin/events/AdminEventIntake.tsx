@@ -67,7 +67,19 @@ export default function AdminEventIntake() {
       .from("event_surveys")
       .select("*")
       .order("created_at", { ascending: false });
-    setSurveys((data ?? []) as Survey[]);
+    const list = (data ?? []) as Survey[];
+    setSurveys(list);
+    // Fetch counts in parallel
+    const entries = await Promise.all(
+      list.map(async (s) => {
+        const { count } = await supabase
+          .from("event_survey_responses")
+          .select("id", { count: "exact", head: true })
+          .eq("survey_id", s.id);
+        return [s.id, count ?? 0] as [string, number];
+      })
+    );
+    setCounts(Object.fromEntries(entries));
     setLoading(false);
   };
 
