@@ -46,6 +46,8 @@ type Response = {
 
 export default function AdminEventIntake() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,19 @@ export default function AdminEventIntake() {
       .from("event_surveys")
       .select("*")
       .order("created_at", { ascending: false });
-    setSurveys((data ?? []) as Survey[]);
+    const list = (data ?? []) as Survey[];
+    setSurveys(list);
+    // Fetch counts in parallel
+    const entries = await Promise.all(
+      list.map(async (s) => {
+        const { count } = await supabase
+          .from("event_survey_responses")
+          .select("id", { count: "exact", head: true })
+          .eq("survey_id", s.id);
+        return [s.id, count ?? 0] as [string, number];
+      })
+    );
+    setCounts(Object.fromEntries(entries));
     setLoading(false);
   };
 
@@ -101,13 +115,20 @@ export default function AdminEventIntake() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return responses.filter((r) => {
+    const out = responses.filter((r) => {
       if (paymentFilter !== "all" && r.payment_method !== paymentFilter) return false;
       if (!q) return true;
       const hay = `${r.first_name} ${r.last_name} ${r.organization} ${r.personal_email} ${r.phone} ${r.zelle_id ?? ""} ${r.check_payable_to ?? ""}`.toLowerCase();
       return hay.includes(q);
     });
-  }, [responses, search, paymentFilter]);
+    out.sort((a, b) => {
+      if (sortBy === "name") return `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`);
+      const da = new Date(a.submitted_at).getTime();
+      const db = new Date(b.submitted_at).getTime();
+      return sortBy === "oldest" ? da - db : db - da;
+    });
+    return out;
+  }, [responses, search, paymentFilter, sortBy]);
 
   const copyLink = () => {
     navigator.clipboard.writeText(publicUrl);
@@ -267,7 +288,7 @@ export default function AdminEventIntake() {
                   </div>
                   <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {new Date(s.created_at).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {s.id === survey?.id ? responses.length : "—"}</span>
+                    <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {counts[s.id] ?? 0} response{(counts[s.id] ?? 0) === 1 ? "" : "s"}</span>
                   </div>
                   <div className="mt-3 flex items-center text-accent text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                     Open responses <ChevronRight className="h-3.5 w-3.5 ml-1" />
@@ -368,6 +389,11 @@ export default function AdminEventIntake() {
               <option value="all">All payment methods</option>
               <option value="zelle">Zelle</option>
               <option value="echeck">E-check</option>
+            </select>
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value as any)} className="h-10 rounded-md border border-border bg-background px-3 text-sm">
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name">By last name</option>
             </select>
           </div>
 
