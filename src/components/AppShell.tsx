@@ -38,8 +38,6 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
       { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
       { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
-      { to: "/admin/marketing/approvals", label: "Marketing Approvals", icon: Megaphone, match: (p) => p.startsWith("/admin/marketing/approvals") },
-      { to: "/admin/marketing/portfolio", label: "Marketing Analytics", icon: BarChart2, match: (p) => p.startsWith("/admin/marketing/portfolio") },
       { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
       { to: "/admin/revenue-share", label: "Revenue Share", icon: Calculator, match: (p) => p.startsWith("/admin/revenue-share") },
     ],
@@ -48,9 +46,6 @@ const ADMIN_GROUPS: NavGroup[] = [
     label: "Library",
     items: [
       { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
-      { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
-      { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/email-templates") },
-      { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
       { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
       { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
       { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
@@ -138,24 +133,24 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/system/wiring-status", label: "Integrations", icon: Plug, match: (p) => p.startsWith("/admin/system") },
     ],
   };
-  // Admin marketing items are gated by the "marketing" module
-  const marketingPaths = [
-    "/admin/marketing/approvals",
-    "/admin/marketing/portfolio",
-    "/admin/marketing/templates",
-    "/admin/marketing/email-templates",
-    "/admin/marketing/sequence-templates",
-  ];
-  const filteredAllegianceGroups: NavGroup[] = role === "admin" && !hasModule("marketing")
-    ? allegianceGroups.map((g) => ({ ...g, items: g.items.filter((it) => !it.to || !marketingPaths.includes(it.to)) }))
-    : allegianceGroups;
+  const adminMarketingGroup: NavGroup = {
+    label: "Marketing",
+    items: [
+      { to: "/admin/marketing/approvals", label: "Approvals", icon: Megaphone, match: (p) => p.startsWith("/admin/marketing/approvals") },
+      { to: "/admin/marketing/portfolio", label: "Analytics", icon: BarChart2, match: (p) => p.startsWith("/admin/marketing/portfolio") },
+      { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
+      { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Mail, match: (p) => p.startsWith("/admin/marketing/email-templates") },
+      { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
+    ],
+  };
   // Org users without marketing module shouldn't see the Marketing group
   const filteredBaseGroups: NavGroup[] = role === "org_user" && !hasModule("marketing")
     ? baseGroups.filter((g) => g.label !== "Marketing")
     : baseGroups;
   let groups = role === "admin" && hasModule("acquisitions")
-    ? [...filteredAllegianceGroups, acquisitionsGroup]
-    : (role === "admin" ? filteredAllegianceGroups : filteredBaseGroups);
+    ? [...allegianceGroups, acquisitionsGroup]
+    : (role === "admin" ? allegianceGroups : filteredBaseGroups);
+  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
