@@ -38,6 +38,19 @@ export default function AdminSchools() {
   const [filter, setFilter] = useState<"all" | "unverified">("all");
   const [editing, setEditing] = useState<Partial<School> | null>(null);
   const [aliasText, setAliasText] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const uploadLogo = async (file: File) => {
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `school-logos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: false, contentType: file.type });
+    if (error) { setUploading(false); return toast.error(error.message); }
+    const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
+    setEditing((prev) => prev ? { ...prev, logo_url: data.publicUrl } : prev);
+    setUploading(false);
+    toast.success("Logo uploaded");
+  };
 
   const load = async () => {
     setLoading(true);
@@ -192,8 +205,18 @@ export default function AdminSchools() {
               </div>
               <div><Label>Conference</Label><Input value={editing.athletic_conference ?? ""} onChange={(e) => setEditing({ ...editing, athletic_conference: e.target.value })} /></div>
               <div className="col-span-2">
-                <Label>Logo URL</Label>
-                <Input value={editing.logo_url ?? ""} onChange={(e) => setEditing({ ...editing, logo_url: e.target.value })} />
+                <Label>Logo</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    disabled={uploading}
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(f); }}
+                    className="flex-1"
+                  />
+                  {uploading && <span className="text-xs text-muted-foreground">Uploading…</span>}
+                </div>
+                <Input className="mt-2" value={editing.logo_url ?? ""} onChange={(e) => setEditing({ ...editing, logo_url: e.target.value })} placeholder="…or paste image URL" />
                 {editing.logo_url && <img src={editing.logo_url} alt="" className="h-12 mt-2 object-contain" />}
               </div>
               <div><Label>Primary color</Label><Input value={editing.primary_color ?? ""} onChange={(e) => setEditing({ ...editing, primary_color: e.target.value })} placeholder="#9E1B32" /></div>
