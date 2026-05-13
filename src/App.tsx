@@ -81,6 +81,8 @@ import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
 import AdminSchools from "@/pages/admin/marketing/AdminSchools";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
+import EventIntake from "@/pages/events/EventIntake";
+import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
