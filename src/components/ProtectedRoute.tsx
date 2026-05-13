@@ -28,17 +28,8 @@ export default function ProtectedRoute({
     if (userRole === "seller_portal") return <Navigate to="/" replace />;
     return <Navigate to="/auth" replace />;
   }
-  if (requiredModule && !hasModule(requiredModule)) {
-    // Send user to a module they can access
-    if (userRole === "admin") {
-      if (requiredModule === "allegiance" && hasModule("acquisitions")) {
-        return <Navigate to="/admin/acquisitions" replace />;
-      }
-      if (requiredModule === "acquisitions" && hasModule("allegiance")) {
-        return <Navigate to="/admin" replace />;
-      }
-      return <Navigate to="/admin" replace />;
-    }
+  // Admins can access any module without the gating check
+  if (requiredModule && userRole !== "admin" && !hasModule(requiredModule)) {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
