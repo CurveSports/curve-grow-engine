@@ -153,6 +153,7 @@ export default function AdminUsers() {
             ...(newAllegiance ? ["allegiance"] : []),
             ...(newAcquisitions ? ["acquisitions"] : []),
             ...(newMarketing ? ["marketing"] : []),
+            ...(newEvents ? ["events"] : []),
           ],
         },
       });
