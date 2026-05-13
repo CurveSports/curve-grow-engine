@@ -256,7 +256,7 @@ export default function AdminUsers() {
               <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
                 Cancel
               </Button>
-              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions && !newMarketing)} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {creating ? "Creating…" : "Create & Invite"}
               </Button>
             </DialogFooter>
