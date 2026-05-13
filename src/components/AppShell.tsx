@@ -275,6 +275,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       {/* Main content */}
       <main className="md:ml-[240px] md:pt-[60px] pb-20 md:pb-0 min-h-screen">
+        <ImpersonationBanner />
         <PageTransition
           key={location.pathname}
           className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8"
