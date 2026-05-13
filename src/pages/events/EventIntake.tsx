@@ -509,8 +509,20 @@ export default function EventIntake() {
           </Field>
 
           <Button onClick={submit} disabled={submitting} className="w-full h-12 bg-accent text-accent-foreground hover:bg-accent/90">
-            {submitting ? "Submitting…" : "Submit"}
+            {submitting ? (
+              <span className="flex items-center gap-2">
+                <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                Submitting your information…
+              </span>
+            ) : (
+              "Submit"
+            )}
           </Button>
+          {submitting && (
+            <p className="text-xs text-center text-muted-foreground -mt-2">
+              Generating your W-9 and uploading — this can take a few seconds. Please don't close this tab.
+            </p>
+          )}
         </div>
       </div>
     </div>
