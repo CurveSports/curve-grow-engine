@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { ArrowLeft, Sparkles, Loader2, Wand2, Copy, Download, CheckCircle2, XCircle, Send, Mail } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Design = {
   id: string;
@@ -31,6 +32,7 @@ export default function DesignEditor() {
   const { id } = useParams<{ id: string }>();
   const { profile, role } = useAuth();
   const navigate = useNavigate();
+  const ml = useMarketingLink();
   const isAdmin = role === "admin";
 
   const [design, setDesign] = useState<Design | null>(null);
@@ -151,7 +153,7 @@ export default function DesignEditor() {
   return (
     <AppShell title="Design">
       <div className="flex items-center gap-3 mb-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/marketing/designs")}><ArrowLeft className="h-4 w-4 mr-1" />All designs</Button>
+        <Button variant="ghost" size="sm" onClick={() => navigate(ml("/marketing/designs"))}><ArrowLeft className="h-4 w-4 mr-1" />All designs</Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -179,7 +181,7 @@ export default function DesignEditor() {
               <h3 className="font-display font-semibold mb-3">Variations</h3>
               <div className="grid grid-cols-3 gap-3">
                 {variations.map((v) => (
-                  <Link key={v.id} to={`/marketing/designs/${v.id}`}>
+                  <Link key={v.id} to={ml(`/marketing/designs/${v.id}`)}>
                     <div className="aspect-square bg-muted rounded overflow-hidden hover:ring-2 hover:ring-primary transition-all">
                       {v.preview_url ? <img src={v.preview_url} alt={v.name || ""} className="w-full h-full object-cover" /> : (
                         <iframe srcDoc={v.generated_html || ""} className="w-full h-full pointer-events-none" sandbox="allow-same-origin" title={v.name || ""} />
@@ -232,7 +234,7 @@ export default function DesignEditor() {
                 </>
               )}
               {design.status === "approved" && (
-                <Button onClick={() => navigate(`/marketing/emails/new?design=${design.id}`)} className="w-full">
+                <Button onClick={() => navigate(ml(`/marketing/emails/new?design=${design.id}`))} className="w-full">
                   <Mail className="h-4 w-4 mr-2" />Use in email
                 </Button>
               )}

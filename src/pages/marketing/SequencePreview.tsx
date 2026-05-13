@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Mail, Image, MessageSquare } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 const channelIcon = (t: string) => {
   if (t === "email") return <Mail className="h-4 w-4" />;
@@ -22,6 +23,7 @@ const channelColor = (t: string) => {
 export default function SequencePreview() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const ml = useMarketingLink();
   const [template, setTemplate] = useState<any>(null);
   const [assets, setAssets] = useState<any[]>([]);
 
@@ -48,7 +50,7 @@ export default function SequencePreview() {
   return (
     <AppShell>
       <div className="p-6 space-y-6 max-w-6xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate("/marketing/sequences")}>
+        <Button variant="ghost" onClick={() => navigate(ml("/marketing/sequences"))}>
           <ArrowLeft className="h-4 w-4 mr-2" />Back to library
         </Button>
 
@@ -58,7 +60,7 @@ export default function SequencePreview() {
             <p className="text-muted-foreground mt-1">{template.preview_summary}</p>
             <p className="text-sm mt-3"><strong>Best for:</strong> {template.best_for}</p>
           </div>
-          <Button size="lg" onClick={() => navigate(`/marketing/sequences/${id}/launch`)}>
+          <Button size="lg" onClick={() => navigate(ml(`/marketing/sequences/${id}/launch`))}>
             Use This Sequence
           </Button>
         </header>

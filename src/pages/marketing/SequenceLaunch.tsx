@@ -76,12 +76,12 @@ export default function SequenceLaunch() {
           .single();
         if (ce2) throw ce2;
         toast.success(`Sequence launched! ${assets.filter(a => includedAssets[a.id]).length} assets queued.`);
-        navigate(`/marketing/campaigns/${c2.id}`);
+        navigate(ml(`/marketing/campaigns/${c2.id}`));
         return;
       }
 
       toast.success(`🎉 Sequence launched! ${assets.filter(a => includedAssets[a.id]).length} assets queued for Curve review.`);
-      navigate(`/marketing/campaigns/${campaign.id}`);
+      navigate(ml(`/marketing/campaigns/${campaign.id}`));
     } catch (e: any) {
       toast.error(e.message || "Failed to launch sequence");
     } finally {
@@ -96,7 +96,7 @@ export default function SequenceLaunch() {
   return (
     <AppShell>
       <div className="p-6 space-y-6 max-w-4xl mx-auto">
-        <Button variant="ghost" onClick={() => navigate(`/marketing/sequences/${id}`)}>
+        <Button variant="ghost" onClick={() => navigate(ml(`/marketing/sequences/${id}`))}>
           <ArrowLeft className="h-4 w-4 mr-2" />Back
         </Button>
 
@@ -152,7 +152,7 @@ export default function SequenceLaunch() {
         </Card>
 
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => navigate(`/marketing/sequences/${id}`)}>Cancel</Button>
+          <Button variant="outline" onClick={() => navigate(ml(`/marketing/sequences/${id}`))}>Cancel</Button>
           <Button size="lg" onClick={launch} disabled={launching || !anchorDate}>
             {launching ? "Launching..." : `Generate ${includedCount} Assets`}
           </Button>

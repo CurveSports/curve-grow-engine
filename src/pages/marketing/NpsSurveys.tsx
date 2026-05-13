@@ -86,7 +86,7 @@ export default function NpsSurveys() {
 
         <div className="space-y-2">
           {surveys.map((s) => (
-            <Card key={s.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(`/marketing/nps/${s.id}`)}>
+            <Card key={s.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(ml(`/marketing/nps/${s.id}`))}>
               <CardContent className="p-4 flex justify-between items-center">
                 <div>
                   <div className="font-medium">{s.name}</div>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import {
+import { useMarketingLink } from "@/hooks/useMarketingLink";
   Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2,
   Link2, FlaskConical, Clock, MessageSquare, Share2, Calendar, Heart,
 } from "lucide-react";
@@ -56,6 +57,7 @@ const SECTIONS: { title: string; blurb: string; tiles: Tile[] }[] = [
 ];
 
 export default function MarketingHub() {
+  const ml = useMarketingLink();
   return (
     <AppShell title="Marketing">
       <div className="mb-10">

@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Plus, Mail, Send as SendIcon, Loader2, Eye, MousePointer, AlertTriangle } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type EmailSend = {
   id: string;
@@ -41,6 +42,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 export default function Emails() {
+  const ml = useMarketingLink();
   const { profile } = useAuth();
   const { orgId } = useEffectiveOrg();
   const [params] = useSearchParams();
@@ -160,7 +162,7 @@ export default function Emails() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Email campaigns</h1>
           <p className="text-muted-foreground mt-1">Send approved designs to your segments and watch engagement.</p>
         </div>
-        <Button asChild><Link to="/marketing/emails/new"><Plus className="h-4 w-4 mr-2" />New email</Link></Button>
+        <Button asChild><Link to={ml("/marketing/emails/new")}><Plus className="h-4 w-4 mr-2" />New email</Link></Button>
       </div>
 
       {loading ? (
@@ -244,7 +246,7 @@ export default function Emails() {
                 <option value="">Custom HTML below…</option>
                 {designs.map((d) => <option key={d.id} value={d.id}>{d.name || "Untitled"}</option>)}
               </select>
-              {!designs.length && <p className="text-xs text-muted-foreground mt-1">No approved designs yet — <Link to="/marketing/designs" className="underline">create one</Link>.</p>}
+              {!designs.length && <p className="text-xs text-muted-foreground mt-1">No approved designs yet — <Link to={ml("/marketing/designs")} className="underline">create one</Link>.</p>}
             </div>
             <div className="md:col-span-2">
               <Label>HTML body</Label>

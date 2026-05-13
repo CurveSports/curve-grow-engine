@@ -59,7 +59,7 @@ export default function SmsComposer() {
     }).select().single();
     if (error) { toast.error(error.message); return; }
     toast.success(`SMS queued to ${recipientCount} recipients (Twilio not wired — stub)`);
-    navigate("/marketing/sms");
+    navigate(ml("/marketing/sms"));
   };
 
   if (!smsNumber) {
@@ -70,7 +70,7 @@ export default function SmsComposer() {
             <CardHeader><CardTitle>SMS not configured</CardTitle></CardHeader>
             <CardContent>
               <p className="mb-4">You need to provision an SMS number first.</p>
-              <Button onClick={() => navigate("/marketing/sms-setup")}>Go to SMS Setup</Button>
+              <Button onClick={() => navigate(ml("/marketing/sms-setup"))}>Go to SMS Setup</Button>
             </CardContent>
           </Card>
         </div>
@@ -116,7 +116,7 @@ export default function SmsComposer() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => navigate("/marketing/sms")}>Cancel</Button>
+            <Button variant="outline" onClick={() => navigate(ml("/marketing/sms"))}>Cancel</Button>
             <Button onClick={send} disabled={!body}>Send Now</Button>
           </div>
         </div>
