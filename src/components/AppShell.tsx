@@ -38,8 +38,6 @@ const ADMIN_GROUPS: NavGroup[] = [
       { to: "/admin/tasks", label: "Portfolio Health", icon: ListChecks, match: (p) => p.startsWith("/admin/tasks") },
       { to: "/admin/weekly-focus", label: "Weekly Focus", icon: Target, match: (p) => p.startsWith("/admin/weekly-focus") },
       { to: "/admin/roadmap", label: "Roadmap", icon: GanttChartSquare, match: (p) => p.startsWith("/admin/roadmap") },
-      { to: "/admin/marketing/approvals", label: "Marketing Approvals", icon: Megaphone, match: (p) => p.startsWith("/admin/marketing/approvals") },
-      { to: "/admin/marketing/portfolio", label: "Marketing Analytics", icon: BarChart2, match: (p) => p.startsWith("/admin/marketing/portfolio") },
       { to: "/admin/pipeline", label: "Sponsorship Pipeline", icon: DollarSign, match: (p) => p.startsWith("/admin/pipeline") },
       { to: "/admin/revenue-share", label: "Revenue Share", icon: Calculator, match: (p) => p.startsWith("/admin/revenue-share") },
     ],
@@ -48,9 +46,6 @@ const ADMIN_GROUPS: NavGroup[] = [
     label: "Library",
     items: [
       { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
-      { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
-      { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/email-templates") },
-      { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
       { to: "/admin/presentations", label: "Presentations", icon: Sparkles, match: (p) => p.startsWith("/admin/presentations") },
       { to: "/calculators", label: "Calculators", icon: Calculator, match: (p) => p.startsWith("/calculators") },
       { to: "/admin/communications", label: "Communications", icon: Mail, match: (p) => p.startsWith("/admin/communications") || p.startsWith("/communications") },
