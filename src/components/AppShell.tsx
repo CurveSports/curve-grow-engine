@@ -11,7 +11,7 @@ import { resolveMobileRoute } from "@/components/mobile/mobileRoutes";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
-  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap,
+  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox,
   Menu,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
@@ -154,6 +154,12 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/marketing/schools", label: "Schools Library", icon: GraduationCap, match: (p) => p.startsWith("/admin/marketing/schools") },
     ],
   };
+  const adminEventsGroup: NavGroup = {
+    label: "Events",
+    items: [
+      { to: "/admin/events/intake", label: "Payment Intake", icon: Inbox, match: (p) => p.startsWith("/admin/events/intake") },
+    ],
+  };
   // Org users without marketing module shouldn't see the Marketing group
   const filteredBaseGroups: NavGroup[] = role === "org_user" && !hasModule("marketing")
     ? baseGroups.filter((g) => g.label !== "Marketing")
@@ -162,6 +168,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     ? [...allegianceGroups, acquisitionsGroup]
     : (role === "admin" ? allegianceGroups : filteredBaseGroups);
   if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
+  if (role === "admin" && hasModule("events")) groups = [...groups, adminEventsGroup];
 
   // When an admin is impersonating an org (URL: /admin/orgs/:orgId/marketing/...),
   // swap the sidebar to the ORG marketing nav, but rewrite every link to the

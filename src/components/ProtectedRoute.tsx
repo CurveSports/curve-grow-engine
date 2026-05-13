@@ -2,7 +2,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ReactNode } from "react";
 
-type ModuleName = "allegiance" | "acquisitions" | "marketing";
+type ModuleName = "allegiance" | "acquisitions" | "marketing" | "events";
 
 export default function ProtectedRoute({
   children,

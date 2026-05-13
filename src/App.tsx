@@ -81,6 +81,8 @@ import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
 import AdminSchools from "@/pages/admin/marketing/AdminSchools";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
+import EventIntake from "@/pages/events/EventIntake";
+import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -141,6 +143,9 @@ const App = () => (
             <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
             <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
+            <Route path="/events/intake/:slug" element={<EventIntake />} />
+            <Route path="/events/intake" element={<EventIntake />} />
+            <Route path="/admin/events/intake" element={<ProtectedRoute role="admin" module="events"><AdminEventIntake /></ProtectedRoute>} />
 
             {/* Admin "act on behalf of org" — same components, scoped via URL :orgId */}
             <Route path="/admin/orgs" element={<ProtectedRoute role="admin" module="marketing"><AdminBrowseOrgs /></ProtectedRoute>} />

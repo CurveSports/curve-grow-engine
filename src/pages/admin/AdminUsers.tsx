@@ -52,6 +52,7 @@ export default function AdminUsers() {
   const [newAllegiance, setNewAllegiance] = useState(true);
   const [newAcquisitions, setNewAcquisitions] = useState(true);
   const [newMarketing, setNewMarketing] = useState(true);
+  const [newEvents, setNewEvents] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -107,9 +108,10 @@ export default function AdminUsers() {
     setNewAllegiance(true);
     setNewAcquisitions(true);
     setNewMarketing(true);
+    setNewEvents(false);
   };
 
-  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing", checked: boolean) => {
+  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing" | "events", checked: boolean) => {
     const next = checked
       ? Array.from(new Set([...(row.module_access ?? []), mod]))
       : (row.module_access ?? []).filter((m) => m !== mod);
@@ -151,6 +153,7 @@ export default function AdminUsers() {
             ...(newAllegiance ? ["allegiance"] : []),
             ...(newAcquisitions ? ["acquisitions"] : []),
             ...(newMarketing ? ["marketing"] : []),
+            ...(newEvents ? ["events"] : []),
           ],
         },
       });
@@ -247,7 +250,11 @@ export default function AdminUsers() {
                     <Checkbox checked={newMarketing} onCheckedChange={(v) => setNewMarketing(!!v)} />
                     <span>Curve Marketing</span>
                   </label>
-                  {!newAllegiance && !newAcquisitions && !newMarketing && (
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <Checkbox checked={newEvents} onCheckedChange={(v) => setNewEvents(!!v)} />
+                    <span>Curve Events</span>
+                  </label>
+                  {!newAllegiance && !newAcquisitions && !newMarketing && !newEvents && (
                     <p className="text-xs text-destructive">Select at least one module.</p>
                   )}
                 </div>
@@ -257,7 +264,7 @@ export default function AdminUsers() {
               <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={creating}>
                 Cancel
               </Button>
-              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions && !newMarketing)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button onClick={createUser} disabled={creating || (!newAllegiance && !newAcquisitions && !newMarketing && !newEvents)} className="bg-accent text-accent-foreground hover:bg-accent/90">
                 {creating ? "Creating…" : "Create & Invite"}
               </Button>
             </DialogFooter>
@@ -313,6 +320,14 @@ export default function AdminUsers() {
                           onCheckedChange={(v) => toggleModule(r, "marketing", !!v)}
                         />
                         <span>Marketing</span>
+                      </label>
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <Checkbox
+                          checked={r.module_access.includes("events")}
+                          disabled={savingModulesId === r.user_id}
+                          onCheckedChange={(v) => toggleModule(r, "events", !!v)}
+                        />
+                        <span>Events</span>
                       </label>
                     </div>
                   </td>
