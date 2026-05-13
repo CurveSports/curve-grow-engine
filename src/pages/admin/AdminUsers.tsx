@@ -52,6 +52,7 @@ export default function AdminUsers() {
   const [newAllegiance, setNewAllegiance] = useState(true);
   const [newAcquisitions, setNewAcquisitions] = useState(true);
   const [newMarketing, setNewMarketing] = useState(true);
+  const [newEvents, setNewEvents] = useState(false);
 
   const load = async () => {
     setLoading(true);
