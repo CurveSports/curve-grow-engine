@@ -150,7 +150,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   let groups = role === "admin" && hasModule("acquisitions")
     ? [...allegianceGroups, acquisitionsGroup]
     : (role === "admin" ? allegianceGroups : filteredBaseGroups);
-  if (role === "admin") groups = [...groups, adminMarketingGroup];
+  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
