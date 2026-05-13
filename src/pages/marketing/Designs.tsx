@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "sonner";
 import { Plus, Sparkles, Loader2, Image as ImageIcon, Search } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
+import SchoolPicker from "@/components/marketing/SchoolPicker";
 
 type Template = {
   id: string;
