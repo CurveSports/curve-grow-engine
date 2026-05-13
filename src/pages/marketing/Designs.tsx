@@ -201,6 +201,16 @@ export default function Designs() {
                     <Textarea rows={3} placeholder={f.placeholder} value={inputs[f.name] ?? ""} onChange={(e) => setInputs((s) => ({ ...s, [f.name]: e.target.value }))} />
                   ) : f.type === "photo_selector" ? (
                     <PhotoSelector orgId={orgId!} value={inputs[f.name] ?? ""} onChange={(v) => setInputs((s) => ({ ...s, [f.name]: v }))} />
+                  ) : f.type === "school_picker" ? (
+                    <SchoolPicker
+                      value={inputs[f.name] ?? ""}
+                      logoUrl={inputs[f.logo_field || "school_logo_url"] ?? ""}
+                      onChange={(next) => setInputs((s) => ({
+                        ...s,
+                        [f.name]: next.name,
+                        [f.logo_field || "school_logo_url"]: next.logo_url ?? "",
+                      }))}
+                    />
                   ) : (
                     <Input
                       type={f.type === "number" ? "number" : f.type === "date" ? "date" : f.type === "url" ? "url" : "text"}
