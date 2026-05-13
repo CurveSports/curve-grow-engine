@@ -6199,6 +6199,72 @@ export type Database = {
           },
         ]
       }
+      schools: {
+        Row: {
+          active: boolean
+          aliases: string[] | null
+          athletic_conference: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          level: string
+          logo_url: string | null
+          mascot: string | null
+          name: string
+          primary_color: string | null
+          secondary_color: string | null
+          short_name: string | null
+          state: string | null
+          updated_at: string
+          verified: boolean
+          website: string | null
+        }
+        Insert: {
+          active?: boolean
+          aliases?: string[] | null
+          athletic_conference?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level?: string
+          logo_url?: string | null
+          mascot?: string | null
+          name: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          short_name?: string | null
+          state?: string | null
+          updated_at?: string
+          verified?: boolean
+          website?: string | null
+        }
+        Update: {
+          active?: boolean
+          aliases?: string[] | null
+          athletic_conference?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level?: string
+          logo_url?: string | null
+          mascot?: string | null
+          name?: string
+          primary_color?: string | null
+          secondary_color?: string | null
+          short_name?: string | null
+          state?: string | null
+          updated_at?: string
+          verified?: boolean
+          website?: string | null
+        }
+        Relationships: []
+      }
       shortlink_clicks: {
         Row: {
           country: string | null
