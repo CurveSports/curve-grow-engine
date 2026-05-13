@@ -247,8 +247,18 @@ function SuggestSchoolDialog({
             </select>
           </div>
           <div>
-            <Label>Logo URL (optional)</Label>
-            <Input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://…" />
+            <Label>Logo</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="file"
+                accept="image/*"
+                disabled={uploading}
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(f); }}
+                className="flex-1"
+              />
+              {uploading && <Loader2 className="h-4 w-4 animate-spin" />}
+            </div>
+            <Input className="mt-2" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="…or paste image URL" />
             {logoUrl && (
               <img src={logoUrl} alt="" className="h-12 mt-2 object-contain" onError={(e) => ((e.target as HTMLImageElement).style.opacity = "0.3")} />
             )}
