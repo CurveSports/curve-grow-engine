@@ -172,8 +172,21 @@ function SuggestSchoolDialog({
   const [level, setLevel] = useState("HS");
   const [logoUrl, setLogoUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => { if (open) setName(initialName); }, [open, initialName]);
+
+  const uploadLogo = async (file: File) => {
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `school-logos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: false, contentType: file.type });
+    if (error) { setUploading(false); return toast.error(error.message); }
+    const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
+    setLogoUrl(data.publicUrl);
+    setUploading(false);
+    toast.success("Logo uploaded");
+  };
 
   const save = async () => {
     if (!name.trim()) return toast.error("Name required");
