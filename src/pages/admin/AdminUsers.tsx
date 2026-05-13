@@ -149,6 +149,7 @@ export default function AdminUsers() {
           module_access: [
             ...(newAllegiance ? ["allegiance"] : []),
             ...(newAcquisitions ? ["acquisitions"] : []),
+            ...(newMarketing ? ["marketing"] : []),
           ],
         },
       });
