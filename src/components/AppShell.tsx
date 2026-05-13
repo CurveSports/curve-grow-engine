@@ -112,6 +112,10 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const { role, profile, signOut, isPrimary } = useAuth();
   const { logoUrl } = useBranding();
   const location = useLocation();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Auto-close drawer on route change
+  useEffect(() => { setMobileNavOpen(false); }, [location.pathname]);
 
   const { hasModule } = useAuth();
   const baseGroups = role === "admin" ? ADMIN_GROUPS : ORG_GROUPS;
