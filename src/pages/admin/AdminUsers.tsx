@@ -108,6 +108,7 @@ export default function AdminUsers() {
     setNewAllegiance(true);
     setNewAcquisitions(true);
     setNewMarketing(true);
+    setNewEvents(false);
   };
 
   const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing" | "events", checked: boolean) => {
