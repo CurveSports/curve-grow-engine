@@ -38,6 +38,19 @@ export default function AdminSchools() {
   const [filter, setFilter] = useState<"all" | "unverified">("all");
   const [editing, setEditing] = useState<Partial<School> | null>(null);
   const [aliasText, setAliasText] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  const uploadLogo = async (file: File) => {
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `school-logos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await supabase.storage.from("brand-assets").upload(path, file, { upsert: false, contentType: file.type });
+    if (error) { setUploading(false); return toast.error(error.message); }
+    const { data } = supabase.storage.from("brand-assets").getPublicUrl(path);
+    setEditing((prev) => prev ? { ...prev, logo_url: data.publicUrl } : prev);
+    setUploading(false);
+    toast.success("Logo uploaded");
+  };
 
   const load = async () => {
     setLoading(true);
