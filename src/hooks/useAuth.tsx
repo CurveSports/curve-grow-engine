@@ -19,7 +19,7 @@ interface AuthCtx {
   role: Role;
   isPrimary: boolean;
   loading: boolean;
-  hasModule: (m: "allegiance" | "acquisitions") => boolean;
+  hasModule: (m: "allegiance" | "acquisitions" | "marketing") => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
