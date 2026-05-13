@@ -106,9 +106,10 @@ export default function AdminUsers() {
     setNewOrgId("");
     setNewAllegiance(true);
     setNewAcquisitions(true);
+    setNewMarketing(true);
   };
 
-  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions", checked: boolean) => {
+  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing", checked: boolean) => {
     const next = checked
       ? Array.from(new Set([...(row.module_access ?? []), mod]))
       : (row.module_access ?? []).filter((m) => m !== mod);
