@@ -35,7 +35,7 @@ type Row = {
 type Org = { id: string; name: string };
 
 export default function AdminUsers() {
-  const { user } = useAuth();
+  const { user, refresh } = useAuth();
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,6 +121,7 @@ export default function AdminUsers() {
         .eq("user_id", row.user_id);
       if (error) throw error;
       setRows((prev) => prev.map((r) => (r.user_id === row.user_id ? { ...r, module_access: next } : r)));
+      if (row.user_id === user?.id) await refresh();
     } catch (err: any) {
       console.error(err);
       toast.error(err.message ?? "Failed to update access");
