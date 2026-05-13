@@ -51,6 +51,7 @@ export default function AdminUsers() {
   const [newOrgId, setNewOrgId] = useState<string>("");
   const [newAllegiance, setNewAllegiance] = useState(true);
   const [newAcquisitions, setNewAcquisitions] = useState(true);
+  const [newMarketing, setNewMarketing] = useState(true);
 
   const load = async () => {
     setLoading(true);
