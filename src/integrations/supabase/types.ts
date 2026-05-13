@@ -2723,6 +2723,119 @@ export type Database = {
           },
         ]
       }
+      event_survey_responses: {
+        Row: {
+          check_delivery_email: string | null
+          check_payable_to: string | null
+          extra: Json | null
+          first_name: string
+          id: string
+          ip_address: string | null
+          last_name: string
+          notes: string | null
+          organization: string
+          payment_method: string
+          personal_email: string
+          phone: string
+          submitted_at: string
+          survey_id: string
+          w9_file_name: string | null
+          w9_file_path: string | null
+          zelle_id: string | null
+          zelle_id_type: string | null
+        }
+        Insert: {
+          check_delivery_email?: string | null
+          check_payable_to?: string | null
+          extra?: Json | null
+          first_name: string
+          id?: string
+          ip_address?: string | null
+          last_name: string
+          notes?: string | null
+          organization: string
+          payment_method: string
+          personal_email: string
+          phone: string
+          submitted_at?: string
+          survey_id: string
+          w9_file_name?: string | null
+          w9_file_path?: string | null
+          zelle_id?: string | null
+          zelle_id_type?: string | null
+        }
+        Update: {
+          check_delivery_email?: string | null
+          check_payable_to?: string | null
+          extra?: Json | null
+          first_name?: string
+          id?: string
+          ip_address?: string | null
+          last_name?: string
+          notes?: string | null
+          organization?: string
+          payment_method?: string
+          personal_email?: string
+          phone?: string
+          submitted_at?: string
+          survey_id?: string
+          w9_file_name?: string | null
+          w9_file_path?: string | null
+          zelle_id?: string | null
+          zelle_id_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "event_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_surveys: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fields: Json
+          id: string
+          instructions: string | null
+          is_active: boolean
+          slug: string
+          title: string
+          updated_at: string
+          w9_template_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          slug: string
+          title?: string
+          updated_at?: string
+          w9_template_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fields?: Json
+          id?: string
+          instructions?: string | null
+          is_active?: boolean
+          slug?: string
+          title?: string
+          updated_at?: string
+          w9_template_url?: string | null
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
