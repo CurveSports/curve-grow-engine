@@ -245,7 +245,7 @@ export default function EventIntake() {
         w9_file_path: path,
         w9_file_name: uploadName,
         notes: form.notes.trim() || null,
-        extra,
+        extra: extra as any,
       });
       if (insErr) throw insErr;
       setDone(true);
