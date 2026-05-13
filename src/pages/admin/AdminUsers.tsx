@@ -109,7 +109,7 @@ export default function AdminUsers() {
     setNewMarketing(true);
   };
 
-  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing", checked: boolean) => {
+  const toggleModule = async (row: Row, mod: "allegiance" | "acquisitions" | "marketing" | "events", checked: boolean) => {
     const next = checked
       ? Array.from(new Set([...(row.module_access ?? []), mod]))
       : (row.module_access ?? []).filter((m) => m !== mod);
