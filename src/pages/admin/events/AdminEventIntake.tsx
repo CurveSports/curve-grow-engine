@@ -46,6 +46,8 @@ type Response = {
 
 export default function AdminEventIntake() {
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "name">("newest");
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [responses, setResponses] = useState<Response[]>([]);
   const [loading, setLoading] = useState(true);
