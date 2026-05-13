@@ -2,10 +2,10 @@ import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card } from "@/components/ui/card";
 import {
-import { useMarketingLink } from "@/hooks/useMarketingLink";
   Palette, Users, Mail, Sparkles, ArrowRight, Megaphone, CheckCircle2,
   Link2, FlaskConical, Clock, MessageSquare, Share2, Calendar, Heart,
 } from "lucide-react";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Tile = { to: string; label: string; desc: string; icon: typeof Mail };
 
