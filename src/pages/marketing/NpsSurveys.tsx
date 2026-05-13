@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,24 +16,22 @@ import { toast } from "sonner";
 
 export default function NpsSurveys() {
   const navigate = useNavigate();
+  const ml = useMarketingLink();
+  const { orgId } = useEffectiveOrg();
   const [surveys, setSurveys] = useState<any[]>([]);
-  const [orgId, setOrgId] = useState("");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
 
   useEffect(() => {
+    if (!orgId) return;
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from("profiles").select("org_id").eq("user_id", user!.id).single();
-      if (!profile?.org_id) return;
-      setOrgId(profile.org_id);
-      const { data } = await (supabase as any).from("org_nps_surveys").select("*").order("created_at", { ascending: false });
+      const { data } = await (supabase as any).from("org_nps_surveys").select("*").eq("org_id", orgId).order("created_at", { ascending: false });
       setSurveys(data || []);
     })();
-  }, []);
+  }, [orgId]);
 
   const create = async () => {
-    if (!name) return;
+    if (!name || !orgId) return;
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await (supabase as any).from("org_nps_surveys").insert({
       org_id: orgId, name, created_by: user!.id, status: "draft",
@@ -39,7 +39,7 @@ export default function NpsSurveys() {
     if (error) { toast.error(error.message); return; }
     toast.success("Survey created");
     setOpen(false);
-    navigate(`/marketing/nps/${data.id}`);
+    navigate(ml(`/marketing/nps/${data.id}`));
   };
 
   const avgScore = surveys.length > 0

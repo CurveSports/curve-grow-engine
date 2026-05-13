@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import AppShell from "@/components/AppShell";
+import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,21 +16,18 @@ export default function SmsSetup() {
   const [areaCode, setAreaCode] = useState("");
   const [tcpaChecked, setTcpaChecked] = useState(false);
   const [signature, setSignature] = useState("");
-  const [orgId, setOrgId] = useState<string>("");
+  const { orgId } = useEffectiveOrg();
   const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-      const { data: profile } = await supabase.from("profiles").select("org_id").eq("user_id", user.id).single();
-      if (!profile?.org_id) return;
-      setOrgId(profile.org_id);
-      const { data } = await (supabase as any).from("org_sms_numbers").select("*").eq("org_id", profile.org_id).maybeSingle();
+      if (user) setUserId(user.id);
+      if (!orgId) return;
+      const { data } = await (supabase as any).from("org_sms_numbers").select("*").eq("org_id", orgId).maybeSingle();
       setSmsNumber(data);
     })();
-  }, []);
+  }, [orgId]);
 
   const requestProvision = async () => {
     if (!areaCode || areaCode.length !== 3) {

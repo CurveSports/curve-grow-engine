@@ -45,8 +45,8 @@ export default function SequenceLaunch() {
     setLaunching(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from("profiles").select("org_id").eq("user_id", user!.id).single();
-      const orgId = profile?.org_id;
+      const orgId = effectiveOrgId;
+      if (!orgId) { toast.error("No organization context"); setLaunching(false); return; }
 
       const { data: campaign, error: ce } = await (supabase as any)
         .from("campaigns")
