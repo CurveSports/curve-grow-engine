@@ -117,9 +117,14 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/system/wiring-status", label: "Integrations", icon: Plug, match: (p) => p.startsWith("/admin/system") },
     ],
   };
+  // Admin marketing items are gated by the "marketing" module
+  const marketingPaths = ["/admin/marketing/approvals", "/admin/marketing/templates", "/admin/marketing/email-templates"];
+  const filteredAllegianceGroups: NavGroup[] = role === "admin" && !hasModule("marketing")
+    ? allegianceGroups.map((g) => ({ ...g, items: g.items.filter((it) => !it.to || !marketingPaths.includes(it.to)) }))
+    : allegianceGroups;
   let groups = role === "admin" && hasModule("acquisitions")
-    ? [...allegianceGroups, acquisitionsGroup]
-    : baseGroups;
+    ? [...filteredAllegianceGroups, acquisitionsGroup]
+    : (role === "admin" ? filteredAllegianceGroups : baseGroups);
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
