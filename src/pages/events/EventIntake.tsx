@@ -10,7 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CheckCircle2, FileDown, Upload, PenLine } from "lucide-react";
-import { jsPDF } from "jspdf";
+import { PDFDocument, StandardFonts } from "pdf-lib";
+
+const W9_TEMPLATE_URL = "/forms/fw9.pdf";
 
 type Survey = {
   id: string;
