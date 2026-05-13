@@ -133,24 +133,24 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/system/wiring-status", label: "Integrations", icon: Plug, match: (p) => p.startsWith("/admin/system") },
     ],
   };
-  // Admin marketing items are gated by the "marketing" module
-  const marketingPaths = [
-    "/admin/marketing/approvals",
-    "/admin/marketing/portfolio",
-    "/admin/marketing/templates",
-    "/admin/marketing/email-templates",
-    "/admin/marketing/sequence-templates",
-  ];
-  const filteredAllegianceGroups: NavGroup[] = role === "admin" && !hasModule("marketing")
-    ? allegianceGroups.map((g) => ({ ...g, items: g.items.filter((it) => !it.to || !marketingPaths.includes(it.to)) }))
-    : allegianceGroups;
+  const adminMarketingGroup: NavGroup = {
+    label: "Marketing",
+    items: [
+      { to: "/admin/marketing/approvals", label: "Approvals", icon: Megaphone, match: (p) => p.startsWith("/admin/marketing/approvals") },
+      { to: "/admin/marketing/portfolio", label: "Analytics", icon: BarChart2, match: (p) => p.startsWith("/admin/marketing/portfolio") },
+      { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
+      { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Mail, match: (p) => p.startsWith("/admin/marketing/email-templates") },
+      { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
+    ],
+  };
   // Org users without marketing module shouldn't see the Marketing group
   const filteredBaseGroups: NavGroup[] = role === "org_user" && !hasModule("marketing")
     ? baseGroups.filter((g) => g.label !== "Marketing")
     : baseGroups;
   let groups = role === "admin" && hasModule("acquisitions")
-    ? [...filteredAllegianceGroups, acquisitionsGroup]
-    : (role === "admin" ? filteredAllegianceGroups : filteredBaseGroups);
+    ? [...allegianceGroups, acquisitionsGroup]
+    : (role === "admin" ? allegianceGroups : filteredBaseGroups);
+  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
   if (isCurveOwner) groups = [...groups, systemGroup];
   const showTeam = role === "org_user" && isPrimary;
 
