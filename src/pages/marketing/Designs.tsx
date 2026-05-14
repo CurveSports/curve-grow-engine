@@ -112,7 +112,6 @@ export default function Designs() {
 
   const startGenerate = async () => {
     if (!picked || !orgId) return;
-    // validate required
     for (const f of picked.input_fields ?? []) {
       if (f.required && !inputs[f.name]) {
         return toast.error(`${f.label} is required`);
@@ -124,11 +123,12 @@ export default function Designs() {
         body: { template_id: picked.id, org_id: orgId, prompt_input: inputs, style_direction: styleDirection },
       });
       if (error) throw error;
-      toast.success("Design generated");
+      toast.success("Generating in the background — we'll let you know when it's ready.");
       setPickOpen(false);
       setPicked(null);
       setInputs({});
-      navigate(ml(`/marketing/designs/${data.design_id}`));
+      // Optimistically navigate to the new design's editor so the user sees progress
+      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}`));
     } catch (e: any) {
       toast.error(e.message || "Generation failed");
     } finally {
