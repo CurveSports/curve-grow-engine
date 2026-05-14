@@ -240,13 +240,21 @@ export default function DesignEditor() {
                     </Button>
                   </div>
                 </div>
-              ) : (
+              ) : design.generated_html ? (
                 <iframe
-                  srcDoc={design.generated_html || ""}
+                  srcDoc={design.generated_html}
                   title="Design preview"
                   style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white" }}
                   sandbox="allow-same-origin"
                 />
+              ) : design.preview_url ? (
+                <img
+                  src={design.preview_url}
+                  alt={design.name || "Design preview"}
+                  style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white", objectFit: "cover" }}
+                />
+              ) : (
+                <div className="flex items-center justify-center text-sm text-muted-foreground p-8">No preview available.</div>
               )}
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">{w} × {h}px</p>
