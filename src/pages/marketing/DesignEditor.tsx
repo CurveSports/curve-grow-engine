@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -118,11 +118,6 @@ export default function DesignEditor() {
     }
   };
 
-  const previewSrc = useMemo(() => {
-    if (!design?.generated_html) return "";
-    return `data:text/html;charset=utf-8,${encodeURIComponent(design.generated_html)}`;
-  }, [design?.generated_html]);
-
   const handleRefine = async () => {
     if (!refinePrompt.trim() || !id) return;
     setRefining(true);
@@ -201,6 +196,23 @@ export default function DesignEditor() {
 
   const w = template?.dimensions?.width || 1080;
   const h = template?.dimensions?.height || 1080;
+  const previewScale = Math.min(1, 600 / w, 600 / h);
+  const previewW = w * previewScale;
+  const previewH = h * previewScale;
+  const previewFrameStyle = {
+    width: previewW,
+    height: previewH,
+    position: "relative" as const,
+    flex: "0 0 auto",
+  };
+  const previewContentStyle = {
+    width: w,
+    height: h,
+    transform: `scale(${previewScale})`,
+    transformOrigin: "top left",
+    border: "1px solid hsl(var(--border))",
+    background: "white",
+  };
 
   return (
     <AppShell title="Design">
@@ -241,18 +253,22 @@ export default function DesignEditor() {
                   </div>
                 </div>
               ) : design.generated_html ? (
-                <iframe
-                  srcDoc={design.generated_html}
-                  title="Design preview"
-                  style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white" }}
-                  sandbox="allow-same-origin"
-                />
+                <div style={previewFrameStyle}>
+                  <iframe
+                    srcDoc={design.generated_html}
+                    title="Design preview"
+                    style={previewContentStyle}
+                    sandbox="allow-same-origin"
+                  />
+                </div>
               ) : design.preview_url ? (
-                <img
-                  src={design.preview_url}
-                  alt={design.name || "Design preview"}
-                  style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white", objectFit: "cover" }}
-                />
+                <div style={previewFrameStyle}>
+                  <img
+                    src={design.preview_url}
+                    alt={design.name || "Design preview"}
+                    style={{ ...previewContentStyle, objectFit: "cover" }}
+                  />
+                </div>
               ) : (
                 <div className="flex items-center justify-center text-sm text-muted-foreground p-8">No preview available.</div>
               )}
