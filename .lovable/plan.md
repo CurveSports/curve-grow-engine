@@ -1,78 +1,67 @@
 ## Goal
 
-Treat brand assets like a real media library — images **and** videos — with inline upload from anywhere a design/email/social post is created. Saves once, reusable everywhere. Designs become asset-driven (pick the hero shot, drop a logo override, attach a video for social), not just "fill in text and hope."
+Remove the Curve Admin approval gatekeeping across the marketing module, then ship the Tier 1 Content Library / design quality improvements (minus the "approved for client use" gate, which is now obsolete).
 
-## Schema changes (`org_brand_assets`)
+## Part 1 — Kill the approval workflow
 
-Extend the existing table — don't fork it:
+Anyone (org user or Curve Admin) can create, edit, and use designs / emails / campaigns directly. Curve Admin can do everything on behalf of an org.
 
-- `media_type text` — `'image' | 'video'` (derived from MIME on upload). Old `asset_type` ('photo' | 'logo' | etc.) stays for categorization.
-- `mime_type text`
-- `width int`, `height int`, `duration_seconds numeric` (video only)
-- `file_size_bytes bigint`
-- `poster_url text` — auto-generated still frame for videos
-- `caption text`, `tags text[]` already exists — keep
-- Index on `(org_id, media_type)` for fast filtering
+### Frontend
 
-Storage: reuse the existing public `brand-assets` bucket. Path convention: `{org_id}/media/{uuid}.{ext}`. Max video size: 100 MB (Lovable Cloud signed-URL upload from the client, not edge function).
+- **`src/pages/marketing/DesignEditor.tsx`** — remove the "Approval" sidebar card (Submit / Approve / Reject buttons + status pill swap). Designs go straight from `generating` → `ready`. Keep a simple "Use this design" / "Send" CTA. Strip `pending_approval` / `rejected` UI branches.
+- **`src/pages/marketing/Designs.tsx`** — remove `pending_approval` and `approved` filter options; status pill stays minimal (`ready` / `generating` / `failed`). Treat any non-failed/generating design as usable.
+- **`src/pages/marketing/Emails.tsx`** — drop the `.eq("status", "approved")` filter. Show all non-draft designs. Reword "Design (approved only)" → "Design".
+- **`src/pages/marketing/CampaignDetail.tsx`** — remove the "Approval workflow" sidebar block, `submitForApproval`, the `in_review` status, and the `approval_queue` insert. Reduce statuses to `planning / live / completed / archived`.
+- **`src/pages/marketing/Campaigns.tsx`** — remove `approved` and `in_review` from filter dropdown / badges.
+- **`src/pages/marketing/MarketingHub.tsx`** — remove `pendingApprovals` stat, the "X approvals waiting" CTA, the `approval_queue` query, and the "Approvals" tile from the grid.
+- **`src/pages/marketing/ApprovalsQueue.tsx`** — delete file.
+- **`src/App.tsx`** — remove `/marketing/approvals` and `/admin/marketing/approvals` routes + import.
+- **`src/components/AppShell.tsx`** — remove "Approvals" nav entry (both org and admin sides).
+- **`src/components/mobile/mobileRoutes.ts`** — remove approvals route entry.
 
-## New "Media Library" page
+### Backend / data
 
-Rename `Brand Kit → Photos` section to its own top-level **Media** page under Marketing:
+- No destructive migration. Leave existing `approval_queue`, `approval_comments`, `designs.status` columns in place so historical rows aren't lost — code just stops reading/writing them.
+- `generate-design` edge function: change the final design row write to `status: 'ready'` (was likely `pending_approval`). Verify and patch.
 
-- `/marketing/media` (org) and `/admin/orgs/:id/marketing/media`
-- Grid of tiles, mixed images + videos. Video tiles show a play badge + duration overlay.
-- Filters: All / Images / Videos / Logos. Search by filename/tag/caption.
-- Drag-and-drop or click to upload. Multi-file. Progress per file.
-- Tile click → side drawer with full preview, rename, tag, alt text/caption, archive, copy URL, download.
-- Bulk select for archive/tag.
-- Brand Kit's "Photo Library" section becomes a compact recents strip with a "Open Media Library →" link.
+## Part 2 — Tier 1 Content Library quality lift (no approval gate)
 
-## Inline upload in design flow
+### Brand-kit readiness banner
 
-The current `PhotoSelector` in Designs.tsx is a static grid. Replace with `<MediaPicker mode="image" />` component used in every create flow:
+- **`src/pages/marketing/Designs.tsx`** (generator panel): query `org_brand_kits` for the active org. If `logo_primary_url`, `color_primary`, or `font_heading` is missing, render a yellow `Alert` above the generate button: *"Your brand kit is incomplete — add a logo / colors / fonts so generated designs match your brand."* with a link to `/marketing/brand-kit`.
 
-- Top row: **Upload new** button (multi-file) + drag-drop zone overlaid on the grid.
-- New uploads stream into the media library and get auto-selected.
-- Below: existing assets (most recent first, last 60). "Open library →" link for full browser.
-- Each tile shows alt text on hover.
-- Optional inline crop (square / 4:5 / 16:9 / 9:16) before save — uses `react-easy-crop`. Result re-uploaded as a derivative, original kept.
+### MediaPicker upgrades
 
-Same component, `mode="video"` for SMS/social composers (video as attachment), `mode="any"` for general use.
+- **`src/components/marketing/MediaPicker.tsx`**:
+  - Add a search `Input` (top of the picker) — filters on `title`, `caption`, `body_text`, `ai_tags` (case-insensitive `ilike` + array overlap).
+  - Add a tag chip row: top 12 tags from the current org's library; clicking toggles a filter.
+  - Add a collections `Select` (loads `org_brand_collections` if present; null = "All collections").
+  - Add a large preview pane above/right of the grid showing the currently-selected asset (image/video) plus its title, tags, "used N times".
+  - Accept `mode="video"` and `mode="any"` props in addition to `image`. Filter library results to matching `asset_type`.
+  - Surface caption snippets when `mode === "snippet"` for textarea pickers.
 
-## Design generation becomes asset-aware
+### Designs slot expansion
 
-Right now the AI gets a single photo URL. Upgrade the contract:
+- **`src/pages/marketing/Designs.tsx`** (and `DesignEditor.tsx` slot picker if shared): keep Hero / Secondary / Sponsor logo, but make the secondary slot accept video for clip-style templates by passing `mode="any"`.
 
-- Allow picking **1–3 images** per design (hero + secondary + sponsor logo).
-- Each picked image is passed to the AI with a role tag: `hero_photo_url`, `secondary_photo_url`, `sponsor_logo_url`.
-- The system prompt is updated to compose with multiple images (collage, split panel, sticker overlay) — feeds into the style direction we already shipped.
-- If no image is picked, the AI generates a typographic-only design instead of inventing imagery.
+### Track usage on every generation
 
-## Social/email use of videos
+- **`supabase/functions/generate-design/index.ts`**: after pulling slot URLs, look up matching `org_brand_assets` rows by URL, then `update used_count = used_count + 1, last_used_at = now()`. Also: when writing the design row, store the slot→asset_id mapping in a new `design_assets_used jsonb` column on `designs` (additive migration).
 
-- Email composer: video block inserts a poster image + play overlay that links to a hosted page (we can ship the hosted page in a follow-up; for now, "download / share link" is enough).
-- Social post: video assets become attachable to the post; downstream publishing (already on a manual handoff) just bundles the file.
-- SMS: out of scope (carriers block video).
+### Migration
 
-## Out of scope (for this pass)
+- Single additive migration:
+  - `alter table public.designs add column if not exists assets_used jsonb default '[]'::jsonb;`
+  - No drops.
 
-- Server-side video transcoding / thumbnail generation (we'll use the first-frame `<video>` element on the client to grab a poster, upload it alongside).
-- AI-driven video generation.
-- Stock library / Unsplash integration (can add later — easy hook into `MediaPicker`).
+## Out of scope (per user)
 
-## Build order
+- "Approved for client use" toggle on assets (obsolete — no approvals).
+- Tier 2 / Tier 3 items from prior audit.
 
-1. Migration: extend `org_brand_assets` columns + index.
-2. Reusable `<MediaPicker>` component (used in 3+ places) with inline upload.
-3. New `/marketing/media` page.
-4. Wire `MediaPicker` into Designs creation flow; allow 1–3 image slots.
-5. Update `generate-design` to accept multiple image roles and update prompt scaffolding.
-6. Replace BrandKit "Photos" section with recents strip + link to Media.
-7. Wire `MediaPicker` into Email composer and Social composer (image + video).
+## Verification
 
-## Open questions before I start
-
-1. **3 image slots OK?** Hero + secondary + sponsor logo per design, or simpler with just 1 hero + 1 sponsor logo?
-2. **Cropping in upload flow** — worth shipping in v1, or save it for a follow-up?
-3. **Stock photo source** later — Unsplash, Pexels, or skip and require user uploads only?
+- Build passes.
+- Manual: generate a design as an org user without going through any approval queue; confirm it lands as `ready` and is immediately selectable in Emails.
+- Manual: open MediaPicker, type a search term, click a tag chip, see results narrow.
+- Manual: confirm `used_count` bumps on the picked asset after generation.
