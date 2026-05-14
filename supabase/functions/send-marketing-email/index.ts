@@ -11,8 +11,19 @@ const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+async function resolveContactIdsByTeams(admin: any, orgId: string, teamIds: string[], role?: string): Promise<Set<string>> {
+  let q = admin.from("org_team_memberships").select("contact_id, role, team:org_teams!inner(org_id)")
+    .in("team_id", teamIds);
+  if (role) q = q.eq("role", role);
+  const { data } = await q;
+  const ids = new Set<string>();
+  (data || []).forEach((m: any) => {
+    if (m.team?.org_id === orgId && m.contact_id) ids.add(m.contact_id);
+  });
+  return ids;
+}
+
 function buildContactQuery(rules: any) {
-  // Returns a function to apply to a Supabase query
   return (q: any) => {
     if (rules?.contact_type) q = q.eq("contact_type", rules.contact_type);
     if (rules?.contact_types) q = q.in("contact_type", rules.contact_types);
