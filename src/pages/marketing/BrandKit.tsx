@@ -69,6 +69,8 @@ export default function BrandKit() {
   const [hashtagInput, setHashtagInput] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  useGoogleFonts([kit.font_heading, kit.font_body, ...FONT_OPTIONS]);
+
   useEffect(() => {
     if (!orgId) return;
     (async () => {
