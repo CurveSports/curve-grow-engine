@@ -654,7 +654,7 @@ function ImportWizard({
     }
     hdrs.push(cur.trim());
     setHeaders(hdrs);
-    applyPreset(isExcel ? "curve_multi_team" : "leagueapps", hdrs);
+    applyPreset(isExcel ? "curve_multiteam" : "leagueapps", hdrs);
   };
 
   const applyPreset = (id: string, hdrs: string[] = headers) => {
