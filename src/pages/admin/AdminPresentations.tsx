@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,8 +46,9 @@ function emptyPostUrls(): PostUrls {
 
 export default function AdminPresentations() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [orgs, setOrgs] = useState<Array<{ id: string; name: string }>>([]);
-  const [orgId, setOrgId] = useState<string | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(searchParams.get("org"));
   const [auditType, setAuditType] = useState<AuditType>("combined");
   const [running, setRunning] = useState(false);
   const [audits, setAudits] = useState<Audit[]>([]);
@@ -173,7 +174,7 @@ export default function AdminPresentations() {
           </p>
 
           <div className="grid gap-4 md:grid-cols-[1fr_200px_auto_auto]">
-            <Select onValueChange={(v) => setOrgId(v)}>
+            <Select value={orgId ?? undefined} onValueChange={(v) => setOrgId(v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose an organization…" />
               </SelectTrigger>

@@ -56,12 +56,21 @@ export default function BrandKit() {
     if (!orgId) return;
     (async () => {
       setLoading(true);
-      const [kitRes, assetsRes] = await Promise.all([
+      const [kitRes, assetsRes, orgRes] = await Promise.all([
         supabase.from("org_brand_kits").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("org_brand_assets").select("*").eq("org_id", orgId).eq("archived", false).order("uploaded_at", { ascending: false }),
+        supabase.from("organizations").select("logo_url").eq("id", orgId).maybeSingle(),
       ]);
-      if (kitRes.data) setKit(kitRes.data as BrandKit);
-      else setKit({ org_id: orgId });
+      const intakeLogo = (orgRes.data as any)?.logo_url ?? null;
+      let loaded: BrandKit = (kitRes.data as BrandKit) ?? { org_id: orgId };
+      // Backfill primary logo from intake upload so users don't re-upload
+      if (!loaded.logo_primary_url && intakeLogo) {
+        loaded = { ...loaded, logo_primary_url: intakeLogo };
+        await supabase
+          .from("org_brand_kits")
+          .upsert({ org_id: orgId, logo_primary_url: intakeLogo }, { onConflict: "org_id" });
+      }
+      setKit(loaded);
       setAssets((assetsRes.data ?? []) as BrandAsset[]);
       setLoading(false);
     })();

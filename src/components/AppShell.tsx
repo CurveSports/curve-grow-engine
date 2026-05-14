@@ -11,7 +11,7 @@ import { resolveMobileRoute } from "@/components/mobile/mobileRoutes";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
-  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox,
+  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox, ClipboardList,
   Menu,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
@@ -144,6 +144,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
       { to: "/admin/marketing/schools", label: "Schools Library", icon: GraduationCap, match: (p) => p.startsWith("/admin/marketing/schools") },
       { to: "/admin/marketing/nps", label: "NPS Surveys", icon: Smile, match: (p) => p.startsWith("/admin/marketing/nps") },
+      { to: "/admin/marketing/audits", label: "Audits", icon: ClipboardList, match: (p) => p.startsWith("/admin/marketing/audits") },
     ],
   };
   const adminEventsGroup: NavGroup = {
