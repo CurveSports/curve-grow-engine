@@ -35,12 +35,14 @@ type Group = { id: string; name: string; description: string | null; group_type:
 type Segment = { id: string; name: string; description: string | null; filter_rules: any; is_system: boolean; contact_count: number };
 type UploadRec = { id: string; filename: string | null; total_rows: number | null; successful_imports: number | null; duplicates_merged: number | null; errors: number | null; status: string; created_at: string };
 
+// Top-level contact-type buckets for CSV import.
+// "Team Manager" is NOT here — it's an in-app role assigned to a parent or coach
+// after upload (Team detail → assign Team Manager).
 const ROLES = [
-  { v: "player", l: "Player" },
-  { v: "coach", l: "Head coach" },
-  { v: "assistant_coach", l: "Assistant coach" },
-  { v: "team_manager", l: "Team manager" },
-  { v: "parent", l: "Parent" },
+  { v: "staff", l: "Staff (head coaches, assistants, managers)" },
+  { v: "player", l: "Players" },
+  { v: "parent", l: "Parents" },
+  { v: "player_parent", l: "Players + Parents (one row per player, parent columns on same row)" },
 ];
 
 export default function Contacts() {
