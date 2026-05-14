@@ -111,12 +111,16 @@ export default function AdminUsers() {
       module_access: Array.isArray(p.module_access) ? p.module_access : [],
     }));
     r.sort((a, b) => (a.org_name ?? "zzz").localeCompare(b.org_name ?? "zzz") || a.email.localeCompare(b.email));
-    setRows(r);
+    // Only the owner sees other Curve admins; everyone else only sees their own admin row + org users.
+    const visibleRows = isOwner
+      ? r
+      : r.filter((row) => !row.roles.includes("admin") || row.user_id === user?.id);
+    setRows(visibleRows);
     setOrgs((orgsData ?? []) as Org[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [isOwner, user?.id]);
 
   const remove = async (uid: string) => {
     setRemovingId(uid);
