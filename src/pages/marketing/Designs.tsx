@@ -26,6 +26,7 @@ import { Plus, Sparkles, Loader2, Image as ImageIcon, Search, Trash2 } from "luc
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 import SchoolPicker from "@/components/marketing/SchoolPicker";
 import MediaPicker from "@/components/marketing/MediaPicker";
+import SnippetPicker from "@/components/marketing/SnippetPicker";
 
 type Template = {
   id: string;
