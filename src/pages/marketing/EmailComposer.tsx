@@ -95,15 +95,25 @@ export default function EmailComposer() {
     if (template) setPropsState((p) => ({ ...(template.preview_props ?? {}), ...p }));
   }, [template]);
 
-  const rendered = useMemo(() => {
-    if (!template) return { html: "", errors: [] as any[] };
-    return renderEmail({
+  const isBlank = templateId === "__blank__";
+  const [customHtml, setCustomHtml] = useState("");
+  const [rendered, setRendered] = useState<{ html: string; errors: any[] }>({ html: "", errors: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    if (isBlank) {
+      setRendered({ html: wrapCustomHtml(customHtml, brand), errors: [] });
+      return;
+    }
+    if (!template) { setRendered({ html: "", errors: [] }); return; }
+    renderEmail({
       templateKey: template.jsx_source ?? undefined,
       mjmlSource: !template.jsx_source ? template.mjml_source ?? "" : undefined,
       props: propsState,
       brand,
-    });
-  }, [template, propsState, brand]);
+    }).then((r) => { if (!cancelled) setRendered(r); });
+    return () => { cancelled = true; };
+  }, [template, propsState, brand, isBlank, customHtml]);
 
   const spam = useMemo(() => localSpamCheck({ subject, html: rendered.html, from: fromEmail }), [subject, rendered.html, fromEmail]);
   const recipientEstimate = segments.find((s) => s.id === segmentId)?.contact_count ?? 0;
