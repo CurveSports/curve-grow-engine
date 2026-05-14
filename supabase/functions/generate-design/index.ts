@@ -201,10 +201,11 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
-        max_tokens: 6000,
+        max_tokens: 12000,
+        temperature: 0.85,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate the design now. Return only the complete HTML document." },
+          { role: "user", content: `Design now. Style: ${style_direction || "bold_sport"}. Asymmetric composition, dominant hero, brand colors used in 60-30-10 distribution. Output the full HTML document only — start with <!DOCTYPE html>.` },
         ],
       }),
     });
