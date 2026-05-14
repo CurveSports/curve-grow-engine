@@ -236,8 +236,9 @@ Deno.serve(async (req) => {
         }
 
         if (effectiveTeamId && effectiveRole && result.id) {
+          const membershipRole = ROLE_TO_MEMBERSHIP[effectiveRole] || effectiveRole;
           await admin.from("org_team_memberships").upsert({
-            org_id, team_id: effectiveTeamId, contact_id: result.id, role: effectiveRole,
+            org_id, team_id: effectiveTeamId, contact_id: result.id, role: membershipRole,
             jersey_number: jersey || null,
             position: position || null,
           }, { onConflict: "team_id,contact_id,role", ignoreDuplicates: false });
