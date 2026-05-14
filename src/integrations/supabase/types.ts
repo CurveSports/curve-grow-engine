@@ -3519,6 +3519,87 @@ export type Database = {
           },
         ]
       }
+      org_contact_group_members: {
+        Row: {
+          added_at: string
+          contact_id: string
+          group_id: string
+          org_id: string
+        }
+        Insert: {
+          added_at?: string
+          contact_id: string
+          group_id: string
+          org_id: string
+        }
+        Update: {
+          added_at?: string
+          contact_id?: string
+          group_id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contact_group_members_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_contact_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "org_contact_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_contact_group_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_contact_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          group_type: string
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          group_type?: string
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          group_type?: string
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_contact_groups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_contact_segments: {
         Row: {
           contact_count: number
@@ -3615,6 +3696,7 @@ export type Database = {
       }
       org_contacts: {
         Row: {
+          archived_at: string | null
           contact_type: string
           created_at: string
           custom_fields: Json | null
@@ -3627,6 +3709,7 @@ export type Database = {
           org_id: string
           parent_of_contact_id: string | null
           phone: string | null
+          phone_normalized: string | null
           player_grad_year: number | null
           season: string | null
           sms_opt_in: boolean
@@ -3639,6 +3722,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          archived_at?: string | null
           contact_type?: string
           created_at?: string
           custom_fields?: Json | null
@@ -3651,6 +3735,7 @@ export type Database = {
           org_id: string
           parent_of_contact_id?: string | null
           phone?: string | null
+          phone_normalized?: string | null
           player_grad_year?: number | null
           season?: string | null
           sms_opt_in?: boolean
@@ -3663,6 +3748,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          archived_at?: string | null
           contact_type?: string
           created_at?: string
           custom_fields?: Json | null
@@ -3675,6 +3761,7 @@ export type Database = {
           org_id?: string
           parent_of_contact_id?: string | null
           phone?: string | null
+          phone_normalized?: string | null
           player_grad_year?: number | null
           season?: string | null
           sms_opt_in?: boolean
@@ -4970,6 +5057,53 @@ export type Database = {
           },
         ]
       }
+      org_seasons: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          season_end_date: string
+          season_start_date: string
+          sport: Database["public"]["Enums"]["org_sport"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          season_end_date: string
+          season_start_date: string
+          sport?: Database["public"]["Enums"]["org_sport"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          season_end_date?: string
+          season_start_date?: string
+          sport?: Database["public"]["Enums"]["org_sport"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_seasons_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_send_platforms: {
         Row: {
           created_at: string
@@ -5786,6 +5920,121 @@ export type Database = {
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_team_memberships: {
+        Row: {
+          contact_id: string
+          created_at: string
+          id: string
+          is_primary_parent: boolean
+          jersey_number: string | null
+          org_id: string
+          position: string | null
+          role: Database["public"]["Enums"]["team_member_role"]
+          team_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          id?: string
+          is_primary_parent?: boolean
+          jersey_number?: string | null
+          org_id: string
+          position?: string | null
+          role: Database["public"]["Enums"]["team_member_role"]
+          team_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          id?: string
+          is_primary_parent?: boolean
+          jersey_number?: string | null
+          org_id?: string
+          position?: string | null
+          role?: Database["public"]["Enums"]["team_member_role"]
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_team_memberships_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_team_memberships_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_team_memberships_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "org_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_teams: {
+        Row: {
+          age_group: string | null
+          created_at: string
+          division: string | null
+          external_id: string | null
+          external_source: string | null
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          season_id: string
+          updated_at: string
+        }
+        Insert: {
+          age_group?: string | null
+          created_at?: string
+          division?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          season_id: string
+          updated_at?: string
+        }
+        Update: {
+          age_group?: string | null
+          created_at?: string
+          division?: string | null
+          external_id?: string | null
+          external_source?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          season_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_teams_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_teams_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "org_seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -6958,6 +7207,16 @@ export type Database = {
       }
       count_segment_contacts: { Args: { _segment_id: string }; Returns: number }
       current_org_id: { Args: never; Returns: string }
+      find_duplicate_contact: {
+        Args: {
+          _email: string
+          _first_name: string
+          _last_name: string
+          _org_id: string
+          _phone: string
+        }
+        Returns: string
+      }
       generate_staff_token: { Args: never; Returns: string }
       get_org_sponsorship_view: {
         Args: { p_org_id: string }
@@ -7059,6 +7318,7 @@ export type Database = {
         | "win"
         | "renewal"
       org_project_status: "draft" | "active" | "completed"
+      org_sport: "baseball" | "softball" | "other"
       plan_status: "draft" | "active" | "parked"
       task_action:
         | "created"
@@ -7088,6 +7348,12 @@ export type Database = {
       task_source: "system" | "library" | "custom"
       task_status: "not_started" | "in_progress" | "completed" | "overdue"
       task_type: "Strategy" | "Execute" | "Communication" | "Track"
+      team_member_role:
+        | "player"
+        | "coach"
+        | "assistant_coach"
+        | "team_manager"
+        | "parent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -7249,6 +7515,7 @@ export const Constants = {
         "renewal",
       ],
       org_project_status: ["draft", "active", "completed"],
+      org_sport: ["baseball", "softball", "other"],
       plan_status: ["draft", "active", "parked"],
       task_action: [
         "created",
@@ -7280,6 +7547,13 @@ export const Constants = {
       task_source: ["system", "library", "custom"],
       task_status: ["not_started", "in_progress", "completed", "overdue"],
       task_type: ["Strategy", "Execute", "Communication", "Track"],
+      team_member_role: [
+        "player",
+        "coach",
+        "assistant_coach",
+        "team_manager",
+        "parent",
+      ],
     },
   },
 } as const
