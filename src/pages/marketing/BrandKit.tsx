@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Upload, Trash2, Image as ImageIcon, Save, Sparkles } from "lucide-react";
+import { Upload, Trash2, Image as ImageIcon, Save, Sparkles, Wand2 } from "lucide-react";
 import { extractColors } from "@/lib/colorExtract";
 
 type BrandKit = {
@@ -66,6 +66,7 @@ export default function BrandKit() {
   const [assets, setAssets] = useState<BrandAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingVoice, setGeneratingVoice] = useState(false);
   const [hashtagInput, setHashtagInput] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,6 +183,25 @@ export default function BrandKit() {
 
   const removeHashtag = (tag: string) => {
     setKit((k) => ({ ...k, hashtags: (k.hashtags ?? []).filter((t) => t !== tag) }));
+  };
+
+  const generateBrandVoice = async () => {
+    if (!orgId) return;
+    if (kit.brand_voice_notes && !confirm("Replace your current brand voice notes with an AI-generated draft?")) return;
+    setGeneratingVoice(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-brand-voice", { body: { orgId } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const voice = data?.voice?.trim();
+      if (!voice) throw new Error("No voice returned");
+      setKit((k) => ({ ...k, brand_voice_notes: voice }));
+      toast.success(`Draft brand voice generated${data.usedWebsite ? " from your website" : ""}. Edit and Save when ready.`);
+    } catch (e: any) {
+      toast.error(e.message || "Could not generate brand voice");
+    } finally {
+      setGeneratingVoice(false);
+    }
   };
 
   const save = async () => {
@@ -342,13 +362,28 @@ export default function BrandKit() {
               />
             </div>
             <div>
-              <Label>Brand voice notes</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Brand voice notes</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateBrandVoice}
+                  disabled={generatingVoice}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                  {generatingVoice ? "Generating…" : "Generate with AI"}
+                </Button>
+              </div>
               <Textarea
-                rows={5}
+                rows={10}
                 value={kit.brand_voice_notes || ""}
                 onChange={(e) => setKit((k) => ({ ...k, brand_voice_notes: e.target.value }))}
                 placeholder="Energetic, family-focused, never corporate. Avoid jargon. Always celebrate the kids first…"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                AI uses your website, social handles, and intake answers to draft a starting point. Edit freely.
+              </p>
             </div>
           </div>
         </Card>
