@@ -197,67 +197,20 @@ Deno.serve(async (req) => {
       styleDirection: style_direction || "bold_sport",
     });
 
-    // Call Lovable AI Gateway
-    const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Lovable-API-Key": LOVABLE_API_KEY,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-pro",
-        max_tokens: 12000,
-        temperature: 0.85,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Design now. Style: ${style_direction || "bold_sport"}. Asymmetric composition, dominant hero, brand colors used in 60-30-10 distribution. Output the full HTML document only — start with <!DOCTYPE html>.` },
-        ],
-      }),
-    });
-
-    if (!aiResp.ok) {
-      const t = await aiResp.text();
-      console.error("AI gateway error", aiResp.status, t);
-      if (aiResp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit reached. Try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Add credits in Workspace settings." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: "Generation failed" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const aiJson = await aiResp.json();
-    const html = stripFences(aiJson.choices?.[0]?.message?.content || "");
-
-    if (!html.toLowerCase().includes("<html")) {
-      return new Response(JSON.stringify({ error: "AI returned invalid HTML" }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const usage = aiJson.usage || {};
-    const cost_cents = Math.ceil(((usage.prompt_tokens || 0) * 0.0000125 + (usage.completion_tokens || 0) * 0.00005) * 100);
-
+    // 1. Insert placeholder row immediately so the UI can show a generating card
     const insertRes = await admin.from("designs").insert({
       org_id,
       design_type: templateRes.data.design_type,
       template_id,
       name: name || `${templateRes.data.name} — ${new Date().toLocaleDateString()}`,
       prompt_input: prompt_input || {},
-      generated_html: html,
-      status: "draft",
+      generated_html: null,
+      status: "generating",
       created_by: userData.user.id,
       created_by_role,
       parent_design_id: parent_design_id || null,
       ai_model_used: "google/gemini-2.5-pro",
-      generation_cost_cents: cost_cents,
+      generation_started_at: new Date().toISOString(),
     }).select().single();
 
     if (insertRes.error) {
@@ -267,7 +220,78 @@ Deno.serve(async (req) => {
       });
     }
 
-    return new Response(JSON.stringify({ design_id: insertRes.data.id, html }), {
+    const designId = insertRes.data.id;
+
+    // 2. Kick off AI generation in the background; respond to the client right away
+    const runGeneration = async () => {
+      try {
+        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Lovable-API-Key": LOVABLE_API_KEY,
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-pro",
+            max_tokens: 12000,
+            temperature: 0.85,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: `Design now. Style: ${style_direction || "bold_sport"}. Asymmetric composition, dominant hero, brand colors used in 60-30-10 distribution. Output the full HTML document only — start with <!DOCTYPE html>.` },
+            ],
+          }),
+        });
+
+        if (!aiResp.ok) {
+          const t = await aiResp.text();
+          console.error("AI gateway error", aiResp.status, t);
+          let msg = "Generation failed. Try again.";
+          if (aiResp.status === 429) msg = "Rate limit reached. Try again in a moment.";
+          else if (aiResp.status === 402) msg = "AI credits exhausted. Add credits in Workspace settings.";
+          await admin.from("designs").update({ status: "failed", generation_error: msg }).eq("id", designId);
+          return;
+        }
+
+        const aiJson = await aiResp.json();
+        const html = stripFences(aiJson.choices?.[0]?.message?.content || "");
+
+        if (!html.toLowerCase().includes("<html")) {
+          await admin.from("designs").update({
+            status: "failed",
+            generation_error: "AI returned invalid HTML. Try a different style or retry.",
+          }).eq("id", designId);
+          return;
+        }
+
+        const usage = aiJson.usage || {};
+        const cost_cents = Math.ceil(((usage.prompt_tokens || 0) * 0.0000125 + (usage.completion_tokens || 0) * 0.00005) * 100);
+
+        await admin.from("designs").update({
+          generated_html: html,
+          status: "draft",
+          generation_cost_cents: cost_cents,
+          generation_error: null,
+        }).eq("id", designId);
+      } catch (err) {
+        console.error("Background generation exception", err);
+        await admin.from("designs").update({
+          status: "failed",
+          generation_error: String(err).slice(0, 500),
+        }).eq("id", designId);
+      }
+    };
+
+    // @ts-ignore Deno EdgeRuntime global
+    if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
+      // @ts-ignore
+      EdgeRuntime.waitUntil(runGeneration());
+    } else {
+      // Fallback: fire-and-forget
+      runGeneration();
+    }
+
+    return new Response(JSON.stringify({ design_id: designId, status: "generating" }), {
+      status: 202,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

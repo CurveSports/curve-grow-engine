@@ -68,6 +68,44 @@ export default function DesignEditor() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
+  // Realtime: live-update this design while AI is generating in the background
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`design-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "designs", filter: `id=eq.${id}` },
+        (payload: any) => {
+          setDesign((prev) => (prev ? { ...prev, ...(payload.new as any) } : (payload.new as any)));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
+  const handleRetry = async () => {
+    if (!design?.template_id || !id) return;
+    setRefining(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-design", {
+        body: {
+          template_id: design.template_id,
+          org_id: design.org_id,
+          prompt_input: (design as any).prompt_input || {},
+          style_direction: (design as any).prompt_input?.style_direction || "bold_sport",
+        },
+      });
+      if (error) throw error;
+      toast.success("Retrying — opening the new generation.");
+      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}`));
+    } catch (e: any) {
+      toast.error(e.message || "Retry failed");
+    } finally {
+      setRefining(false);
+    }
+  };
+
   const previewSrc = useMemo(() => {
     if (!design?.generated_html) return "";
     return `data:text/html;charset=utf-8,${encodeURIComponent(design.generated_html)}`;
@@ -162,15 +200,40 @@ export default function DesignEditor() {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
               <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={saveName} className="font-display text-lg font-semibold border-0 bg-transparent shadow-none px-0 focus-visible:ring-0 max-w-md" />
-              <span className={`text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded ${design.status === "approved" ? "bg-green-100 text-green-800" : design.status === "pending_approval" ? "bg-amber-100 text-amber-800" : design.status === "rejected" ? "bg-destructive/10 text-destructive" : "bg-muted text-muted-foreground"}`}>{design.status.replace("_", " ")}</span>
+              <span className={`text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded ${design.status === "approved" ? "bg-green-100 text-green-800" : design.status === "pending_approval" ? "bg-amber-100 text-amber-800" : design.status === "rejected" || design.status === "failed" ? "bg-destructive/10 text-destructive" : design.status === "generating" ? "bg-blue-100 text-blue-800" : "bg-muted text-muted-foreground"}`}>{design.status.replace("_", " ")}</span>
             </div>
             <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center overflow-auto" style={{ minHeight: 400 }}>
-              <iframe
-                srcDoc={design.generated_html || ""}
-                title="Design preview"
-                style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white" }}
-                sandbox="allow-same-origin"
-              />
+              {design.status === "generating" ? (
+                <div className="flex flex-col items-center justify-center text-center py-16 px-4 gap-4">
+                  <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                  <div>
+                    <p className="font-display font-semibold text-lg">Generating your design…</p>
+                    <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                      AI is composing layout, applying your brand kit, and writing the HTML. This usually takes 20–60 seconds. You can close this page — we'll save it when it's ready.
+                    </p>
+                  </div>
+                </div>
+              ) : design.status === "failed" ? (
+                <div className="flex flex-col items-center justify-center text-center py-16 px-4 gap-4">
+                  <XCircle className="h-12 w-12 text-destructive" />
+                  <div className="space-y-2">
+                    <p className="font-display font-semibold text-lg">Generation failed</p>
+                    <p className="text-sm text-muted-foreground max-w-md">
+                      {(design as any).generation_error || "Something went wrong while generating this design."}
+                    </p>
+                    <Button onClick={handleRetry} disabled={refining} size="sm" className="mt-2">
+                      {refining ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Retrying…</> : <><Sparkles className="h-4 w-4 mr-2" />Retry generation</>}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <iframe
+                  srcDoc={design.generated_html || ""}
+                  title="Design preview"
+                  style={{ width: w, height: h, transform: `scale(${Math.min(1, 600 / w, 600 / h)})`, transformOrigin: "center", border: "1px solid hsl(var(--border))", background: "white" }}
+                  sandbox="allow-same-origin"
+                />
+              )}
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">{w} × {h}px</p>
           </Card>

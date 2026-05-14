@@ -37,6 +37,8 @@ type Design = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
+  generating: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  failed: "bg-destructive/10 text-destructive",
   draft: "bg-muted text-muted-foreground",
   pending_approval: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
   approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
@@ -75,6 +77,30 @@ export default function Designs() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
+  // Realtime: keep design rows in sync as generation completes / fails in the background
+  useEffect(() => {
+    if (!orgId) return;
+    const channel = supabase
+      .channel(`designs-${orgId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "designs", filter: `org_id=eq.${orgId}` },
+        (payload: any) => {
+          setDesigns((prev) => {
+            if (payload.eventType === "DELETE") return prev.filter((d) => d.id !== payload.old.id);
+            const row = payload.new as Design;
+            const idx = prev.findIndex((d) => d.id === row.id);
+            if (idx === -1) return [row, ...prev];
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...row };
+            return next;
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [orgId]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return designs.filter((d) => {
@@ -86,7 +112,6 @@ export default function Designs() {
 
   const startGenerate = async () => {
     if (!picked || !orgId) return;
-    // validate required
     for (const f of picked.input_fields ?? []) {
       if (f.required && !inputs[f.name]) {
         return toast.error(`${f.label} is required`);
@@ -98,11 +123,12 @@ export default function Designs() {
         body: { template_id: picked.id, org_id: orgId, prompt_input: inputs, style_direction: styleDirection },
       });
       if (error) throw error;
-      toast.success("Design generated");
+      toast.success("Generating in the background — we'll let you know when it's ready.");
       setPickOpen(false);
       setPicked(null);
       setInputs({});
-      navigate(ml(`/marketing/designs/${data.design_id}`));
+      // Optimistically navigate to the new design's editor so the user sees progress
+      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}`));
     } catch (e: any) {
       toast.error(e.message || "Generation failed");
     } finally {
@@ -152,8 +178,18 @@ export default function Designs() {
           {filtered.map((d) => (
             <Link key={d.id} to={ml(`/marketing/designs/${d.id}`)}>
               <Card className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
-                <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
-                  {d.preview_url ? (
+                <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
+                  {d.status === "generating" ? (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-xs font-medium">Generating…</p>
+                    </div>
+                  ) : d.status === "failed" ? (
+                    <div className="flex flex-col items-center gap-1 text-destructive px-2 text-center">
+                      <ImageIcon className="h-8 w-8" />
+                      <p className="text-xs font-medium">Generation failed</p>
+                    </div>
+                  ) : d.preview_url ? (
                     <img src={d.preview_url} alt={d.name || "Design"} className="w-full h-full object-cover" />
                   ) : (
                     <ImageIcon className="h-10 w-10 text-muted-foreground" />
