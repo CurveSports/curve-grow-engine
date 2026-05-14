@@ -3110,66 +3110,81 @@ export type Database = {
       }
       org_brand_assets: {
         Row: {
+          ai_tags: string[]
           alt_text: string | null
           archived: boolean
           asset_type: string
+          body_text: string | null
           caption: string | null
           duration_seconds: number | null
           file_size_bytes: number | null
           filename: string | null
           height: number | null
           id: string
+          last_used_at: string | null
           media_type: string
           mime_type: string | null
           org_id: string
           poster_url: string | null
           tags: string[] | null
           thumbnail_url: string | null
+          title: string | null
           uploaded_at: string
           uploaded_by: string | null
-          url: string
+          url: string | null
+          used_count: number
           width: number | null
         }
         Insert: {
+          ai_tags?: string[]
           alt_text?: string | null
           archived?: boolean
           asset_type?: string
+          body_text?: string | null
           caption?: string | null
           duration_seconds?: number | null
           file_size_bytes?: number | null
           filename?: string | null
           height?: number | null
           id?: string
+          last_used_at?: string | null
           media_type?: string
           mime_type?: string | null
           org_id: string
           poster_url?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
+          title?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
-          url: string
+          url?: string | null
+          used_count?: number
           width?: number | null
         }
         Update: {
+          ai_tags?: string[]
           alt_text?: string | null
           archived?: boolean
           asset_type?: string
+          body_text?: string | null
           caption?: string | null
           duration_seconds?: number | null
           file_size_bytes?: number | null
           filename?: string | null
           height?: number | null
           id?: string
+          last_used_at?: string | null
           media_type?: string
           mime_type?: string | null
           org_id?: string
           poster_url?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
+          title?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
-          url?: string
+          url?: string | null
+          used_count?: number
           width?: number | null
         }
         Relationships: [
@@ -3939,6 +3954,87 @@ export type Database = {
             columns: ["parent_of_contact_id"]
             isOneToOne: false
             referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_content_collection_items: {
+        Row: {
+          added_at: string
+          asset_id: string
+          collection_id: string
+        }
+        Insert: {
+          added_at?: string
+          asset_id: string
+          collection_id: string
+        }
+        Update: {
+          added_at?: string
+          asset_id?: string
+          collection_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_content_collection_items_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "org_brand_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_content_collection_items_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "org_content_collections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_content_collections: {
+        Row: {
+          cover_asset_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          cover_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          cover_asset_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_content_collections_cover_asset_id_fkey"
+            columns: ["cover_asset_id"]
+            isOneToOne: false
+            referencedRelation: "org_brand_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_content_collections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
