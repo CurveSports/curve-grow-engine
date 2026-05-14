@@ -417,6 +417,35 @@ export default function AdminUsers() {
           </tbody>
         </table>
       </div>
+
+      <Dialog open={!!linkDialog} onOpenChange={(o) => { if (!o) setLinkDialog(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              Invite re-sent to {linkDialog?.email}
+            </DialogTitle>
+            <DialogDescription>
+              {linkDialog?.wasConfirmed
+                ? "This user has already confirmed their account — share this link only if they're locked out."
+                : "Email is on the way. If they say \"I didn't get it,\" copy this one-tap sign-in link and text or DM it directly."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">One-tap sign-in link</Label>
+            <div className="flex gap-2">
+              <Input readOnly value={linkDialog?.url ?? ""} className="font-mono text-xs h-10" onFocus={(e) => e.currentTarget.select()} />
+              <Button type="button" onClick={copyLink} className="h-10 shrink-0">
+                {copied ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLinkDialog(null)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
