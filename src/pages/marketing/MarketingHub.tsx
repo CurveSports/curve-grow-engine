@@ -62,9 +62,12 @@ export default function MarketingHub() {
       const surveyIds = (await supabase.from("org_nps_surveys").select("id").eq("org_id", orgId)).data?.map((s: any) => s.id) ?? [];
       const sendIds = (await supabase.from("org_email_sends").select("id").eq("org_id", orgId)).data?.map((s: any) => s.id) ?? [];
 
+      const today = new Date(); today.setHours(0,0,0,0);
+      const in48 = new Date(Date.now() + 48 * 3600 * 1000);
+
       const [
         approvals, detractors, nextSend, domains, smsNum, socials,
-        events24, contacts7d, sentSends,
+        events24, contacts7d, sentSends, gameDay,
       ] = await Promise.all([
         supabase.from("designs").select("id", { count: "exact", head: true })
           .eq("org_id", orgId).eq("status", "approved_curve"),
