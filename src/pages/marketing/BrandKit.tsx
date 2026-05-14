@@ -66,6 +66,7 @@ export default function BrandKit() {
   const [assets, setAssets] = useState<BrandAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingVoice, setGeneratingVoice] = useState(false);
   const [hashtagInput, setHashtagInput] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
 
