@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams, useSearchParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 export default function NpsResponse() {
-  const { token } = useParams();
+  const { token, surveyId: surveyIdParam } = useParams();
+  const location = useLocation();
+  const isPreview = location.pathname.startsWith("/nps/preview/");
   const [params] = useSearchParams();
   const initialScore = params.get("score");
   const [score, setScore] = useState<number | null>(initialScore ? parseInt(initialScore) : null);
@@ -18,20 +20,23 @@ export default function NpsResponse() {
 
   useEffect(() => {
     (async () => {
-      // Look up magic link by token
-      const { data: link } = await (supabase as any).from("magic_links").select("*").eq("token", token).maybeSingle();
-      if (!link) return;
-      const surveyId = link.action_data?.survey_id;
+      let surveyId: string | undefined = surveyIdParam;
+      if (!isPreview) {
+        const { data: link } = await (supabase as any).from("magic_links").select("*").eq("token", token).maybeSingle();
+        if (!link) return;
+        surveyId = link.action_data?.survey_id;
+      }
       if (!surveyId) return;
       const { data: s } = await (supabase as any).from("org_nps_surveys").select("*, organizations(name)").eq("id", surveyId).single();
       setSurvey(s);
       setOrgName(s?.organizations?.name || "our club");
     })();
-  }, [token]);
+  }, [token, surveyIdParam, isPreview]);
 
   const submitScore = async (s: number) => {
     setScore(s);
     if (!survey) { setStep("done"); return; }
+    if (isPreview) { setStep("followup"); return; }
     const { data, error } = await (supabase as any).from("org_nps_responses").insert({
       survey_id: survey.id,
       score: s,
@@ -43,11 +48,14 @@ export default function NpsResponse() {
   };
 
   const submitFollowup = async () => {
-    if (responseId && followup) {
+    if (!isPreview && responseId && followup) {
       await (supabase as any).from("org_nps_responses").update({ followup_response: followup }).eq("id", responseId);
     }
     setStep("done");
   };
+
+  const promptText = (survey?.question || "How likely are you to recommend {org_name} to a friend or family member?")
+    .replace("{org_name}", orgName);
 
   const followupQuestion = score == null ? "" :
     score >= 9 ? (survey?.followup_question_promoter || "What did we do well?") :
@@ -57,12 +65,15 @@ export default function NpsResponse() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-6">
       <div className="max-w-xl w-full bg-card rounded-2xl shadow-xl p-8">
+        {isPreview && (
+          <div className="mb-4 px-3 py-2 rounded-md bg-amber-100 text-amber-900 text-xs font-medium text-center">
+            Preview mode — responses are not recorded.
+          </div>
+        )}
         {step === "score" && (
           <>
             <h1 className="text-2xl font-bold mb-2">A quick favor</h1>
-            <p className="text-muted-foreground mb-6">
-              How likely are you to recommend {orgName} to a friend or family member?
-            </p>
+            <p className="text-muted-foreground mb-6">{promptText}</p>
             <div className="grid grid-cols-11 gap-1.5">
               {[0,1,2,3,4,5,6,7,8,9,10].map((n) => (
                 <button

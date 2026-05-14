@@ -80,6 +80,7 @@ import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
 import AdminSchools from "@/pages/admin/marketing/AdminSchools";
+import AdminNpsOverview from "@/pages/admin/marketing/AdminNpsOverview";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import EventIntake from "@/pages/events/EventIntake";
 import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
@@ -143,6 +144,7 @@ const App = () => (
             <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
             <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
+            <Route path="/nps/preview/:surveyId" element={<NpsResponse />} />
             <Route path="/events/intake/:slug" element={<EventIntake />} />
             <Route path="/events/intake" element={<EventIntake />} />
             <Route path="/admin/events/intake" element={<ProtectedRoute role="admin" module="events"><AdminEventIntake /></ProtectedRoute>} />
@@ -176,6 +178,7 @@ const App = () => (
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/schools" element={<ProtectedRoute role="admin" module="marketing"><AdminSchools /></ProtectedRoute>} />
+            <Route path="/admin/marketing/nps" element={<ProtectedRoute role="admin" module="marketing"><AdminNpsOverview /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />

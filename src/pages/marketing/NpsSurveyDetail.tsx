@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Heart, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { ArrowLeft, Heart, AlertCircle, Pencil, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 
@@ -18,6 +21,30 @@ export default function NpsSurveyDetail() {
   const [survey, setSurvey] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [followupNotes, setFollowupNotes] = useState<Record<string, string>>({});
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+
+  const openEdit = () => {
+    setEditForm({
+      name: survey.name || "",
+      question: survey.question || "",
+      followup_question_promoter: survey.followup_question_promoter || "",
+      followup_question_passive: survey.followup_question_passive || "",
+      followup_question_detractor: survey.followup_question_detractor || "",
+    });
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    const { error } = await (supabase as any).from("org_nps_surveys").update(editForm).eq("id", id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Survey updated");
+    setEditOpen(false);
+    load();
+  };
 
   const load = async () => {
     if (!id) return;
@@ -61,13 +88,66 @@ export default function NpsSurveyDetail() {
           <ArrowLeft className="h-4 w-4 mr-2" />Back to surveys
         </Button>
 
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-3 flex-wrap">
           <div>
             <h1 className="text-3xl font-bold">{survey.name}</h1>
             <Badge className="mt-2">{survey.status}</Badge>
           </div>
-          {survey.status === "draft" && <Button onClick={sendSurvey}>Send Survey</Button>}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => window.open(`/nps/preview/${id}`, "_blank")}>
+              <Eye className="h-4 w-4 mr-2" />Preview
+            </Button>
+            <Button variant="outline" onClick={openEdit}>
+              <Pencil className="h-4 w-4 mr-2" />Edit
+            </Button>
+            {survey.status === "draft" && <Button onClick={sendSurvey}>Send Survey</Button>}
+          </div>
         </div>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-xs uppercase text-muted-foreground mb-1">Recipients will see</div>
+            <div className="font-medium">{survey.question}</div>
+            <div className="grid md:grid-cols-3 gap-3 mt-3 text-sm">
+              <div><span className="text-green-600 font-medium">Promoter follow-up:</span> {survey.followup_question_promoter}</div>
+              <div><span className="text-amber-600 font-medium">Passive follow-up:</span> {survey.followup_question_passive}</div>
+              <div><span className="text-red-600 font-medium">Detractor follow-up:</span> {survey.followup_question_detractor}</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Edit Survey</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Survey name</Label>
+                <Input value={editForm.name || ""} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Main question</Label>
+                <Textarea rows={2} value={editForm.question || ""} onChange={(e) => setEditForm({ ...editForm, question: e.target.value })} />
+                <p className="text-xs text-muted-foreground mt-1">Use <code>{"{org_name}"}</code> to insert the org name.</p>
+              </div>
+              <div>
+                <Label>Follow-up for Promoters (9–10)</Label>
+                <Textarea rows={2} value={editForm.followup_question_promoter || ""} onChange={(e) => setEditForm({ ...editForm, followup_question_promoter: e.target.value })} />
+              </div>
+              <div>
+                <Label>Follow-up for Passives (7–8)</Label>
+                <Textarea rows={2} value={editForm.followup_question_passive || ""} onChange={(e) => setEditForm({ ...editForm, followup_question_passive: e.target.value })} />
+              </div>
+              <div>
+                <Label>Follow-up for Detractors (0–6)</Label>
+                <Textarea rows={2} value={editForm.followup_question_detractor || ""} onChange={(e) => setEditForm({ ...editForm, followup_question_detractor: e.target.value })} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+              <Button onClick={saveEdit} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card><CardContent className="p-4">
