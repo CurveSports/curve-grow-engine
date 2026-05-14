@@ -42,6 +42,22 @@ type BrandAsset = {
 
 const FONT_OPTIONS = ["Inter", "Poppins", "Montserrat", "Oswald", "Playfair Display", "Bebas Neue", "Roboto", "Work Sans", "Lora", "Anton"];
 
+// Inject a Google Fonts <link> for any font referenced by the kit
+function useGoogleFonts(fonts: (string | null | undefined)[]) {
+  useEffect(() => {
+    const unique = Array.from(new Set(fonts.filter(Boolean) as string[]));
+    unique.forEach((f) => {
+      const id = `gf-${f.replace(/\s+/g, "-")}`;
+      if (document.getElementById(id)) return;
+      const link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f)}:wght@400;600;700&display=swap`;
+      document.head.appendChild(link);
+    });
+  }, [fonts.join("|")]);
+}
+
 export default function BrandKit() {
   const { profile } = useAuth();
   const { orgId } = useEffectiveOrg();
