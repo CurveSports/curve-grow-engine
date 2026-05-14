@@ -740,7 +740,12 @@ function ImportWizard({
         {step === 2 && (
           <div className="space-y-4">
             <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-3 text-sm space-y-2">
-              <div className="font-medium text-amber-900 dark:text-amber-200">Two ways to format your file</div>
+              <div className="font-medium text-amber-900 dark:text-amber-200">How to format your file</div>
+              <div className="text-amber-900/90 dark:text-amber-100/90">
+                Pick what kind of contacts this file holds in Step 1: <strong>Staff</strong>,
+                <strong> Players</strong>, <strong>Parents</strong>, or
+                <strong> Players + Parents</strong> (one row per player with parent columns on the same row).
+              </div>
               <ol className="list-decimal pl-5 space-y-1 text-amber-900/90 dark:text-amber-100/90">
                 <li>
                   <span className="font-medium">One CSV file</span> with a <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">Team</code> column on every row — the importer will create teams automatically.
@@ -750,7 +755,7 @@ function ImportWizard({
                 </li>
               </ol>
               <div className="text-xs text-amber-800 dark:text-amber-200/80">
-                Required columns either way: <code>First Name</code>, <code>Last Name</code>, and at least one of <code>Email</code> or <code>Phone</code>. Parent fields are optional and auto-link.
+                Required columns: <code>First Name</code>, <code>Last Name</code>, and at least one of <code>Email</code> or <code>Phone</code>. All staff (head coach, assistant, manager) import as one <em>Staff</em> group — <strong>Team Manager</strong> is assigned in-app from the team detail page after upload.
               </div>
             </div>
             <div>
