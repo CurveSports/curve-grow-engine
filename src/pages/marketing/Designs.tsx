@@ -222,6 +222,30 @@ export default function Designs() {
                   )}
                 </div>
               ))}
+
+              <div className="pt-4 border-t">
+                <Label className="mb-2 block">Style direction</Label>
+                <p className="text-xs text-muted-foreground mb-3">How should this look? Pick a visual treatment — your brand colors and fonts apply to all of them.</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { key: "bold_sport", label: "Bold Sport", blurb: "Diagonal cuts, duotone, gameday energy" },
+                    { key: "editorial", label: "Editorial", blurb: "Magazine layout, asymmetric, refined" },
+                    { key: "minimal_modern", label: "Minimal Modern", blurb: "Restrained, whitespace, one hero" },
+                    { key: "vintage_athletic", label: "Vintage Athletic", blurb: "Varsity, crest, heritage feel" },
+                    { key: "high_energy", label: "High-Energy Neon", blurb: "Saturated, sticker chips, glitch text" },
+                  ].map((s) => (
+                    <button
+                      key={s.key}
+                      type="button"
+                      onClick={() => setStyleDirection(s.key)}
+                      className={`text-left p-3 rounded-lg border transition-all ${styleDirection === s.key ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:border-primary/40"}`}
+                    >
+                      <p className="font-semibold text-sm">{s.label}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{s.blurb}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
