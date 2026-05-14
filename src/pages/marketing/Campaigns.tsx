@@ -27,8 +27,6 @@ type Campaign = {
 
 const STATUS_BADGE: Record<string, string> = {
   planning: "bg-muted text-muted-foreground",
-  in_review: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  approved: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   live: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
   completed: "bg-muted text-muted-foreground",
   archived: "bg-muted text-muted-foreground",
@@ -127,8 +125,6 @@ export default function Campaigns() {
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
           <option value="all">All statuses</option>
           <option value="planning">Planning</option>
-          <option value="in_review">In review</option>
-          <option value="approved">Approved</option>
           <option value="live">Live</option>
           <option value="completed">Completed</option>
         </select>

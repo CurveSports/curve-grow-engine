@@ -225,7 +225,7 @@ export default function DesignEditor() {
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
               <Input value={name} onChange={(e) => setName(e.target.value)} onBlur={saveName} className="font-display text-lg font-semibold border-0 bg-transparent shadow-none px-0 focus-visible:ring-0 max-w-md" />
-              <span className={`text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded ${design.status === "approved" ? "bg-green-100 text-green-800" : design.status === "pending_approval" ? "bg-amber-100 text-amber-800" : design.status === "rejected" || design.status === "failed" ? "bg-destructive/10 text-destructive" : design.status === "generating" ? "bg-blue-100 text-blue-800" : "bg-muted text-muted-foreground"}`}>{design.status.replace("_", " ")}</span>
+              <span className={`text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded ${design.status === "ready" || design.status === "draft" ? "bg-green-100 text-green-800" : design.status === "failed" ? "bg-destructive/10 text-destructive" : design.status === "generating" ? "bg-blue-100 text-blue-800" : "bg-muted text-muted-foreground"}`}>{design.status === "draft" ? "ready" : design.status.replace("_", " ")}</span>
             </div>
             <div className="bg-muted/30 rounded-lg p-4 flex items-center justify-center overflow-auto" style={{ minHeight: 400 }}>
               {design.status === "generating" ? (
@@ -302,32 +302,15 @@ export default function DesignEditor() {
             </Button>
           </Card>
 
-          {/* Approval */}
-          <Card className="p-4">
-            <h3 className="font-display font-semibold mb-3">Approval</h3>
-            <div className="space-y-2">
-              {design.status === "draft" && (
-                <Button onClick={() => updateStatus("pending_approval")} className="w-full" variant="outline">
-                  <Send className="h-4 w-4 mr-2" />Submit for approval
-                </Button>
-              )}
-              {isAdmin && design.status === "pending_approval" && (
-                <>
-                  <Button onClick={() => updateStatus("approved")} className="w-full">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />Approve
-                  </Button>
-                  <Button onClick={() => updateStatus("rejected")} variant="outline" className="w-full">
-                    <XCircle className="h-4 w-4 mr-2" />Reject
-                  </Button>
-                </>
-              )}
-              {design.status === "approved" && (
-                <Button onClick={() => navigate(ml(`/marketing/emails/new?design=${design.id}`))} className="w-full">
-                  <Mail className="h-4 w-4 mr-2" />Use in email
-                </Button>
-              )}
-            </div>
-          </Card>
+          {/* Use design */}
+          {(design.status === "ready" || design.status === "draft") && (
+            <Card className="p-4">
+              <h3 className="font-display font-semibold mb-3">Use this design</h3>
+              <Button onClick={() => navigate(ml(`/marketing/emails/new?design=${design.id}`))} className="w-full">
+                <Mail className="h-4 w-4 mr-2" />Use in email
+              </Button>
+            </Card>
+          )}
 
           {/* Export */}
           <Card className="p-4">

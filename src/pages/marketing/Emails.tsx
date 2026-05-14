@@ -65,7 +65,7 @@ export default function Emails() {
       supabase.from("org_email_sends").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(100),
       supabase.from("org_contact_segments").select("id,name,contact_count").eq("org_id", orgId).order("name"),
       supabase.from("org_email_domains").select("id,from_email,from_name,is_default").eq("org_id", orgId),
-      supabase.from("designs").select("id,name,generated_html,status,preview_url").eq("org_id", orgId).eq("status", "approved").order("created_at", { ascending: false }).limit(50),
+      supabase.from("designs").select("id,name,generated_html,status,preview_url").eq("org_id", orgId).not("status", "in", "(generating,failed)").order("created_at", { ascending: false }).limit(50),
     ]);
     setSends((s.data ?? []) as EmailSend[]);
     setSegments((seg.data ?? []) as Segment[]);
@@ -160,7 +160,7 @@ export default function Emails() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Email campaigns</h1>
-          <p className="text-muted-foreground mt-1">Send approved designs to your segments and watch engagement.</p>
+          <p className="text-muted-foreground mt-1">Send designs to your segments and watch engagement.</p>
         </div>
         <Button asChild><Link to={ml("/marketing/emails/new")}><Plus className="h-4 w-4 mr-2" />New email</Link></Button>
       </div>
@@ -241,12 +241,12 @@ export default function Emails() {
               {draft.segment_id && <p className="text-xs text-muted-foreground mt-1">~{recipientEstimate} contacts will receive this email.</p>}
             </div>
             <div className="md:col-span-2">
-              <Label>Design (approved only)</Label>
+              <Label>Design</Label>
               <select value={draft.design_id ?? ""} onChange={(e) => onPickDesign(e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
                 <option value="">Custom HTML below…</option>
                 {designs.map((d) => <option key={d.id} value={d.id}>{d.name || "Untitled"}</option>)}
               </select>
-              {!designs.length && <p className="text-xs text-muted-foreground mt-1">No approved designs yet — <Link to={ml("/marketing/designs")} className="underline">create one</Link>.</p>}
+              {!designs.length && <p className="text-xs text-muted-foreground mt-1">No designs yet — <Link to={ml("/marketing/designs")} className="underline">create one</Link>.</p>}
             </div>
             <div className="md:col-span-2">
               <Label>HTML body</Label>

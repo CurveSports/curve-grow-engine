@@ -51,9 +51,7 @@ const STATUS_BADGE: Record<string, string> = {
   generating: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
   failed: "bg-destructive/10 text-destructive",
   draft: "bg-muted text-muted-foreground",
-  pending_approval: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-  approved: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
-  rejected: "bg-destructive/10 text-destructive",
+  ready: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300",
 };
 
 export default function Designs() {
@@ -182,9 +180,9 @@ export default function Designs() {
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="h-10 px-3 rounded-md border border-input bg-background text-sm">
           <option value="all">All statuses</option>
           <option value="draft">Draft</option>
-          <option value="pending_approval">Pending approval</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
+          <option value="ready">Ready</option>
+          <option value="generating">Generating</option>
+          <option value="failed">Failed</option>
         </select>
       </Card>
 

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Image as ImageIcon, Mail, Trash2, Send, Save } from "lucide-react";
+import { ArrowLeft, Plus, Image as ImageIcon, Mail, Trash2, Save } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Campaign = any;
@@ -26,7 +26,7 @@ type AssetRow = {
   email?: { id: string; subject: string | null; status: string } | null;
 };
 
-const STATUSES = ["planning", "in_review", "approved", "live", "completed", "archived"];
+const STATUSES = ["planning", "live", "completed", "archived"];
 
 export default function CampaignDetail() {
   const { id } = useParams();

@@ -41,7 +41,7 @@ const ENTRIES: MobileRouteEntry[] = [
   { pattern: "/marketing/emails/new", title: "New Email", backTo: "/marketing/emails" },
   { pattern: "/marketing/campaigns", title: "Campaigns", backTo: "/marketing" },
   { pattern: "/marketing/campaigns/:id", title: "Campaign", backTo: "/marketing/campaigns" },
-  { pattern: "/marketing/approvals", title: "Approvals", backTo: "/marketing" },
+  
   { pattern: "/marketing/shortlinks", title: "Shortlinks", backTo: "/marketing" },
   { pattern: "/marketing/ab-tests", title: "A/B Tests", backTo: "/marketing" },
   { pattern: "/marketing/send-times", title: "Send Times", backTo: "/marketing" },
@@ -74,7 +74,7 @@ const ENTRIES: MobileRouteEntry[] = [
   { pattern: "/admin/orgs/:orgId/marketing/emails/new", title: "New Email", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing/emails` },
   { pattern: "/admin/orgs/:orgId/marketing/campaigns", title: "Campaigns", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing` },
   { pattern: "/admin/orgs/:orgId/marketing/campaigns/:id", title: "Campaign", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing/campaigns` },
-  { pattern: "/admin/orgs/:orgId/marketing/approvals", title: "Approvals", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing` },
+  
   { pattern: "/admin/orgs/:orgId/marketing/shortlinks", title: "Shortlinks", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing` },
   { pattern: "/admin/orgs/:orgId/marketing/ab-tests", title: "A/B Tests", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing` },
   { pattern: "/admin/orgs/:orgId/marketing/send-times", title: "Send Times", backTo: ({ orgId }) => `/admin/orgs/${orgId}/marketing` },
@@ -95,7 +95,7 @@ const ENTRIES: MobileRouteEntry[] = [
   { pattern: "/admin/marketing/sequence-templates", title: "Sequence Templates" },
   { pattern: "/admin/marketing/schools", title: "Schools Library" },
   { pattern: "/admin/marketing/portfolio", title: "Portfolio Analytics" },
-  { pattern: "/admin/marketing/approvals", title: "Curve Approvals" },
+  
 
   // ---------- Admin org detail / library ----------
   { pattern: "/admin/org/:orgId", title: "Organization" },
