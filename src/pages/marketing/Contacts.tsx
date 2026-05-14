@@ -606,10 +606,44 @@ function ImportWizard({
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]; if (!f) return;
     setFile(f);
-    const text = await f.text();
+    let text = "";
+    const isExcel = /\.(xlsx|xls)$/i.test(f.name);
+    if (isExcel) {
+      try {
+        const XLSX = await import("xlsx");
+        const buf = await f.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        // Flatten every sheet, using sheet name as Team
+        const allRows: Record<string, string>[] = [];
+        const allHeaders = new Set<string>();
+        for (const sheetName of wb.SheetNames) {
+          const ws = wb.Sheets[sheetName];
+          const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+          for (const row of rows) {
+            const norm: Record<string, string> = { Team: sheetName };
+            for (const k of Object.keys(row)) {
+              const key = k.trim();
+              if (!key) continue;
+              norm[key] = String(row[k] ?? "").trim();
+              allHeaders.add(key);
+            }
+            allHeaders.add("Team");
+            allRows.push(norm);
+          }
+        }
+        const headerList = ["Team", ...Array.from(allHeaders).filter((h) => h !== "Team")];
+        const escape = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+        text = [headerList.join(","), ...allRows.map((r) => headerList.map((h) => escape(r[h] ?? "")).join(","))].join("\n");
+        toast.success(`Loaded ${wb.SheetNames.length} tab(s) → ${allRows.length} rows. Sheet names used as team names.`);
+      } catch (err: any) {
+        toast.error("Could not read spreadsheet: " + (err?.message || err));
+        return;
+      }
+    } else {
+      text = await f.text();
+    }
     setCsvText(text);
     const firstLine = text.split(/\r?\n/)[0] || "";
-    // Simple split that respects quoted commas
     const hdrs: string[] = [];
     let cur = "", q = false;
     for (let i = 0; i < firstLine.length; i++) {
@@ -620,8 +654,7 @@ function ImportWizard({
     }
     hdrs.push(cur.trim());
     setHeaders(hdrs);
-    // Auto-apply default preset
-    applyPreset("leagueapps", hdrs);
+    applyPreset(isExcel ? "curve_multi_team" : "leagueapps", hdrs);
   };
 
   const applyPreset = (id: string, hdrs: string[] = headers) => {
