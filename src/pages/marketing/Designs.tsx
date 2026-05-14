@@ -77,6 +77,30 @@ export default function Designs() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
+  // Realtime: keep design rows in sync as generation completes / fails in the background
+  useEffect(() => {
+    if (!orgId) return;
+    const channel = supabase
+      .channel(`designs-${orgId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "designs", filter: `org_id=eq.${orgId}` },
+        (payload: any) => {
+          setDesigns((prev) => {
+            if (payload.eventType === "DELETE") return prev.filter((d) => d.id !== payload.old.id);
+            const row = payload.new as Design;
+            const idx = prev.findIndex((d) => d.id === row.id);
+            if (idx === -1) return [row, ...prev];
+            const next = [...prev];
+            next[idx] = { ...next[idx], ...row };
+            return next;
+          });
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [orgId]);
+
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return designs.filter((d) => {
