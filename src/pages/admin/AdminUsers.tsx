@@ -80,7 +80,7 @@ export default function AdminUsers() {
   const [creating, setCreating] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newFullName, setNewFullName] = useState("");
-  const [newRole, setNewRole] = useState<"admin" | "org_user">("admin");
+  const [newRole, setNewRole] = useState<"admin" | "org_user">(isOwner ? "admin" : "org_user");
   const [newOrgId, setNewOrgId] = useState<string>("");
   const [newAllegiance, setNewAllegiance] = useState(true);
   const [newAcquisitions, setNewAcquisitions] = useState(true);
