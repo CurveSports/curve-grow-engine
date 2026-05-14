@@ -590,8 +590,9 @@ function ImportWizard({
   const [file, setFile] = useState<File | null>(null);
   const [csvText, setCsvText] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
-  const [presetId, setPresetId] = useState("leagueapps");
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [autoMappedCount, setAutoMappedCount] = useState(0);
+  const [fileFormat, setFileFormat] = useState<"single" | "multitab">("single");
   const [seasonId, setSeasonId] = useState("");
   const [teamId, setTeamId] = useState("");
   const [role, setRole] = useState("player");
@@ -600,7 +601,8 @@ function ImportWizard({
 
   const reset = () => {
     setStep(1); setFile(null); setCsvText(""); setHeaders([]);
-    setPresetId("leagueapps"); setMapping({}); setSeasonId(""); setTeamId(""); setRole("player");
+    setMapping({}); setAutoMappedCount(0); setFileFormat("single");
+    setSeasonId(""); setTeamId(""); setRole("player");
   };
 
   useEffect(() => { if (!open) reset(); }, [open]);
@@ -615,28 +617,35 @@ function ImportWizard({
         const XLSX = await import("xlsx");
         const buf = await f.arrayBuffer();
         const wb = XLSX.read(buf, { type: "array" });
-        // Flatten every sheet, using sheet name as Team
-        const allRows: Record<string, string>[] = [];
-        const allHeaders = new Set<string>();
-        for (const sheetName of wb.SheetNames) {
-          const ws = wb.Sheets[sheetName];
-          const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
-          for (const row of rows) {
-            const norm: Record<string, string> = { Team: sheetName };
-            for (const k of Object.keys(row)) {
-              const key = k.trim();
-              if (!key) continue;
-              norm[key] = String(row[k] ?? "").trim();
-              allHeaders.add(key);
+
+        if (fileFormat === "multitab") {
+          // Flatten every sheet, using sheet name as Team
+          const allRows: Record<string, string>[] = [];
+          const allHeaders = new Set<string>();
+          for (const sheetName of wb.SheetNames) {
+            const ws = wb.Sheets[sheetName];
+            const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+            for (const row of rows) {
+              const norm: Record<string, string> = { Team: sheetName };
+              for (const k of Object.keys(row)) {
+                const key = k.trim();
+                if (!key) continue;
+                norm[key] = String(row[k] ?? "").trim();
+                allHeaders.add(key);
+              }
+              allHeaders.add("Team");
+              allRows.push(norm);
             }
-            allHeaders.add("Team");
-            allRows.push(norm);
           }
+          const headerList = ["Team", ...Array.from(allHeaders).filter((h) => h !== "Team")];
+          const escape = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+          text = [headerList.join(","), ...allRows.map((r) => headerList.map((h) => escape(r[h] ?? "")).join(","))].join("\n");
+          toast.success(`Loaded ${wb.SheetNames.length} tab(s) → ${allRows.length} rows. Sheet names used as team names.`);
+        } else {
+          // Single-tab mode: just use the first sheet as-is
+          const firstSheet = wb.Sheets[wb.SheetNames[0]];
+          text = XLSX.utils.sheet_to_csv(firstSheet);
         }
-        const headerList = ["Team", ...Array.from(allHeaders).filter((h) => h !== "Team")];
-        const escape = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-        text = [headerList.join(","), ...allRows.map((r) => headerList.map((h) => escape(r[h] ?? "")).join(","))].join("\n");
-        toast.success(`Loaded ${wb.SheetNames.length} tab(s) → ${allRows.length} rows. Sheet names used as team names.`);
       } catch (err: any) {
         toast.error("Could not read spreadsheet: " + (err?.message || err));
         return;
@@ -656,22 +665,9 @@ function ImportWizard({
     }
     hdrs.push(cur.trim());
     setHeaders(hdrs);
-    applyPreset(isExcel ? "curve_multiteam" : "leagueapps", hdrs);
-  };
-
-  const applyPreset = (id: string, hdrs: string[] = headers) => {
-    setPresetId(id);
-    const preset = IMPORT_PRESETS.find((p) => p.id === id);
-    if (!preset) return setMapping({});
-    const m: Record<string, string> = {};
-    for (const h of hdrs) {
-      // exact, then case-insensitive
-      const exact = preset.mapping[h];
-      if (exact) { m[h] = exact; continue; }
-      const ci = Object.entries(preset.mapping).find(([k]) => k.toLowerCase() === h.toLowerCase());
-      if (ci) m[h] = ci[1];
-    }
-    setMapping(m);
+    const auto = autoMapHeaders(hdrs);
+    setMapping(auto);
+    setAutoMappedCount(Object.keys(auto).length);
   };
 
   const teamsForSeason = teams.filter((t) => t.season_id === seasonId);
