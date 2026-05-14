@@ -8,8 +8,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Sparkles, Loader2, Wand2, Copy, Download, CheckCircle2, XCircle, Send, Mail } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, Wand2, Copy, Download, CheckCircle2, XCircle, Send, Mail, Trash2 } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Design = {
   id: string;

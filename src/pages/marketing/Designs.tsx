@@ -10,8 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Sparkles, Loader2, Image as ImageIcon, Search } from "lucide-react";
+import { Plus, Sparkles, Loader2, Image as ImageIcon, Search, Trash2 } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 import SchoolPicker from "@/components/marketing/SchoolPicker";
 import MediaPicker from "@/components/marketing/MediaPicker";
