@@ -7,6 +7,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callStabilityAI, ASPECT_RATIOS, type StabilityModel } from "../_shared/stability.ts";
 import { buildStabilityPrompt } from "../_shared/buildStabilityPrompt.ts";
+import { buildSpecContext, interpolateSpec } from "../_shared/interpolateSpec.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -261,7 +262,17 @@ Deno.serve(async (req) => {
         let totalCost = result.costCents;
         const workerUrl = Deno.env.get("COMPOSITE_WORKER_URL");
         const workerToken = Deno.env.get("COMPOSITE_WORKER_TOKEN");
-        const compositionSpec = templateRes.data.composition_config || null;
+        const rawSpec = templateRes.data.composition_config || null;
+        const compositionSpec = rawSpec
+          ? interpolateSpec(
+              rawSpec,
+              buildSpecContext({
+                orgName: orgRes.data?.name || "Organization",
+                brandKit: brandRes.data,
+                promptInput: prompt_input || {},
+              }),
+            )
+          : null;
 
         if (workerUrl && compositionSpec) {
           try {
