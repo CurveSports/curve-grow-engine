@@ -88,9 +88,7 @@ export default function DesignEditor() {
     if (!design?.template_id || !id) return;
     setRefining(true);
     try {
-      // Reset row state and re-invoke generation against the same design row's inputs
-      await supabase.from("designs").update({ status: "generating", generation_error: null, generation_started_at: new Date().toISOString() }).eq("id", id);
-      const { error } = await supabase.functions.invoke("generate-design", {
+      const { data, error } = await supabase.functions.invoke("generate-design", {
         body: {
           template_id: design.template_id,
           org_id: design.org_id,
@@ -99,7 +97,8 @@ export default function DesignEditor() {
         },
       });
       if (error) throw error;
-      toast.success("Retrying — this design will update in place.");
+      toast.success("Retrying — opening the new generation.");
+      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}`));
     } catch (e: any) {
       toast.error(e.message || "Retry failed");
     } finally {
