@@ -41,6 +41,36 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [savingModulesId, setSavingModulesId] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [linkDialog, setLinkDialog] = useState<{ email: string; url: string; wasConfirmed: boolean } | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const resendInvite = async (row: Row) => {
+    setResendingId(row.user_id);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-invite-link", {
+        body: { email: row.email, redirect_to: `${window.location.origin}/` },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const url = (data as any)?.action_link as string;
+      setLinkDialog({ email: row.email, url, wasConfirmed: !!(data as any)?.was_confirmed });
+      toast.success("Invite email re-sent");
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message ?? "Failed to resend invite");
+    } finally {
+      setResendingId(null);
+    }
+  };
+
+  const copyLink = async () => {
+    if (!linkDialog) return;
+    await navigator.clipboard.writeText(linkDialog.url);
+    setCopied(true);
+    toast.success("Link copied");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Create user dialog state
   const [createOpen, setCreateOpen] = useState(false);
