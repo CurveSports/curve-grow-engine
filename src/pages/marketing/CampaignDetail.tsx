@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Image as ImageIcon, Mail, Trash2, Send, Save } from "lucide-react";
+import { ArrowLeft, Plus, Image as ImageIcon, Mail, Trash2, Save } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 
 type Campaign = any;
@@ -26,7 +26,7 @@ type AssetRow = {
   email?: { id: string; subject: string | null; status: string } | null;
 };
 
-const STATUSES = ["planning", "in_review", "approved", "live", "completed", "archived"];
+const STATUSES = ["planning", "live", "completed", "archived"];
 
 export default function CampaignDetail() {
   const { id } = useParams();
@@ -245,25 +245,23 @@ export default function CampaignDetail() {
 
         <div className="space-y-4">
           <Card className="p-5">
-            <h2 className="font-display text-lg font-semibold mb-3">Approval workflow</h2>
+            <h2 className="font-display text-lg font-semibold mb-3">Launch</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              When you submit, every draft asset enters the Curve review queue. After Curve approves, it returns to your team for final sign-off.
+              Designs and emails in this campaign are ready to use immediately. Open any asset to send or share it.
             </p>
-            <Button className="w-full" onClick={submitForApproval} disabled={campaign.status === "in_review"}>
-              <Send className="h-4 w-4 mr-2" />
-              {campaign.status === "in_review" ? "In review" : "Submit for Curve review"}
+            <Button
+              className="w-full"
+              disabled={campaign.status === "live"}
+              onClick={async () => {
+                const { error } = await supabase.from("campaigns").update({ status: "live" }).eq("id", campaign.id);
+                if (error) return toast.error(error.message);
+                toast.success("Campaign marked live");
+                load();
+              }}
+            >
+              {campaign.status === "live" ? "Live" : "Mark campaign live"}
             </Button>
-            <Link to={ml("/marketing/approvals")} className="block text-center text-sm text-primary hover:underline mt-3">
-              View approval queue →
-            </Link>
           </Card>
-
-          {role === "admin" && (
-            <Card className="p-5 bg-amber-50 dark:bg-amber-900/10 border-amber-200">
-              <p className="text-xs uppercase tracking-wider font-bold text-amber-800 dark:text-amber-300 mb-2">Curve admin</p>
-              <Link to="/admin/marketing/approvals" className="text-sm text-primary hover:underline">Open Curve approval queue →</Link>
-            </Card>
-          )}
         </div>
       </div>
 

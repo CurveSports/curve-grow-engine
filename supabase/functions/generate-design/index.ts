@@ -268,10 +268,30 @@ Deno.serve(async (req) => {
 
         await admin.from("designs").update({
           generated_html: html,
-          status: "draft",
+          status: "ready",
           generation_cost_cents: cost_cents,
           generation_error: null,
+          assets_used: [
+            prompt_input?.hero_photo_url,
+            prompt_input?.secondary_photo_url,
+            prompt_input?.sponsor_logo_url,
+          ].filter(Boolean),
         }).eq("id", designId);
+
+        // Bump used_count / last_used_at on any picked library assets
+        const usedUrls = [prompt_input?.hero_photo_url, prompt_input?.secondary_photo_url, prompt_input?.sponsor_logo_url].filter(Boolean);
+        if (usedUrls.length) {
+          const { data: assets } = await admin
+            .from("org_brand_assets")
+            .select("id, used_count")
+            .eq("org_id", org_id)
+            .in("url", usedUrls);
+          for (const a of (assets ?? [])) {
+            await admin.from("org_brand_assets")
+              .update({ used_count: (a.used_count ?? 0) + 1, last_used_at: new Date().toISOString() })
+              .eq("id", a.id);
+          }
+        }
       } catch (err) {
         console.error("Background generation exception", err);
         await admin.from("designs").update({

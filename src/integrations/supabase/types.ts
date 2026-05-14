@@ -2575,6 +2575,7 @@ export type Database = {
           ai_model_used: string | null
           approved_at: string | null
           approved_by: string | null
+          assets_used: Json
           created_at: string
           created_by: string | null
           created_by_role: string | null
@@ -2598,6 +2599,7 @@ export type Database = {
           ai_model_used?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assets_used?: Json
           created_at?: string
           created_by?: string | null
           created_by_role?: string | null
@@ -2621,6 +2623,7 @@ export type Database = {
           ai_model_used?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          assets_used?: Json
           created_at?: string
           created_by?: string | null
           created_by_role?: string | null

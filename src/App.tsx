@@ -63,7 +63,6 @@ import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
 import AdminEmailTemplates from "@/pages/admin/marketing/AdminEmailTemplates";
 import Campaigns from "@/pages/marketing/Campaigns";
 import CampaignDetail from "@/pages/marketing/CampaignDetail";
-import ApprovalsQueue from "@/pages/marketing/ApprovalsQueue";
 import Shortlinks from "@/pages/marketing/Shortlinks";
 import AbTests from "@/pages/marketing/AbTests";
 import SendTimes from "@/pages/marketing/SendTimes";
@@ -132,8 +131,6 @@ const App = () => (
             <Route path="/marketing/emails/new" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
             <Route path="/marketing/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
             <Route path="/marketing/campaigns/:id" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
-            <Route path="/marketing/approvals" element={<ProtectedRoute role="org_user"><ApprovalsQueue mode="org" /></ProtectedRoute>} />
-            <Route path="/admin/marketing/approvals" element={<ProtectedRoute role="admin" module="marketing"><ApprovalsQueue mode="curve" /></ProtectedRoute>} />
             <Route path="/marketing/shortlinks" element={<ProtectedRoute><Shortlinks /></ProtectedRoute>} />
             <Route path="/marketing/ab-tests" element={<ProtectedRoute><AbTests /></ProtectedRoute>} />
             <Route path="/marketing/send-times" element={<ProtectedRoute><SendTimes /></ProtectedRoute>} />
@@ -171,7 +168,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/emails/new" element={<ProtectedRoute role="admin" module="marketing"><EmailComposer /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/campaigns" element={<ProtectedRoute role="admin" module="marketing"><Campaigns /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/campaigns/:id" element={<ProtectedRoute role="admin" module="marketing"><CampaignDetail /></ProtectedRoute>} />
-            <Route path="/admin/orgs/:orgId/marketing/approvals" element={<ProtectedRoute role="admin" module="marketing"><ApprovalsQueue mode="org" /></ProtectedRoute>} />
+            
             <Route path="/admin/orgs/:orgId/marketing/shortlinks" element={<ProtectedRoute role="admin" module="marketing"><Shortlinks /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/ab-tests" element={<ProtectedRoute role="admin" module="marketing"><AbTests /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/send-times" element={<ProtectedRoute role="admin" module="marketing"><SendTimes /></ProtectedRoute>} />

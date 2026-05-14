@@ -15,7 +15,6 @@ import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 
 type HubStats = {
-  pendingApprovals: number;
   detractorsOpen: number;
   nextSendAt: string | null;
   nextSendSubject: string | null;
@@ -30,7 +29,7 @@ type HubStats = {
 };
 
 const EMPTY_STATS: HubStats = {
-  pendingApprovals: 0, detractorsOpen: 0, nextSendAt: null, nextSendSubject: null,
+  detractorsOpen: 0, nextSendAt: null, nextSendSubject: null,
   emailDomainVerified: false, smsActive: false, socialConnected: false,
   last24Opens: 0, last24Clicks: 0, last24Sent: 0, newContacts7d: 0, upcomingEvent: null,
 };
@@ -66,11 +65,9 @@ export default function MarketingHub() {
       const in48 = new Date(Date.now() + 48 * 3600 * 1000);
 
       const [
-        approvals, detractors, nextSend, domains, smsNum, socials,
+        detractors, nextSend, domains, smsNum, socials,
         events24, contacts7d, sentSends, gameDay,
       ] = await Promise.all([
-        supabase.from("designs").select("id", { count: "exact", head: true })
-          .eq("org_id", orgId).eq("status", "approved_curve"),
         surveyIds.length
           ? supabase.from("org_nps_responses").select("id", { count: "exact", head: true })
               .eq("category", "detractor").eq("flagged_for_followup", true).is("followup_completed_at", null)
@@ -106,7 +103,6 @@ export default function MarketingHub() {
       const gameDayItem = (gameDay.data ?? [])[0] as any;
 
       setStats({
-        pendingApprovals: approvals.count ?? 0,
         detractorsOpen: detractors.count ?? 0,
         nextSendAt: (nextSend.data as any)?.scheduled_for ?? null,
         nextSendSubject: (nextSend.data as any)?.subject ?? null,
@@ -132,15 +128,6 @@ export default function MarketingHub() {
       sub: `Starts ${timeFromNow(stats.upcomingEvent.starts_at)} — launch a 48h push`,
       to: "/marketing/sequences",
       tone: "warn",
-    });
-  }
-  if (stats.pendingApprovals > 0) {
-    whatsNext.push({
-      icon: CheckSquare,
-      label: `${stats.pendingApprovals} approval${stats.pendingApprovals === 1 ? "" : "s"} waiting`,
-      sub: "Curve has signed off — you're the final yes",
-      to: "/marketing/approvals",
-      tone: "default",
     });
   }
   if (stats.detractorsOpen > 0) {
@@ -301,7 +288,6 @@ export default function MarketingHub() {
         <Section title="Orchestrate" blurb="Coordinate multi-asset campaigns end to end." tiles={[
           { to: "/marketing/sequences", label: "Sequence Library", desc: "Proven multi-week plays.", icon: Calendar },
           { to: "/marketing/campaigns", label: "Campaigns", desc: "One goal, many assets.", icon: Megaphone },
-          { to: "/marketing/approvals", label: "Approvals", desc: "Final sign-off after Curve review.", icon: CheckCircle2 },
         ]} />
         <Section title="Measure" blurb="Squeeze more out of every send." tiles={[
           { to: "/marketing/nps", label: "NPS Surveys", desc: "Track satisfaction; flag detractors.", icon: Heart },
