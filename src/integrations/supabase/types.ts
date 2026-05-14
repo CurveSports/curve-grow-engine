@@ -3063,40 +3063,64 @@ export type Database = {
           alt_text: string | null
           archived: boolean
           asset_type: string
+          caption: string | null
+          duration_seconds: number | null
+          file_size_bytes: number | null
           filename: string | null
+          height: number | null
           id: string
+          media_type: string
+          mime_type: string | null
           org_id: string
+          poster_url: string | null
           tags: string[] | null
           thumbnail_url: string | null
           uploaded_at: string
           uploaded_by: string | null
           url: string
+          width: number | null
         }
         Insert: {
           alt_text?: string | null
           archived?: boolean
           asset_type?: string
+          caption?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
           filename?: string | null
+          height?: number | null
           id?: string
+          media_type?: string
+          mime_type?: string | null
           org_id: string
+          poster_url?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
           url: string
+          width?: number | null
         }
         Update: {
           alt_text?: string | null
           archived?: boolean
           asset_type?: string
+          caption?: string | null
+          duration_seconds?: number | null
+          file_size_bytes?: number | null
           filename?: string | null
+          height?: number | null
           id?: string
+          media_type?: string
+          mime_type?: string | null
           org_id?: string
+          poster_url?: string | null
           tags?: string[] | null
           thumbnail_url?: string | null
           uploaded_at?: string
           uploaded_by?: string | null
           url?: string
+          width?: number | null
         }
         Relationships: [
           {

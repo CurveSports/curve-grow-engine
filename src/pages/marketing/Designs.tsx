@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, Sparkles, Loader2, Image as ImageIcon, Search } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 import SchoolPicker from "@/components/marketing/SchoolPicker";
+import MediaPicker from "@/components/marketing/MediaPicker";
 
 type Template = {
   id: string;
@@ -201,7 +202,13 @@ export default function Designs() {
                   {f.type === "textarea" ? (
                     <Textarea rows={3} placeholder={f.placeholder} value={inputs[f.name] ?? ""} onChange={(e) => setInputs((s) => ({ ...s, [f.name]: e.target.value }))} />
                   ) : f.type === "photo_selector" ? (
-                    <PhotoSelector orgId={orgId!} value={inputs[f.name] ?? ""} onChange={(v) => setInputs((s) => ({ ...s, [f.name]: v }))} />
+                    <MediaPicker
+                      orgId={orgId!}
+                      mode="image"
+                      value={inputs[f.name] ?? ""}
+                      onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
+                      compact
+                    />
                   ) : f.type === "school_picker" ? (
                     <SchoolPicker
                       value={inputs[f.name] ?? ""}
@@ -222,6 +229,43 @@ export default function Designs() {
                   )}
                 </div>
               ))}
+
+              {/* Image slots — always available, optional unless template requires */}
+              <div className="pt-4 border-t space-y-3">
+                <div>
+                  <Label>Hero image</Label>
+                  <p className="text-xs text-muted-foreground mb-2">The dominant photo. Upload new or pick from your library.</p>
+                  <MediaPicker
+                    orgId={orgId!}
+                    mode="image"
+                    value={inputs.hero_photo_url ?? ""}
+                    onChange={(url) => setInputs((s) => ({ ...s, hero_photo_url: url ?? "" }))}
+                    compact
+                  />
+                </div>
+                <div>
+                  <Label>Secondary image <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                  <p className="text-xs text-muted-foreground mb-2">Used as a sidebar, sticker, or collage element.</p>
+                  <MediaPicker
+                    orgId={orgId!}
+                    mode="image"
+                    value={inputs.secondary_photo_url ?? ""}
+                    onChange={(url) => setInputs((s) => ({ ...s, secondary_photo_url: url ?? "" }))}
+                    compact
+                  />
+                </div>
+                <div>
+                  <Label>Sponsor / partner logo <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                  <p className="text-xs text-muted-foreground mb-2">Adds a "presented by" lockup to the design.</p>
+                  <MediaPicker
+                    orgId={orgId!}
+                    mode="image"
+                    value={inputs.sponsor_logo_url ?? ""}
+                    onChange={(url) => setInputs((s) => ({ ...s, sponsor_logo_url: url ?? "" }))}
+                    compact
+                  />
+                </div>
+              </div>
 
               <div className="pt-4 border-t">
                 <Label className="mb-2 block">Style direction</Label>
@@ -264,26 +308,3 @@ export default function Designs() {
   );
 }
 
-function PhotoSelector({ orgId, value, onChange }: { orgId: string; value: string; onChange: (v: string) => void }) {
-  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
-  useEffect(() => {
-    supabase.from("org_brand_assets").select("id,url").eq("org_id", orgId).eq("archived", false).eq("asset_type", "photo").order("uploaded_at", { ascending: false }).limit(40).then(({ data }) => {
-      setPhotos((data ?? []) as any);
-    });
-  }, [orgId]);
-  if (!photos.length) return <p className="text-xs text-muted-foreground mt-1">No photos in your library yet — add them under Brand Kit.</p>;
-  return (
-    <div className="grid grid-cols-5 sm:grid-cols-7 gap-2 mt-1">
-      {photos.map((p) => (
-        <button
-          key={p.id}
-          type="button"
-          onClick={() => onChange(p.url)}
-          className={`aspect-square rounded overflow-hidden border-2 transition-all ${value === p.url ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-border"}`}
-        >
-          <img src={p.url} alt="" className="w-full h-full object-cover" />
-        </button>
-      ))}
-    </div>
-  );
-}

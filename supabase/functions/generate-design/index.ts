@@ -117,6 +117,11 @@ ${layoutSpec}
 TEMPLATE INTENT
 ${template.base_prompt}
 
+IMAGE ASSETS (use VERBATIM URLs with crossorigin="anonymous"; if a slot is empty, do NOT invent an image — fall back to typography or a brand-color block)
+- hero_photo_url: ${promptInput.hero_photo_url || "(none)"} — full-bleed background or dominant half-panel. Apply the style's photo treatment (duotone, sepia, etc.).
+- secondary_photo_url: ${promptInput.secondary_photo_url || "(none)"} — used as a sidebar inset, rotated sticker (-6deg), or collage element. Smaller than the hero.
+- sponsor_logo_url: ${promptInput.sponsor_logo_url || "(none)"} — render as a "PRESENTED BY" lockup in a corner with 14px ALL CAPS tracking-0.2em label above. Max 120px wide.
+
 CONTENT FROM USER (use VERBATIM; if a field is empty, omit it — never invent or use placeholder copy like "Lorem ipsum" or "Your text here")
 ${fieldsList || "(no content provided — use only org name + tagline)"}
 
