@@ -549,27 +549,24 @@ export default function Contacts() {
 
       {/* Segment editor */}
       <Dialog open={segOpen} onOpenChange={setSegOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>{editingSeg.id ? "Edit" : "New"} segment</DialogTitle>
-            <DialogDescription>Filter keys: contact_type, season_id, team_id, team_role, group_id, archived, sms_opt_in, unsubscribed, grad_year</DialogDescription>
+            <DialogDescription>
+              A segment is a saved group of contacts. Pick the filters below — we'll only include people who match every filter you set. Leave a filter blank to ignore it.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Name</Label><Input value={editingSeg.name ?? ""} onChange={(e) => setEditingSeg((s) => ({ ...s, name: e.target.value }))} /></div>
-            <div><Label>Description</Label><Input value={editingSeg.description ?? ""} onChange={(e) => setEditingSeg((s) => ({ ...s, description: e.target.value }))} /></div>
-            <div>
-              <Label>Filter rules (JSON)</Label>
-              <Textarea
-                rows={6}
-                className="font-mono text-xs"
-                value={JSON.stringify(editingSeg.filter_rules ?? {}, null, 2)}
-                onChange={(e) => {
-                  try { setEditingSeg((s) => ({ ...s, filter_rules: JSON.parse(e.target.value) })); } catch { /* keep typing */ }
-                }}
-              />
-            </div>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setSegOpen(false)}>Cancel</Button><Button onClick={saveSegment}>Save segment</Button></DialogFooter>
+          <SegmentBuilder
+            value={editingSeg}
+            onChange={setEditingSeg}
+            seasons={seasons}
+            teams={teams}
+            groups={groups}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSegOpen(false)}>Cancel</Button>
+            <Button onClick={saveSegment} disabled={!editingSeg.name?.trim()}>Save segment</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>
@@ -757,5 +754,182 @@ function ImportWizard({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// =================== Segment Builder ===================
+function SegmentBuilder({
+  value,
+  onChange,
+  seasons,
+  teams,
+  groups,
+}: {
+  value: Partial<Segment>;
+  onChange: (updater: (s: Partial<Segment>) => Partial<Segment>) => void;
+  seasons: Season[];
+  teams: Team[];
+  groups: Group[];
+}) {
+  const rules: any = value.filter_rules ?? {};
+  const setRule = (key: string, v: any) => {
+    onChange((s) => {
+      const next = { ...(s.filter_rules ?? {}) };
+      if (v === undefined || v === "" || v === null || v === "any") delete next[key];
+      else next[key] = v;
+      return { ...s, filter_rules: next };
+    });
+  };
+
+  const filteredTeams = rules.season_id ? teams.filter((t) => t.season_id === rules.season_id) : teams;
+
+  return (
+    <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+      <div className="grid grid-cols-1 gap-3">
+        <div>
+          <Label>Segment name</Label>
+          <Input
+            placeholder="e.g. 14U Black parents"
+            value={value.name ?? ""}
+            onChange={(e) => onChange((s) => ({ ...s, name: e.target.value }))}
+          />
+        </div>
+        <div>
+          <Label>Description <span className="text-muted-foreground text-xs">(optional)</span></Label>
+          <Input
+            placeholder="What is this list for?"
+            value={value.description ?? ""}
+            onChange={(e) => onChange((s) => ({ ...s, description: e.target.value }))}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+        <div className="text-sm font-medium">Who should be included?</div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <Label className="text-xs">Contact type</Label>
+            <select
+              className="w-full border rounded-md p-2 text-sm bg-background"
+              value={rules.contact_type ?? "any"}
+              onChange={(e) => setRule("contact_type", e.target.value)}
+            >
+              <option value="any">Any type</option>
+              <option value="family">Family</option>
+              <option value="player">Player</option>
+              <option value="alumni">Alumni</option>
+              <option value="prospect">Prospect</option>
+              <option value="sponsor">Sponsor</option>
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Season</Label>
+            <select
+              className="w-full border rounded-md p-2 text-sm bg-background"
+              value={rules.season_id ?? "any"}
+              onChange={(e) => {
+                setRule("season_id", e.target.value);
+                if (rules.team_id) setRule("team_id", "any");
+              }}
+            >
+              <option value="any">Any season</option>
+              {seasons.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Team</Label>
+            <select
+              className="w-full border rounded-md p-2 text-sm bg-background"
+              value={rules.team_id ?? "any"}
+              onChange={(e) => setRule("team_id", e.target.value)}
+            >
+              <option value="any">Any team</option>
+              {filteredTeams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Team role</Label>
+            <select
+              className="w-full border rounded-md p-2 text-sm bg-background"
+              value={rules.team_role ?? "any"}
+              onChange={(e) => setRule("team_role", e.target.value)}
+            >
+              <option value="any">Any role</option>
+              {ROLES.map((r) => (
+                <option key={r.v} value={r.v}>{r.l}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Group / mailing list</Label>
+            <select
+              className="w-full border rounded-md p-2 text-sm bg-background"
+              value={rules.group_id ?? "any"}
+              onChange={(e) => setRule("group_id", e.target.value)}
+            >
+              <option value="any">Any group</option>
+              {groups.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs">Graduation year</Label>
+            <Input
+              type="number"
+              placeholder="e.g. 2026"
+              value={rules.grad_year ?? ""}
+              onChange={(e) => setRule("grad_year", e.target.value ? Number(e.target.value) : undefined)}
+            />
+          </div>
+        </div>
+
+        <div className="border-t pt-3 space-y-2">
+          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Status</div>
+          <div className="flex flex-wrap gap-4 text-sm">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rules.sms_opt_in === true}
+                onChange={(e) => setRule("sms_opt_in", e.target.checked ? true : undefined)}
+              />
+              Only people opted in to SMS
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rules.unsubscribed === false}
+                onChange={(e) => setRule("unsubscribed", e.target.checked ? false : undefined)}
+              />
+              Exclude unsubscribed
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={rules.archived === true}
+                onChange={(e) => setRule("archived", e.target.checked ? true : undefined)}
+              />
+              Only archived contacts
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {Object.keys(rules).length === 0 && (
+        <div className="text-xs text-muted-foreground italic">
+          No filters set — this segment will include every contact in the org.
+        </div>
+      )}
+    </div>
   );
 }
