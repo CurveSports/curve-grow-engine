@@ -33,12 +33,29 @@ function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ""));
 }
 
+// Top-level import buckets → contact_type
+// "staff" = any non-playing adult on a team (head coach, asst, manager) → contact_type "coach"
+// Team Manager designation is assigned in-app after upload, not at import time.
 const ROLE_TO_CONTACT_TYPE: Record<string, string> = {
   player: "player",
+  player_parent: "player",
+  staff: "coach",
   coach: "coach",
   assistant_coach: "coach",
   team_manager: "coach",
   parent: "family",
+};
+
+// Maps a role value to the team_membership.role column.
+// We collapse all staff variants to "coach" — Team Manager is assigned in-app later.
+const ROLE_TO_MEMBERSHIP: Record<string, string> = {
+  player: "player",
+  player_parent: "player",
+  staff: "coach",
+  coach: "coach",
+  assistant_coach: "coach",
+  team_manager: "coach",
+  parent: "parent",
 };
 
 Deno.serve(async (req) => {
@@ -145,9 +162,11 @@ Deno.serve(async (req) => {
 
     const ROLE_NORMALIZE: Record<string, string> = {
       player: "player", players: "player",
-      coach: "coach", "head coach": "coach", "head_coach": "coach",
-      "assistant coach": "assistant_coach", assistant_coach: "assistant_coach", asst: "assistant_coach",
-      "team manager": "team_manager", team_manager: "team_manager", manager: "team_manager",
+      "player+parent": "player_parent", "players+parents": "player_parent", player_parent: "player_parent",
+      staff: "staff",
+      coach: "staff", "head coach": "staff", "head_coach": "staff",
+      "assistant coach": "staff", assistant_coach: "staff", asst: "staff",
+      "team manager": "staff", team_manager: "staff", manager: "staff",
       parent: "parent", guardian: "parent",
     };
 
@@ -217,8 +236,9 @@ Deno.serve(async (req) => {
         }
 
         if (effectiveTeamId && effectiveRole && result.id) {
+          const membershipRole = ROLE_TO_MEMBERSHIP[effectiveRole] || effectiveRole;
           await admin.from("org_team_memberships").upsert({
-            org_id, team_id: effectiveTeamId, contact_id: result.id, role: effectiveRole,
+            org_id, team_id: effectiveTeamId, contact_id: result.id, role: membershipRole,
             jersey_number: jersey || null,
             position: position || null,
           }, { onConflict: "team_id,contact_id,role", ignoreDuplicates: false });
