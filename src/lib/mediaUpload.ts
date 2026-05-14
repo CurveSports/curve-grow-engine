@@ -12,7 +12,10 @@ export type MediaItem = {
   filename: string | null;
   caption: string | null;
   alt_text: string | null;
+  title: string | null;
+  body_text: string | null;
   tags: string[] | null;
+  ai_tags: string[] | null;
   width: number | null;
   height: number | null;
   duration_seconds: number | null;
