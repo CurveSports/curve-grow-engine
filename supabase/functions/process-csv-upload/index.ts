@@ -1,4 +1,4 @@
-// Parse uploaded CSV and create org_contacts in batches.
+// Parse uploaded CSV → contacts + team memberships + parent linking, with dedupe.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -9,7 +9,6 @@ const corsHeaders = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Naive CSV parser supporting quoted fields and commas
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let i = 0, field = "", row: string[] = [], inQuotes = false;
@@ -34,12 +33,33 @@ function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ""));
 }
 
+const ROLE_TO_CONTACT_TYPE: Record<string, string> = {
+  player: "player",
+  coach: "coach",
+  assistant_coach: "coach",
+  team_manager: "coach",
+  parent: "family",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
-    const { org_id, csv_text, column_mapping, sms_default, duplicate_strategy, filename } = await req.json();
-    if (!org_id || !csv_text || !column_mapping) {
-      return new Response(JSON.stringify({ error: "org_id, csv_text, column_mapping required" }), {
+    const body = await req.json();
+    const {
+      org_id,
+      csv_text,
+      csv,            // legacy alias
+      column_mapping = {},
+      sms_default,
+      duplicate_strategy = "merge",
+      filename,
+      season_id,      // optional
+      team_id,        // optional
+      role,           // optional: player|coach|assistant_coach|team_manager|parent
+    } = body;
+    const text = csv_text || csv;
+    if (!org_id || !text) {
+      return new Response(JSON.stringify({ error: "org_id and csv_text required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -53,75 +73,132 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const rows = parseCsv(csv_text);
+    const rows = parseCsv(text);
     if (rows.length < 2) {
       return new Response(JSON.stringify({ error: "CSV is empty" }), { status: 400, headers: corsHeaders });
     }
     const header = rows[0].map((h) => h.trim());
     const dataRows = rows.slice(1);
 
-    // Insert upload record
     const uploadIns = await admin.from("org_contact_uploads").insert({
       org_id, filename: filename || "upload.csv", uploaded_by: userData.user.id,
       total_rows: dataRows.length, status: "processing",
     }).select().single();
     const upload_id = uploadIns.data?.id;
 
-    let imported = 0, merged = 0, errors = 0;
+    let imported = 0, merged = 0, parentsLinked = 0, errors = 0;
     const errorDetails: any[] = [];
 
-    // column_mapping: { source_column: target_field }
     const mapping = column_mapping as Record<string, string>;
     const sourceIdx: Record<string, number> = {};
     header.forEach((h, i) => { sourceIdx[h] = i; });
 
-    for (const row of dataRows) {
-      const contact: Record<string, any> = { org_id, source: "csv_upload", source_batch_id: upload_id };
-      let smsOptIn = sms_default === "true" || sms_default === true;
-      for (const [src, tgt] of Object.entries(mapping)) {
-        const idx = sourceIdx[src];
-        if (idx === undefined) continue;
-        const val = (row[idx] || "").trim();
-        if (!val) continue;
-        if (tgt === "sms_opt_in") {
-          smsOptIn = ["true", "yes", "y", "1"].includes(val.toLowerCase());
-        } else if (tgt === "team_assignments") {
-          contact[tgt] = val.split(/[,;|]/).map((s) => s.trim()).filter(Boolean);
-        } else if (tgt === "player_grad_year") {
-          const n = parseInt(val); if (!isNaN(n)) contact[tgt] = n;
-        } else if (tgt.startsWith("custom.")) {
-          contact.custom_fields = contact.custom_fields || {};
-          contact.custom_fields[tgt.slice(7)] = val;
-        } else {
-          contact[tgt] = val;
+    const primaryContactType = role ? (ROLE_TO_CONTACT_TYPE[role] || "family") : null;
+
+    async function findOrCreateContact(c: Record<string, any>): Promise<{ id: string; created: boolean } | null> {
+      const { data: dupId } = await admin.rpc("find_duplicate_contact", {
+        _org_id: org_id,
+        _email: c.email || null,
+        _phone: c.phone || null,
+        _first_name: c.first_name || null,
+        _last_name: c.last_name || null,
+      });
+      if (dupId) {
+        if (duplicate_strategy === "skip") return { id: dupId as string, created: false };
+        // Merge: only fill missing fields; don't overwrite non-empty
+        const { data: existing } = await admin.from("org_contacts").select("*").eq("id", dupId).maybeSingle();
+        if (existing) {
+          const patch: Record<string, any> = {};
+          for (const k of Object.keys(c)) {
+            if (c[k] === undefined || c[k] === null || c[k] === "") continue;
+            if (existing[k] === null || existing[k] === undefined || existing[k] === "" ||
+                (Array.isArray(existing[k]) && existing[k].length === 0)) {
+              patch[k] = c[k];
+            }
+          }
+          if (Object.keys(patch).length) await admin.from("org_contacts").update(patch).eq("id", dupId);
         }
+        return { id: dupId as string, created: false };
       }
-      contact.sms_opt_in = smsOptIn;
-      if (smsOptIn) contact.sms_opt_in_date = new Date().toISOString();
-      if (!contact.contact_type) contact.contact_type = "family";
+      const ins = await admin.from("org_contacts").insert(c).select("id").single();
+      if (ins.error) throw ins.error;
+      return { id: ins.data!.id, created: true };
+    }
 
-      if (!contact.email && !contact.phone) {
-        errors++; errorDetails.push({ row, reason: "missing email and phone" });
-        continue;
-      }
-
+    for (const row of dataRows) {
       try {
-        if (contact.email) {
-          const { data: existing } = await admin.from("org_contacts")
-            .select("id").eq("org_id", org_id).ilike("email", contact.email).maybeSingle();
-          if (existing) {
-            if (duplicate_strategy === "skip") continue;
-            if (duplicate_strategy === "overwrite" || duplicate_strategy === "merge") {
-              await admin.from("org_contacts").update(contact).eq("id", existing.id);
-              merged++; continue;
+        const primary: Record<string, any> = {
+          org_id, source: "csv_upload", source_batch_id: upload_id,
+          contact_type: primaryContactType || "family",
+        };
+        const parent: Record<string, any> = {
+          org_id, source: "csv_upload", source_batch_id: upload_id,
+          contact_type: "family",
+        };
+        let smsOptIn = sms_default === "true" || sms_default === true;
+
+        for (const [src, tgt] of Object.entries(mapping)) {
+          if (!tgt) continue;
+          const idx = sourceIdx[src];
+          if (idx === undefined) continue;
+          const val = (row[idx] || "").trim();
+          if (!val) continue;
+
+          if (tgt === "sms_opt_in") {
+            smsOptIn = ["true", "yes", "y", "1"].includes(val.toLowerCase());
+          } else if (tgt === "player_grad_year") {
+            const n = parseInt(val); if (!isNaN(n)) primary[tgt] = n;
+          } else if (tgt.startsWith("parent_")) {
+            parent[tgt.replace("parent_", "")] = val;
+          } else if (tgt === "jersey_number" || tgt === "position") {
+            primary[`__${tgt}`] = val; // stored on membership, not contact
+          } else {
+            primary[tgt] = val;
+          }
+        }
+        primary.sms_opt_in = smsOptIn;
+        if (smsOptIn) primary.sms_opt_in_date = new Date().toISOString();
+
+        if (!primary.email && !primary.phone && !primary.first_name) {
+          errors++; errorDetails.push({ row, reason: "row has no identifying data" });
+          continue;
+        }
+
+        // Strip membership-only fields before insert
+        const jersey = primary.__jersey_number; delete primary.__jersey_number;
+        const position = primary.__position; delete primary.__position;
+
+        const result = await findOrCreateContact(primary);
+        if (!result) { errors++; continue; }
+        if (result.created) imported++; else merged++;
+
+        // Membership
+        if (team_id && role && result.id) {
+          await admin.from("org_team_memberships").upsert({
+            org_id, team_id, contact_id: result.id, role,
+            jersey_number: jersey || null,
+            position: position || null,
+          }, { onConflict: "team_id,contact_id,role", ignoreDuplicates: false });
+        }
+
+        // Parent linking
+        if (parent.first_name || parent.email || parent.phone) {
+          const parentResult = await findOrCreateContact(parent);
+          if (parentResult?.id) {
+            parentsLinked++;
+            // Link parent → player
+            await admin.from("org_contacts").update({ parent_of_contact_id: result.id }).eq("id", parentResult.id);
+            // Add parent to team as 'parent'
+            if (team_id) {
+              await admin.from("org_team_memberships").upsert({
+                org_id, team_id, contact_id: parentResult.id, role: "parent",
+                is_primary_parent: true,
+              }, { onConflict: "team_id,contact_id,role", ignoreDuplicates: true });
             }
           }
         }
-        const ins = await admin.from("org_contacts").insert(contact);
-        if (ins.error) { errors++; errorDetails.push({ row, reason: ins.error.message }); }
-        else imported++;
-      } catch (e) {
-        errors++; errorDetails.push({ row, reason: String(e) });
+      } catch (e: any) {
+        errors++; errorDetails.push({ row, reason: String(e?.message || e) });
       }
     }
 
@@ -130,7 +207,10 @@ Deno.serve(async (req) => {
       error_details: errorDetails.slice(0, 50), status: "complete",
     }).eq("id", upload_id);
 
-    return new Response(JSON.stringify({ upload_id, imported, merged, errors }), {
+    return new Response(JSON.stringify({
+      upload_id, imported, merged, parents_linked: parentsLinked, errors,
+      successful_imports: imported, duplicates_merged: merged,
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

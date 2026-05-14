@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "@/components/AppShell";
-import { useAuth } from "@/hooks/useAuth";
 import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Upload, Plus, Trash2, Users, Filter, Mail, Loader2 } from "lucide-react";
+import { Upload, Plus, Trash2, Users, Filter, Loader2, ChevronRight, Calendar, Layers, FolderOpen, Archive } from "lucide-react";
+import { IMPORT_PRESETS, TARGET_FIELDS } from "@/lib/csvImportPresets";
 
 type Contact = {
   id: string;
@@ -24,171 +25,305 @@ type Contact = {
   season: string | null;
   player_grad_year: number | null;
   unsubscribed: boolean;
+  archived_at: string | null;
 };
 
-type Segment = {
-  id: string;
-  name: string;
-  description: string | null;
-  filter_rules: any;
-  is_system: boolean;
-  contact_count: number;
-};
+type Season = { id: string; name: string; sport: string; season_start_date: string; season_end_date: string; status: string };
+type Team = { id: string; season_id: string; name: string; age_group: string | null; division: string | null };
+type Membership = { id: string; team_id: string; contact_id: string; role: string; jersey_number: string | null; position: string | null };
+type Group = { id: string; name: string; description: string | null; group_type: string };
+type Segment = { id: string; name: string; description: string | null; filter_rules: any; is_system: boolean; contact_count: number };
+type UploadRec = { id: string; filename: string | null; total_rows: number | null; successful_imports: number | null; duplicates_merged: number | null; errors: number | null; status: string; created_at: string };
 
-type Upload = {
-  id: string;
-  filename: string | null;
-  total_rows: number | null;
-  successful_imports: number | null;
-  duplicates_merged: number | null;
-  errors: number | null;
-  status: string;
-  created_at: string;
-};
+const ROLES = [
+  { v: "player", l: "Player" },
+  { v: "coach", l: "Head coach" },
+  { v: "assistant_coach", l: "Assistant coach" },
+  { v: "team_manager", l: "Team manager" },
+  { v: "parent", l: "Parent" },
+];
 
 export default function Contacts() {
-  const { profile } = useAuth();
   const { orgId } = useEffectiveOrg();
-  const [tab, setTab] = useState("contacts");
+  const [tab, setTab] = useState("seasons");
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [memberships, setMemberships] = useState<Membership[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
-  const [uploads, setUploads] = useState<Upload[]>([]);
+  const [uploads, setUploads] = useState<UploadRec[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [csvUploading, setCsvUploading] = useState(false);
-  const csvInputRef = useRef<HTMLInputElement>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
+  // Modals
+  const [importOpen, setImportOpen] = useState(false);
+  const [seasonOpen, setSeasonOpen] = useState(false);
+  const [teamOpen, setTeamOpen] = useState(false);
+  const [groupOpen, setGroupOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [newContact, setNewContact] = useState<Partial<Contact>>({ contact_type: "family" });
-
   const [segOpen, setSegOpen] = useState(false);
   const [editingSeg, setEditingSeg] = useState<Partial<Segment>>({});
+  const [newSeason, setNewSeason] = useState<Partial<Season>>({ sport: "baseball" });
+  const [newTeam, setNewTeam] = useState<Partial<Team>>({});
+  const [newGroup, setNewGroup] = useState<Partial<Group>>({ group_type: "mailing_list" });
+  const [newContact, setNewContact] = useState<Partial<Contact>>({ contact_type: "family" });
 
   const load = async () => {
     if (!orgId) return;
     setLoading(true);
-    const [c, s, u] = await Promise.all([
-      supabase.from("org_contacts").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(500),
+    const [c, sn, t, m, g, s, u] = await Promise.all([
+      supabase.from("org_contacts").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(1000),
+      supabase.from("org_seasons").select("*").eq("org_id", orgId).order("season_start_date", { ascending: false }),
+      supabase.from("org_teams").select("*").eq("org_id", orgId).order("name"),
+      supabase.from("org_team_memberships").select("*").eq("org_id", orgId),
+      supabase.from("org_contact_groups").select("*").eq("org_id", orgId).order("name"),
       supabase.from("org_contact_segments").select("*").eq("org_id", orgId).order("is_system", { ascending: false }).order("name"),
       supabase.from("org_contact_uploads").select("*").eq("org_id", orgId).order("created_at", { ascending: false }).limit(10),
     ]);
-    setContacts((c.data ?? []) as Contact[]);
-    setSegments((s.data ?? []) as Segment[]);
-    setUploads((u.data ?? []) as Upload[]);
+    setContacts((c.data ?? []) as any);
+    setSeasons((sn.data ?? []) as any);
+    setTeams((t.data ?? []) as any);
+    setMemberships((m.data ?? []) as any);
+    setGroups((g.data ?? []) as any);
+    setSegments((s.data ?? []) as any);
+    setUploads((u.data ?? []) as any);
     setLoading(false);
   };
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
+  const contactById = useMemo(() => new Map(contacts.map((c) => [c.id, c])), [contacts]);
+
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return contacts.filter((c) => {
+      if (!showArchived && c.archived_at) return false;
+      if (showArchived && !c.archived_at) return false;
       if (typeFilter !== "all" && c.contact_type !== typeFilter) return false;
       if (!q) return true;
       const blob = `${c.first_name ?? ""} ${c.last_name ?? ""} ${c.email ?? ""} ${c.phone ?? ""}`.toLowerCase();
       return blob.includes(q);
     });
-  }, [contacts, search, typeFilter]);
+  }, [contacts, search, typeFilter, showArchived]);
 
-  const onCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !orgId) return;
-    setCsvUploading(true);
-    try {
-      const text = await file.text();
-      const { data, error } = await supabase.functions.invoke("process-csv-upload", {
-        body: { org_id: orgId, filename: file.name, csv: text },
-      });
-      if (error) throw error;
-      toast.success(`Imported ${data?.successful_imports ?? 0} contacts (${data?.duplicates_merged ?? 0} merged, ${data?.errors ?? 0} errors)`);
-      await load();
-    } catch (err: any) {
-      toast.error(err.message || "Upload failed");
-    } finally {
-      setCsvUploading(false);
-      e.target.value = "";
-    }
+  // ---------- Season / Team CRUD ----------
+  const saveSeason = async () => {
+    if (!orgId || !newSeason.name || !newSeason.season_start_date || !newSeason.season_end_date) return toast.error("Name, start, and end dates required");
+    const { error } = await supabase.from("org_seasons").insert({
+      org_id: orgId, name: newSeason.name, sport: newSeason.sport as any,
+      season_start_date: newSeason.season_start_date, season_end_date: newSeason.season_end_date,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Season created");
+    setSeasonOpen(false); setNewSeason({ sport: "baseball" }); load();
   };
 
-  const downloadTemplate = () => {
-    const csv = "first_name,last_name,email,phone,contact_type,team,season,grad_year\nJane,Doe,jane@example.com,5551234567,family,12U Red,Spring 2026,2030\n";
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "contacts-template.csv"; a.click();
-    URL.revokeObjectURL(url);
+  const saveTeam = async () => {
+    if (!orgId || !newTeam.season_id || !newTeam.name) return toast.error("Season and name required");
+    const { error } = await supabase.from("org_teams").insert({
+      org_id: orgId, season_id: newTeam.season_id, name: newTeam.name,
+      age_group: newTeam.age_group || null, division: newTeam.division || null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Team created");
+    setTeamOpen(false); setNewTeam({}); load();
   };
 
+  const deleteSeason = async (id: string) => {
+    if (!confirm("Delete this season and all its teams?")) return;
+    await supabase.from("org_seasons").delete().eq("id", id);
+    load();
+  };
+  const deleteTeam = async (id: string) => {
+    if (!confirm("Delete this team and all memberships?")) return;
+    await supabase.from("org_teams").delete().eq("id", id);
+    load();
+  };
+
+  // ---------- Group CRUD ----------
+  const saveGroup = async () => {
+    if (!orgId || !newGroup.name) return toast.error("Name required");
+    const { error } = await supabase.from("org_contact_groups").insert({
+      org_id: orgId, name: newGroup.name, description: newGroup.description || null, group_type: newGroup.group_type as any,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Group created");
+    setGroupOpen(false); setNewGroup({ group_type: "mailing_list" }); load();
+  };
+  const deleteGroup = async (id: string) => {
+    if (!confirm("Delete this group?")) return;
+    await supabase.from("org_contact_groups").delete().eq("id", id);
+    load();
+  };
+
+  // ---------- Contact CRUD ----------
   const saveContact = async () => {
     if (!orgId) return;
-    if (!newContact.email && !newContact.phone) return toast.error("Email or phone required");
+    if (!newContact.email && !newContact.phone && !newContact.first_name) return toast.error("Need at least a name, email, or phone");
     const { error } = await supabase.from("org_contacts").insert({ ...newContact, org_id: orgId } as any);
     if (error) return toast.error(error.message);
     toast.success("Contact added");
-    setAddOpen(false);
-    setNewContact({ contact_type: "family" });
+    setAddOpen(false); setNewContact({ contact_type: "family" }); load();
+  };
+
+  const archiveContact = async (id: string) => {
+    await supabase.from("org_contacts").update({ archived_at: new Date().toISOString() }).eq("id", id);
+    load();
+  };
+  const unarchiveContact = async (id: string) => {
+    await supabase.from("org_contacts").update({ archived_at: null }).eq("id", id);
     load();
   };
 
-  const deleteContact = async (id: string) => {
-    if (!confirm("Delete this contact?")) return;
-    await supabase.from("org_contacts").delete().eq("id", id);
-    setContacts((cs) => cs.filter((c) => c.id !== id));
-  };
-
+  // ---------- Segment CRUD ----------
   const saveSegment = async () => {
     if (!orgId || !editingSeg.name) return toast.error("Name required");
     const payload: any = {
-      org_id: orgId,
-      name: editingSeg.name,
+      org_id: orgId, name: editingSeg.name,
       description: editingSeg.description ?? null,
       filter_rules: editingSeg.filter_rules ?? {},
     };
-    let error;
-    if (editingSeg.id) {
-      ({ error } = await supabase.from("org_contact_segments").update(payload).eq("id", editingSeg.id));
-    } else {
-      ({ error } = await supabase.from("org_contact_segments").insert(payload));
-    }
+    const { error } = editingSeg.id
+      ? await supabase.from("org_contact_segments").update(payload).eq("id", editingSeg.id)
+      : await supabase.from("org_contact_segments").insert(payload);
     if (error) return toast.error(error.message);
     toast.success("Segment saved");
-    setSegOpen(false);
-    setEditingSeg({});
-    load();
-  };
-
-  const deleteSegment = async (s: Segment) => {
-    if (s.is_system) return toast.error("System segments can't be deleted");
-    if (!confirm(`Delete segment "${s.name}"?`)) return;
-    await supabase.from("org_contact_segments").delete().eq("id", s.id);
-    setSegments((arr) => arr.filter((x) => x.id !== s.id));
+    setSegOpen(false); setEditingSeg({}); load();
   };
 
   return (
     <AppShell title="Contacts">
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 flex-wrap gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold tracking-tight">Contacts</h1>
-          <p className="text-muted-foreground mt-1">Your audience for every email, SMS, and campaign.</p>
+          <p className="text-muted-foreground mt-1">Seasons, teams, groups — your entire audience in one place.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={downloadTemplate}>Download template</Button>
-          <Button onClick={() => csvInputRef.current?.click()} disabled={csvUploading}>
-            {csvUploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-            Upload CSV
+          <Button onClick={() => setImportOpen(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Import CSV
           </Button>
-          <input ref={csvInputRef} type="file" accept=".csv" className="hidden" onChange={onCsvUpload} />
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="contacts"><Users className="h-4 w-4 mr-2" />Contacts ({contacts.length})</TabsTrigger>
+          <TabsTrigger value="seasons"><Calendar className="h-4 w-4 mr-2" />Seasons & Teams</TabsTrigger>
+          <TabsTrigger value="groups"><FolderOpen className="h-4 w-4 mr-2" />Groups ({groups.length})</TabsTrigger>
+          <TabsTrigger value="contacts"><Users className="h-4 w-4 mr-2" />All Contacts ({contacts.filter(c => !c.archived_at).length})</TabsTrigger>
           <TabsTrigger value="segments"><Filter className="h-4 w-4 mr-2" />Segments ({segments.length})</TabsTrigger>
-          <TabsTrigger value="uploads"><Upload className="h-4 w-4 mr-2" />Uploads</TabsTrigger>
+          <TabsTrigger value="uploads"><Layers className="h-4 w-4 mr-2" />Uploads</TabsTrigger>
         </TabsList>
 
+        {/* SEASONS & TEAMS */}
+        <TabsContent value="seasons" className="mt-4 space-y-4">
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setTeamOpen(true)} disabled={seasons.length === 0}>
+              <Plus className="h-4 w-4 mr-2" /> New team
+            </Button>
+            <Button onClick={() => setSeasonOpen(true)}><Plus className="h-4 w-4 mr-2" /> New season</Button>
+          </div>
+          {loading ? <Card className="p-8 text-center text-muted-foreground">Loading…</Card> :
+           seasons.length === 0 ? <Card className="p-8 text-center text-muted-foreground">No seasons yet. Create one to start organizing teams.</Card> :
+           seasons.map((s) => {
+            const seasonTeams = teams.filter((t) => t.season_id === s.id);
+            return (
+              <Card key={s.id} className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-display font-semibold text-lg">{s.name}</h3>
+                      <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{s.sport}</span>
+                      <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${s.status === "active" ? "bg-lime/20 text-lime-strong" : "bg-muted text-muted-foreground"}`}>{s.status}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{s.season_start_date} → {s.season_end_date} · {seasonTeams.length} team{seasonTeams.length === 1 ? "" : "s"}</p>
+                  </div>
+                  <button onClick={() => deleteSeason(s.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                </div>
+                <div className="space-y-2">
+                  {seasonTeams.length === 0 && <p className="text-sm text-muted-foreground italic">No teams in this season yet.</p>}
+                  {seasonTeams.map((t) => {
+                    const tm = memberships.filter((m) => m.team_id === t.id);
+                    const players = tm.filter((m) => m.role === "player");
+                    const coaches = tm.filter((m) => m.role === "coach" || m.role === "assistant_coach" || m.role === "team_manager");
+                    const parents = tm.filter((m) => m.role === "parent");
+                    return (
+                      <Collapsible key={t.id}>
+                        <div className="border border-border rounded-md">
+                          <div className="flex items-center justify-between p-3">
+                            <CollapsibleTrigger className="flex items-center gap-2 hover:underline group flex-1 text-left">
+                              <ChevronRight className="h-4 w-4 transition-transform group-data-[state=open]:rotate-90" />
+                              <span className="font-medium">{t.name}</span>
+                              {t.age_group && <span className="text-xs text-muted-foreground">{t.age_group}</span>}
+                              <span className="text-xs text-muted-foreground ml-2">
+                                {players.length} players · {coaches.length} coaches · {parents.length} parents
+                              </span>
+                            </CollapsibleTrigger>
+                            <button onClick={() => deleteTeam(t.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                          </div>
+                          <CollapsibleContent>
+                            <div className="border-t border-border px-3 py-2 space-y-2 bg-muted/20">
+                              {[
+                                { label: "Coaches", list: coaches },
+                                { label: "Players", list: players },
+                                { label: "Parents", list: parents },
+                              ].map(({ label, list }) => list.length > 0 && (
+                                <div key={label}>
+                                  <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mb-1">{label}</p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-sm">
+                                    {list.map((m) => {
+                                      const c = contactById.get(m.contact_id);
+                                      if (!c) return null;
+                                      return (
+                                        <div key={m.id} className="flex items-center gap-2">
+                                          {m.jersey_number && <span className="text-xs px-1.5 py-0.5 rounded bg-muted">#{m.jersey_number}</span>}
+                                          <span>{[c.first_name, c.last_name].filter(Boolean).join(" ") || c.email || "—"}</span>
+                                          {m.position && <span className="text-xs text-muted-foreground">({m.position})</span>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              ))}
+                              {tm.length === 0 && <p className="text-sm text-muted-foreground italic">No members yet. Use Import CSV with this team selected.</p>}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  })}
+                </div>
+              </Card>
+            );
+          })}
+        </TabsContent>
+
+        {/* GROUPS */}
+        <TabsContent value="groups" className="mt-4">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => setGroupOpen(true)}><Plus className="h-4 w-4 mr-2" /> New group</Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {groups.length === 0 ? (
+              <Card className="p-8 text-center text-muted-foreground md:col-span-2">No groups yet. Use groups for evergreen lists like "Alumni" or "Newsletter".</Card>
+            ) : groups.map((g) => (
+              <Card key={g.id} className="p-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="font-display font-semibold">{g.name}</h3>
+                    <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{g.group_type}</span>
+                    {g.description && <p className="text-sm text-muted-foreground mt-2">{g.description}</p>}
+                  </div>
+                  <button onClick={() => deleteGroup(g.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        {/* ALL CONTACTS */}
         <TabsContent value="contacts" className="mt-4">
           <Card className="p-4 mb-4">
             <div className="flex flex-wrap gap-3 items-center">
@@ -202,12 +337,15 @@ export default function Contacts() {
                 <option value="prospect">Prospect</option>
                 <option value="sponsor">Sponsor</option>
               </select>
+              <label className="flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+                Archived only
+              </label>
               <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
                 <Plus className="h-4 w-4 mr-1" /> Add contact
               </Button>
             </div>
           </Card>
-
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -217,15 +355,14 @@ export default function Contacts() {
                     <th className="text-left p-3">Type</th>
                     <th className="text-left p-3">Email</th>
                     <th className="text-left p-3">Phone</th>
-                    <th className="text-left p-3">Team(s)</th>
                     <th className="text-right p-3"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">Loading…</td></tr>
                   ) : filtered.length === 0 ? (
-                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No contacts. Upload a CSV to get started.</td></tr>
+                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No contacts.</td></tr>
                   ) : filtered.map((c) => (
                     <tr key={c.id} className="border-t border-border hover:bg-muted/30">
                       <td className="p-3 font-medium">{[c.first_name, c.last_name].filter(Boolean).join(" ") || "—"}</td>
@@ -234,19 +371,22 @@ export default function Contacts() {
                         {c.email}{c.unsubscribed && <span className="ml-2 text-xs text-destructive">unsubscribed</span>}
                       </td>
                       <td className="p-3 text-muted-foreground">{c.phone || "—"}</td>
-                      <td className="p-3 text-muted-foreground">{(c.team_assignments ?? []).join(", ") || "—"}</td>
                       <td className="p-3 text-right">
-                        <button onClick={() => deleteContact(c.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                        {c.archived_at ? (
+                          <button onClick={() => unarchiveContact(c.id)} className="text-xs text-primary hover:underline">Restore</button>
+                        ) : (
+                          <button onClick={() => archiveContact(c.id)} className="text-muted-foreground hover:text-foreground" title="Archive"><Archive className="h-4 w-4" /></button>
+                        )}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            {filtered.length >= 500 && <p className="p-3 text-xs text-muted-foreground border-t border-border">Showing first 500. Filter to narrow results.</p>}
           </Card>
         </TabsContent>
 
+        {/* SEGMENTS */}
         <TabsContent value="segments" className="mt-4">
           <div className="flex justify-end mb-4">
             <Button onClick={() => { setEditingSeg({ filter_rules: {} }); setSegOpen(true); }}>
@@ -265,19 +405,14 @@ export default function Contacts() {
                     {s.description && <p className="text-sm text-muted-foreground mt-1">{s.description}</p>}
                     <p className="text-xs text-muted-foreground mt-2"><Users className="inline h-3 w-3 mr-1" />{s.contact_count} contacts</p>
                   </div>
-                  <div className="flex gap-1">
-                    <button onClick={() => { setEditingSeg(s); setSegOpen(true); }} className="text-xs text-primary hover:underline">Edit</button>
-                    {!s.is_system && (
-                      <button onClick={() => deleteSegment(s)} className="ml-2 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
-                    )}
-                  </div>
+                  <button onClick={() => { setEditingSeg(s); setSegOpen(true); }} className="text-xs text-primary hover:underline">Edit</button>
                 </div>
               </Card>
             ))}
-            {segments.length === 0 && <Card className="p-8 text-center text-muted-foreground md:col-span-2">No segments yet.</Card>}
           </div>
         </TabsContent>
 
+        {/* UPLOADS */}
         <TabsContent value="uploads" className="mt-4">
           <Card className="overflow-hidden">
             <table className="w-full text-sm">
@@ -312,6 +447,81 @@ export default function Contacts() {
         </TabsContent>
       </Tabs>
 
+      {/* IMPORT WIZARD */}
+      <ImportWizard
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        orgId={orgId}
+        seasons={seasons}
+        teams={teams}
+        onDone={load}
+      />
+
+      {/* New season */}
+      <Dialog open={seasonOpen} onOpenChange={setSeasonOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New season</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2"><Label>Name</Label><Input placeholder="Spring 2026 Baseball" value={newSeason.name ?? ""} onChange={(e) => setNewSeason((s) => ({ ...s, name: e.target.value }))} /></div>
+            <div>
+              <Label>Sport</Label>
+              <select value={newSeason.sport} onChange={(e) => setNewSeason((s) => ({ ...s, sport: e.target.value }))} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                <option value="baseball">Baseball</option>
+                <option value="softball">Softball</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div></div>
+            <div><Label>Start date</Label><Input type="date" value={newSeason.season_start_date ?? ""} onChange={(e) => setNewSeason((s) => ({ ...s, season_start_date: e.target.value }))} /></div>
+            <div><Label>End date</Label><Input type="date" value={newSeason.season_end_date ?? ""} onChange={(e) => setNewSeason((s) => ({ ...s, season_end_date: e.target.value }))} /></div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setSeasonOpen(false)}>Cancel</Button><Button onClick={saveSeason}>Create season</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New team */}
+      <Dialog open={teamOpen} onOpenChange={setTeamOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New team</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Season</Label>
+              <select value={newTeam.season_id ?? ""} onChange={(e) => setNewTeam((t) => ({ ...t, season_id: e.target.value }))} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                <option value="">Select…</option>
+                {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+            <div><Label>Team name</Label><Input placeholder="12U Red" value={newTeam.name ?? ""} onChange={(e) => setNewTeam((t) => ({ ...t, name: e.target.value }))} /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Age group</Label><Input placeholder="12U" value={newTeam.age_group ?? ""} onChange={(e) => setNewTeam((t) => ({ ...t, age_group: e.target.value }))} /></div>
+              <div><Label>Division</Label><Input value={newTeam.division ?? ""} onChange={(e) => setNewTeam((t) => ({ ...t, division: e.target.value }))} /></div>
+            </div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setTeamOpen(false)}>Cancel</Button><Button onClick={saveTeam}>Create team</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New group */}
+      <Dialog open={groupOpen} onOpenChange={setGroupOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>New group</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Name</Label><Input value={newGroup.name ?? ""} onChange={(e) => setNewGroup((g) => ({ ...g, name: e.target.value }))} /></div>
+            <div><Label>Description</Label><Input value={newGroup.description ?? ""} onChange={(e) => setNewGroup((g) => ({ ...g, description: e.target.value }))} /></div>
+            <div>
+              <Label>Type</Label>
+              <select value={newGroup.group_type} onChange={(e) => setNewGroup((g) => ({ ...g, group_type: e.target.value }))} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                <option value="mailing_list">Mailing list</option>
+                <option value="event">Event</option>
+                <option value="alumni">Alumni</option>
+                <option value="custom">Custom</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter><Button variant="outline" onClick={() => setGroupOpen(false)}>Cancel</Button><Button onClick={saveGroup}>Create group</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Add contact */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent>
@@ -333,17 +543,17 @@ export default function Contacts() {
               </select>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={saveContact}>Add contact</Button>
-          </DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button><Button onClick={saveContact}>Add contact</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Segment editor */}
       <Dialog open={segOpen} onOpenChange={setSegOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editingSeg.id ? "Edit" : "New"} segment</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>{editingSeg.id ? "Edit" : "New"} segment</DialogTitle>
+            <DialogDescription>Filter keys: contact_type, season_id, team_id, team_role, group_id, archived, sms_opt_in, unsubscribed, grad_year</DialogDescription>
+          </DialogHeader>
           <div className="space-y-3">
             <div><Label>Name</Label><Input value={editingSeg.name ?? ""} onChange={(e) => setEditingSeg((s) => ({ ...s, name: e.target.value }))} /></div>
             <div><Label>Description</Label><Input value={editingSeg.description ?? ""} onChange={(e) => setEditingSeg((s) => ({ ...s, description: e.target.value }))} /></div>
@@ -357,15 +567,195 @@ export default function Contacts() {
                   try { setEditingSeg((s) => ({ ...s, filter_rules: JSON.parse(e.target.value) })); } catch { /* keep typing */ }
                 }}
               />
-              <p className="text-xs text-muted-foreground mt-1">Example: <code>{`{"contact_type":"family","team":"12U"}`}</code></p>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSegOpen(false)}>Cancel</Button>
-            <Button onClick={saveSegment}>Save segment</Button>
-          </DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setSegOpen(false)}>Cancel</Button><Button onClick={saveSegment}>Save segment</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>
+  );
+}
+
+// =================== Import Wizard ===================
+function ImportWizard({
+  open, onOpenChange, orgId, seasons, teams, onDone,
+}: {
+  open: boolean;
+  onOpenChange: (b: boolean) => void;
+  orgId: string | null;
+  seasons: Season[];
+  teams: Team[];
+  onDone: () => void;
+}) {
+  const [step, setStep] = useState(1);
+  const [file, setFile] = useState<File | null>(null);
+  const [csvText, setCsvText] = useState("");
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [presetId, setPresetId] = useState("leagueapps");
+  const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [seasonId, setSeasonId] = useState("");
+  const [teamId, setTeamId] = useState("");
+  const [role, setRole] = useState("player");
+  const [submitting, setSubmitting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const reset = () => {
+    setStep(1); setFile(null); setCsvText(""); setHeaders([]);
+    setPresetId("leagueapps"); setMapping({}); setSeasonId(""); setTeamId(""); setRole("player");
+  };
+
+  useEffect(() => { if (!open) reset(); }, [open]);
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    setFile(f);
+    const text = await f.text();
+    setCsvText(text);
+    const firstLine = text.split(/\r?\n/)[0] || "";
+    // Simple split that respects quoted commas
+    const hdrs: string[] = [];
+    let cur = "", q = false;
+    for (let i = 0; i < firstLine.length; i++) {
+      const c = firstLine[i];
+      if (c === '"') q = !q;
+      else if (c === "," && !q) { hdrs.push(cur.trim()); cur = ""; }
+      else cur += c;
+    }
+    hdrs.push(cur.trim());
+    setHeaders(hdrs);
+    // Auto-apply default preset
+    applyPreset("leagueapps", hdrs);
+  };
+
+  const applyPreset = (id: string, hdrs: string[] = headers) => {
+    setPresetId(id);
+    const preset = IMPORT_PRESETS.find((p) => p.id === id);
+    if (!preset) return setMapping({});
+    const m: Record<string, string> = {};
+    for (const h of hdrs) {
+      // exact, then case-insensitive
+      const exact = preset.mapping[h];
+      if (exact) { m[h] = exact; continue; }
+      const ci = Object.entries(preset.mapping).find(([k]) => k.toLowerCase() === h.toLowerCase());
+      if (ci) m[h] = ci[1];
+    }
+    setMapping(m);
+  };
+
+  const teamsForSeason = teams.filter((t) => t.season_id === seasonId);
+
+  const submit = async () => {
+    if (!orgId) return;
+    setSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("process-csv-upload", {
+        body: {
+          org_id: orgId, csv_text: csvText, column_mapping: mapping,
+          filename: file?.name, season_id: seasonId || null, team_id: teamId || null, role,
+          duplicate_strategy: "merge",
+        },
+      });
+      if (error) throw error;
+      toast.success(`Imported ${data?.imported ?? 0} · merged ${data?.merged ?? 0} · ${data?.parents_linked ?? 0} parents linked · ${data?.errors ?? 0} errors`);
+      onOpenChange(false);
+      onDone();
+    } catch (e: any) {
+      toast.error(e.message || "Import failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Import contacts — Step {step} of 3</DialogTitle>
+          <DialogDescription>
+            {step === 1 && "Pick the season, team, and role for this CSV."}
+            {step === 2 && "Upload the file and pick a platform preset."}
+            {step === 3 && "Review the column mapping before importing."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === 1 && (
+          <div className="space-y-4">
+            <div>
+              <Label>Season (optional — leave blank for evergreen contacts)</Label>
+              <select value={seasonId} onChange={(e) => { setSeasonId(e.target.value); setTeamId(""); }} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                <option value="">— No season —</option>
+                {seasons.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.sport})</option>)}
+              </select>
+            </div>
+            <div>
+              <Label>Team (optional)</Label>
+              <select value={teamId} onChange={(e) => setTeamId(e.target.value)} disabled={!seasonId} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm disabled:opacity-50">
+                <option value="">— No team —</option>
+                {teamsForSeason.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              {!seasonId && <p className="text-xs text-muted-foreground mt-1">Pick a season first to assign contacts to a team.</p>}
+            </div>
+            <div>
+              <Label>Role being imported</Label>
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm">
+                {ROLES.map((r) => <option key={r.v} value={r.v}>{r.l}</option>)}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">If you map parent fields, parent contacts are auto-created and linked.</p>
+            </div>
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            <div>
+              <Label>Platform preset</Label>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {IMPORT_PRESETS.map((p) => (
+                  <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
+                    className={`text-left p-3 rounded-md border text-sm ${presetId === p.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
+                    <div className="font-medium">{p.label}</div>
+                    <div className="text-xs text-muted-foreground">{p.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <Label>CSV file</Label>
+              <input ref={fileRef} type="file" accept=".csv" onChange={onFile} className="block w-full text-sm mt-1" />
+              {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {headers.length} columns detected</p>}
+            </div>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Map each CSV column to a contact field. Unmapped columns are ignored.</p>
+            <div className="border border-border rounded-md divide-y divide-border max-h-80 overflow-y-auto">
+              {headers.map((h) => (
+                <div key={h} className="flex items-center gap-3 p-2">
+                  <div className="flex-1 text-sm font-mono truncate">{h}</div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  <select value={mapping[h] || ""} onChange={(e) => setMapping((m) => ({ ...m, [h]: e.target.value }))}
+                    className="flex-1 h-9 px-2 rounded-md border border-input bg-background text-sm">
+                    {TARGET_FIELDS.map((f) => <option key={f.key} value={f.key}>{f.label}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          {step > 1 && <Button variant="outline" onClick={() => setStep(step - 1)}>Back</Button>}
+          {step < 3 && <Button onClick={() => setStep(step + 1)} disabled={step === 2 && !file}>Next</Button>}
+          {step === 3 && (
+            <Button onClick={submit} disabled={submitting || headers.length === 0}>
+              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Import
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
