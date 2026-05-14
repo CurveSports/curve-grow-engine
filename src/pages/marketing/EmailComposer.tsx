@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, Send, Save, Smartphone, Tablet, Monitor, Moon, FileText, Shield } from "lucide-react";
-import { renderEmail, htmlToText, type BrandContext, DEFAULT_BRAND } from "@/emails/render";
+import { renderEmail, htmlToText, wrapCustomHtml, type BrandContext, DEFAULT_BRAND } from "@/emails/render";
 import { localSpamCheck } from "@/lib/spamCheck";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 
@@ -95,15 +95,25 @@ export default function EmailComposer() {
     if (template) setPropsState((p) => ({ ...(template.preview_props ?? {}), ...p }));
   }, [template]);
 
-  const rendered = useMemo(() => {
-    if (!template) return { html: "", errors: [] as any[] };
-    return renderEmail({
+  const isBlank = templateId === "__blank__";
+  const [customHtml, setCustomHtml] = useState("");
+  const [rendered, setRendered] = useState<{ html: string; errors: any[] }>({ html: "", errors: [] });
+
+  useEffect(() => {
+    let cancelled = false;
+    if (isBlank) {
+      setRendered({ html: wrapCustomHtml(customHtml, brand), errors: [] });
+      return;
+    }
+    if (!template) { setRendered({ html: "", errors: [] }); return; }
+    renderEmail({
       templateKey: template.jsx_source ?? undefined,
       mjmlSource: !template.jsx_source ? template.mjml_source ?? "" : undefined,
       props: propsState,
       brand,
-    });
-  }, [template, propsState, brand]);
+    }).then((r) => { if (!cancelled) setRendered(r); });
+    return () => { cancelled = true; };
+  }, [template, propsState, brand, isBlank, customHtml]);
 
   const spam = useMemo(() => localSpamCheck({ subject, html: rendered.html, from: fromEmail }), [subject, rendered.html, fromEmail]);
   const recipientEstimate = segments.find((s) => s.id === segmentId)?.contact_count ?? 0;
@@ -112,7 +122,8 @@ export default function EmailComposer() {
     if (!orgId) return;
     if (!subject) return toast.error("Subject required");
     if (!segmentId) return toast.error("Pick a segment");
-    if (!template) return toast.error("Pick a template");
+    if (!template && !isBlank) return toast.error("Pick a template");
+    if (isBlank && !customHtml.trim()) return toast.error("Write your email body");
     setSaving(true);
     try {
       const payload: any = {
@@ -120,9 +131,9 @@ export default function EmailComposer() {
         subject, preview_text: previewText || null,
         from_email: fromEmail || null, from_name: fromName || null,
         segment_id: segmentId,
-        template_id: template.id,
-        rendering_engine: template.rendering_engine,
-        template_props: propsState,
+        template_id: isBlank ? null : template!.id,
+        rendering_engine: isBlank ? "html" : template!.rendering_engine,
+        template_props: isBlank ? { custom_html: customHtml } : propsState,
         html_body: rendered.html,
         text_body: htmlToText(rendered.html),
         spam_score: spam.score,
@@ -162,10 +173,25 @@ export default function EmailComposer() {
             <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
               className="w-full h-10 px-2 rounded-md border border-input bg-background text-sm">
               <option value="">Pick a template…</option>
+              <option value="__blank__">✏️ Blank email — write your own</option>
               {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
             {template?.description && <p className="text-xs text-muted-foreground mt-1">{template.description}</p>}
+            {isBlank && <p className="text-xs text-muted-foreground mt-1">Write HTML or plain text — it'll be wrapped in your brand shell.</p>}
           </div>
+
+          {isBlank && (
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Email body</p>
+              <Textarea
+                rows={14}
+                className="font-mono text-xs"
+                value={customHtml}
+                placeholder={"<h2>Hi {{first_name}},</h2>\n<p>Write your message here. Basic HTML is supported.</p>\n<p><a href=\"https://example.com\">Click here</a></p>"}
+                onChange={(e) => setCustomHtml(e.target.value)}
+              />
+            </div>
+          )}
 
           {template && Array.isArray(template.input_fields) && template.input_fields.length > 0 && (
             <div className="space-y-3 border-t border-border pt-3">
@@ -225,8 +251,8 @@ export default function EmailComposer() {
             ))}
           </div>
           <div className={`flex-1 overflow-auto p-4 ${isDark ? "bg-zinc-950" : "bg-zinc-100"}`}>
-            {!template ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Pick a template to preview</div>
+            {!template && !isBlank ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Pick a template or "Blank email" to preview</div>
             ) : previewMode === "text" ? (
               <pre className="bg-background p-4 rounded text-xs whitespace-pre-wrap max-w-2xl mx-auto">{htmlToText(rendered.html)}</pre>
             ) : (
