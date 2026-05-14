@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
+import { useMarketingLink } from "@/hooks/useMarketingLink";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { Upload, Plus, Trash2, Users, Filter, Loader2, ChevronRight, Calendar, Layers, FolderOpen, Archive } from "lucide-react";
+import { Upload, Plus, Trash2, Users, Filter, Loader2, ChevronRight, Calendar, Layers, FolderOpen, Archive, Mail } from "lucide-react";
 import { autoMapHeaders, TARGET_FIELDS } from "@/lib/csvImportPresets";
 
 type Contact = {
