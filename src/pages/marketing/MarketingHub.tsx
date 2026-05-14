@@ -89,6 +89,11 @@ export default function MarketingHub() {
           .eq("org_id", orgId).gte("created_at", since7d),
         supabase.from("org_email_sends").select("id, recipient_count").eq("org_id", orgId)
           .eq("status", "sent").gte("sent_at", since24),
+        supabase.from("org_calendar_items").select("id, title, calculated_due_date")
+          .eq("org_id", orgId).eq("is_non_negotiable", true)
+          .gte("calculated_due_date", today.toISOString().slice(0, 10))
+          .lte("calculated_due_date", in48.toISOString().slice(0, 10))
+          .order("calculated_due_date", { ascending: true }).limit(1),
       ]);
 
       if (cancelled) return;
