@@ -127,7 +127,9 @@ export default function NpsSurveyDetail() {
             <Button variant="outline" onClick={openEdit}>
               <Pencil className="h-4 w-4 mr-2" />Edit
             </Button>
-            {survey.status === "draft" && <Button onClick={sendSurvey}>Send Survey</Button>}
+            {survey.status === "draft" && (
+              <Button onClick={sendSurvey} disabled={sending}>{sending ? "Sending…" : "Send Survey"}</Button>
+            )}
           </div>
         </div>
 
