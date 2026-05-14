@@ -20,15 +20,19 @@ export default function NpsSurveyDetail() {
   const ml = useMarketingLink();
   const [survey, setSurvey] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
+  const [segments, setSegments] = useState<any[]>([]);
   const [followupNotes, setFollowupNotes] = useState<Record<string, string>>({});
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
 
   const openEdit = () => {
     setEditForm({
       name: survey.name || "",
       question: survey.question || "",
+      audience_segment_id: survey.audience_segment_id || "",
       followup_question_promoter: survey.followup_question_promoter || "",
       followup_question_passive: survey.followup_question_passive || "",
       followup_question_detractor: survey.followup_question_detractor || "",
@@ -38,7 +42,9 @@ export default function NpsSurveyDetail() {
 
   const saveEdit = async () => {
     setSaving(true);
-    const { error } = await (supabase as any).from("org_nps_surveys").update(editForm).eq("id", id);
+    const payload = { ...editForm };
+    if (!payload.audience_segment_id) payload.audience_segment_id = null;
+    const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Survey updated");
@@ -52,14 +58,35 @@ export default function NpsSurveyDetail() {
     const { data: r } = await (supabase as any).from("org_nps_responses").select("*").eq("survey_id", id).order("responded_at", { ascending: false });
     setSurvey(s);
     setResponses(r || []);
+    if (s?.org_id) {
+      const { data: segs } = await (supabase as any).from("org_contact_segments").select("id,name,contact_count").eq("org_id", s.org_id).order("name");
+      setSegments(segs || []);
+    }
   };
 
   useEffect(() => { load(); }, [id]);
 
   const sendSurvey = async () => {
-    await (supabase as any).from("org_nps_surveys").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", id);
-    toast.success("Survey marked as sent (email/SMS delivery wires when integrations are ready)");
+    if (!survey?.audience_segment_id) {
+      toast.error("Pick an audience first — open Edit and choose a segment.");
+      return;
+    }
+    if (!confirm("Send this survey to everyone in the audience now?")) return;
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id } });
+    setSending(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Sent to ${data?.sent ?? 0} of ${data?.total ?? 0} recipients` + (data?.failed ? ` (${data.failed} failed)` : ""));
     load();
+  };
+
+  const sendTest = async () => {
+    if (!testEmail) return toast.error("Enter your email");
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id, test_email: testEmail } });
+    setSending(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(data?.sent ? "Test sent — check your inbox" : "Test failed");
   };
 
   const resolveFollowup = async (responseId: string) => {
