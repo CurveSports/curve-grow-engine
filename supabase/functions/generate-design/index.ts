@@ -189,6 +189,7 @@ Deno.serve(async (req) => {
       brandKit: brandRes.data,
       template: templateRes.data,
       promptInput: prompt_input || {},
+      styleDirection: style_direction || "bold_sport",
     });
 
     // Call Lovable AI Gateway
