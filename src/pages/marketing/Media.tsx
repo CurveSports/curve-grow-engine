@@ -356,7 +356,7 @@ export default function ContentLibrary() {
               onRetag={async () => {
                 toast.message("Re-running AI tags…");
                 const { data, error } = await supabase.functions.invoke("ai-tag-media", { body: { asset_id: selected.id } });
-                if (error) return toast.error(error.message);
+                if (error) { toast.error(error.message); return; }
                 toast.success("Tags refreshed");
                 if (data) saveMeta(selected, data as Partial<Item>);
               }}
