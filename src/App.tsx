@@ -131,8 +131,6 @@ const App = () => (
             <Route path="/marketing/emails/new" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
             <Route path="/marketing/campaigns" element={<ProtectedRoute><Campaigns /></ProtectedRoute>} />
             <Route path="/marketing/campaigns/:id" element={<ProtectedRoute><CampaignDetail /></ProtectedRoute>} />
-            <Route path="/marketing/approvals" element={<ProtectedRoute role="org_user"><ApprovalsQueue mode="org" /></ProtectedRoute>} />
-            <Route path="/admin/marketing/approvals" element={<ProtectedRoute role="admin" module="marketing"><ApprovalsQueue mode="curve" /></ProtectedRoute>} />
             <Route path="/marketing/shortlinks" element={<ProtectedRoute><Shortlinks /></ProtectedRoute>} />
             <Route path="/marketing/ab-tests" element={<ProtectedRoute><AbTests /></ProtectedRoute>} />
             <Route path="/marketing/send-times" element={<ProtectedRoute><SendTimes /></ProtectedRoute>} />
