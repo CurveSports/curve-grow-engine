@@ -33,12 +33,29 @@ function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((c) => c.trim() !== ""));
 }
 
+// Top-level import buckets → contact_type
+// "staff" = any non-playing adult on a team (head coach, asst, manager) → contact_type "coach"
+// Team Manager designation is assigned in-app after upload, not at import time.
 const ROLE_TO_CONTACT_TYPE: Record<string, string> = {
   player: "player",
+  player_parent: "player",
+  staff: "coach",
   coach: "coach",
   assistant_coach: "coach",
   team_manager: "coach",
   parent: "family",
+};
+
+// Maps a role value to the team_membership.role column.
+// We collapse all staff variants to "coach" — Team Manager is assigned in-app later.
+const ROLE_TO_MEMBERSHIP: Record<string, string> = {
+  player: "player",
+  player_parent: "player",
+  staff: "coach",
+  coach: "coach",
+  assistant_coach: "coach",
+  team_manager: "coach",
+  parent: "parent",
 };
 
 Deno.serve(async (req) => {
