@@ -85,7 +85,7 @@ const ORG_GROUPS: NavGroup[] = [
     label: "Marketing",
     items: [
       { to: "/marketing", label: "Hub", icon: Sparkles, match: (p) => p === "/marketing" },
-      { to: "/marketing/designs", label: "Create", icon: ImageIcon, match: (p) => p.startsWith("/marketing/designs") || p.startsWith("/marketing/emails") || p.startsWith("/marketing/sms") || p.startsWith("/marketing/social") || p.startsWith("/marketing/sequences") },
+      { to: "/marketing/create", label: "Create", icon: ImageIcon, match: (p) => p.startsWith("/marketing/create") || p.startsWith("/marketing/designs") || p.startsWith("/marketing/emails") || p.startsWith("/marketing/sms") || p.startsWith("/marketing/social") || p.startsWith("/marketing/sequences") },
       { to: "/marketing/contacts", label: "Audience", icon: UsersRound, match: (p) => p.startsWith("/marketing/contacts") || p.startsWith("/marketing/brand-kit") },
       { to: "/marketing/campaigns", label: "Campaigns", icon: Megaphone, match: (p) => p.startsWith("/marketing/campaigns") || p.startsWith("/marketing/approvals") },
       { to: "/marketing/insights", label: "Insights", icon: BarChart2, match: (p) => p.startsWith("/marketing/insights") || p.startsWith("/marketing/nps") || p.startsWith("/marketing/ab-tests") || p.startsWith("/marketing/send-times") || p.startsWith("/marketing/shortlinks") },
