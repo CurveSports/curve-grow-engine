@@ -80,6 +80,7 @@ import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
 import AdminSchools from "@/pages/admin/marketing/AdminSchools";
+import AdminNpsOverview from "@/pages/admin/marketing/AdminNpsOverview";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import EventIntake from "@/pages/events/EventIntake";
 import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
