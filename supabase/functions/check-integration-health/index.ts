@@ -86,10 +86,19 @@ async function probe(key: string): Promise<CheckResult> {
         ? { status: "broken", result: { success: false, latency_ms: r.ms, error_message: r.error } }
         : { status: "live", result: { success: true, latency_ms: r.ms } };
     }
-    case "buffer": {
-      const have = ["BUFFER_CLIENT_ID", "BUFFER_CLIENT_SECRET", "BUFFER_REDIRECT_URI"].filter((v) => !Deno.env.get(v));
-      if (have.length) return { status: "stubbed", result: { success: false, missing_vars: have } };
-      return { status: "live", result: { success: true } };
+    case "ayrshare": {
+      const k = Deno.env.get("AYRSHARE_API_KEY");
+      if (!k) return { status: "stubbed", result: { success: false, missing_vars: ["AYRSHARE_API_KEY"] } };
+      const r = await timed(async () => {
+        const resp = await fetch("https://app.ayrshare.com/api/user", {
+          headers: { Authorization: `Bearer ${k}` },
+        });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        return true;
+      });
+      return r.error
+        ? { status: "broken", result: { success: false, latency_ms: r.ms, error_message: r.error } }
+        : { status: "live", result: { success: true, latency_ms: r.ms } };
     }
     case "twilio": {
       const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
