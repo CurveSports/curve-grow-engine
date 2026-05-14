@@ -59,7 +59,8 @@ const ADMIN_GROUPS: NavGroup[] = [
   {
     label: "Admin",
     items: [
-      { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
+      { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p === "/admin/users" || p.startsWith("/admin/invite") },
+      { to: "/admin/users/lookup", label: "User Lookup", icon: Search, match: (p) => p.startsWith("/admin/users/lookup") },
       { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
     ],
   },
