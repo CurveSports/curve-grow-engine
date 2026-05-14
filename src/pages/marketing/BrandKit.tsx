@@ -111,8 +111,33 @@ export default function BrandKit() {
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) return toast.error("Logo must be under 3 MB");
     const url = await uploadFile(file, "logos");
-    if (url) setKit((k) => ({ ...k, [key]: url }));
+    if (url) {
+      setKit((k) => ({ ...k, [key]: url }));
+      if (key === "logo_primary_url") autofillColorsFromLogo(url);
+    }
     e.target.value = "";
+  };
+
+  const autofillColorsFromLogo = async (logoUrl: string, force = false) => {
+    try {
+      const colors = await extractColors(logoUrl, 5);
+      if (!colors.length) return;
+      setKit((k) => {
+        const next = { ...k };
+        const slots: (keyof BrandKit)[] = ["color_primary", "color_secondary", "color_accent", "color_dark", "color_light"];
+        let filled = 0;
+        slots.forEach((slot, i) => {
+          if ((force || !k[slot]) && colors[i]) {
+            (next as any)[slot] = colors[i].hex;
+            filled++;
+          }
+        });
+        if (filled) toast.success(`Pulled ${filled} color${filled > 1 ? "s" : ""} from your logo`);
+        return next;
+      });
+    } catch (err) {
+      console.warn("color extraction failed", err);
+    }
   };
 
   const onPhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
