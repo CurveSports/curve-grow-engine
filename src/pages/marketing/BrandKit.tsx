@@ -372,7 +372,7 @@ export default function BrandKit() {
                   disabled={generatingVoice}
                 >
                   <Wand2 className="h-3.5 w-3.5 mr-1.5" />
-                  {generatingVoice ? "Generating…" : "Generate with AI"}
+                  {generatingVoice ? "Generating…" : "Generate"}
                 </Button>
               </div>
               <Textarea
