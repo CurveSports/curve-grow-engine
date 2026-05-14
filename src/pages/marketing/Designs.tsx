@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Plus, Sparkles, Loader2, Image as ImageIcon, Search } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 import SchoolPicker from "@/components/marketing/SchoolPicker";
+import MediaPicker from "@/components/marketing/MediaPicker";
 
 type Template = {
   id: string;
