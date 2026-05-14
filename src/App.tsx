@@ -144,6 +144,7 @@ const App = () => (
             <Route path="/marketing/sms/new" element={<ProtectedRoute><SmsComposer /></ProtectedRoute>} />
             <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
             <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/marketing/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
             <Route path="/nps/preview/:surveyId" element={<NpsResponse />} />
             <Route path="/events/intake/:slug" element={<EventIntake />} />
