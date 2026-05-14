@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { Upload, Plus, Trash2, Users, Filter, Loader2, ChevronRight, Calendar, Layers, FolderOpen, Archive } from "lucide-react";
-import { IMPORT_PRESETS, TARGET_FIELDS } from "@/lib/csvImportPresets";
+import { autoMapHeaders, TARGET_FIELDS } from "@/lib/csvImportPresets";
 
 type Contact = {
   id: string;
@@ -590,8 +590,9 @@ function ImportWizard({
   const [file, setFile] = useState<File | null>(null);
   const [csvText, setCsvText] = useState("");
   const [headers, setHeaders] = useState<string[]>([]);
-  const [presetId, setPresetId] = useState("leagueapps");
   const [mapping, setMapping] = useState<Record<string, string>>({});
+  const [autoMappedCount, setAutoMappedCount] = useState(0);
+  const [fileFormat, setFileFormat] = useState<"single" | "multitab">("single");
   const [seasonId, setSeasonId] = useState("");
   const [teamId, setTeamId] = useState("");
   const [role, setRole] = useState("player");
@@ -600,7 +601,8 @@ function ImportWizard({
 
   const reset = () => {
     setStep(1); setFile(null); setCsvText(""); setHeaders([]);
-    setPresetId("leagueapps"); setMapping({}); setSeasonId(""); setTeamId(""); setRole("player");
+    setMapping({}); setAutoMappedCount(0); setFileFormat("single");
+    setSeasonId(""); setTeamId(""); setRole("player");
   };
 
   useEffect(() => { if (!open) reset(); }, [open]);
@@ -615,28 +617,35 @@ function ImportWizard({
         const XLSX = await import("xlsx");
         const buf = await f.arrayBuffer();
         const wb = XLSX.read(buf, { type: "array" });
-        // Flatten every sheet, using sheet name as Team
-        const allRows: Record<string, string>[] = [];
-        const allHeaders = new Set<string>();
-        for (const sheetName of wb.SheetNames) {
-          const ws = wb.Sheets[sheetName];
-          const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
-          for (const row of rows) {
-            const norm: Record<string, string> = { Team: sheetName };
-            for (const k of Object.keys(row)) {
-              const key = k.trim();
-              if (!key) continue;
-              norm[key] = String(row[k] ?? "").trim();
-              allHeaders.add(key);
+
+        if (fileFormat === "multitab") {
+          // Flatten every sheet, using sheet name as Team
+          const allRows: Record<string, string>[] = [];
+          const allHeaders = new Set<string>();
+          for (const sheetName of wb.SheetNames) {
+            const ws = wb.Sheets[sheetName];
+            const rows: Record<string, any>[] = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+            for (const row of rows) {
+              const norm: Record<string, string> = { Team: sheetName };
+              for (const k of Object.keys(row)) {
+                const key = k.trim();
+                if (!key) continue;
+                norm[key] = String(row[k] ?? "").trim();
+                allHeaders.add(key);
+              }
+              allHeaders.add("Team");
+              allRows.push(norm);
             }
-            allHeaders.add("Team");
-            allRows.push(norm);
           }
+          const headerList = ["Team", ...Array.from(allHeaders).filter((h) => h !== "Team")];
+          const escape = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+          text = [headerList.join(","), ...allRows.map((r) => headerList.map((h) => escape(r[h] ?? "")).join(","))].join("\n");
+          toast.success(`Loaded ${wb.SheetNames.length} tab(s) → ${allRows.length} rows. Sheet names used as team names.`);
+        } else {
+          // Single-tab mode: just use the first sheet as-is
+          const firstSheet = wb.Sheets[wb.SheetNames[0]];
+          text = XLSX.utils.sheet_to_csv(firstSheet);
         }
-        const headerList = ["Team", ...Array.from(allHeaders).filter((h) => h !== "Team")];
-        const escape = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-        text = [headerList.join(","), ...allRows.map((r) => headerList.map((h) => escape(r[h] ?? "")).join(","))].join("\n");
-        toast.success(`Loaded ${wb.SheetNames.length} tab(s) → ${allRows.length} rows. Sheet names used as team names.`);
       } catch (err: any) {
         toast.error("Could not read spreadsheet: " + (err?.message || err));
         return;
@@ -656,22 +665,9 @@ function ImportWizard({
     }
     hdrs.push(cur.trim());
     setHeaders(hdrs);
-    applyPreset(isExcel ? "curve_multiteam" : "leagueapps", hdrs);
-  };
-
-  const applyPreset = (id: string, hdrs: string[] = headers) => {
-    setPresetId(id);
-    const preset = IMPORT_PRESETS.find((p) => p.id === id);
-    if (!preset) return setMapping({});
-    const m: Record<string, string> = {};
-    for (const h of hdrs) {
-      // exact, then case-insensitive
-      const exact = preset.mapping[h];
-      if (exact) { m[h] = exact; continue; }
-      const ci = Object.entries(preset.mapping).find(([k]) => k.toLowerCase() === h.toLowerCase());
-      if (ci) m[h] = ci[1];
-    }
-    setMapping(m);
+    const auto = autoMapHeaders(hdrs);
+    setMapping(auto);
+    setAutoMappedCount(Object.keys(auto).length);
   };
 
   const teamsForSeason = teams.filter((t) => t.season_id === seasonId);
@@ -705,7 +701,7 @@ function ImportWizard({
           <DialogTitle>Import contacts — Step {step} of 3</DialogTitle>
           <DialogDescription>
             {step === 1 && "Pick the season, team, and role for this CSV."}
-            {step === 2 && "Upload the file and pick a platform preset."}
+            {step === 2 && "Choose your file format and upload — columns are auto-mapped."}
             {step === 3 && "Review the column mapping before importing."}
           </DialogDescription>
         </DialogHeader>
@@ -746,34 +742,40 @@ function ImportWizard({
                 <strong> Players</strong>, <strong>Parents</strong>, or
                 <strong> Players + Parents</strong> (one row per player with parent columns on the same row).
               </div>
-              <ol className="list-decimal pl-5 space-y-1 text-amber-900/90 dark:text-amber-100/90">
-                <li>
-                  <span className="font-medium">One CSV file</span> with a <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">Team</code> column on every row — the importer will create teams automatically.
-                </li>
-                <li>
-                  <span className="font-medium">One Excel file (.xlsx) with a tab per team</span> — name each tab the team name (e.g. <em>14U Black</em>). We'll flatten every tab and use the tab name as the team.
-                </li>
-              </ol>
               <div className="text-xs text-amber-800 dark:text-amber-200/80">
                 Required columns: <code>First Name</code>, <code>Last Name</code>, and at least one of <code>Email</code> or <code>Phone</code>. All staff (head coach, assistant, manager) import as one <em>Staff</em> group — <strong>Team Manager</strong> is assigned in-app from the team detail page after upload.
               </div>
             </div>
+
             <div>
-              <Label>Platform preset</Label>
+              <Label>File format</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {IMPORT_PRESETS.map((p) => (
-                  <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
-                    className={`text-left p-3 rounded-md border text-sm ${presetId === p.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
-                    <div className="font-medium">{p.label}</div>
-                    <div className="text-xs text-muted-foreground">{p.description}</div>
-                  </button>
-                ))}
+                <button type="button" onClick={() => setFileFormat("single")}
+                  className={`text-left p-3 rounded-md border text-sm ${fileFormat === "single" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
+                  <div className="font-medium">Single file</div>
+                  <div className="text-xs text-muted-foreground">One CSV or single-tab spreadsheet. Add a <code>Team</code> column if rows belong to different teams.</div>
+                </button>
+                <button type="button" onClick={() => setFileFormat("multitab")}
+                  className={`text-left p-3 rounded-md border text-sm ${fileFormat === "multitab" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
+                  <div className="font-medium">Multi-tab spreadsheet</div>
+                  <div className="text-xs text-muted-foreground">One <code>.xlsx</code>, one tab per team. Tab name = team name. Teams are auto-created.</div>
+                </button>
               </div>
             </div>
+
             <div>
-              <Label>CSV or Excel file</Label>
-              <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="block w-full text-sm mt-1" />
-              {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {headers.length} columns detected</p>}
+              <Label>{fileFormat === "multitab" ? "Excel file (.xlsx)" : "CSV or Excel file"}</Label>
+              <input ref={fileRef} type="file"
+                accept={fileFormat === "multitab" ? ".xlsx,.xls" : ".csv,.xlsx,.xls"}
+                onChange={onFile} className="block w-full text-sm mt-1" />
+              {file && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {file.name} · {headers.length} columns detected · auto-mapped {autoMappedCount} of {headers.length}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Columns are auto-detected from any platform export (LeagueApps, SportsEngine, Futures App, TeamSnap, etc.) — you'll review the mapping in the next step.
+              </p>
             </div>
           </div>
         )}
