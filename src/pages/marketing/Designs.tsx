@@ -80,7 +80,7 @@ export default function Designs() {
     const [dRes, tRes, bkRes] = await Promise.all([
       supabase.from("designs").select("id,name,design_type,status,preview_url,created_at,template_id").eq("org_id", orgId).order("created_at", { ascending: false }).limit(200),
       supabase.from("design_templates").select("*").eq("active", true).order("sort_order"),
-      supabase.from("org_brand_kits").select("logo_primary_url,color_primary,font_heading").eq("org_id", orgId).maybeSingle(),
+      supabase.from("org_brand_kits").select("logo_primary_url,logo_secondary_url,logo_mark_url,color_primary,font_heading,tagline").eq("org_id", orgId).maybeSingle(),
     ]);
     setDesigns((dRes.data ?? []) as Design[]);
     setTemplates((tRes.data ?? []) as Template[]);
