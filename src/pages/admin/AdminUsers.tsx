@@ -230,13 +230,18 @@ export default function AdminUsers() {
             <div className="space-y-4 py-2">
               <div>
                 <Label className="text-sm font-medium">Role</Label>
-                <Select value={newRole} onValueChange={(v) => setNewRole(v as "admin" | "org_user")}>
+                <Select value={newRole} onValueChange={(v) => setNewRole(v as "admin" | "org_user")} disabled={!isOwner}>
                   <SelectTrigger className="mt-2 h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Curve Admin</SelectItem>
+                    {isOwner && <SelectItem value="admin">Curve Admin</SelectItem>}
                     <SelectItem value="org_user">Organization User</SelectItem>
                   </SelectContent>
                 </Select>
+                {!isOwner && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Only {OWNER_EMAIL} can create new Curve Admin accounts.
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm font-medium">Email</Label>
