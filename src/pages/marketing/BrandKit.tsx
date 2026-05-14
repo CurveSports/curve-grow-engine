@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Upload, Trash2, Image as ImageIcon, Save } from "lucide-react";
+import { Upload, Trash2, Image as ImageIcon, Save, Sparkles } from "lucide-react";
+import { extractColors } from "@/lib/colorExtract";
 
 type BrandKit = {
   id?: string;
@@ -41,6 +42,22 @@ type BrandAsset = {
 
 const FONT_OPTIONS = ["Inter", "Poppins", "Montserrat", "Oswald", "Playfair Display", "Bebas Neue", "Roboto", "Work Sans", "Lora", "Anton"];
 
+// Inject a Google Fonts <link> for any font referenced by the kit
+function useGoogleFonts(fonts: (string | null | undefined)[]) {
+  useEffect(() => {
+    const unique = Array.from(new Set(fonts.filter(Boolean) as string[]));
+    unique.forEach((f) => {
+      const id = `gf-${f.replace(/\s+/g, "-")}`;
+      if (document.getElementById(id)) return;
+      const link = document.createElement("link");
+      link.id = id;
+      link.rel = "stylesheet";
+      link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(f)}:wght@400;600;700&display=swap`;
+      document.head.appendChild(link);
+    });
+  }, [fonts.join("|")]);
+}
+
 export default function BrandKit() {
   const { profile } = useAuth();
   const { orgId } = useEffectiveOrg();
@@ -51,6 +68,8 @@ export default function BrandKit() {
   const [saving, setSaving] = useState(false);
   const [hashtagInput, setHashtagInput] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  useGoogleFonts([kit.font_heading, kit.font_body, ...FONT_OPTIONS]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -73,6 +92,11 @@ export default function BrandKit() {
       setKit(loaded);
       setAssets((assetsRes.data ?? []) as BrandAsset[]);
       setLoading(false);
+      // Auto-pull colors from primary logo on first load if none are set yet
+      const noColors = !loaded.color_primary && !loaded.color_secondary && !loaded.color_accent;
+      if (loaded.logo_primary_url && noColors) {
+        autofillColorsFromLogo(loaded.logo_primary_url);
+      }
     })();
   }, [orgId]);
 
@@ -94,8 +118,33 @@ export default function BrandKit() {
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) return toast.error("Logo must be under 3 MB");
     const url = await uploadFile(file, "logos");
-    if (url) setKit((k) => ({ ...k, [key]: url }));
+    if (url) {
+      setKit((k) => ({ ...k, [key]: url }));
+      if (key === "logo_primary_url") autofillColorsFromLogo(url);
+    }
     e.target.value = "";
+  };
+
+  const autofillColorsFromLogo = async (logoUrl: string, force = false) => {
+    try {
+      const colors = await extractColors(logoUrl, 5);
+      if (!colors.length) return;
+      setKit((k) => {
+        const next = { ...k };
+        const slots: (keyof BrandKit)[] = ["color_primary", "color_secondary", "color_accent", "color_dark", "color_light"];
+        let filled = 0;
+        slots.forEach((slot, i) => {
+          if ((force || !k[slot]) && colors[i]) {
+            (next as any)[slot] = colors[i].hex;
+            filled++;
+          }
+        });
+        if (filled) toast.success(`Pulled ${filled} color${filled > 1 ? "s" : ""} from your logo`);
+        return next;
+      });
+    } catch (err) {
+      console.warn("color extraction failed", err);
+    }
   };
 
   const onPhotosUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +248,19 @@ export default function BrandKit() {
 
         {/* Colors */}
         <Card className="p-6 lg:col-span-2">
-          <h2 className="font-display text-lg font-semibold mb-4">Colors</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-semibold">Colors</h2>
+            {kit.logo_primary_url && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => autofillColorsFromLogo(kit.logo_primary_url!, true)}
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Re-pull from logo
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {([
               ["color_primary", "Primary"],
@@ -232,7 +293,7 @@ export default function BrandKit() {
         {/* Fonts */}
         <Card className="p-6">
           <h2 className="font-display text-lg font-semibold mb-4">Typography</h2>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <Label>Heading font</Label>
               <select
@@ -242,6 +303,12 @@ export default function BrandKit() {
               >
                 {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
+              <div
+                className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-3 text-2xl leading-tight"
+                style={{ fontFamily: `'${kit.font_heading || "Inter"}', sans-serif`, fontWeight: 700 }}
+              >
+                The quick brown fox
+              </div>
             </div>
             <div>
               <Label>Body font</Label>
@@ -252,6 +319,12 @@ export default function BrandKit() {
               >
                 {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
+              <div
+                className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-3 text-sm leading-relaxed"
+                style={{ fontFamily: `'${kit.font_body || "Inter"}', sans-serif` }}
+              >
+                Pack my box with five dozen liquor jugs — the quick brown fox jumps over the lazy dog.
+              </div>
             </div>
           </div>
         </Card>
