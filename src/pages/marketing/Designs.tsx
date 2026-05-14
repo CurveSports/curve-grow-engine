@@ -300,13 +300,37 @@ export default function Designs() {
               <p className="text-sm text-muted-foreground">Fill in these details — AI will compose the design from your brand kit.</p>
               {(picked.input_fields ?? []).map((f: any) => (
                 <div key={f.name}>
-                  <Label>{f.label}{f.required && <span className="text-destructive ml-1">*</span>}</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label>{f.label}{f.required && <span className="text-destructive ml-1">*</span>}</Label>
+                    {f.type === "textarea" && orgId && (
+                      <SnippetPicker
+                        orgId={orgId}
+                        onPick={(text) => setInputs((s) => ({ ...s, [f.name]: text }))}
+                      />
+                    )}
+                  </div>
                   {f.type === "textarea" ? (
                     <Textarea rows={3} placeholder={f.placeholder} value={inputs[f.name] ?? ""} onChange={(e) => setInputs((s) => ({ ...s, [f.name]: e.target.value }))} />
                   ) : f.type === "photo_selector" ? (
                     <MediaPicker
                       orgId={orgId!}
                       mode="image"
+                      value={inputs[f.name] ?? ""}
+                      onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
+                      compact
+                    />
+                  ) : f.type === "video_selector" ? (
+                    <MediaPicker
+                      orgId={orgId!}
+                      mode="video"
+                      value={inputs[f.name] ?? ""}
+                      onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
+                      compact
+                    />
+                  ) : f.type === "media_selector" ? (
+                    <MediaPicker
+                      orgId={orgId!}
+                      mode="any"
                       value={inputs[f.name] ?? ""}
                       onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
                       compact
@@ -358,13 +382,18 @@ export default function Designs() {
                 </div>
                 <div>
                   <Label>Sponsor / partner logo <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
-                  <p className="text-xs text-muted-foreground mb-2">Adds a "presented by" lockup to the design.</p>
+                  <p className="text-xs text-muted-foreground mb-2">Adds a "presented by" lockup to the design. Pick a brand-kit logo or upload a partner mark.</p>
                   <MediaPicker
                     orgId={orgId!}
                     mode="image"
                     value={inputs.sponsor_logo_url ?? ""}
                     onChange={(url) => setInputs((s) => ({ ...s, sponsor_logo_url: url ?? "" }))}
                     compact
+                    logoVariants={[
+                      brandKit?.logo_primary_url && { label: "Primary", url: brandKit.logo_primary_url },
+                      brandKit?.logo_secondary_url && { label: "Secondary", url: brandKit.logo_secondary_url },
+                      brandKit?.logo_mark_url && { label: "Monogram", url: brandKit.logo_mark_url },
+                    ].filter(Boolean) as { label: string; url: string }[]}
                   />
                 </div>
               </div>
