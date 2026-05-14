@@ -177,6 +177,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/sms/new" element={<ProtectedRoute role="admin" module="marketing"><SmsComposer /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/nps" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveys /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/insights" element={<ProtectedRoute role="admin" module="marketing"><Insights /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/schools" element={<ProtectedRoute role="admin" module="marketing"><AdminSchools /></ProtectedRoute>} />
