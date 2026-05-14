@@ -183,6 +183,20 @@ export default function NpsSurveyDetail() {
                 <p className="text-xs text-muted-foreground mt-1">Use <code>{"{org_name}"}</code> to insert the org name.</p>
               </div>
               <div>
+                <Label>Audience</Label>
+                <select
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  value={editForm.audience_segment_id || ""}
+                  onChange={(e) => setEditForm({ ...editForm, audience_segment_id: e.target.value })}
+                >
+                  <option value="">— Choose a segment —</option>
+                  {segments.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.contact_count ?? 0})</option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">Manage segments under <strong>Contacts → Segments</strong>.</p>
+              </div>
+              <div>
                 <Label>Follow-up for Promoters (9–10)</Label>
                 <Textarea rows={2} value={editForm.followup_question_promoter || ""} onChange={(e) => setEditForm({ ...editForm, followup_question_promoter: e.target.value })} />
               </div>
