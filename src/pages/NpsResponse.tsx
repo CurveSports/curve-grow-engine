@@ -44,6 +44,7 @@ export default function NpsResponse() {
       survey_id: survey.id,
       score: s,
       responded_via: "email_link",
+      contact_id: (window as any).__npsContactId ?? null,
     }).select().single();
     if (error) { toast.error("Could not record response"); return; }
     setResponseId(data.id);
