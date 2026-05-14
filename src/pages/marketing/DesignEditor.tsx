@@ -194,6 +194,19 @@ export default function DesignEditor() {
     toast.success("Name updated");
   };
 
+  const handleDelete = async () => {
+    if (!id) return;
+    setDeleting(true);
+    const { error } = await supabase.from("designs").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setDeleting(false);
+    } else {
+      toast.success("Design deleted");
+      navigate(ml("/marketing/designs"));
+    }
+  };
+
   if (loading) return <AppShell title="Design"><div className="p-8 text-muted-foreground">Loading…</div></AppShell>;
   if (!design) return <AppShell title="Design"><div className="p-8">Design not found.</div></AppShell>;
 
