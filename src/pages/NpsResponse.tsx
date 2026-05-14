@@ -21,10 +21,13 @@ export default function NpsResponse() {
   useEffect(() => {
     (async () => {
       let surveyId: string | undefined = surveyIdParam;
+      let contactId: string | null = null;
       if (!isPreview) {
         const { data: link } = await (supabase as any).from("magic_links").select("*").eq("token", token).maybeSingle();
         if (!link) return;
-        surveyId = link.action_data?.survey_id;
+        surveyId = link.payload?.survey_id;
+        contactId = link.payload?.contact_id ?? link.contact_id ?? null;
+        (window as any).__npsContactId = contactId;
       }
       if (!surveyId) return;
       const { data: s } = await (supabase as any).from("org_nps_surveys").select("*, organizations(name)").eq("id", surveyId).single();
