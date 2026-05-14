@@ -345,6 +345,16 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       {/* Main content */}
       <main className="md:ml-[240px] md:pt-[60px] pb-20 md:pb-0 min-h-screen">
         <ImpersonationBanner />
+        {/\/marketing(\/|$)/.test(location.pathname) && (
+          <div className="bg-amber-500/15 border-y border-amber-500/40 text-amber-900 dark:text-amber-200">
+            <div className="max-w-[1280px] mx-auto px-4 md:px-8 py-2.5 text-xs md:text-sm font-medium flex items-center gap-2">
+              <span aria-hidden>🚧</span>
+              <span>
+                <strong>Under Construction</strong> — Marketing features are still being tested. Output may be rough or incomplete. Please don't rely on these for live campaigns yet.
+              </span>
+            </div>
+          </div>
+        )}
         <PageTransition
           key={location.pathname}
           className="max-w-[1280px] mx-auto px-4 md:px-8 py-6 md:py-8"
