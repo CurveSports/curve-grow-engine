@@ -65,12 +65,15 @@ export default function NpsResponse() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-6">
       <div className="max-w-xl w-full bg-card rounded-2xl shadow-xl p-8">
+        {isPreview && (
+          <div className="mb-4 px-3 py-2 rounded-md bg-amber-100 text-amber-900 text-xs font-medium text-center">
+            Preview mode — responses are not recorded.
+          </div>
+        )}
         {step === "score" && (
           <>
             <h1 className="text-2xl font-bold mb-2">A quick favor</h1>
-            <p className="text-muted-foreground mb-6">
-              How likely are you to recommend {orgName} to a friend or family member?
-            </p>
+            <p className="text-muted-foreground mb-6">{promptText}</p>
             <div className="grid grid-cols-11 gap-1.5">
               {[0,1,2,3,4,5,6,7,8,9,10].map((n) => (
                 <button
