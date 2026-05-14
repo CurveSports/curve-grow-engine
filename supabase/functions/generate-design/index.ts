@@ -7,6 +7,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { callStabilityAI, ASPECT_RATIOS, type StabilityModel } from "../_shared/stability.ts";
 import { buildStabilityPrompt } from "../_shared/buildStabilityPrompt.ts";
+import { buildSpecContext, interpolateSpec } from "../_shared/interpolateSpec.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
