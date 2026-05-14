@@ -35,12 +35,15 @@ export default function AdminEmailTemplates() {
   };
   useEffect(() => { load(); }, []);
 
-  const preview = useMemo(() => {
-    if (!editing) return { html: "", errors: [] as any[] };
-    return renderEmail({
+  const [preview, setPreview] = useState<{ html: string; errors: any[] }>({ html: "", errors: [] });
+  useEffect(() => {
+    if (!editing) { setPreview({ html: "", errors: [] }); return; }
+    let cancelled = false;
+    renderEmail({
       mjmlSource: editing.mjml_source ?? "",
       props: (editing.preview_props as any) ?? {},
-    });
+    }).then((r) => { if (!cancelled) setPreview(r); });
+    return () => { cancelled = true; };
   }, [editing]);
 
   const save = async () => {
