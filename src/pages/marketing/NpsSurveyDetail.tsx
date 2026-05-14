@@ -20,15 +20,19 @@ export default function NpsSurveyDetail() {
   const ml = useMarketingLink();
   const [survey, setSurvey] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
+  const [segments, setSegments] = useState<any[]>([]);
   const [followupNotes, setFollowupNotes] = useState<Record<string, string>>({});
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [testEmail, setTestEmail] = useState("");
 
   const openEdit = () => {
     setEditForm({
       name: survey.name || "",
       question: survey.question || "",
+      audience_segment_id: survey.audience_segment_id || "",
       followup_question_promoter: survey.followup_question_promoter || "",
       followup_question_passive: survey.followup_question_passive || "",
       followup_question_detractor: survey.followup_question_detractor || "",
@@ -38,7 +42,9 @@ export default function NpsSurveyDetail() {
 
   const saveEdit = async () => {
     setSaving(true);
-    const { error } = await (supabase as any).from("org_nps_surveys").update(editForm).eq("id", id);
+    const payload = { ...editForm };
+    if (!payload.audience_segment_id) payload.audience_segment_id = null;
+    const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success("Survey updated");
@@ -52,14 +58,35 @@ export default function NpsSurveyDetail() {
     const { data: r } = await (supabase as any).from("org_nps_responses").select("*").eq("survey_id", id).order("responded_at", { ascending: false });
     setSurvey(s);
     setResponses(r || []);
+    if (s?.org_id) {
+      const { data: segs } = await (supabase as any).from("org_contact_segments").select("id,name,contact_count").eq("org_id", s.org_id).order("name");
+      setSegments(segs || []);
+    }
   };
 
   useEffect(() => { load(); }, [id]);
 
   const sendSurvey = async () => {
-    await (supabase as any).from("org_nps_surveys").update({ status: "sent", sent_at: new Date().toISOString() }).eq("id", id);
-    toast.success("Survey marked as sent (email/SMS delivery wires when integrations are ready)");
+    if (!survey?.audience_segment_id) {
+      toast.error("Pick an audience first — open Edit and choose a segment.");
+      return;
+    }
+    if (!confirm("Send this survey to everyone in the audience now?")) return;
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id } });
+    setSending(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Sent to ${data?.sent ?? 0} of ${data?.total ?? 0} recipients` + (data?.failed ? ` (${data.failed} failed)` : ""));
     load();
+  };
+
+  const sendTest = async () => {
+    if (!testEmail) return toast.error("Enter your email");
+    setSending(true);
+    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id, test_email: testEmail } });
+    setSending(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(data?.sent ? "Test sent — check your inbox" : "Test failed");
   };
 
   const resolveFollowup = async (responseId: string) => {
@@ -100,18 +127,44 @@ export default function NpsSurveyDetail() {
             <Button variant="outline" onClick={openEdit}>
               <Pencil className="h-4 w-4 mr-2" />Edit
             </Button>
-            {survey.status === "draft" && <Button onClick={sendSurvey}>Send Survey</Button>}
+            {survey.status === "draft" && (
+              <Button onClick={sendSurvey} disabled={sending}>{sending ? "Sending…" : "Send Survey"}</Button>
+            )}
           </div>
         </div>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="text-xs uppercase text-muted-foreground mb-1">Recipients will see</div>
-            <div className="font-medium">{survey.question}</div>
-            <div className="grid md:grid-cols-3 gap-3 mt-3 text-sm">
-              <div><span className="text-green-600 font-medium">Promoter follow-up:</span> {survey.followup_question_promoter}</div>
-              <div><span className="text-amber-600 font-medium">Passive follow-up:</span> {survey.followup_question_passive}</div>
-              <div><span className="text-red-600 font-medium">Detractor follow-up:</span> {survey.followup_question_detractor}</div>
+          <CardContent className="p-4 space-y-4">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground mb-1">Recipients will see</div>
+              <div className="font-medium">{survey.question}</div>
+              <div className="grid md:grid-cols-3 gap-3 mt-3 text-sm">
+                <div><span className="text-green-600 font-medium">Promoter follow-up:</span> {survey.followup_question_promoter}</div>
+                <div><span className="text-amber-600 font-medium">Passive follow-up:</span> {survey.followup_question_passive}</div>
+                <div><span className="text-red-600 font-medium">Detractor follow-up:</span> {survey.followup_question_detractor}</div>
+              </div>
+            </div>
+            <div className="border-t pt-3 grid md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-xs uppercase text-muted-foreground mb-1">Audience</div>
+                <div className="font-medium">
+                  {segments.find(s => s.id === survey.audience_segment_id)?.name || (
+                    <span className="text-destructive">No audience selected — click Edit to choose one.</span>
+                  )}
+                </div>
+                {survey.audience_segment_id && (
+                  <div className="text-xs text-muted-foreground">
+                    ~{segments.find(s => s.id === survey.audience_segment_id)?.contact_count ?? 0} recipients
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="text-xs uppercase text-muted-foreground mb-1">Send a test to yourself</div>
+                <div className="flex gap-2">
+                  <Input placeholder="you@example.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
+                  <Button variant="outline" size="sm" onClick={sendTest} disabled={sending || !testEmail}>Test send</Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -128,6 +181,20 @@ export default function NpsSurveyDetail() {
                 <Label>Main question</Label>
                 <Textarea rows={2} value={editForm.question || ""} onChange={(e) => setEditForm({ ...editForm, question: e.target.value })} />
                 <p className="text-xs text-muted-foreground mt-1">Use <code>{"{org_name}"}</code> to insert the org name.</p>
+              </div>
+              <div>
+                <Label>Audience</Label>
+                <select
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                  value={editForm.audience_segment_id || ""}
+                  onChange={(e) => setEditForm({ ...editForm, audience_segment_id: e.target.value })}
+                >
+                  <option value="">— Choose a segment —</option>
+                  {segments.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.contact_count ?? 0})</option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">Manage segments under <strong>Contacts → Segments</strong>.</p>
               </div>
               <div>
                 <Label>Follow-up for Promoters (9–10)</Label>
