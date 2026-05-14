@@ -1,0 +1,1 @@
+alter table public.designs add column if not exists assets_used jsonb not null default '[]'::jsonb;
