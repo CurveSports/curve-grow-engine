@@ -134,13 +134,37 @@ export default function NpsSurveyDetail() {
         </div>
 
         <Card>
-          <CardContent className="p-4">
-            <div className="text-xs uppercase text-muted-foreground mb-1">Recipients will see</div>
-            <div className="font-medium">{survey.question}</div>
-            <div className="grid md:grid-cols-3 gap-3 mt-3 text-sm">
-              <div><span className="text-green-600 font-medium">Promoter follow-up:</span> {survey.followup_question_promoter}</div>
-              <div><span className="text-amber-600 font-medium">Passive follow-up:</span> {survey.followup_question_passive}</div>
-              <div><span className="text-red-600 font-medium">Detractor follow-up:</span> {survey.followup_question_detractor}</div>
+          <CardContent className="p-4 space-y-4">
+            <div>
+              <div className="text-xs uppercase text-muted-foreground mb-1">Recipients will see</div>
+              <div className="font-medium">{survey.question}</div>
+              <div className="grid md:grid-cols-3 gap-3 mt-3 text-sm">
+                <div><span className="text-green-600 font-medium">Promoter follow-up:</span> {survey.followup_question_promoter}</div>
+                <div><span className="text-amber-600 font-medium">Passive follow-up:</span> {survey.followup_question_passive}</div>
+                <div><span className="text-red-600 font-medium">Detractor follow-up:</span> {survey.followup_question_detractor}</div>
+              </div>
+            </div>
+            <div className="border-t pt-3 grid md:grid-cols-2 gap-3 text-sm">
+              <div>
+                <div className="text-xs uppercase text-muted-foreground mb-1">Audience</div>
+                <div className="font-medium">
+                  {segments.find(s => s.id === survey.audience_segment_id)?.name || (
+                    <span className="text-destructive">No audience selected — click Edit to choose one.</span>
+                  )}
+                </div>
+                {survey.audience_segment_id && (
+                  <div className="text-xs text-muted-foreground">
+                    ~{segments.find(s => s.id === survey.audience_segment_id)?.contact_count ?? 0} recipients
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="text-xs uppercase text-muted-foreground mb-1">Send a test to yourself</div>
+                <div className="flex gap-2">
+                  <Input placeholder="you@example.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
+                  <Button variant="outline" size="sm" onClick={sendTest} disabled={sending || !testEmail}>Test send</Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
