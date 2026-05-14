@@ -42,10 +42,15 @@ export default function EmailComposer() {
   const ml = useMarketingLink();
   const [params] = useSearchParams();
   const presetTemplateId = params.get("template");
+  const presetSegmentId = params.get("segment");
+  const presetTeamIds = (params.get("teams") || "").split(",").filter(Boolean);
+  const presetTeamRole = params.get("role") || "";
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [brand, setBrand] = useState<BrandContext>(DEFAULT_BRAND);
 
   const [templateId, setTemplateId] = useState<string>("");
@@ -54,7 +59,10 @@ export default function EmailComposer() {
   const [previewText, setPreviewText] = useState("");
   const [fromEmail, setFromEmail] = useState("");
   const [fromName, setFromName] = useState("");
-  const [segmentId, setSegmentId] = useState("");
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>(presetTeamIds.length > 0 ? "teams" : "segment");
+  const [segmentId, setSegmentId] = useState(presetSegmentId || "");
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>(presetTeamIds);
+  const [teamRole, setTeamRole] = useState<string>(presetTeamRole); // "" = all
   const [previewMode, setPreviewMode] = useState<Preview>("desktop");
   const [saving, setSaving] = useState(false);
 
