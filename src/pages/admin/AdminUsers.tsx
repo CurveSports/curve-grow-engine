@@ -34,8 +34,11 @@ type Row = {
 
 type Org = { id: string; name: string };
 
+const OWNER_EMAIL = "matt.gerber@curvesports.com";
+
 export default function AdminUsers() {
   const { user, refresh } = useAuth();
+  const isOwner = (user?.email ?? "").toLowerCase() === OWNER_EMAIL;
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
