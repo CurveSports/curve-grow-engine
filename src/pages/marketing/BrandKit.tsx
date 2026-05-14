@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Upload, Trash2, Image as ImageIcon, Save } from "lucide-react";
+import { Upload, Trash2, Image as ImageIcon, Save, Sparkles } from "lucide-react";
+import { extractColors } from "@/lib/colorExtract";
 
 type BrandKit = {
   id?: string;
