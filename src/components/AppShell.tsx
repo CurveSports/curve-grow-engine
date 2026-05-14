@@ -11,7 +11,7 @@ import { resolveMobileRoute } from "@/components/mobile/mobileRoutes";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
-  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox, ClipboardList,
+  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox, ClipboardList, Search,
   Menu,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
