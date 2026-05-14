@@ -2582,6 +2582,8 @@ export type Database = {
           export_urls: Json | null
           generated_html: string | null
           generation_cost_cents: number | null
+          generation_error: string | null
+          generation_started_at: string | null
           id: string
           name: string | null
           org_id: string
@@ -2603,6 +2605,8 @@ export type Database = {
           export_urls?: Json | null
           generated_html?: string | null
           generation_cost_cents?: number | null
+          generation_error?: string | null
+          generation_started_at?: string | null
           id?: string
           name?: string | null
           org_id: string
@@ -2624,6 +2628,8 @@ export type Database = {
           export_urls?: Json | null
           generated_html?: string | null
           generation_cost_cents?: number | null
+          generation_error?: string | null
+          generation_started_at?: string | null
           id?: string
           name?: string | null
           org_id?: string
