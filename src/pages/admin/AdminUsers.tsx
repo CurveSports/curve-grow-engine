@@ -136,7 +136,7 @@ export default function AdminUsers() {
   const resetCreateForm = () => {
     setNewEmail("");
     setNewFullName("");
-    setNewRole("admin");
+    setNewRole(isOwner ? "admin" : "org_user");
     setNewOrgId("");
     setNewAllegiance(true);
     setNewAcquisitions(true);
