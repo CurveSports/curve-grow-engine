@@ -21,6 +21,30 @@ export default function NpsSurveyDetail() {
   const [survey, setSurvey] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [followupNotes, setFollowupNotes] = useState<Record<string, string>>({});
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState<any>({});
+  const [saving, setSaving] = useState(false);
+
+  const openEdit = () => {
+    setEditForm({
+      name: survey.name || "",
+      question: survey.question || "",
+      followup_question_promoter: survey.followup_question_promoter || "",
+      followup_question_passive: survey.followup_question_passive || "",
+      followup_question_detractor: survey.followup_question_detractor || "",
+    });
+    setEditOpen(true);
+  };
+
+  const saveEdit = async () => {
+    setSaving(true);
+    const { error } = await (supabase as any).from("org_nps_surveys").update(editForm).eq("id", id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Survey updated");
+    setEditOpen(false);
+    load();
+  };
 
   const load = async () => {
     if (!id) return;
