@@ -1,67 +1,72 @@
-## Goal
+# Round 15 — Hybrid Image Generation Engine
 
-Remove the Curve Admin approval gatekeeping across the marketing module, then ship the Tier 1 Content Library / design quality improvements (minus the "approved for client use" gate, which is now obsolete).
+This is a big architectural shift. Before I write code, I want to flag a few decisions that materially affect scope, cost, and reliability — because getting them wrong wastes a lot of work.
 
-## Part 1 — Kill the approval workflow
+## Open questions I need answered first
 
-Anyone (org user or Curve Admin) can create, edit, and use designs / emails / campaigns directly. Curve Admin can do everything on behalf of an org.
+1. **Sharp in Supabase Edge Functions.** Sharp is a native Node binary. It does **not** run in Deno edge runtime out of the box. The `npm:sharp` import in your spec will fail at deploy. Realistic options:
+   - **A. Use `@jsquash/png` + `resvg-wasm` + `canvaskit-wasm`** — pure WASM, works in Deno, but text rendering is fiddlier than sharp.
+   - **B. Use Photon (`@silvia-odwyer/photon`)** — Rust→WASM image lib, fast, no SVG/text rendering (would need a separate SVG rasterizer).
+   - **C. Run compositing on a tiny Fly.io / Railway service** with real sharp. Adds ~$5/mo but is rock solid and matches your spec exactly.
+   - **D. Composite on Stability's side** — they don't really do this; not viable.
+   
+   My recommendation: **C (Fly.io worker)**. It's the only path that delivers the spec as written without weeks of WASM workarounds. Edge function calls the worker over HTTPS, worker returns the composited PNG.
+   
+   **Which option do you want?**
 
-### Frontend
+2. **Replace vs. coexist.** The spec says "replaces the existing HTML/CSS system" but also says "existing designs preserved as-is, fall back to HTML/CSS if no key." Confirm: new generations always use Stability when key is present, old designs untouched, no migration of existing designs. ✅ Assumed yes.
 
-- **`src/pages/marketing/DesignEditor.tsx`** — remove the "Approval" sidebar card (Submit / Approve / Reject buttons + status pill swap). Designs go straight from `generating` → `ready`. Keep a simple "Use this design" / "Send" CTA. Strip `pending_approval` / `rejected` UI branches.
-- **`src/pages/marketing/Designs.tsx`** — remove `pending_approval` and `approved` filter options; status pill stays minimal (`ready` / `generating` / `failed`). Treat any non-failed/generating design as usable.
-- **`src/pages/marketing/Emails.tsx`** — drop the `.eq("status", "approved")` filter. Show all non-draft designs. Reword "Design (approved only)" → "Design".
-- **`src/pages/marketing/CampaignDetail.tsx`** — remove the "Approval workflow" sidebar block, `submitForApproval`, the `in_review` status, and the `approval_queue` insert. Reduce statuses to `planning / live / completed / archived`.
-- **`src/pages/marketing/Campaigns.tsx`** — remove `approved` and `in_review` from filter dropdown / badges.
-- **`src/pages/marketing/MarketingHub.tsx`** — remove `pendingApprovals` stat, the "X approvals waiting" CTA, the `approval_queue` query, and the "Approvals" tile from the grid.
-- **`src/pages/marketing/ApprovalsQueue.tsx`** — delete file.
-- **`src/App.tsx`** — remove `/marketing/approvals` and `/admin/marketing/approvals` routes + import.
-- **`src/components/AppShell.tsx`** — remove "Approvals" nav entry (both org and admin sides).
-- **`src/components/mobile/mobileRoutes.ts`** — remove approvals route entry.
+3. **25 templates.** Authoring 25 production-quality `composition_config` JSON blobs is the bulk of the visible quality. I will ship 1 polished example (Tryout Square) end-to-end, plus stub configs for the other 24 that work but need tuning. You then approve the example and I batch-author the rest in a follow-up. **OK?**
 
-### Backend / data
+4. **Stability key.** I'll request `STABILITY_API_KEY` via the secrets tool when we're ready to wire. Until then, system stays on the existing HTML/CSS path (already working).
 
-- No destructive migration. Leave existing `approval_queue`, `approval_comments`, `designs.status` columns in place so historical rows aren't lost — code just stops reading/writing them.
-- `generate-design` edge function: change the final design row write to `status: 'ready'` (was likely `pending_approval`). Verify and patch.
+5. **Refine-via-Claude parser.** Adds another LLM hop on every refinement. Cheap but slower. Confirm you want this vs. just exposing structured controls (sliders / dropdowns) for layout tweaks. I'd lean structured controls + keep one freeform "describe a change" box that uses Claude. ✅ Assumed.
 
-## Part 2 — Tier 1 Content Library quality lift (no approval gate)
+## Plan (assuming Option C for sharp + answers above)
 
-### Brand-kit readiness banner
+### Phase 1 — Schema + integration registry (this round)
+- Migration: extend `designs` (`generation_engine`, `stability_prompt`, `stability_image_url`, `stability_seed`, `composition_spec`, `generation_time_ms`) and `design_templates` (`stability_prompt_template`, `composition_config`, `generation_engine`, `stability_model`, `mood`).
+- Insert `stability_ai` row into `system_integrations`.
+- Wiring-status page already reads from that table — no UI work needed.
 
-- **`src/pages/marketing/Designs.tsx`** (generator panel): query `org_brand_kits` for the active org. If `logo_primary_url`, `color_primary`, or `font_heading` is missing, render a yellow `Alert` above the generate button: *"Your brand kit is incomplete — add a logo / colors / fonts so generated designs match your brand."* with a link to `/marketing/brand-kit`.
+### Phase 2 — Provider + prompt builder (edge function only, no compositing yet)
+- New file `supabase/functions/_shared/stability.ts`: `callStabilityAI({ prompt, negativePrompt, aspectRatio, model, seed })`.
+- New file `supabase/functions/_shared/buildStabilityPrompt.ts`: assembles prompt from template + brand kit + inputs.
+- Update `generate-design` to branch: if `STABILITY_API_KEY` present AND template has `generation_engine='stability_sharp'`, call Stability, store raw background as `stability_image_url`, **skip compositing for now**, set `preview_url = stability_image_url`. This proves the pipeline end-to-end before we add the worker.
 
-### MediaPicker upgrades
+### Phase 3 — Composition worker (Fly.io)
+- New `services/composite-worker/` directory in repo (Node + Express + sharp).
+- One endpoint: `POST /composite` → takes `{ background_url, composition_spec, brand_kit, user_inputs }` → returns PNG bytes.
+- Implements the full sharp logic from §15.6 (overlays, logo, text-via-SVG, CTA, accent bar).
+- Dockerfile + `fly.toml`. You deploy with `fly deploy` (I'll prep everything, you run one command). Add `COMPOSITE_WORKER_URL` and `COMPOSITE_WORKER_TOKEN` secrets.
 
-- **`src/components/marketing/MediaPicker.tsx`**:
-  - Add a search `Input` (top of the picker) — filters on `title`, `caption`, `body_text`, `ai_tags` (case-insensitive `ilike` + array overlap).
-  - Add a tag chip row: top 12 tags from the current org's library; clicking toggles a filter.
-  - Add a collections `Select` (loads `org_brand_collections` if present; null = "All collections").
-  - Add a large preview pane above/right of the grid showing the currently-selected asset (image/video) plus its title, tags, "used N times".
-  - Accept `mode="video"` and `mode="any"` props in addition to `image`. Filter library results to matching `asset_type`.
-  - Surface caption snippets when `mode === "snippet"` for textarea pickers.
+### Phase 4 — Wire compositing into `generate-design`
+- After Stability returns background, POST to worker, store final PNG to `design-renders` bucket, set `preview_url`.
+- Add `composite-image` and `regenerate-background` edge functions per spec.
+- Update `render-design` to add `StabilitySharpProvider` for export scaling (this part works in pure Deno via re-fetch + simple resize call to worker).
 
-### Designs slot expansion
+### Phase 5 — One polished template
+- Update Tryout Announcement (social square) `design_templates` row with full `stability_prompt_template` + `composition_config`.
+- QA: generate 3 designs, verify they look like the spec target.
 
-- **`src/pages/marketing/Designs.tsx`** (and `DesignEditor.tsx` slot picker if shared): keep Hero / Secondary / Sponsor logo, but make the secondary slot accept video for clip-style templates by passing `mode="any"`.
+### Phase 6 — Editor UI updates
+- `DesignEditor.tsx`: replace iframe with `<img>` + two-phase progress.
+- Add "Try different background" button → calls `regenerate-background`.
+- Add "Premium quality" toggle.
+- Replace freeform refinement textarea with structured controls (overlay opacity slider, text-size dropdown per layer, layout preset dropdown) + keep one freeform box that uses Claude to parse intent into a `composition_spec` patch.
 
-### Track usage on every generation
+### Phase 7 — Remaining 24 templates (separate round)
+Batch-authored after you approve the Tryout example.
 
-- **`supabase/functions/generate-design/index.ts`**: after pulling slot URLs, look up matching `org_brand_assets` rows by URL, then `update used_count = used_count + 1, last_used_at = now()`. Also: when writing the design row, store the slot→asset_id mapping in a new `design_assets_used jsonb` column on `designs` (additive migration).
+## What I'll build right now if you approve
 
-### Migration
+Just **Phase 1** (DB migration + integration registry row) — this is reversible, unblocks everything else, and surfaces the Stability AI row on the wiring-status page so you can add the API key whenever you're ready. Then we'll talk through Q1–Q5 above and proceed.
 
-- Single additive migration:
-  - `alter table public.designs add column if not exists assets_used jsonb default '[]'::jsonb;`
-  - No drops.
+## Tech notes / risks
+- Sharp in Deno edge: **will not work** as written in spec. Worker is the safe path.
+- Stability Core latency: 3–6s typical, 10s p95. UI must show progress.
+- Negative prompt is essential — without it backgrounds get fake watermark text.
+- Existing `render-design` puppeteer stub stays; it just becomes the fallback path.
+- Cost: ~$0.03/image Core, ~$5/mo worker, negligible at projected volume.
 
-## Out of scope (per user)
-
-- "Approved for client use" toggle on assets (obsolete — no approvals).
-- Tier 2 / Tier 3 items from prior audit.
-
-## Verification
-
-- Build passes.
-- Manual: generate a design as an org user without going through any approval queue; confirm it lands as `ready` and is immediately selectable in Emails.
-- Manual: open MediaPicker, type a search term, click a tag chip, see results narrow.
-- Manual: confirm `used_count` bumps on the picked asset after generation.
+**Reply with answers to Q1, Q3, Q5 (and confirm Q2/Q4) and I'll start with Phase 1.**
