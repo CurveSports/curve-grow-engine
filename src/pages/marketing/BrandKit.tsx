@@ -185,7 +185,26 @@ export default function BrandKit() {
     setKit((k) => ({ ...k, hashtags: (k.hashtags ?? []).filter((t) => t !== tag) }));
   };
 
-  const save = async () => {
+  const generateBrandVoice = async () => {
+    if (!orgId) return;
+    if (kit.brand_voice_notes && !confirm("Replace your current brand voice notes with an AI-generated draft?")) return;
+    setGeneratingVoice(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-brand-voice", { body: { orgId } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const voice = data?.voice?.trim();
+      if (!voice) throw new Error("No voice returned");
+      setKit((k) => ({ ...k, brand_voice_notes: voice }));
+      toast.success(`Draft brand voice generated${data.usedWebsite ? " from your website" : ""}. Edit and Save when ready.`);
+    } catch (e: any) {
+      toast.error(e.message || "Could not generate brand voice");
+    } finally {
+      setGeneratingVoice(false);
+    }
+  };
+
+
     if (!orgId) return;
     setSaving(true);
     const payload = { ...kit, org_id: orgId };
