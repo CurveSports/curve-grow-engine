@@ -382,7 +382,7 @@ export default function BrandKit() {
                 placeholder="Energetic, family-focused, never corporate. Avoid jargon. Always celebrate the kids first…"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                AI uses your website, social handles, and intake answers to draft a starting point. Edit freely.
+                We use your website, social handles, and intake answers to draft a starting point. Edit freely.
               </p>
             </div>
           </div>
