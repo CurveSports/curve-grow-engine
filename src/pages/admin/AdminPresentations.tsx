@@ -174,7 +174,7 @@ export default function AdminPresentations() {
           </p>
 
           <div className="grid gap-4 md:grid-cols-[1fr_200px_auto_auto]">
-            <Select onValueChange={(v) => setOrgId(v)}>
+            <Select value={orgId ?? undefined} onValueChange={(v) => setOrgId(v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Choose an organization…" />
               </SelectTrigger>
