@@ -8,8 +8,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft, Sparkles, Loader2, Wand2, Copy, Download, CheckCircle2, XCircle, Send, Mail } from "lucide-react";
+import { ArrowLeft, Sparkles, Loader2, Wand2, Copy, Download, CheckCircle2, XCircle, Send, Mail, Trash2 } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Design = {
   id: string;
@@ -46,6 +57,7 @@ export default function DesignEditor() {
   const [varying, setVarying] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -180,6 +192,19 @@ export default function DesignEditor() {
     if (!id) return;
     await supabase.from("designs").update({ name }).eq("id", id);
     toast.success("Name updated");
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    setDeleting(true);
+    const { error } = await supabase.from("designs").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      setDeleting(false);
+    } else {
+      toast.success("Design deleted");
+      navigate(ml("/marketing/designs"));
+    }
   };
 
   if (loading) return <AppShell title="Design"><div className="p-8 text-muted-foreground">Loading…</div></AppShell>;
@@ -334,6 +359,32 @@ export default function DesignEditor() {
               </ul>
             </Card>
           )}
+
+          {/* Delete */}
+          <Card className="p-4 border-destructive/20">
+            <h3 className="font-display font-semibold mb-3 text-destructive">Danger zone</h3>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />Delete design
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this design?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently remove “{design.name || "Untitled"}” and its refinement history. Variations will become standalone designs. This cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    {deleting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Deleting…</> : "Delete"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
         </div>
       </div>
     </AppShell>

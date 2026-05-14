@@ -10,8 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Plus, Sparkles, Loader2, Image as ImageIcon, Search } from "lucide-react";
+import { Plus, Sparkles, Loader2, Image as ImageIcon, Search, Trash2 } from "lucide-react";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 import SchoolPicker from "@/components/marketing/SchoolPicker";
 import MediaPicker from "@/components/marketing/MediaPicker";
@@ -62,6 +73,7 @@ export default function Designs() {
   const [inputs, setInputs] = useState<Record<string, any>>({});
   const [styleDirection, setStyleDirection] = useState<string>("bold_sport");
   const [generating, setGenerating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!orgId) return;
@@ -136,6 +148,18 @@ export default function Designs() {
     }
   };
 
+  const handleDelete = async (designId: string) => {
+    setDeletingId(designId);
+    const { error } = await supabase.from("designs").delete().eq("id", designId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Design deleted");
+      setDesigns((prev) => prev.filter((d) => d.id !== designId));
+    }
+    setDeletingId(null);
+  };
+
   const categories = useMemo(() => Array.from(new Set(templates.map((t) => t.category))), [templates]);
 
   return (
@@ -176,8 +200,8 @@ export default function Designs() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((d) => (
-            <Link key={d.id} to={ml(`/marketing/designs/${d.id}`)}>
-              <Card className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
+            <Card key={d.id} className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 group">
+              <Link to={ml(`/marketing/designs/${d.id}`)}>
                 <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
                   {d.status === "generating" ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -195,15 +219,42 @@ export default function Designs() {
                     <ImageIcon className="h-10 w-10 text-muted-foreground" />
                   )}
                 </div>
-                <div className="p-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-sm truncate flex-1">{d.name || "Untitled"}</p>
-                    <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${STATUS_BADGE[d.status] ?? STATUS_BADGE.draft}`}>{d.status.replace("_", " ")}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(d.created_at).toLocaleDateString()}</p>
+              </Link>
+              <div className="p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium text-sm truncate flex-1">{d.name || "Untitled"}</p>
+                  <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded ${STATUS_BADGE[d.status] ?? STATUS_BADGE.draft}`}>{d.status.replace("_", " ")}</span>
                 </div>
-              </Card>
-            </Link>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</p>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                        title="Delete design"
+                      >
+                        {deletingId === d.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this design?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently remove “{d.name || "Untitled"}” and its refinement history. Variations will become standalone designs.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(d.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
       )}
