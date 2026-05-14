@@ -72,6 +72,27 @@ export const IMPORT_PRESETS: ImportPreset[] = [
     },
   },
   {
+    id: "curve_multiteam",
+    label: "Curve Multi-team",
+    description: "One CSV → many teams; auto-creates teams in the selected season",
+    mapping: {
+      "Team": "team_name",
+      "Role": "role",
+      "First Name": "first_name",
+      "Last Name": "last_name",
+      "Email": "email",
+      "Phone": "phone",
+      "Jersey": "jersey_number",
+      "Position": "position",
+      "Grad Year": "player_grad_year",
+      "Parent First Name": "parent_first_name",
+      "Parent Last Name": "parent_last_name",
+      "Parent Email": "parent_email",
+      "Parent Phone": "parent_phone",
+      "SMS Opt-in": "sms_opt_in",
+    },
+  },
+  {
     id: "generic",
     label: "Generic CSV",
     description: "Map columns yourself",
@@ -81,6 +102,8 @@ export const IMPORT_PRESETS: ImportPreset[] = [
 
 export const TARGET_FIELDS: { key: string; label: string }[] = [
   { key: "", label: "— skip —" },
+  { key: "team_name", label: "Team name (auto-creates)" },
+  { key: "role", label: "Role (player/coach/parent)" },
   { key: "first_name", label: "First name" },
   { key: "last_name", label: "Last name" },
   { key: "email", label: "Email" },

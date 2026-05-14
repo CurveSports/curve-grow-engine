@@ -125,6 +125,32 @@ Deno.serve(async (req) => {
       return { id: ins.data!.id, created: true };
     }
 
+    // In-process cache: team name (lowercased) → team_id, scoped to season_id
+    const teamCache = new Map<string, string>();
+    async function findOrCreateTeam(name: string, forSeasonId: string | null): Promise<string | null> {
+      if (!name || !forSeasonId) return null;
+      const key = `${forSeasonId}::${name.toLowerCase()}`;
+      const cached = teamCache.get(key);
+      if (cached) return cached;
+      const { data: existing } = await admin.from("org_teams")
+        .select("id").eq("season_id", forSeasonId).ilike("name", name).maybeSingle();
+      if (existing?.id) { teamCache.set(key, existing.id); return existing.id; }
+      const ins = await admin.from("org_teams").insert({
+        org_id, season_id: forSeasonId, name: name.trim(),
+      }).select("id").single();
+      if (ins.error || !ins.data?.id) return null;
+      teamCache.set(key, ins.data.id);
+      return ins.data.id;
+    }
+
+    const ROLE_NORMALIZE: Record<string, string> = {
+      player: "player", players: "player",
+      coach: "coach", "head coach": "coach", "head_coach": "coach",
+      "assistant coach": "assistant_coach", assistant_coach: "assistant_coach", asst: "assistant_coach",
+      "team manager": "team_manager", team_manager: "team_manager", manager: "team_manager",
+      parent: "parent", guardian: "parent",
+    };
+
     for (const row of dataRows) {
       try {
         const primary: Record<string, any> = {
@@ -136,6 +162,8 @@ Deno.serve(async (req) => {
           contact_type: "family",
         };
         let smsOptIn = sms_default === "true" || sms_default === true;
+        let rowTeamName: string | null = null;
+        let rowRole: string | null = null;
 
         for (const [src, tgt] of Object.entries(mapping)) {
           if (!tgt) continue;
@@ -148,10 +176,14 @@ Deno.serve(async (req) => {
             smsOptIn = ["true", "yes", "y", "1"].includes(val.toLowerCase());
           } else if (tgt === "player_grad_year") {
             const n = parseInt(val); if (!isNaN(n)) primary[tgt] = n;
+          } else if (tgt === "team_name") {
+            rowTeamName = val;
+          } else if (tgt === "role") {
+            rowRole = ROLE_NORMALIZE[val.toLowerCase()] || val.toLowerCase();
           } else if (tgt.startsWith("parent_")) {
             parent[tgt.replace("parent_", "")] = val;
           } else if (tgt === "jersey_number" || tgt === "position") {
-            primary[`__${tgt}`] = val; // stored on membership, not contact
+            primary[`__${tgt}`] = val;
           } else {
             primary[tgt] = val;
           }
@@ -159,12 +191,17 @@ Deno.serve(async (req) => {
         primary.sms_opt_in = smsOptIn;
         if (smsOptIn) primary.sms_opt_in_date = new Date().toISOString();
 
+        // Per-row role overrides body-level role
+        const effectiveRole = rowRole || role || null;
+        if (effectiveRole) {
+          primary.contact_type = ROLE_TO_CONTACT_TYPE[effectiveRole] || primary.contact_type;
+        }
+
         if (!primary.email && !primary.phone && !primary.first_name) {
           errors++; errorDetails.push({ row, reason: "row has no identifying data" });
           continue;
         }
 
-        // Strip membership-only fields before insert
         const jersey = primary.__jersey_number; delete primary.__jersey_number;
         const position = primary.__position; delete primary.__position;
 
@@ -172,10 +209,16 @@ Deno.serve(async (req) => {
         if (!result) { errors++; continue; }
         if (result.created) imported++; else merged++;
 
-        // Membership
-        if (team_id && role && result.id) {
+        // Resolve target team: row-level wins, otherwise the one passed in body
+        let effectiveTeamId: string | null = team_id || null;
+        if (rowTeamName) {
+          const created = await findOrCreateTeam(rowTeamName, season_id || null);
+          if (created) effectiveTeamId = created;
+        }
+
+        if (effectiveTeamId && effectiveRole && result.id) {
           await admin.from("org_team_memberships").upsert({
-            org_id, team_id, contact_id: result.id, role,
+            org_id, team_id: effectiveTeamId, contact_id: result.id, role: effectiveRole,
             jersey_number: jersey || null,
             position: position || null,
           }, { onConflict: "team_id,contact_id,role", ignoreDuplicates: false });
@@ -186,12 +229,10 @@ Deno.serve(async (req) => {
           const parentResult = await findOrCreateContact(parent);
           if (parentResult?.id) {
             parentsLinked++;
-            // Link parent → player
             await admin.from("org_contacts").update({ parent_of_contact_id: result.id }).eq("id", parentResult.id);
-            // Add parent to team as 'parent'
-            if (team_id) {
+            if (effectiveTeamId) {
               await admin.from("org_team_memberships").upsert({
-                org_id, team_id, contact_id: parentResult.id, role: "parent",
+                org_id, team_id: effectiveTeamId, contact_id: parentResult.id, role: "parent",
                 is_primary_parent: true,
               }, { onConflict: "team_id,contact_id,role", ignoreDuplicates: true });
             }
