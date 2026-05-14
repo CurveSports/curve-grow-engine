@@ -135,6 +135,41 @@ export default function AdminInvite() {
           </div>
         </form>
       </div>
+
+      <Dialog open={!!inviteUrl} onOpenChange={(o) => { if (!o) { setInviteUrl(null); navigate("/admin"); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              {createdOrgName} is live
+            </DialogTitle>
+            <DialogDescription>
+              An invitation email is on the way to <strong>{email}</strong>. Inboxes can be flaky —
+              copy the one-tap sign-in link below so you can text or DM it directly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">One-tap sign-in link</Label>
+              <div className="mt-1.5 flex gap-2">
+                <Input readOnly value={inviteUrl ?? ""} className="font-mono text-xs h-10" onFocus={(e) => e.currentTarget.select()} />
+                <Button type="button" onClick={copyUrl} className="h-10 shrink-0">
+                  {copied ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                <Mail className="h-3 w-3" /> Link is single-use and expires per Supabase auth settings.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setInviteUrl(null); navigate("/admin"); }}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }
