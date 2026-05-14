@@ -4,7 +4,7 @@ export type MediaItem = {
   id: string;
   org_id: string;
   asset_type: string;
-  media_type: "image" | "video";
+  media_type: "image" | "video" | "text" | "document";
   mime_type: string | null;
   url: string;
   poster_url: string | null;
