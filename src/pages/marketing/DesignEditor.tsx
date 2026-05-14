@@ -68,6 +68,45 @@ export default function DesignEditor() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [id]);
 
+  // Realtime: live-update this design while AI is generating in the background
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`design-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "designs", filter: `id=eq.${id}` },
+        (payload: any) => {
+          setDesign((prev) => (prev ? { ...prev, ...(payload.new as any) } : (payload.new as any)));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id]);
+
+  const handleRetry = async () => {
+    if (!design?.template_id || !id) return;
+    setRefining(true);
+    try {
+      // Reset row state and re-invoke generation against the same design row's inputs
+      await supabase.from("designs").update({ status: "generating", generation_error: null, generation_started_at: new Date().toISOString() }).eq("id", id);
+      const { error } = await supabase.functions.invoke("generate-design", {
+        body: {
+          template_id: design.template_id,
+          org_id: design.org_id,
+          prompt_input: (design as any).prompt_input || {},
+          style_direction: (design as any).prompt_input?.style_direction || "bold_sport",
+        },
+      });
+      if (error) throw error;
+      toast.success("Retrying — this design will update in place.");
+    } catch (e: any) {
+      toast.error(e.message || "Retry failed");
+    } finally {
+      setRefining(false);
+    }
+  };
+
   const previewSrc = useMemo(() => {
     if (!design?.generated_html) return "";
     return `data:text/html;charset=utf-8,${encodeURIComponent(design.generated_html)}`;
