@@ -90,6 +90,11 @@ export default function BrandKit() {
       setKit(loaded);
       setAssets((assetsRes.data ?? []) as BrandAsset[]);
       setLoading(false);
+      // Auto-pull colors from primary logo on first load if none are set yet
+      const noColors = !loaded.color_primary && !loaded.color_secondary && !loaded.color_accent;
+      if (loaded.logo_primary_url && noColors) {
+        autofillColorsFromLogo(loaded.logo_primary_url);
+      }
     })();
   }, [orgId]);
 
