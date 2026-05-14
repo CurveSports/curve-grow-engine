@@ -63,7 +63,6 @@ import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
 import AdminEmailTemplates from "@/pages/admin/marketing/AdminEmailTemplates";
 import Campaigns from "@/pages/marketing/Campaigns";
 import CampaignDetail from "@/pages/marketing/CampaignDetail";
-
 import Shortlinks from "@/pages/marketing/Shortlinks";
 import AbTests from "@/pages/marketing/AbTests";
 import SendTimes from "@/pages/marketing/SendTimes";

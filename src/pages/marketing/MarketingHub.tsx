@@ -130,15 +130,6 @@ export default function MarketingHub() {
       tone: "warn",
     });
   }
-  if (stats.pendingApprovals > 0) {
-    whatsNext.push({
-      icon: CheckSquare,
-      label: `${stats.pendingApprovals} approval${stats.pendingApprovals === 1 ? "" : "s"} waiting`,
-      sub: "Curve has signed off — you're the final yes",
-      to: "/marketing/approvals",
-      tone: "default",
-    });
-  }
   if (stats.detractorsOpen > 0) {
     whatsNext.push({
       icon: AlertTriangle,
