@@ -64,15 +64,20 @@ export default function AdminInvite() {
       });
       if (invErr) throw invErr;
 
-      // Send magic link so first sign-in triggers the handle_new_user flow
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/` },
+      // Generate invite link via admin edge function (also sends the email)
+      const { data: linkRes, error: linkErr } = await supabase.functions.invoke("admin-invite-link", {
+        body: { email: email.trim(), redirect_to: `${window.location.origin}/` },
       });
-      if (otpErr) console.warn("Magic link send warning:", otpErr.message);
+      if (linkErr) console.warn("Invite link warning:", linkErr.message);
+      const url = (linkRes as any)?.action_link as string | undefined;
 
-      toast.success("Organization created and invitation sent");
-      navigate("/admin");
+      toast.success("Organization created — invitation sent");
+      setCreatedOrgName(name.trim());
+      if (url) {
+        setInviteUrl(url);
+      } else {
+        navigate("/admin");
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message ?? "Failed to create organization");
