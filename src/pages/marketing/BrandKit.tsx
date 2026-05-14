@@ -291,7 +291,7 @@ export default function BrandKit() {
         {/* Fonts */}
         <Card className="p-6">
           <h2 className="font-display text-lg font-semibold mb-4">Typography</h2>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <Label>Heading font</Label>
               <select
@@ -301,6 +301,12 @@ export default function BrandKit() {
               >
                 {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
+              <div
+                className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-3 text-2xl leading-tight"
+                style={{ fontFamily: `'${kit.font_heading || "Inter"}', sans-serif`, fontWeight: 700 }}
+              >
+                The quick brown fox
+              </div>
             </div>
             <div>
               <Label>Body font</Label>
@@ -311,6 +317,12 @@ export default function BrandKit() {
               >
                 {FONT_OPTIONS.map((f) => <option key={f} value={f}>{f}</option>)}
               </select>
+              <div
+                className="mt-2 rounded-md border border-border bg-muted/40 px-3 py-3 text-sm leading-relaxed"
+                style={{ fontFamily: `'${kit.font_body || "Inter"}', sans-serif` }}
+              >
+                Pack my box with five dozen liquor jugs — the quick brown fox jumps over the lazy dog.
+              </div>
             </div>
           </div>
         </Card>
