@@ -76,6 +76,7 @@ import SmsComposer from "@/pages/marketing/SmsComposer";
 import SmsSends from "@/pages/marketing/SmsSends";
 import NpsSurveys from "@/pages/marketing/NpsSurveys";
 import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
+import Insights from "@/pages/marketing/Insights";
 import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
