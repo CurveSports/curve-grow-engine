@@ -2982,6 +2982,82 @@ export type Database = {
           },
         ]
       }
+      org_ab_test_runs: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decision_window_hours: number
+          id: string
+          name: string
+          org_id: string
+          sample_size: number | null
+          status: string
+          test_type: string
+          updated_at: string
+          variant_a_email_send_id: string | null
+          variant_b_email_send_id: string | null
+          winner_metric: string
+          winner_picked_at: string | null
+          winner_variant: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decision_window_hours?: number
+          id?: string
+          name: string
+          org_id: string
+          sample_size?: number | null
+          status?: string
+          test_type?: string
+          updated_at?: string
+          variant_a_email_send_id?: string | null
+          variant_b_email_send_id?: string | null
+          winner_metric?: string
+          winner_picked_at?: string | null
+          winner_variant?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decision_window_hours?: number
+          id?: string
+          name?: string
+          org_id?: string
+          sample_size?: number | null
+          status?: string
+          test_type?: string
+          updated_at?: string
+          variant_a_email_send_id?: string | null
+          variant_b_email_send_id?: string | null
+          winner_metric?: string
+          winner_picked_at?: string | null
+          winner_variant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_ab_test_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_ab_test_runs_variant_a_email_send_id_fkey"
+            columns: ["variant_a_email_send_id"]
+            isOneToOne: false
+            referencedRelation: "org_email_sends"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_ab_test_runs_variant_b_email_send_id_fkey"
+            columns: ["variant_b_email_send_id"]
+            isOneToOne: false
+            referencedRelation: "org_email_sends"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_brand_assets: {
         Row: {
           alt_text: string | null
@@ -3697,6 +3773,7 @@ export type Database = {
       org_contacts: {
         Row: {
           archived_at: string | null
+          best_send_hour: number | null
           contact_type: string
           created_at: string
           custom_fields: Json | null
@@ -3723,6 +3800,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          best_send_hour?: number | null
           contact_type?: string
           created_at?: string
           custom_fields?: Json | null
@@ -3749,6 +3827,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          best_send_hour?: number | null
           contact_type?: string
           created_at?: string
           custom_fields?: Json | null
@@ -3843,6 +3922,47 @@ export type Database = {
           },
           {
             foreignKeyName: "org_contract_installments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_cost_log: {
+        Row: {
+          amount_usd: number
+          cost_type: string
+          description: string | null
+          id: string
+          meta: Json | null
+          occurred_at: string
+          org_id: string
+          units: number | null
+        }
+        Insert: {
+          amount_usd?: number
+          cost_type: string
+          description?: string | null
+          id?: string
+          meta?: Json | null
+          occurred_at?: string
+          org_id: string
+          units?: number | null
+        }
+        Update: {
+          amount_usd?: number
+          cost_type?: string
+          description?: string | null
+          id?: string
+          meta?: Json | null
+          occurred_at?: string
+          org_id?: string
+          units?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_cost_log_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4169,6 +4289,67 @@ export type Database = {
           },
         ]
       }
+      org_email_send_queue: {
+        Row: {
+          attempts: number
+          contact_id: string
+          created_at: string
+          email_send_id: string
+          id: string
+          last_error: string | null
+          org_id: string
+          scheduled_for: string
+          sent_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          contact_id: string
+          created_at?: string
+          email_send_id: string
+          id?: string
+          last_error?: string | null
+          org_id: string
+          scheduled_for: string
+          sent_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          contact_id?: string
+          created_at?: string
+          email_send_id?: string
+          id?: string
+          last_error?: string | null
+          org_id?: string
+          scheduled_for?: string
+          sent_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_email_send_queue_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "org_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_email_send_queue_email_send_id_fkey"
+            columns: ["email_send_id"]
+            isOneToOne: false
+            referencedRelation: "org_email_sends"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_email_send_queue_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_email_sends: {
         Row: {
           bounced_count: number | null
@@ -4192,6 +4373,7 @@ export type Database = {
           reply_to: string | null
           scheduled_for: string | null
           segment_id: string | null
+          send_at_optimal_time: boolean
           sent_at: string | null
           spam_check_at: string | null
           spam_check_details: Json | null
@@ -4225,6 +4407,7 @@ export type Database = {
           reply_to?: string | null
           scheduled_for?: string | null
           segment_id?: string | null
+          send_at_optimal_time?: boolean
           sent_at?: string | null
           spam_check_at?: string | null
           spam_check_details?: Json | null
@@ -4258,6 +4441,7 @@ export type Database = {
           reply_to?: string | null
           scheduled_for?: string | null
           segment_id?: string | null
+          send_at_optimal_time?: boolean
           sent_at?: string | null
           spam_check_at?: string | null
           spam_check_details?: Json | null
@@ -4519,6 +4703,7 @@ export type Database = {
           followup_completed_at: string | null
           followup_completed_by: string | null
           followup_notes: string | null
+          followup_resolved_outcome: string | null
           followup_response: string | null
           id: string
           ip_address: string | null
@@ -4535,6 +4720,7 @@ export type Database = {
           followup_completed_at?: string | null
           followup_completed_by?: string | null
           followup_notes?: string | null
+          followup_resolved_outcome?: string | null
           followup_response?: string | null
           id?: string
           ip_address?: string | null
@@ -4551,6 +4737,7 @@ export type Database = {
           followup_completed_at?: string | null
           followup_completed_by?: string | null
           followup_notes?: string | null
+          followup_resolved_outcome?: string | null
           followup_response?: string | null
           id?: string
           ip_address?: string | null
@@ -6478,6 +6665,7 @@ export type Database = {
           plan_activated_at: string | null
           plan_activated_revenue: number | null
           primary_user_id: string | null
+          short_domain: string | null
           updated_at: string
         }
         Insert: {
@@ -6497,6 +6685,7 @@ export type Database = {
           plan_activated_at?: string | null
           plan_activated_revenue?: number | null
           primary_user_id?: string | null
+          short_domain?: string | null
           updated_at?: string
         }
         Update: {
@@ -6516,6 +6705,7 @@ export type Database = {
           plan_activated_at?: string | null
           plan_activated_revenue?: number | null
           primary_user_id?: string | null
+          short_domain?: string | null
           updated_at?: string
         }
         Relationships: []
