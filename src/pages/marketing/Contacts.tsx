@@ -742,34 +742,40 @@ function ImportWizard({
                 <strong> Players</strong>, <strong>Parents</strong>, or
                 <strong> Players + Parents</strong> (one row per player with parent columns on the same row).
               </div>
-              <ol className="list-decimal pl-5 space-y-1 text-amber-900/90 dark:text-amber-100/90">
-                <li>
-                  <span className="font-medium">One CSV file</span> with a <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">Team</code> column on every row — the importer will create teams automatically.
-                </li>
-                <li>
-                  <span className="font-medium">One Excel file (.xlsx) with a tab per team</span> — name each tab the team name (e.g. <em>14U Black</em>). We'll flatten every tab and use the tab name as the team.
-                </li>
-              </ol>
               <div className="text-xs text-amber-800 dark:text-amber-200/80">
                 Required columns: <code>First Name</code>, <code>Last Name</code>, and at least one of <code>Email</code> or <code>Phone</code>. All staff (head coach, assistant, manager) import as one <em>Staff</em> group — <strong>Team Manager</strong> is assigned in-app from the team detail page after upload.
               </div>
             </div>
+
             <div>
-              <Label>Platform preset</Label>
+              <Label>File format</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
-                {IMPORT_PRESETS.map((p) => (
-                  <button key={p.id} type="button" onClick={() => applyPreset(p.id)}
-                    className={`text-left p-3 rounded-md border text-sm ${presetId === p.id ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
-                    <div className="font-medium">{p.label}</div>
-                    <div className="text-xs text-muted-foreground">{p.description}</div>
-                  </button>
-                ))}
+                <button type="button" onClick={() => setFileFormat("single")}
+                  className={`text-left p-3 rounded-md border text-sm ${fileFormat === "single" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
+                  <div className="font-medium">Single file</div>
+                  <div className="text-xs text-muted-foreground">One CSV or single-tab spreadsheet. Add a <code>Team</code> column if rows belong to different teams.</div>
+                </button>
+                <button type="button" onClick={() => setFileFormat("multitab")}
+                  className={`text-left p-3 rounded-md border text-sm ${fileFormat === "multitab" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"}`}>
+                  <div className="font-medium">Multi-tab spreadsheet</div>
+                  <div className="text-xs text-muted-foreground">One <code>.xlsx</code>, one tab per team. Tab name = team name. Teams are auto-created.</div>
+                </button>
               </div>
             </div>
+
             <div>
-              <Label>CSV or Excel file</Label>
-              <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="block w-full text-sm mt-1" />
-              {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {headers.length} columns detected</p>}
+              <Label>{fileFormat === "multitab" ? "Excel file (.xlsx)" : "CSV or Excel file"}</Label>
+              <input ref={fileRef} type="file"
+                accept={fileFormat === "multitab" ? ".xlsx,.xls" : ".csv,.xlsx,.xls"}
+                onChange={onFile} className="block w-full text-sm mt-1" />
+              {file && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  {file.name} · {headers.length} columns detected · auto-mapped {autoMappedCount} of {headers.length}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Columns are auto-detected from any platform export (LeagueApps, SportsEngine, Futures App, TeamSnap, etc.) — you'll review the mapping in the next step.
+              </p>
             </div>
           </div>
         )}
