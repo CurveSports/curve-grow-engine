@@ -11,7 +11,7 @@ import { resolveMobileRoute } from "@/components/mobile/mobileRoutes";
 import {
   LayoutDashboard, Grid3x3, ListChecks, FileText, BarChart3,
   Settings, LogOut, Users, Megaphone, Calculator, Mail, Sparkles, UserCircle2, UsersRound, Target, GanttChartSquare, DollarSign, Briefcase, Mic, Plug,
-  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox, ClipboardList,
+  Palette, Image as ImageIcon, Send, MessageSquare, Share2, Workflow, Smile, CheckSquare, Link2, FlaskConical, Clock, BarChart2, Building2, GraduationCap, CalendarDays, Inbox, ClipboardList, Search,
   Menu,
 } from "lucide-react";
 import logoIconWhite from "@/assets/curve-logo-icon-white.png";
@@ -59,7 +59,8 @@ const ADMIN_GROUPS: NavGroup[] = [
   {
     label: "Admin",
     items: [
-      { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p.startsWith("/admin/users") || p.startsWith("/admin/invite") },
+      { to: "/admin/users", label: "Users", icon: UsersRound, match: (p) => p === "/admin/users" || p.startsWith("/admin/invite") },
+      { to: "/admin/users/lookup", label: "User Lookup", icon: Search, match: (p) => p.startsWith("/admin/users/lookup") },
       { to: "/admin/reports", label: "Internal Reports", icon: BarChart3, match: (p) => p.startsWith("/admin/reports") },
     ],
   },

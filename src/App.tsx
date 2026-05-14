@@ -25,6 +25,7 @@ import AdminHealthReports from "@/pages/admin/AdminHealthReports";
 import AdminPresentations from "@/pages/admin/AdminPresentations";
 import AdminTemplates from "@/pages/admin/AdminTemplates";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import AdminUserLookup from "@/pages/admin/AdminUserLookup";
 
 import AdminMyTasks from "@/pages/admin/AdminMyTasks";
 import AdminPipeline from "@/pages/admin/AdminPipeline";
@@ -209,6 +210,7 @@ const App = () => (
             <Route path="/admin/revenue-share/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><OrgRevenueShareDetail /></ProtectedRoute>} />
             <Route path="/admin/templates" element={<ProtectedRoute role="admin" module="allegiance"><AdminTemplates /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsersPage /></ProtectedRoute>} />
+            <Route path="/admin/users/lookup" element={<ProtectedRoute role="admin"><AdminUserLookup /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />
             <Route path="/admin/system/wiring-status" element={<ProtectedRoute role="admin"><SystemIntegrations /></ProtectedRoute>} />
             

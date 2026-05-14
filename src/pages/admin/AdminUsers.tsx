@@ -34,8 +34,11 @@ type Row = {
 
 type Org = { id: string; name: string };
 
+const OWNER_EMAIL = "matt.gerber@curvesports.com";
+
 export default function AdminUsers() {
   const { user, refresh } = useAuth();
+  const isOwner = (user?.email ?? "").toLowerCase() === OWNER_EMAIL;
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +80,7 @@ export default function AdminUsers() {
   const [creating, setCreating] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newFullName, setNewFullName] = useState("");
-  const [newRole, setNewRole] = useState<"admin" | "org_user">("admin");
+  const [newRole, setNewRole] = useState<"admin" | "org_user">(isOwner ? "admin" : "org_user");
   const [newOrgId, setNewOrgId] = useState<string>("");
   const [newAllegiance, setNewAllegiance] = useState(true);
   const [newAcquisitions, setNewAcquisitions] = useState(true);
@@ -108,12 +111,16 @@ export default function AdminUsers() {
       module_access: Array.isArray(p.module_access) ? p.module_access : [],
     }));
     r.sort((a, b) => (a.org_name ?? "zzz").localeCompare(b.org_name ?? "zzz") || a.email.localeCompare(b.email));
-    setRows(r);
+    // Only the owner sees other Curve admins; everyone else only sees their own admin row + org users.
+    const visibleRows = isOwner
+      ? r
+      : r.filter((row) => !row.roles.includes("admin") || row.user_id === user?.id);
+    setRows(visibleRows);
     setOrgs((orgsData ?? []) as Org[]);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [isOwner, user?.id]);
 
   const remove = async (uid: string) => {
     setRemovingId(uid);
@@ -133,7 +140,7 @@ export default function AdminUsers() {
   const resetCreateForm = () => {
     setNewEmail("");
     setNewFullName("");
-    setNewRole("admin");
+    setNewRole(isOwner ? "admin" : "org_user");
     setNewOrgId("");
     setNewAllegiance(true);
     setNewAcquisitions(true);
@@ -223,13 +230,18 @@ export default function AdminUsers() {
             <div className="space-y-4 py-2">
               <div>
                 <Label className="text-sm font-medium">Role</Label>
-                <Select value={newRole} onValueChange={(v) => setNewRole(v as "admin" | "org_user")}>
+                <Select value={newRole} onValueChange={(v) => setNewRole(v as "admin" | "org_user")} disabled={!isOwner}>
                   <SelectTrigger className="mt-2 h-11"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Curve Admin</SelectItem>
+                    {isOwner && <SelectItem value="admin">Curve Admin</SelectItem>}
                     <SelectItem value="org_user">Organization User</SelectItem>
                   </SelectContent>
                 </Select>
+                {!isOwner && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Only {OWNER_EMAIL} can create new Curve Admin accounts.
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm font-medium">Email</Label>
