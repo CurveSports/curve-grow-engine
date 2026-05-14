@@ -49,6 +49,8 @@ const ROLES = [
 
 export default function Contacts() {
   const { orgId } = useEffectiveOrg();
+  const navigate = useNavigate();
+  const ml = useMarketingLink();
   const [tab, setTab] = useState("seasons");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [seasons, setSeasons] = useState<Season[]>([]);
