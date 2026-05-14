@@ -549,27 +549,24 @@ export default function Contacts() {
 
       {/* Segment editor */}
       <Dialog open={segOpen} onOpenChange={setSegOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-xl">
           <DialogHeader>
             <DialogTitle>{editingSeg.id ? "Edit" : "New"} segment</DialogTitle>
-            <DialogDescription>Filter keys: contact_type, season_id, team_id, team_role, group_id, archived, sms_opt_in, unsubscribed, grad_year</DialogDescription>
+            <DialogDescription>
+              A segment is a saved group of contacts. Pick the filters below — we'll only include people who match every filter you set. Leave a filter blank to ignore it.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div><Label>Name</Label><Input value={editingSeg.name ?? ""} onChange={(e) => setEditingSeg((s) => ({ ...s, name: e.target.value }))} /></div>
-            <div><Label>Description</Label><Input value={editingSeg.description ?? ""} onChange={(e) => setEditingSeg((s) => ({ ...s, description: e.target.value }))} /></div>
-            <div>
-              <Label>Filter rules (JSON)</Label>
-              <Textarea
-                rows={6}
-                className="font-mono text-xs"
-                value={JSON.stringify(editingSeg.filter_rules ?? {}, null, 2)}
-                onChange={(e) => {
-                  try { setEditingSeg((s) => ({ ...s, filter_rules: JSON.parse(e.target.value) })); } catch { /* keep typing */ }
-                }}
-              />
-            </div>
-          </div>
-          <DialogFooter><Button variant="outline" onClick={() => setSegOpen(false)}>Cancel</Button><Button onClick={saveSegment}>Save segment</Button></DialogFooter>
+          <SegmentBuilder
+            value={editingSeg}
+            onChange={setEditingSeg}
+            seasons={seasons}
+            teams={teams}
+            groups={groups}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSegOpen(false)}>Cancel</Button>
+            <Button onClick={saveSegment} disabled={!editingSeg.name?.trim()}>Save segment</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </AppShell>
