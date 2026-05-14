@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { template_id, org_id, prompt_input, parent_design_id, name } = await req.json();
+    const { template_id, org_id, prompt_input, parent_design_id, name, style_direction } = await req.json();
     if (!template_id || !org_id) {
       return new Response(JSON.stringify({ error: "template_id and org_id required" }), {
         status: 400,
