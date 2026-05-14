@@ -73,6 +73,7 @@ export default function Designs() {
   const [inputs, setInputs] = useState<Record<string, any>>({});
   const [styleDirection, setStyleDirection] = useState<string>("bold_sport");
   const [generating, setGenerating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = async () => {
     if (!orgId) return;
