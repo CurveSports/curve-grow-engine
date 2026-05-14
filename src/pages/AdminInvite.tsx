@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ORG_TYPES } from "@/lib/intakeOptions";
+import { Copy, CheckCircle2, Mail } from "lucide-react";
 
 // Curve Admin: create an organization and invite the primary user via magic link.
 export default function AdminInvite() {
@@ -21,6 +25,17 @@ export default function AdminInvite() {
   const [cityState, setCityState] = useState("");
   const [orgType, setOrgType] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [createdOrgName, setCreatedOrgName] = useState<string>("");
+
+  const copyUrl = async () => {
+    if (!inviteUrl) return;
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    toast.success("Invite link copied");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,15 +64,20 @@ export default function AdminInvite() {
       });
       if (invErr) throw invErr;
 
-      // Send magic link so first sign-in triggers the handle_new_user flow
-      const { error: otpErr } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/` },
+      // Generate invite link via admin edge function (also sends the email)
+      const { data: linkRes, error: linkErr } = await supabase.functions.invoke("admin-invite-link", {
+        body: { email: email.trim(), redirect_to: `${window.location.origin}/` },
       });
-      if (otpErr) console.warn("Magic link send warning:", otpErr.message);
+      if (linkErr) console.warn("Invite link warning:", linkErr.message);
+      const url = (linkRes as any)?.action_link as string | undefined;
 
-      toast.success("Organization created and invitation sent");
-      navigate("/admin");
+      toast.success("Organization created — invitation sent");
+      setCreatedOrgName(name.trim());
+      if (url) {
+        setInviteUrl(url);
+      } else {
+        navigate("/admin");
+      }
     } catch (err: any) {
       console.error(err);
       toast.error(err.message ?? "Failed to create organization");
@@ -115,6 +135,41 @@ export default function AdminInvite() {
           </div>
         </form>
       </div>
+
+      <Dialog open={!!inviteUrl} onOpenChange={(o) => { if (!o) { setInviteUrl(null); navigate("/admin"); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              {createdOrgName} is live
+            </DialogTitle>
+            <DialogDescription>
+              An invitation email is on the way to <strong>{email}</strong>. Inboxes can be flaky —
+              copy the one-tap sign-in link below so you can text or DM it directly.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground">One-tap sign-in link</Label>
+              <div className="mt-1.5 flex gap-2">
+                <Input readOnly value={inviteUrl ?? ""} className="font-mono text-xs h-10" onFocus={(e) => e.currentTarget.select()} />
+                <Button type="button" onClick={copyUrl} className="h-10 shrink-0">
+                  {copied ? <CheckCircle2 className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+                  {copied ? "Copied" : "Copy"}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
+                <Mail className="h-3 w-3" /> Link is single-use and expires per Supabase auth settings.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setInviteUrl(null); navigate("/admin"); }}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppShell>
   );
 }

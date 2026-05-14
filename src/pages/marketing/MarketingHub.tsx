@@ -62,9 +62,12 @@ export default function MarketingHub() {
       const surveyIds = (await supabase.from("org_nps_surveys").select("id").eq("org_id", orgId)).data?.map((s: any) => s.id) ?? [];
       const sendIds = (await supabase.from("org_email_sends").select("id").eq("org_id", orgId)).data?.map((s: any) => s.id) ?? [];
 
+      const today = new Date(); today.setHours(0,0,0,0);
+      const in48 = new Date(Date.now() + 48 * 3600 * 1000);
+
       const [
         approvals, detractors, nextSend, domains, smsNum, socials,
-        events24, contacts7d, sentSends,
+        events24, contacts7d, sentSends, gameDay,
       ] = await Promise.all([
         supabase.from("designs").select("id", { count: "exact", head: true })
           .eq("org_id", orgId).eq("status", "approved_curve"),
@@ -86,6 +89,11 @@ export default function MarketingHub() {
           .eq("org_id", orgId).gte("created_at", since7d),
         supabase.from("org_email_sends").select("id, recipient_count").eq("org_id", orgId)
           .eq("status", "sent").gte("sent_at", since24),
+        supabase.from("org_calendar_items").select("id, title, calculated_due_date")
+          .eq("org_id", orgId).eq("is_non_negotiable", true)
+          .gte("calculated_due_date", today.toISOString().slice(0, 10))
+          .lte("calculated_due_date", in48.toISOString().slice(0, 10))
+          .order("calculated_due_date", { ascending: true }).limit(1),
       ]);
 
       if (cancelled) return;
@@ -94,6 +102,8 @@ export default function MarketingHub() {
       const clicks = (events24.data ?? []).filter((e: any) => e.event_type === "clicked").length;
       const sent = (sentSends.data ?? []).reduce((acc: number, s: any) => acc + (s.recipient_count ?? 0), 0);
       const domainOk = (domains.data ?? []).some((d: any) => d.status === "verified" || d.status === "active");
+
+      const gameDayItem = (gameDay.data ?? [])[0] as any;
 
       setStats({
         pendingApprovals: approvals.count ?? 0,
@@ -105,7 +115,9 @@ export default function MarketingHub() {
         socialConnected: (socials.data?.length ?? 0) > 0,
         last24Opens: opens, last24Clicks: clicks, last24Sent: sent,
         newContacts7d: contacts7d.count ?? 0,
-        upcomingEvent: null,
+        upcomingEvent: gameDayItem
+          ? { id: gameDayItem.id, title: gameDayItem.title, starts_at: gameDayItem.calculated_due_date }
+          : null,
       });
       setLoading(false);
     })().catch(() => setLoading(false));
@@ -175,14 +187,43 @@ export default function MarketingHub() {
         </p>
       </div>
 
+      {/* Game Day banner */}
+      {stats.upcomingEvent && (
+        <Link to={ml("/marketing/sequences")} className="block mb-6">
+          <Card className="p-4 border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-background hover:border-amber-500/60 transition-all group">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
+                <Zap className="h-6 w-6" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-[10px] uppercase tracking-widest font-semibold text-amber-700 dark:text-amber-400">Game Day Mode</span>
+                  <Badge variant="outline" className="h-4 px-1.5 text-[10px] border-amber-500/40 text-amber-700 dark:text-amber-400">
+                    {timeFromNow(stats.upcomingEvent.starts_at)}
+                  </Badge>
+                </div>
+                <div className="font-display text-lg font-semibold truncate">{stats.upcomingEvent.title}</div>
+                <div className="text-xs text-muted-foreground">Launch a 48-hour push — hype reel, reminders, and post-game recap, ready in one tap.</div>
+              </div>
+              <ArrowRight className="h-5 w-5 text-amber-700 dark:text-amber-400 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+            </div>
+          </Card>
+        </Link>
+      )}
+
       {/* Trust strip */}
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap items-center gap-2 mb-8">
+        <span className="text-[10px] uppercase tracking-widest text-muted-foreground/70 mr-1">Channels</span>
         {trustBadges.map((b) => (
-          <Link key={b.label} to={ml(b.to)}>
-            <Badge variant={b.ok ? "default" : "outline"} className={`gap-1.5 ${b.ok ? "" : "text-muted-foreground"}`}>
-              {b.ok ? <ShieldCheck className="h-3 w-3" /> : <AlertTriangle className="h-3 w-3" />}
-              {b.label} {b.ok ? "ready" : "needs setup"}
-            </Badge>
+          <Link key={b.label} to={ml(b.to)} className="group">
+            <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-all
+              ${b.ok
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/15"
+                : "border-amber-500/30 bg-amber-500/5 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"}`}>
+              <span className={`h-1.5 w-1.5 rounded-full ${b.ok ? "bg-emerald-500" : "bg-amber-500 animate-pulse"}`} />
+              {b.label}
+              <span className="opacity-70">{b.ok ? "ready" : "needs setup"}</span>
+            </div>
           </Link>
         ))}
       </div>
