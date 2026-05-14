@@ -701,7 +701,7 @@ function ImportWizard({
           <DialogTitle>Import contacts — Step {step} of 3</DialogTitle>
           <DialogDescription>
             {step === 1 && "Pick the season, team, and role for this CSV."}
-            {step === 2 && "Upload the file and pick a platform preset."}
+            {step === 2 && "Choose your file format and upload — columns are auto-mapped."}
             {step === 3 && "Review the column mapping before importing."}
           </DialogDescription>
         </DialogHeader>
