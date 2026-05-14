@@ -3064,6 +3064,50 @@ export type Database = {
           },
         ]
       }
+      org_ayrshare_profiles: {
+        Row: {
+          active: boolean
+          ayrshare_profile_key: string
+          ayrshare_ref_id: string | null
+          created_at: string
+          display_title: string | null
+          id: string
+          is_mock: boolean
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          ayrshare_profile_key: string
+          ayrshare_ref_id?: string | null
+          created_at?: string
+          display_title?: string | null
+          id?: string
+          is_mock?: boolean
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          ayrshare_profile_key?: string
+          ayrshare_ref_id?: string | null
+          created_at?: string
+          display_title?: string | null
+          id?: string
+          is_mock?: boolean
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_ayrshare_profiles_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_brand_assets: {
         Row: {
           alt_text: string | null
@@ -5773,7 +5817,8 @@ export type Database = {
       }
       org_social_accounts: {
         Row: {
-          buffer_profile_id: string | null
+          ayrshare_account_id: string | null
+          ayrshare_metadata: Json
           created_at: string
           created_by: string | null
           display_name: string | null
@@ -5787,7 +5832,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          buffer_profile_id?: string | null
+          ayrshare_account_id?: string | null
+          ayrshare_metadata?: Json
           created_at?: string
           created_by?: string | null
           display_name?: string | null
@@ -5801,7 +5847,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          buffer_profile_id?: string | null
+          ayrshare_account_id?: string | null
+          ayrshare_metadata?: Json
           created_at?: string
           created_by?: string | null
           display_name?: string | null
@@ -5818,20 +5865,23 @@ export type Database = {
       }
       org_social_posts: {
         Row: {
+          ayrshare_post_id: string | null
           body: string
-          buffer_update_id: string | null
           campaign_asset_id: string | null
           comments_count: number
           created_at: string
           created_by: string | null
           design_id: string | null
+          engagement_data: Json
           error_message: string | null
           external_post_id: string | null
           id: string
           impressions_count: number
+          last_metric_sync: string | null
           likes_count: number
           media_urls: string[]
           org_id: string
+          platform_urls: Json
           posted_at: string | null
           scheduled_for: string | null
           shares_count: number
@@ -5841,20 +5891,23 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          ayrshare_post_id?: string | null
           body: string
-          buffer_update_id?: string | null
           campaign_asset_id?: string | null
           comments_count?: number
           created_at?: string
           created_by?: string | null
           design_id?: string | null
+          engagement_data?: Json
           error_message?: string | null
           external_post_id?: string | null
           id?: string
           impressions_count?: number
+          last_metric_sync?: string | null
           likes_count?: number
           media_urls?: string[]
           org_id: string
+          platform_urls?: Json
           posted_at?: string | null
           scheduled_for?: string | null
           shares_count?: number
@@ -5864,20 +5917,23 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          ayrshare_post_id?: string | null
           body?: string
-          buffer_update_id?: string | null
           campaign_asset_id?: string | null
           comments_count?: number
           created_at?: string
           created_by?: string | null
           design_id?: string | null
+          engagement_data?: Json
           error_message?: string | null
           external_post_id?: string | null
           id?: string
           impressions_count?: number
+          last_metric_sync?: string | null
           likes_count?: number
           media_urls?: string[]
           org_id?: string
+          platform_urls?: Json
           posted_at?: string | null
           scheduled_for?: string | null
           shares_count?: number
