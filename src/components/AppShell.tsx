@@ -144,6 +144,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
       { to: "/admin/marketing/schools", label: "Schools Library", icon: GraduationCap, match: (p) => p.startsWith("/admin/marketing/schools") },
       { to: "/admin/marketing/nps", label: "NPS Surveys", icon: Smile, match: (p) => p.startsWith("/admin/marketing/nps") },
+      { to: "/admin/marketing/audits", label: "Audits", icon: ClipboardList, match: (p) => p.startsWith("/admin/marketing/audits") },
     ],
   };
   const adminEventsGroup: NavGroup = {
