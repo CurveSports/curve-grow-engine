@@ -94,7 +94,7 @@ export default function Designs() {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-design", {
-        body: { template_id: picked.id, org_id: orgId, prompt_input: inputs },
+        body: { template_id: picked.id, org_id: orgId, prompt_input: inputs, style_direction: styleDirection },
       });
       if (error) throw error;
       toast.success("Design generated");
