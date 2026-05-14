@@ -251,8 +251,8 @@ export default function EmailComposer() {
             ))}
           </div>
           <div className={`flex-1 overflow-auto p-4 ${isDark ? "bg-zinc-950" : "bg-zinc-100"}`}>
-            {!template ? (
-              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Pick a template to preview</div>
+            {!template && !isBlank ? (
+              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Pick a template or "Blank email" to preview</div>
             ) : previewMode === "text" ? (
               <pre className="bg-background p-4 rounded text-xs whitespace-pre-wrap max-w-2xl mx-auto">{htmlToText(rendered.html)}</pre>
             ) : (
