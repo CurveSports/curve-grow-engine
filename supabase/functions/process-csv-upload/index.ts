@@ -162,9 +162,11 @@ Deno.serve(async (req) => {
 
     const ROLE_NORMALIZE: Record<string, string> = {
       player: "player", players: "player",
-      coach: "coach", "head coach": "coach", "head_coach": "coach",
-      "assistant coach": "assistant_coach", assistant_coach: "assistant_coach", asst: "assistant_coach",
-      "team manager": "team_manager", team_manager: "team_manager", manager: "team_manager",
+      "player+parent": "player_parent", "players+parents": "player_parent", player_parent: "player_parent",
+      staff: "staff",
+      coach: "staff", "head coach": "staff", "head_coach": "staff",
+      "assistant coach": "staff", assistant_coach: "staff", asst: "staff",
+      "team manager": "staff", team_manager: "staff", manager: "staff",
       parent: "parent", guardian: "parent",
     };
 
