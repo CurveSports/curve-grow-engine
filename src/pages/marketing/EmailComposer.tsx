@@ -132,20 +132,39 @@ export default function EmailComposer() {
 
   const spam = useMemo(() => localSpamCheck({ subject, html: rendered.html, from: fromEmail }), [subject, rendered.html, fromEmail]);
   const recipientEstimate = segments.find((s) => s.id === segmentId)?.contact_count ?? 0;
+  const teamLabel = (id: string) => teams.find((t) => t.id === id)?.name ?? "team";
 
   const save = async (sendNow: boolean) => {
     if (!orgId) return;
     if (!subject) return toast.error("Subject required");
-    if (!segmentId) return toast.error("Pick a segment");
     if (!template && !isBlank) return toast.error("Pick a template");
     if (isBlank && !customHtml.trim()) return toast.error("Write your email body");
+    if (audienceMode === "segment" && !segmentId) return toast.error("Pick a segment");
+    if (audienceMode === "teams" && selectedTeamIds.length === 0) return toast.error("Pick at least one team");
     setSaving(true);
     try {
+      let useSegmentId = segmentId;
+
+      // Multi-team mode: create an ad-hoc segment with team_ids filter
+      if (audienceMode === "teams") {
+        const names = selectedTeamIds.map(teamLabel).join(", ");
+        const roleSuffix = teamRole ? ` (${teamRole}s)` : "";
+        const ad = await supabase.from("org_contact_segments").insert({
+          org_id: orgId,
+          name: `Blast — ${names}${roleSuffix} · ${new Date().toLocaleDateString()}`,
+          description: `Multi-team blast to ${selectedTeamIds.length} team(s)`,
+          filter_rules: { team_ids: selectedTeamIds, ...(teamRole ? { team_role: teamRole } : {}) },
+          is_system: false,
+        }).select("id").single();
+        if (ad.error) throw ad.error;
+        useSegmentId = ad.data.id;
+      }
+
       const payload: any = {
         org_id: orgId,
         subject, preview_text: previewText || null,
         from_email: fromEmail || null, from_name: fromName || null,
-        segment_id: segmentId,
+        segment_id: useSegmentId,
         template_id: isBlank ? null : template!.id,
         rendering_engine: isBlank ? "html" : template!.rendering_engine,
         template_props: isBlank ? { custom_html: customHtml } : propsState,
