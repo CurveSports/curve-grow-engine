@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2, Send, Save, Smartphone, Tablet, Monitor, Moon, FileText, Shield } from "lucide-react";
-import { renderEmail, htmlToText, type BrandContext, DEFAULT_BRAND } from "@/emails/render";
+import { renderEmail, htmlToText, wrapCustomHtml, type BrandContext, DEFAULT_BRAND } from "@/emails/render";
 import { localSpamCheck } from "@/lib/spamCheck";
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 
