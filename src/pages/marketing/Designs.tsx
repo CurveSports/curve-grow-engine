@@ -308,26 +308,3 @@ export default function Designs() {
   );
 }
 
-function PhotoSelector({ orgId, value, onChange }: { orgId: string; value: string; onChange: (v: string) => void }) {
-  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
-  useEffect(() => {
-    supabase.from("org_brand_assets").select("id,url").eq("org_id", orgId).eq("archived", false).eq("asset_type", "photo").order("uploaded_at", { ascending: false }).limit(40).then(({ data }) => {
-      setPhotos((data ?? []) as any);
-    });
-  }, [orgId]);
-  if (!photos.length) return <p className="text-xs text-muted-foreground mt-1">No photos in your library yet — add them under Brand Kit.</p>;
-  return (
-    <div className="grid grid-cols-5 sm:grid-cols-7 gap-2 mt-1">
-      {photos.map((p) => (
-        <button
-          key={p.id}
-          type="button"
-          onClick={() => onChange(p.url)}
-          className={`aspect-square rounded overflow-hidden border-2 transition-all ${value === p.url ? "border-primary ring-2 ring-primary/30" : "border-transparent hover:border-border"}`}
-        >
-          <img src={p.url} alt="" className="w-full h-full object-cover" />
-        </button>
-      ))}
-    </div>
-  );
-}
