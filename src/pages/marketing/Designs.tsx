@@ -178,8 +178,18 @@ export default function Designs() {
           {filtered.map((d) => (
             <Link key={d.id} to={ml(`/marketing/designs/${d.id}`)}>
               <Card className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
-                <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden">
-                  {d.preview_url ? (
+                <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
+                  {d.status === "generating" ? (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <p className="text-xs font-medium">Generating…</p>
+                    </div>
+                  ) : d.status === "failed" ? (
+                    <div className="flex flex-col items-center gap-1 text-destructive px-2 text-center">
+                      <ImageIcon className="h-8 w-8" />
+                      <p className="text-xs font-medium">Generation failed</p>
+                    </div>
+                  ) : d.preview_url ? (
                     <img src={d.preview_url} alt={d.name || "Design"} className="w-full h-full object-cover" />
                   ) : (
                     <ImageIcon className="h-10 w-10 text-muted-foreground" />
