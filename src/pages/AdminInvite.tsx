@@ -25,6 +25,17 @@ export default function AdminInvite() {
   const [cityState, setCityState] = useState("");
   const [orgType, setOrgType] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [createdOrgName, setCreatedOrgName] = useState<string>("");
+
+  const copyUrl = async () => {
+    if (!inviteUrl) return;
+    await navigator.clipboard.writeText(inviteUrl);
+    setCopied(true);
+    toast.success("Invite link copied");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
