@@ -76,6 +76,7 @@ import SmsComposer from "@/pages/marketing/SmsComposer";
 import SmsSends from "@/pages/marketing/SmsSends";
 import NpsSurveys from "@/pages/marketing/NpsSurveys";
 import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
+import Insights from "@/pages/marketing/Insights";
 import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
@@ -143,6 +144,7 @@ const App = () => (
             <Route path="/marketing/sms/new" element={<ProtectedRoute><SmsComposer /></ProtectedRoute>} />
             <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
             <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/marketing/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
             <Route path="/nps/preview/:surveyId" element={<NpsResponse />} />
             <Route path="/events/intake/:slug" element={<EventIntake />} />
@@ -175,6 +177,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/sms/new" element={<ProtectedRoute role="admin" module="marketing"><SmsComposer /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/nps" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveys /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/insights" element={<ProtectedRoute role="admin" module="marketing"><Insights /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/schools" element={<ProtectedRoute role="admin" module="marketing"><AdminSchools /></ProtectedRoute>} />
