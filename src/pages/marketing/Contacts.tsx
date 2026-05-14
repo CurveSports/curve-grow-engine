@@ -267,7 +267,16 @@ export default function Contacts() {
                                 {players.length} players · {coaches.length} coaches · {parents.length} parents
                               </span>
                             </CollapsibleTrigger>
-                            <button onClick={() => deleteTeam(t.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => navigate(ml(`/marketing/emails/new?teams=${t.id}`))}
+                                className="text-muted-foreground hover:text-primary inline-flex items-center gap-1 text-xs px-2 py-1 rounded hover:bg-muted"
+                                title="Email this team"
+                              >
+                                <Mail className="h-3.5 w-3.5" /> Email
+                              </button>
+                              <button onClick={() => deleteTeam(t.id)} className="text-muted-foreground hover:text-destructive p-1"><Trash2 className="h-4 w-4" /></button>
+                            </div>
                           </div>
                           <CollapsibleContent>
                             <div className="border-t border-border px-3 py-2 space-y-2 bg-muted/20">
