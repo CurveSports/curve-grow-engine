@@ -148,6 +148,18 @@ export default function Designs() {
     }
   };
 
+  const handleDelete = async (designId: string) => {
+    setDeletingId(designId);
+    const { error } = await supabase.from("designs").delete().eq("id", designId);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Design deleted");
+      setDesigns((prev) => prev.filter((d) => d.id !== designId));
+    }
+    setDeletingId(null);
+  };
+
   const categories = useMemo(() => Array.from(new Set(templates.map((t) => t.category))), [templates]);
 
   return (
