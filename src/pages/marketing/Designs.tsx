@@ -202,7 +202,13 @@ export default function Designs() {
                   {f.type === "textarea" ? (
                     <Textarea rows={3} placeholder={f.placeholder} value={inputs[f.name] ?? ""} onChange={(e) => setInputs((s) => ({ ...s, [f.name]: e.target.value }))} />
                   ) : f.type === "photo_selector" ? (
-                    <PhotoSelector orgId={orgId!} value={inputs[f.name] ?? ""} onChange={(v) => setInputs((s) => ({ ...s, [f.name]: v }))} />
+                    <MediaPicker
+                      orgId={orgId!}
+                      mode="image"
+                      value={inputs[f.name] ?? ""}
+                      onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
+                      compact
+                    />
                   ) : f.type === "school_picker" ? (
                     <SchoolPicker
                       value={inputs[f.name] ?? ""}
@@ -223,6 +229,43 @@ export default function Designs() {
                   )}
                 </div>
               ))}
+
+              {/* Image slots — always available, optional unless template requires */}
+              <div className="pt-4 border-t space-y-3">
+                <div>
+                  <Label>Hero image</Label>
+                  <p className="text-xs text-muted-foreground mb-2">The dominant photo. Upload new or pick from your library.</p>
+                  <MediaPicker
+                    orgId={orgId!}
+                    mode="image"
+                    value={inputs.hero_photo_url ?? ""}
+                    onChange={(url) => setInputs((s) => ({ ...s, hero_photo_url: url ?? "" }))}
+                    compact
+                  />
+                </div>
+                <div>
+                  <Label>Secondary image <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                  <p className="text-xs text-muted-foreground mb-2">Used as a sidebar, sticker, or collage element.</p>
+                  <MediaPicker
+                    orgId={orgId!}
+                    mode="image"
+                    value={inputs.secondary_photo_url ?? ""}
+                    onChange={(url) => setInputs((s) => ({ ...s, secondary_photo_url: url ?? "" }))}
+                    compact
+                  />
+                </div>
+                <div>
+                  <Label>Sponsor / partner logo <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
+                  <p className="text-xs text-muted-foreground mb-2">Adds a "presented by" lockup to the design.</p>
+                  <MediaPicker
+                    orgId={orgId!}
+                    mode="image"
+                    value={inputs.sponsor_logo_url ?? ""}
+                    onChange={(url) => setInputs((s) => ({ ...s, sponsor_logo_url: url ?? "" }))}
+                    compact
+                  />
+                </div>
+              </div>
 
               <div className="pt-4 border-t">
                 <Label className="mb-2 block">Style direction</Label>
