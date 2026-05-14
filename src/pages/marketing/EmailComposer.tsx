@@ -26,8 +26,11 @@ type Template = {
   input_fields: any;
   preview_props: any;
 };
-type Segment = { id: string; name: string; contact_count: number };
+type Segment = { id: string; name: string; contact_count: number; team_id?: string | null };
 type Domain = { id: string; from_email: string | null; from_name: string | null; is_default: boolean };
+type Team = { id: string; name: string; season_id: string | null };
+type Season = { id: string; name: string };
+type AudienceMode = "segment" | "teams";
 
 type Preview = "desktop" | "tablet" | "mobile" | "dark" | "text";
 const WIDTHS: Record<Preview, number | undefined> = { desktop: 800, tablet: 600, mobile: 375, dark: 800, text: 800 };
@@ -39,10 +42,15 @@ export default function EmailComposer() {
   const ml = useMarketingLink();
   const [params] = useSearchParams();
   const presetTemplateId = params.get("template");
+  const presetSegmentId = params.get("segment");
+  const presetTeamIds = (params.get("teams") || "").split(",").filter(Boolean);
+  const presetTeamRole = params.get("role") || "";
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [segments, setSegments] = useState<Segment[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
   const [brand, setBrand] = useState<BrandContext>(DEFAULT_BRAND);
 
   const [templateId, setTemplateId] = useState<string>("");
@@ -51,23 +59,30 @@ export default function EmailComposer() {
   const [previewText, setPreviewText] = useState("");
   const [fromEmail, setFromEmail] = useState("");
   const [fromName, setFromName] = useState("");
-  const [segmentId, setSegmentId] = useState("");
+  const [audienceMode, setAudienceMode] = useState<AudienceMode>(presetTeamIds.length > 0 ? "teams" : "segment");
+  const [segmentId, setSegmentId] = useState(presetSegmentId || "");
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>(presetTeamIds);
+  const [teamRole, setTeamRole] = useState<string>(presetTeamRole); // "" = all
   const [previewMode, setPreviewMode] = useState<Preview>("desktop");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!orgId) return;
     (async () => {
-      const [t, s, d, b] = await Promise.all([
+      const [t, s, d, b, , tm, se] = await Promise.all([
         supabase.from("email_templates").select("*").eq("active", true).order("sort_order"),
-        supabase.from("org_contact_segments").select("id,name,contact_count").eq("org_id", orgId).order("name"),
+        supabase.from("org_contact_segments").select("id,name,contact_count,team_id").eq("org_id", orgId).order("name"),
         supabase.from("org_email_domains").select("id,from_email,from_name,is_default").eq("org_id", orgId),
         supabase.from("org_brand_kits").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
+        supabase.from("org_teams").select("id,name,season_id").eq("org_id", orgId).order("name"),
+        supabase.from("org_seasons").select("id,name").eq("org_id", orgId).order("season_start_date", { ascending: false }),
       ]);
       setTemplates((t.data ?? []) as Template[]);
       setSegments((s.data ?? []) as Segment[]);
       setDomains((d.data ?? []) as Domain[]);
+      setTeams((tm.data ?? []) as Team[]);
+      setSeasons((se.data ?? []) as Season[]);
       const def = (d.data ?? []).find((x: any) => x.is_default) ?? (d.data ?? [])[0];
       if (def) { setFromEmail(def.from_email ?? ""); setFromName(def.from_name ?? ""); }
       const bk: any = b.data;
@@ -117,20 +132,39 @@ export default function EmailComposer() {
 
   const spam = useMemo(() => localSpamCheck({ subject, html: rendered.html, from: fromEmail }), [subject, rendered.html, fromEmail]);
   const recipientEstimate = segments.find((s) => s.id === segmentId)?.contact_count ?? 0;
+  const teamLabel = (id: string) => teams.find((t) => t.id === id)?.name ?? "team";
 
   const save = async (sendNow: boolean) => {
     if (!orgId) return;
     if (!subject) return toast.error("Subject required");
-    if (!segmentId) return toast.error("Pick a segment");
     if (!template && !isBlank) return toast.error("Pick a template");
     if (isBlank && !customHtml.trim()) return toast.error("Write your email body");
+    if (audienceMode === "segment" && !segmentId) return toast.error("Pick a segment");
+    if (audienceMode === "teams" && selectedTeamIds.length === 0) return toast.error("Pick at least one team");
     setSaving(true);
     try {
+      let useSegmentId = segmentId;
+
+      // Multi-team mode: create an ad-hoc segment with team_ids filter
+      if (audienceMode === "teams") {
+        const names = selectedTeamIds.map(teamLabel).join(", ");
+        const roleSuffix = teamRole ? ` (${teamRole}s)` : "";
+        const ad = await supabase.from("org_contact_segments").insert({
+          org_id: orgId,
+          name: `Blast — ${names}${roleSuffix} · ${new Date().toLocaleDateString()}`,
+          description: `Multi-team blast to ${selectedTeamIds.length} team(s)`,
+          filter_rules: { team_ids: selectedTeamIds, ...(teamRole ? { team_role: teamRole } : {}) },
+          is_system: false,
+        }).select("id").single();
+        if (ad.error) throw ad.error;
+        useSegmentId = ad.data.id;
+      }
+
       const payload: any = {
         org_id: orgId,
         subject, preview_text: previewText || null,
         from_email: fromEmail || null, from_name: fromName || null,
-        segment_id: segmentId,
+        segment_id: useSegmentId,
         template_id: isBlank ? null : template!.id,
         rendering_engine: isBlank ? "html" : template!.rendering_engine,
         template_props: isBlank ? { custom_html: customHtml } : propsState,
@@ -213,12 +247,78 @@ export default function EmailComposer() {
 
           <div className="border-t border-border pt-3 space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Audience</p>
-            <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)}
-              className="w-full h-10 px-2 rounded-md border border-input bg-background text-sm">
-              <option value="">Pick a segment…</option>
-              {segments.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.contact_count})</option>)}
-            </select>
-            {segmentId && <p className="text-xs text-muted-foreground">~{recipientEstimate} recipients</p>}
+            <div className="flex rounded-md border border-input overflow-hidden text-xs">
+              <button type="button" onClick={() => setAudienceMode("segment")}
+                className={`flex-1 px-2 py-1.5 ${audienceMode === "segment" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}>
+                Segment
+              </button>
+              <button type="button" onClick={() => setAudienceMode("teams")}
+                className={`flex-1 px-2 py-1.5 ${audienceMode === "teams" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}>
+                Pick teams
+              </button>
+            </div>
+
+            {audienceMode === "segment" ? (
+              <>
+                <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)}
+                  className="w-full h-10 px-2 rounded-md border border-input bg-background text-sm">
+                  <option value="">Pick a segment…</option>
+                  {segments.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.contact_count})</option>)}
+                </select>
+                {segmentId && <p className="text-xs text-muted-foreground">~{recipientEstimate} recipients</p>}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <div className="max-h-56 overflow-y-auto border border-border rounded-md p-2 space-y-1">
+                  {teams.length === 0 && <p className="text-xs text-muted-foreground italic px-1">No teams yet. Add teams in Contacts → Seasons.</p>}
+                  {seasons.map((season) => {
+                    const ts = teams.filter((t) => t.season_id === season.id);
+                    if (ts.length === 0) return null;
+                    return (
+                      <div key={season.id}>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-1 pt-1">{season.name}</p>
+                        {ts.map((t) => (
+                          <label key={t.id} className="flex items-center gap-2 text-sm px-1 py-0.5 hover:bg-muted rounded cursor-pointer">
+                            <input type="checkbox" checked={selectedTeamIds.includes(t.id)}
+                              onChange={(e) => setSelectedTeamIds((prev) =>
+                                e.target.checked ? [...prev, t.id] : prev.filter((x) => x !== t.id))} />
+                            <span>{t.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {teams.filter((t) => !t.season_id).length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-1 pt-1">Other</p>
+                      {teams.filter((t) => !t.season_id).map((t) => (
+                        <label key={t.id} className="flex items-center gap-2 text-sm px-1 py-0.5 hover:bg-muted rounded cursor-pointer">
+                          <input type="checkbox" checked={selectedTeamIds.includes(t.id)}
+                            onChange={(e) => setSelectedTeamIds((prev) =>
+                              e.target.checked ? [...prev, t.id] : prev.filter((x) => x !== t.id))} />
+                          <span>{t.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs">Send to</Label>
+                  <select value={teamRole} onChange={(e) => setTeamRole(e.target.value)}
+                    className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm">
+                    <option value="">Everyone on these teams</option>
+                    <option value="player">Players only</option>
+                    <option value="parent">Parents only</option>
+                    <option value="coach">Coaches & staff only</option>
+                  </select>
+                </div>
+                {selectedTeamIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTeamIds.length} team{selectedTeamIds.length === 1 ? "" : "s"} selected · recipients calculated at send time
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border-t border-border pt-3 space-y-3">

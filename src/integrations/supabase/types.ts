@@ -3778,6 +3778,7 @@ export type Database = {
           is_system: boolean
           name: string
           org_id: string
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -3789,6 +3790,7 @@ export type Database = {
           is_system?: boolean
           name: string
           org_id: string
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -3800,6 +3802,7 @@ export type Database = {
           is_system?: boolean
           name?: string
           org_id?: string
+          team_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3808,6 +3811,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_contact_segments_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "org_teams"
             referencedColumns: ["id"]
           },
         ]
@@ -7655,6 +7665,7 @@ export type Database = {
         Args: { _org_id: string }
         Returns: undefined
       }
+      seed_org_team_segments: { Args: { _org_id: string }; Returns: undefined }
       seed_portal_config: {
         Args: { _acq_id: string; _state: string }
         Returns: undefined
