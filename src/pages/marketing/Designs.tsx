@@ -26,6 +26,7 @@ import { Plus, Sparkles, Loader2, Image as ImageIcon, Search, Trash2 } from "luc
 import { useMarketingLink } from "@/hooks/useMarketingLink";
 import SchoolPicker from "@/components/marketing/SchoolPicker";
 import MediaPicker from "@/components/marketing/MediaPicker";
+import SnippetPicker from "@/components/marketing/SnippetPicker";
 
 type Template = {
   id: string;
@@ -80,7 +81,7 @@ export default function Designs() {
     const [dRes, tRes, bkRes] = await Promise.all([
       supabase.from("designs").select("id,name,design_type,status,preview_url,created_at,template_id").eq("org_id", orgId).order("created_at", { ascending: false }).limit(200),
       supabase.from("design_templates").select("*").eq("active", true).order("sort_order"),
-      supabase.from("org_brand_kits").select("logo_primary_url,color_primary,font_heading").eq("org_id", orgId).maybeSingle(),
+      supabase.from("org_brand_kits").select("logo_primary_url,logo_secondary_url,logo_mark_url,color_primary,font_heading,tagline").eq("org_id", orgId).maybeSingle(),
     ]);
     setDesigns((dRes.data ?? []) as Design[]);
     setTemplates((tRes.data ?? []) as Template[]);
@@ -299,13 +300,37 @@ export default function Designs() {
               <p className="text-sm text-muted-foreground">Fill in these details — AI will compose the design from your brand kit.</p>
               {(picked.input_fields ?? []).map((f: any) => (
                 <div key={f.name}>
-                  <Label>{f.label}{f.required && <span className="text-destructive ml-1">*</span>}</Label>
+                  <div className="flex items-center justify-between gap-2">
+                    <Label>{f.label}{f.required && <span className="text-destructive ml-1">*</span>}</Label>
+                    {f.type === "textarea" && orgId && (
+                      <SnippetPicker
+                        orgId={orgId}
+                        onPick={(text) => setInputs((s) => ({ ...s, [f.name]: text }))}
+                      />
+                    )}
+                  </div>
                   {f.type === "textarea" ? (
                     <Textarea rows={3} placeholder={f.placeholder} value={inputs[f.name] ?? ""} onChange={(e) => setInputs((s) => ({ ...s, [f.name]: e.target.value }))} />
                   ) : f.type === "photo_selector" ? (
                     <MediaPicker
                       orgId={orgId!}
                       mode="image"
+                      value={inputs[f.name] ?? ""}
+                      onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
+                      compact
+                    />
+                  ) : f.type === "video_selector" ? (
+                    <MediaPicker
+                      orgId={orgId!}
+                      mode="video"
+                      value={inputs[f.name] ?? ""}
+                      onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
+                      compact
+                    />
+                  ) : f.type === "media_selector" ? (
+                    <MediaPicker
+                      orgId={orgId!}
+                      mode="any"
                       value={inputs[f.name] ?? ""}
                       onChange={(url) => setInputs((s) => ({ ...s, [f.name]: url ?? "" }))}
                       compact
@@ -357,13 +382,18 @@ export default function Designs() {
                 </div>
                 <div>
                   <Label>Sponsor / partner logo <span className="text-muted-foreground text-xs font-normal">(optional)</span></Label>
-                  <p className="text-xs text-muted-foreground mb-2">Adds a "presented by" lockup to the design.</p>
+                  <p className="text-xs text-muted-foreground mb-2">Adds a "presented by" lockup to the design. Pick a brand-kit logo or upload a partner mark.</p>
                   <MediaPicker
                     orgId={orgId!}
                     mode="image"
                     value={inputs.sponsor_logo_url ?? ""}
                     onChange={(url) => setInputs((s) => ({ ...s, sponsor_logo_url: url ?? "" }))}
                     compact
+                    logoVariants={[
+                      brandKit?.logo_primary_url && { label: "Primary", url: brandKit.logo_primary_url },
+                      brandKit?.logo_secondary_url && { label: "Secondary", url: brandKit.logo_secondary_url },
+                      brandKit?.logo_mark_url && { label: "Monogram", url: brandKit.logo_mark_url },
+                    ].filter(Boolean) as { label: string; url: string }[]}
                   />
                 </div>
               </div>
