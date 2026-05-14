@@ -410,41 +410,6 @@ export default function BrandKit() {
             {!(kit.hashtags?.length ?? 0) && <p className="text-xs text-muted-foreground">No hashtags yet</p>}
           </div>
         </Card>
-
-        {/* Photo library */}
-        <Card className="p-6 lg:col-span-3">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="font-display text-lg font-semibold">Photo library</h2>
-              <p className="text-sm text-muted-foreground">Upload action shots, team photos and venue images for use in designs.</p>
-            </div>
-            <Button onClick={() => photoInputRef.current?.click()} variant="outline">
-              <Upload className="h-4 w-4 mr-2" /> Upload photos
-            </Button>
-            <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={onPhotosUpload} />
-          </div>
-          {assets.length === 0 ? (
-            <div className="border-2 border-dashed border-border rounded-lg p-12 text-center">
-              <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">No photos yet — upload your best shots to use in designs.</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {assets.map((a) => (
-                <div key={a.id} className="relative group aspect-square rounded-lg overflow-hidden bg-muted">
-                  <img src={a.thumbnail_url || a.url} alt={a.alt_text || ""} className="w-full h-full object-cover" />
-                  <button
-                    onClick={() => archiveAsset(a.id)}
-                    className="absolute top-2 right-2 p-1.5 rounded-md bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground"
-                    aria-label="Remove"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
       </div>
     </AppShell>
   );
