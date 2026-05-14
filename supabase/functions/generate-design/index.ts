@@ -256,16 +256,58 @@ Deno.serve(async (req) => {
         const { data: signed } = await admin.storage.from("design-renders").createSignedUrl(bgPath, 86400 * 7);
         const bgUrl = signed?.signedUrl || "";
 
+        // Phase 3: composite via Fly.io worker if configured
+        let finalUrl = bgUrl;
+        let totalCost = result.costCents;
+        const workerUrl = Deno.env.get("COMPOSITE_WORKER_URL");
+        const workerToken = Deno.env.get("COMPOSITE_WORKER_TOKEN");
+        const compositionSpec = templateRes.data.composition_config || null;
+
+        if (workerUrl && compositionSpec) {
+          try {
+            const compResp = await fetch(`${workerUrl.replace(/\/$/, "")}/composite`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
+              },
+              body: JSON.stringify({
+                background_url: bgUrl,
+                composition_spec: compositionSpec,
+                brand_kit: brandRes.data || {},
+                output_format: "png",
+              }),
+            });
+            if (!compResp.ok) {
+              const errTxt = await compResp.text();
+              console.warn("composite worker failed", compResp.status, errTxt);
+            } else {
+              const compBytes = new Uint8Array(await compResp.arrayBuffer());
+              const finalPath = `${org_id}/${designId}/final.png`;
+              const fup = await admin.storage.from("design-renders").upload(finalPath, compBytes, {
+                contentType: "image/png",
+                upsert: true,
+              });
+              if (!fup.error) {
+                const { data: fsigned } = await admin.storage.from("design-renders").createSignedUrl(finalPath, 86400 * 7);
+                if (fsigned?.signedUrl) finalUrl = fsigned.signedUrl;
+              }
+            }
+          } catch (e) {
+            console.warn("composite worker exception", e);
+          }
+        }
+
         await admin.from("designs").update({
           status: "ready",
           generation_engine: model === "sd3.5-large" ? "stability_sharp_premium" : "stability_sharp",
           stability_prompt: prompt,
           stability_image_url: bgUrl,
           stability_seed: result.seed,
-          composition_spec: templateRes.data.composition_config || null,
-          generation_cost_cents: result.costCents,
+          composition_spec: compositionSpec,
+          generation_cost_cents: totalCost,
           generation_time_ms: Date.now() - t0,
-          preview_url: bgUrl, // Phase 2: raw background as preview. Phase 4 will replace with composited image.
+          preview_url: finalUrl,
           ai_model_used: `stability/${model}`,
           generation_error: null,
         }).eq("id", designId);
