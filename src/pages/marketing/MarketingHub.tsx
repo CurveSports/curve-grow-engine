@@ -58,32 +58,34 @@ export default function MarketingHub() {
     (async () => {
       const since24 = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
       const since7d = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
-      const next48 = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+
+      const surveyIds = (await supabase.from("org_nps_surveys").select("id").eq("org_id", orgId)).data?.map((s: any) => s.id) ?? [];
+      const sendIds = (await supabase.from("org_email_sends").select("id").eq("org_id", orgId)).data?.map((s: any) => s.id) ?? [];
 
       const [
-        approvals, detractors, nextSend, domains, smsSetup, socials,
-        events24, contacts7d, sentSends, upcoming,
+        approvals, detractors, nextSend, domains, smsNum, socials,
+        events24, contacts7d, sentSends,
       ] = await Promise.all([
-        supabase.from("org_designs").select("id", { count: "exact", head: true })
+        supabase.from("designs").select("id", { count: "exact", head: true })
           .eq("org_id", orgId).eq("status", "approved_curve"),
-        supabase.from("org_nps_responses").select("id", { count: "exact", head: true })
-          .eq("category", "detractor").eq("flagged_for_followup", true).eq("followup_resolved", false)
-          .in("survey_id", (await supabase.from("org_nps_surveys").select("id").eq("org_id", orgId)).data?.map(s => s.id) ?? ["00000000-0000-0000-0000-000000000000"]),
+        surveyIds.length
+          ? supabase.from("org_nps_responses").select("id", { count: "exact", head: true })
+              .eq("category", "detractor").eq("flagged_for_followup", true).is("followup_completed_at", null)
+              .in("survey_id", surveyIds)
+          : Promise.resolve({ count: 0 } as any),
         supabase.from("org_email_sends").select("id, subject, scheduled_for")
           .eq("org_id", orgId).eq("status", "scheduled")
           .order("scheduled_for", { ascending: true }).limit(1).maybeSingle(),
         supabase.from("org_email_domains").select("id, status").eq("org_id", orgId),
-        supabase.from("org_sms_settings").select("id, phone_number_status").eq("org_id", orgId).maybeSingle(),
+        supabase.from("org_sms_numbers").select("id, active").eq("org_id", orgId).eq("active", true).limit(1),
         supabase.from("org_social_accounts").select("id").eq("org_id", orgId).limit(1),
-        supabase.from("org_email_events").select("event_type").gte("created_at", since24)
-          .in("send_id", (await supabase.from("org_email_sends").select("id").eq("org_id", orgId)).data?.map(s => s.id) ?? ["00000000-0000-0000-0000-000000000000"]),
+        sendIds.length
+          ? supabase.from("org_email_events").select("event_type").gte("created_at", since24).in("send_id", sendIds)
+          : Promise.resolve({ data: [] } as any),
         supabase.from("org_contacts").select("id", { count: "exact", head: true })
           .eq("org_id", orgId).gte("created_at", since7d),
         supabase.from("org_email_sends").select("id, recipient_count").eq("org_id", orgId)
           .eq("status", "sent").gte("sent_at", since24),
-        supabase.from("org_events").select("id, title, starts_at").eq("org_id", orgId)
-          .gte("starts_at", new Date().toISOString()).lte("starts_at", next48)
-          .order("starts_at", { ascending: true }).limit(1).maybeSingle(),
       ]);
 
       if (cancelled) return;
@@ -99,11 +101,11 @@ export default function MarketingHub() {
         nextSendAt: (nextSend.data as any)?.scheduled_for ?? null,
         nextSendSubject: (nextSend.data as any)?.subject ?? null,
         emailDomainVerified: domainOk,
-        smsActive: ((smsSetup.data as any)?.phone_number_status === "active"),
+        smsActive: (smsNum.data?.length ?? 0) > 0,
         socialConnected: (socials.data?.length ?? 0) > 0,
         last24Opens: opens, last24Clicks: clicks, last24Sent: sent,
         newContacts7d: contacts7d.count ?? 0,
-        upcomingEvent: (upcoming.data as any) ?? null,
+        upcomingEvent: null,
       });
       setLoading(false);
     })().catch(() => setLoading(false));
