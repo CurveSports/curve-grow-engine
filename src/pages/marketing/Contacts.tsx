@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { Upload, Plus, Trash2, Users, Filter, Loader2, ChevronRight, Calendar, Layers, FolderOpen, Archive } from "lucide-react";
-import { IMPORT_PRESETS, TARGET_FIELDS } from "@/lib/csvImportPresets";
+import { autoMapHeaders, TARGET_FIELDS } from "@/lib/csvImportPresets";
 
 type Contact = {
   id: string;
