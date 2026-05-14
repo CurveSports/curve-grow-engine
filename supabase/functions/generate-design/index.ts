@@ -229,8 +229,57 @@ Deno.serve(async (req) => {
 
     const designId = insertRes.data.id;
 
-    // 2. Kick off AI generation in the background; respond to the client right away
-    const runGeneration = async () => {
+    // 2. Decide engine: Stability (when key present + template opts in) or HTML/CSS fallback.
+    const stabilityKey = Deno.env.get("STABILITY_API_KEY");
+    const useStability = !!stabilityKey && templateRes.data.generation_engine === "stability_sharp";
+
+    const runStabilityGeneration = async () => {
+      const t0 = Date.now();
+      try {
+        const prompt = buildStabilityPrompt(
+          templateRes.data as any,
+          (brandRes.data || {}) as any,
+          prompt_input || {},
+        );
+        const aspect = ASPECT_RATIOS[templateRes.data.design_type] || "1:1";
+        const model = (prompt_input?.use_premium ? "sd3.5-large" : (templateRes.data.stability_model || "core")) as StabilityModel;
+
+        const result = await callStabilityAI({ prompt, aspectRatio: aspect, model });
+
+        // Upload raw background to design-renders bucket
+        const bgPath = `${org_id}/${designId}/background.png`;
+        const up = await admin.storage.from("design-renders").upload(bgPath, result.imageBytes, {
+          contentType: "image/png",
+          upsert: true,
+        });
+        if (up.error) throw new Error(`storage upload: ${up.error.message}`);
+        const { data: signed } = await admin.storage.from("design-renders").createSignedUrl(bgPath, 86400 * 7);
+        const bgUrl = signed?.signedUrl || "";
+
+        await admin.from("designs").update({
+          status: "ready",
+          generation_engine: model === "sd3.5-large" ? "stability_sharp_premium" : "stability_sharp",
+          stability_prompt: prompt,
+          stability_image_url: bgUrl,
+          stability_seed: result.seed,
+          composition_spec: templateRes.data.composition_config || null,
+          generation_cost_cents: result.costCents,
+          generation_time_ms: Date.now() - t0,
+          preview_url: bgUrl, // Phase 2: raw background as preview. Phase 4 will replace with composited image.
+          ai_model_used: `stability/${model}`,
+          generation_error: null,
+        }).eq("id", designId);
+      } catch (err) {
+        console.error("Stability generation exception", err);
+        await admin.from("designs").update({
+          status: "failed",
+          generation_error: `Stability AI: ${String(err).slice(0, 400)}`,
+          generation_time_ms: Date.now() - t0,
+        }).eq("id", designId);
+      }
+    };
+
+    const runHtmlGeneration = async () => {
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
@@ -276,6 +325,7 @@ Deno.serve(async (req) => {
         await admin.from("designs").update({
           generated_html: html,
           status: "ready",
+          generation_engine: "html_css",
           generation_cost_cents: cost_cents,
           generation_error: null,
           assets_used: [
@@ -307,6 +357,8 @@ Deno.serve(async (req) => {
         }).eq("id", designId);
       }
     };
+
+    const runGeneration = useStability ? runStabilityGeneration : runHtmlGeneration;
 
     // @ts-ignore Deno EdgeRuntime global
     if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
