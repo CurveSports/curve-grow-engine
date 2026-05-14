@@ -204,7 +204,7 @@ export default function BrandKit() {
     }
   };
 
-
+  const save = async () => {
     if (!orgId) return;
     setSaving(true);
     const payload = { ...kit, org_id: orgId };
