@@ -372,6 +372,17 @@ export default function AdminUsers() {
                           <Palette className="h-3.5 w-3.5" /> Customize
                         </Link>
                       )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={resendingId === r.user_id}
+                        onClick={() => resendInvite(r)}
+                        title="Resend invite & copy sign-in link"
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <MailPlus className="h-4 w-4 mr-1" />
+                        {resendingId === r.user_id ? "Sending…" : "Resend"}
+                      </Button>
                       {!isSelf && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
