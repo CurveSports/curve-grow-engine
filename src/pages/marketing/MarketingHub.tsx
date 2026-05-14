@@ -103,6 +103,8 @@ export default function MarketingHub() {
       const sent = (sentSends.data ?? []).reduce((acc: number, s: any) => acc + (s.recipient_count ?? 0), 0);
       const domainOk = (domains.data ?? []).some((d: any) => d.status === "verified" || d.status === "active");
 
+      const gameDayItem = (gameDay.data ?? [])[0] as any;
+
       setStats({
         pendingApprovals: approvals.count ?? 0,
         detractorsOpen: detractors.count ?? 0,
@@ -113,7 +115,9 @@ export default function MarketingHub() {
         socialConnected: (socials.data?.length ?? 0) > 0,
         last24Opens: opens, last24Clicks: clicks, last24Sent: sent,
         newContacts7d: contacts7d.count ?? 0,
-        upcomingEvent: null,
+        upcomingEvent: gameDayItem
+          ? { id: gameDayItem.id, title: gameDayItem.title, starts_at: gameDayItem.calculated_due_date }
+          : null,
       });
       setLoading(false);
     })().catch(() => setLoading(false));
