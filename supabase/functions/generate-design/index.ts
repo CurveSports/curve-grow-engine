@@ -1,5 +1,12 @@
-// Generate a design via Lovable AI Gateway. Returns HTML and stores design row.
+// Generate a design. Two execution paths:
+//   1. Stability AI background (when STABILITY_API_KEY set AND template uses 'stability_sharp')
+//      → calls Stability v2beta, uploads raw background to design-renders bucket,
+//        sets it as preview_url. Compositing (logo/text/CTA overlays) happens in a
+//        follow-up step (composite-image function, Phase 4).
+//   2. Existing HTML/CSS via Lovable AI Gateway (default fallback).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { callStabilityAI, ASPECT_RATIOS, type StabilityModel } from "../_shared/stability.ts";
+import { buildStabilityPrompt } from "../_shared/buildStabilityPrompt.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
