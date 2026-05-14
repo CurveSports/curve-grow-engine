@@ -2513,16 +2513,21 @@ export type Database = {
           active: boolean
           base_prompt: string
           category: string
+          composition_config: Json | null
           created_at: string
           design_type: string
           dimensions: Json
           example_output: string | null
+          generation_engine: string | null
           id: string
           input_fields: Json
           is_system: boolean
+          mood: string | null
           name: string
           owner_org_id: string | null
           sort_order: number
+          stability_model: string | null
+          stability_prompt_template: string | null
           thumbnail_url: string | null
           updated_at: string
         }
@@ -2530,16 +2535,21 @@ export type Database = {
           active?: boolean
           base_prompt: string
           category?: string
+          composition_config?: Json | null
           created_at?: string
           design_type: string
           dimensions?: Json
           example_output?: string | null
+          generation_engine?: string | null
           id?: string
           input_fields?: Json
           is_system?: boolean
+          mood?: string | null
           name: string
           owner_org_id?: string | null
           sort_order?: number
+          stability_model?: string | null
+          stability_prompt_template?: string | null
           thumbnail_url?: string | null
           updated_at?: string
         }
@@ -2547,16 +2557,21 @@ export type Database = {
           active?: boolean
           base_prompt?: string
           category?: string
+          composition_config?: Json | null
           created_at?: string
           design_type?: string
           dimensions?: Json
           example_output?: string | null
+          generation_engine?: string | null
           id?: string
           input_fields?: Json
           is_system?: boolean
+          mood?: string | null
           name?: string
           owner_org_id?: string | null
           sort_order?: number
+          stability_model?: string | null
+          stability_prompt_template?: string | null
           thumbnail_url?: string | null
           updated_at?: string
         }
@@ -2576,6 +2591,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           assets_used: Json
+          composition_spec: Json | null
           created_at: string
           created_by: string | null
           created_by_role: string | null
@@ -2583,14 +2599,19 @@ export type Database = {
           export_urls: Json | null
           generated_html: string | null
           generation_cost_cents: number | null
+          generation_engine: string | null
           generation_error: string | null
           generation_started_at: string | null
+          generation_time_ms: number | null
           id: string
           name: string | null
           org_id: string
           parent_design_id: string | null
           preview_url: string | null
           prompt_input: Json | null
+          stability_image_url: string | null
+          stability_prompt: string | null
+          stability_seed: number | null
           status: string
           template_id: string | null
           updated_at: string
@@ -2600,6 +2621,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assets_used?: Json
+          composition_spec?: Json | null
           created_at?: string
           created_by?: string | null
           created_by_role?: string | null
@@ -2607,14 +2629,19 @@ export type Database = {
           export_urls?: Json | null
           generated_html?: string | null
           generation_cost_cents?: number | null
+          generation_engine?: string | null
           generation_error?: string | null
           generation_started_at?: string | null
+          generation_time_ms?: number | null
           id?: string
           name?: string | null
           org_id: string
           parent_design_id?: string | null
           preview_url?: string | null
           prompt_input?: Json | null
+          stability_image_url?: string | null
+          stability_prompt?: string | null
+          stability_seed?: number | null
           status?: string
           template_id?: string | null
           updated_at?: string
@@ -2624,6 +2651,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assets_used?: Json
+          composition_spec?: Json | null
           created_at?: string
           created_by?: string | null
           created_by_role?: string | null
@@ -2631,14 +2659,19 @@ export type Database = {
           export_urls?: Json | null
           generated_html?: string | null
           generation_cost_cents?: number | null
+          generation_engine?: string | null
           generation_error?: string | null
           generation_started_at?: string | null
+          generation_time_ms?: number | null
           id?: string
           name?: string | null
           org_id?: string
           parent_design_id?: string | null
           preview_url?: string | null
           prompt_input?: Json | null
+          stability_image_url?: string | null
+          stability_prompt?: string | null
+          stability_seed?: number | null
           status?: string
           template_id?: string | null
           updated_at?: string
