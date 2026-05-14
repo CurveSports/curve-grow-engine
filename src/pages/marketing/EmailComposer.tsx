@@ -69,16 +69,20 @@ export default function EmailComposer() {
   useEffect(() => {
     if (!orgId) return;
     (async () => {
-      const [t, s, d, b] = await Promise.all([
+      const [t, s, d, b, , tm, se] = await Promise.all([
         supabase.from("email_templates").select("*").eq("active", true).order("sort_order"),
-        supabase.from("org_contact_segments").select("id,name,contact_count").eq("org_id", orgId).order("name"),
+        supabase.from("org_contact_segments").select("id,name,contact_count,team_id").eq("org_id", orgId).order("name"),
         supabase.from("org_email_domains").select("id,from_email,from_name,is_default").eq("org_id", orgId),
         supabase.from("org_brand_kits").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
+        supabase.from("org_teams").select("id,name,season_id").eq("org_id", orgId).order("name"),
+        supabase.from("org_seasons").select("id,name").eq("org_id", orgId).order("season_start_date", { ascending: false }),
       ]);
       setTemplates((t.data ?? []) as Template[]);
       setSegments((s.data ?? []) as Segment[]);
       setDomains((d.data ?? []) as Domain[]);
+      setTeams((tm.data ?? []) as Team[]);
+      setSeasons((se.data ?? []) as Season[]);
       const def = (d.data ?? []).find((x: any) => x.is_default) ?? (d.data ?? [])[0];
       if (def) { setFromEmail(def.from_email ?? ""); setFromName(def.from_name ?? ""); }
       const bk: any = b.data;
