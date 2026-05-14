@@ -175,18 +175,7 @@ export default function DesignEditor() {
     }
   };
 
-  const updateStatus = async (status: string) => {
-    if (!id) return;
-    const updates: any = { status };
-    if (status === "approved") {
-      updates.approved_by = profile?.user_id;
-      updates.approved_at = new Date().toISOString();
-    }
-    const { error } = await supabase.from("designs").update(updates).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success(`Status: ${status.replace("_", " ")}`);
-    load();
-  };
+  // (approval workflow removed — designs are usable as soon as they're generated)
 
   const saveName = async () => {
     if (!id) return;
