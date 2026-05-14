@@ -26,8 +26,11 @@ type Template = {
   input_fields: any;
   preview_props: any;
 };
-type Segment = { id: string; name: string; contact_count: number };
+type Segment = { id: string; name: string; contact_count: number; team_id?: string | null };
 type Domain = { id: string; from_email: string | null; from_name: string | null; is_default: boolean };
+type Team = { id: string; name: string; season_id: string | null };
+type Season = { id: string; name: string };
+type AudienceMode = "segment" | "teams";
 
 type Preview = "desktop" | "tablet" | "mobile" | "dark" | "text";
 const WIDTHS: Record<Preview, number | undefined> = { desktop: 800, tablet: 600, mobile: 375, dark: 800, text: 800 };
