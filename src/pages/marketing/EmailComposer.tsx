@@ -173,10 +173,25 @@ export default function EmailComposer() {
             <select value={templateId} onChange={(e) => setTemplateId(e.target.value)}
               className="w-full h-10 px-2 rounded-md border border-input bg-background text-sm">
               <option value="">Pick a template…</option>
+              <option value="__blank__">✏️ Blank email — write your own</option>
               {templates.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
             {template?.description && <p className="text-xs text-muted-foreground mt-1">{template.description}</p>}
+            {isBlank && <p className="text-xs text-muted-foreground mt-1">Write HTML or plain text — it'll be wrapped in your brand shell.</p>}
           </div>
+
+          {isBlank && (
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Email body</p>
+              <Textarea
+                rows={14}
+                className="font-mono text-xs"
+                value={customHtml}
+                placeholder={"<h2>Hi {{first_name}},</h2>\n<p>Write your message here. Basic HTML is supported.</p>\n<p><a href=\"https://example.com\">Click here</a></p>"}
+                onChange={(e) => setCustomHtml(e.target.value)}
+              />
+            </div>
+          )}
 
           {template && Array.isArray(template.input_fields) && template.input_fields.length > 0 && (
             <div className="space-y-3 border-t border-border pt-3">
