@@ -246,7 +246,19 @@ export default function BrandKit() {
 
         {/* Colors */}
         <Card className="p-6 lg:col-span-2">
-          <h2 className="font-display text-lg font-semibold mb-4">Colors</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-semibold">Colors</h2>
+            {kit.logo_primary_url && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => autofillColorsFromLogo(kit.logo_primary_url!, true)}
+              >
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" /> Re-pull from logo
+              </Button>
+            )}
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {([
               ["color_primary", "Primary"],
