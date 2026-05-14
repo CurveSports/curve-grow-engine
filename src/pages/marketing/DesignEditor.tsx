@@ -57,6 +57,7 @@ export default function DesignEditor() {
   const [varying, setVarying] = useState(false);
   const [exporting, setExporting] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   const load = async () => {
     if (!id) return;
