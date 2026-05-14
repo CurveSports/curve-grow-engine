@@ -57,6 +57,7 @@ export default function Designs() {
   const [pickOpen, setPickOpen] = useState(false);
   const [picked, setPicked] = useState<Template | null>(null);
   const [inputs, setInputs] = useState<Record<string, any>>({});
+  const [styleDirection, setStyleDirection] = useState<string>("bold_sport");
   const [generating, setGenerating] = useState(false);
 
   const load = async () => {
