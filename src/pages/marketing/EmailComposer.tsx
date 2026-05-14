@@ -122,7 +122,8 @@ export default function EmailComposer() {
     if (!orgId) return;
     if (!subject) return toast.error("Subject required");
     if (!segmentId) return toast.error("Pick a segment");
-    if (!template) return toast.error("Pick a template");
+    if (!template && !isBlank) return toast.error("Pick a template");
+    if (isBlank && !customHtml.trim()) return toast.error("Write your email body");
     setSaving(true);
     try {
       const payload: any = {
@@ -130,9 +131,9 @@ export default function EmailComposer() {
         subject, preview_text: previewText || null,
         from_email: fromEmail || null, from_name: fromName || null,
         segment_id: segmentId,
-        template_id: template.id,
-        rendering_engine: template.rendering_engine,
-        template_props: propsState,
+        template_id: isBlank ? null : template!.id,
+        rendering_engine: isBlank ? "html" : template!.rendering_engine,
+        template_props: isBlank ? { custom_html: customHtml } : propsState,
         html_body: rendered.html,
         text_body: htmlToText(rendered.html),
         spam_score: spam.score,
