@@ -737,6 +737,20 @@ function ImportWizard({
 
         {step === 2 && (
           <div className="space-y-4">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-900 p-3 text-sm space-y-2">
+              <div className="font-medium text-amber-900 dark:text-amber-200">Two ways to format your file</div>
+              <ol className="list-decimal pl-5 space-y-1 text-amber-900/90 dark:text-amber-100/90">
+                <li>
+                  <span className="font-medium">One CSV file</span> with a <code className="bg-amber-100 dark:bg-amber-900/50 px-1 rounded">Team</code> column on every row — the importer will create teams automatically.
+                </li>
+                <li>
+                  <span className="font-medium">One Excel file (.xlsx) with a tab per team</span> — name each tab the team name (e.g. <em>14U Black</em>). We'll flatten every tab and use the tab name as the team.
+                </li>
+              </ol>
+              <div className="text-xs text-amber-800 dark:text-amber-200/80">
+                Required columns either way: <code>First Name</code>, <code>Last Name</code>, and at least one of <code>Email</code> or <code>Phone</code>. Parent fields are optional and auto-link.
+              </div>
+            </div>
             <div>
               <Label>Platform preset</Label>
               <div className="grid grid-cols-2 gap-2 mt-2">
@@ -750,8 +764,8 @@ function ImportWizard({
               </div>
             </div>
             <div>
-              <Label>CSV file</Label>
-              <input ref={fileRef} type="file" accept=".csv" onChange={onFile} className="block w-full text-sm mt-1" />
+              <Label>CSV or Excel file</Label>
+              <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="block w-full text-sm mt-1" />
               {file && <p className="text-xs text-muted-foreground mt-1">{file.name} · {headers.length} columns detected</p>}
             </div>
           </div>
