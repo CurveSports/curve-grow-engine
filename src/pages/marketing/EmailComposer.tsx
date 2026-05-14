@@ -247,12 +247,78 @@ export default function EmailComposer() {
 
           <div className="border-t border-border pt-3 space-y-3">
             <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Audience</p>
-            <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)}
-              className="w-full h-10 px-2 rounded-md border border-input bg-background text-sm">
-              <option value="">Pick a segment…</option>
-              {segments.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.contact_count})</option>)}
-            </select>
-            {segmentId && <p className="text-xs text-muted-foreground">~{recipientEstimate} recipients</p>}
+            <div className="flex rounded-md border border-input overflow-hidden text-xs">
+              <button type="button" onClick={() => setAudienceMode("segment")}
+                className={`flex-1 px-2 py-1.5 ${audienceMode === "segment" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}>
+                Segment
+              </button>
+              <button type="button" onClick={() => setAudienceMode("teams")}
+                className={`flex-1 px-2 py-1.5 ${audienceMode === "teams" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}>
+                Pick teams
+              </button>
+            </div>
+
+            {audienceMode === "segment" ? (
+              <>
+                <select value={segmentId} onChange={(e) => setSegmentId(e.target.value)}
+                  className="w-full h-10 px-2 rounded-md border border-input bg-background text-sm">
+                  <option value="">Pick a segment…</option>
+                  {segments.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.contact_count})</option>)}
+                </select>
+                {segmentId && <p className="text-xs text-muted-foreground">~{recipientEstimate} recipients</p>}
+              </>
+            ) : (
+              <div className="space-y-2">
+                <div className="max-h-56 overflow-y-auto border border-border rounded-md p-2 space-y-1">
+                  {teams.length === 0 && <p className="text-xs text-muted-foreground italic px-1">No teams yet. Add teams in Contacts → Seasons.</p>}
+                  {seasons.map((season) => {
+                    const ts = teams.filter((t) => t.season_id === season.id);
+                    if (ts.length === 0) return null;
+                    return (
+                      <div key={season.id}>
+                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-1 pt-1">{season.name}</p>
+                        {ts.map((t) => (
+                          <label key={t.id} className="flex items-center gap-2 text-sm px-1 py-0.5 hover:bg-muted rounded cursor-pointer">
+                            <input type="checkbox" checked={selectedTeamIds.includes(t.id)}
+                              onChange={(e) => setSelectedTeamIds((prev) =>
+                                e.target.checked ? [...prev, t.id] : prev.filter((x) => x !== t.id))} />
+                            <span>{t.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })}
+                  {teams.filter((t) => !t.season_id).length > 0 && (
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground px-1 pt-1">Other</p>
+                      {teams.filter((t) => !t.season_id).map((t) => (
+                        <label key={t.id} className="flex items-center gap-2 text-sm px-1 py-0.5 hover:bg-muted rounded cursor-pointer">
+                          <input type="checkbox" checked={selectedTeamIds.includes(t.id)}
+                            onChange={(e) => setSelectedTeamIds((prev) =>
+                              e.target.checked ? [...prev, t.id] : prev.filter((x) => x !== t.id))} />
+                          <span>{t.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-xs">Send to</Label>
+                  <select value={teamRole} onChange={(e) => setTeamRole(e.target.value)}
+                    className="w-full h-9 px-2 rounded-md border border-input bg-background text-sm">
+                    <option value="">Everyone on these teams</option>
+                    <option value="player">Players only</option>
+                    <option value="parent">Parents only</option>
+                    <option value="coach">Coaches & staff only</option>
+                  </select>
+                </div>
+                {selectedTeamIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {selectedTeamIds.length} team{selectedTeamIds.length === 1 ? "" : "s"} selected · recipients calculated at send time
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="border-t border-border pt-3 space-y-3">
