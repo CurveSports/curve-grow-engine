@@ -62,6 +62,7 @@ export default function Designs() {
 
   const [designs, setDesigns] = useState<Design[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [brandKit, setBrandKit] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -76,12 +77,14 @@ export default function Designs() {
   const load = async () => {
     if (!orgId) return;
     setLoading(true);
-    const [dRes, tRes] = await Promise.all([
+    const [dRes, tRes, bkRes] = await Promise.all([
       supabase.from("designs").select("id,name,design_type,status,preview_url,created_at,template_id").eq("org_id", orgId).order("created_at", { ascending: false }).limit(200),
       supabase.from("design_templates").select("*").eq("active", true).order("sort_order"),
+      supabase.from("org_brand_kits").select("logo_primary_url,color_primary,font_heading").eq("org_id", orgId).maybeSingle(),
     ]);
     setDesigns((dRes.data ?? []) as Design[]);
     setTemplates((tRes.data ?? []) as Template[]);
+    setBrandKit(bkRes.data);
     setLoading(false);
   };
 
@@ -171,6 +174,19 @@ export default function Designs() {
           <Plus className="h-4 w-4 mr-2" /> New design
         </Button>
       </div>
+
+      {brandKit !== null && (!brandKit?.logo_primary_url || !brandKit?.color_primary || !brandKit?.font_heading) && (
+        <Card className="p-4 mb-4 border-amber-500/40 bg-amber-500/5 flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="font-semibold text-sm">Your brand kit is incomplete</p>
+            <p className="text-sm text-muted-foreground">
+              Add a logo, brand colors, and fonts so generated designs match your brand.
+              <Link to={ml("/marketing/brand-kit")} className="ml-2 text-primary hover:underline">Open brand kit →</Link>
+            </p>
+          </div>
+        </Card>
+      )}
 
       <Card className="p-4 mb-4 flex flex-wrap items-center gap-3">
         <div className="relative flex-1 max-w-sm">
