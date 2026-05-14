@@ -25,6 +25,7 @@ import AdminHealthReports from "@/pages/admin/AdminHealthReports";
 import AdminPresentations from "@/pages/admin/AdminPresentations";
 import AdminTemplates from "@/pages/admin/AdminTemplates";
 import AdminUsersPage from "@/pages/admin/AdminUsersPage";
+import AdminUserLookup from "@/pages/admin/AdminUserLookup";
 
 import AdminMyTasks from "@/pages/admin/AdminMyTasks";
 import AdminPipeline from "@/pages/admin/AdminPipeline";
