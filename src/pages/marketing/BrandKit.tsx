@@ -362,13 +362,28 @@ export default function BrandKit() {
               />
             </div>
             <div>
-              <Label>Brand voice notes</Label>
+              <div className="flex items-center justify-between mb-1">
+                <Label>Brand voice notes</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={generateBrandVoice}
+                  disabled={generatingVoice}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1.5" />
+                  {generatingVoice ? "Generating…" : "Generate with AI"}
+                </Button>
+              </div>
               <Textarea
-                rows={5}
+                rows={10}
                 value={kit.brand_voice_notes || ""}
                 onChange={(e) => setKit((k) => ({ ...k, brand_voice_notes: e.target.value }))}
                 placeholder="Energetic, family-focused, never corporate. Avoid jargon. Always celebrate the kids first…"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                AI uses your website, social handles, and intake answers to draft a starting point. Edit freely.
+              </p>
             </div>
           </div>
         </Card>
