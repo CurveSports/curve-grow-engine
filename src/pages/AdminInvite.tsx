@@ -7,8 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ORG_TYPES } from "@/lib/intakeOptions";
+import { Copy, CheckCircle2, Mail } from "lucide-react";
 
 // Curve Admin: create an organization and invite the primary user via magic link.
 export default function AdminInvite() {
