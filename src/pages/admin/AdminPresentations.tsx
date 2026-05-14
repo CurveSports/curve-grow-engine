@@ -46,8 +46,9 @@ function emptyPostUrls(): PostUrls {
 
 export default function AdminPresentations() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [orgs, setOrgs] = useState<Array<{ id: string; name: string }>>([]);
-  const [orgId, setOrgId] = useState<string | null>(null);
+  const [orgId, setOrgId] = useState<string | null>(searchParams.get("org"));
   const [auditType, setAuditType] = useState<AuditType>("combined");
   const [running, setRunning] = useState(false);
   const [audits, setAudits] = useState<Audit[]>([]);
