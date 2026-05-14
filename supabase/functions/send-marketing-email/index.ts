@@ -55,9 +55,22 @@ Deno.serve(async (req) => {
 
     // Resolve recipients
     const { data: segment } = await admin.from("org_contact_segments").select("*").eq("id", send.segment_id).single();
+    const rules = segment?.filter_rules ?? {};
     let q = admin.from("org_contacts").select("id, email, first_name, last_name")
       .eq("org_id", send.org_id).eq("unsubscribed", false).eq("hard_bounce", false).not("email", "is", null);
-    q = buildContactQuery(segment?.filter_rules)(q);
+    q = buildContactQuery(rules)(q);
+
+    // team_id (single) and team_ids (multi-team union) — apply via membership lookup
+    const teamIds: string[] = Array.isArray(rules.team_ids) ? rules.team_ids : (rules.team_id ? [rules.team_id] : []);
+    if (teamIds.length > 0) {
+      const allowed = await resolveContactIdsByTeams(admin, send.org_id, teamIds, rules.team_role);
+      if (allowed.size === 0) {
+        await admin.from("org_email_sends").update({ status: "sent", sent_at: new Date().toISOString(), recipient_count: 0, delivered_count: 0 }).eq("id", send_id);
+        return new Response(JSON.stringify({ recipient_count: 0, delivered: 0, failures: 0 }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      q = q.in("id", Array.from(allowed));
+    }
+
     const { data: contacts } = await q;
     const recipients = (contacts || []).filter((c: any) => c.email);
 
