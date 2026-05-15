@@ -53,7 +53,17 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are refining an existing HTML design. Apply ONLY the user's requested change while preserving everything else. Return the complete updated HTML document with no fences or commentary.",
+            content: [
+              "You are a surgical HTML editor for an existing marketing design.",
+              "ABSOLUTE RULES — violating any of these is a failure:",
+              "1. Return the COMPLETE original HTML document. Never rewrite it from scratch.",
+              "2. Preserve EVERY <img> tag exactly (same src, same position, same size). Never delete or replace images.",
+              "3. Preserve every background-image, background, gradient, and inline style URL exactly.",
+              "4. Preserve the overall layout, structure, fonts, colors, and class names.",
+              "5. Change ONLY the specific text or styling the user explicitly asked for. If the request is ambiguous, make the smallest possible change.",
+              "6. If the user's request is about the BACKGROUND PHOTO, IMAGERY, SUBJECTS in the photo, age/look of people, scene, atmosphere, or anything visual that lives inside the generated background image (not text), DO NOT modify the HTML. Instead return exactly this single line and nothing else: NEEDS_BACKGROUND_REGEN",
+              "Return only the raw HTML (or the marker), no fences, no commentary.",
+            ].join("\n"),
           },
           {
             role: "user",
@@ -72,11 +82,41 @@ Deno.serve(async (req) => {
     }
 
     const aiJson = await aiResp.json();
-    const newHtml = stripFences(aiJson.choices?.[0]?.message?.content || "");
+    const rawOut = (aiJson.choices?.[0]?.message?.content || "").trim();
+
+    // Model decided this request is about the background imagery, not the HTML.
+    if (/^NEEDS_BACKGROUND_REGEN\b/i.test(rawOut)) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "This request is about the background image (people, scene, atmosphere). HTML refinement can't change what's inside the photo. Use 'Regenerate background' with this guidance instead.",
+          needs_background_regen: true,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const newHtml = stripFences(rawOut);
     if (!newHtml.toLowerCase().includes("<html")) {
       return new Response(JSON.stringify({ error: "Invalid HTML returned" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Safety: reject refinements that nuked the original images / structure.
+    const origImgs = (design.generated_html.match(/<img\b/gi) || []).length;
+    const newImgs = (newHtml.match(/<img\b/gi) || []).length;
+    const origBg = (design.generated_html.match(/background-image\s*:/gi) || []).length;
+    const newBg = (newHtml.match(/background-image\s*:/gi) || []).length;
+    if (newImgs < origImgs || newBg < origBg || newHtml.length < design.generated_html.length * 0.4) {
+      console.warn("Refinement rejected: structure shrunk", { origImgs, newImgs, origBg, newBg, origLen: design.generated_html.length, newLen: newHtml.length });
+      return new Response(
+        JSON.stringify({
+          error:
+            "The AI tried to remove images or core structure, so the refinement was discarded. Try something more specific like 'change the headline to ...', or use 'Regenerate background' for image changes.",
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     await admin.from("design_refinements").insert({
