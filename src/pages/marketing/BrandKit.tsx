@@ -357,37 +357,120 @@ export default function BrandKit() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Logos */}
-        <Card className="p-6 lg:col-span-3">
-          <h2 className="font-display text-lg font-semibold mb-4">Logos</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {([
-              ["logo_primary_url", "Primary logo", "Full-color, used most often"],
-              ["logo_secondary_url", "Reverse logo", "For dark backgrounds"],
-              ["logo_mark_url", "Logo mark", "Just the icon — for avatars, watermarks"],
-            ] as const).map(([key, label, hint]) => (
-              <div key={key} className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-                <div className="aspect-video bg-muted rounded flex items-center justify-center mb-3 overflow-hidden">
-                  {kit[key] ? (
-                    <img src={kit[key]!} alt={label} className="max-h-full max-w-full object-contain" />
-                  ) : (
-                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+        {/* Logos — single smart upload */}
+        <Card className="p-6 lg:col-span-3 space-y-5">
+          <div>
+            <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+              <Upload className="h-4 w-4" /> Logo
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Upload one logo — we'll auto-clean and enhance it. SVG is best (lossless). PNG/JPG must be at least 512px on the long edge; we'll upscale and remove backgrounds automatically. Max 5 MB.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="h-24 w-52 rounded-lg border border-border bg-muted flex items-center justify-center overflow-hidden relative">
+              {kit.logo_primary_url ? (
+                <img src={kit.logo_primary_url} alt="Logo" className="max-h-20 max-w-48 object-contain" />
+              ) : (
+                <div className="flex flex-col items-center text-muted-foreground">
+                  <ImageOff className="h-5 w-5" />
+                  <span className="text-[10px] mt-1">No logo yet</span>
+                </div>
+              )}
+              {logoStatus === "pending" && (
+                <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <label className="inline-flex">
+                <input
+                  type="file"
+                  accept="image/*,.svg"
+                  className="hidden"
+                  onChange={onSmartLogoUpload}
+                  disabled={uploadingLogo || logoStatus === "pending"}
+                />
+                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-foreground text-background text-sm font-medium cursor-pointer hover:opacity-90">
+                  <Upload className="h-3.5 w-3.5" />
+                  {uploadingLogo ? "Uploading…" : logoStatus === "pending" ? "Enhancing…" : kit.logo_primary_url ? "Replace logo" : "Upload logo"}
+                </span>
+              </label>
+              {kit.logo_primary_url && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {logoQuality && (
+                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                      logoQuality === "vector" || logoQuality === "high"
+                        ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10"
+                        : logoQuality === "medium"
+                        ? "border-amber-500/40 text-amber-700 bg-amber-500/10"
+                        : "border-orange-500/40 text-orange-700 bg-orange-500/10"
+                    }`}>
+                      {logoQuality === "vector" ? "Vector ✓"
+                        : logoQuality === "high" ? "High res"
+                        : logoQuality === "medium" ? "Medium res"
+                        : "Low res — enhanced"}
+                    </span>
+                  )}
+                  {logoDims && logoDims.w > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{logoDims.w}×{logoDims.h}</span>
+                  )}
+                  {logoStatus === "ready" && logoOriginalUrl && logoOriginalUrl !== kit.logo_primary_url && (
+                    <a href={logoOriginalUrl} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground underline">
+                      view original
+                    </a>
                   )}
                 </div>
-                <p className="font-semibold text-sm">{label}</p>
-                <p className="text-xs text-muted-foreground mb-3">{hint}</p>
-                <label className="inline-flex items-center gap-2 text-sm font-medium text-primary cursor-pointer hover:underline">
-                  <Upload className="h-4 w-4" />
-                  {kit[key] ? "Replace" : "Upload"}
-                  <input type="file" accept="image/*" className="hidden" onChange={(e) => onLogoUpload(e, key)} />
-                </label>
-                {kit[key] && (
-                  <button onClick={() => setKit((k) => ({ ...k, [key]: null }))} className="block mx-auto mt-1 text-xs text-muted-foreground hover:text-destructive">
-                    Remove
-                  </button>
-                )}
+              )}
+            </div>
+          </div>
+
+          {/* Optional manual overrides for reverse / mark variants */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowOverrides((s) => !s)}
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              {showOverrides ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {showOverrides ? "Hide" : "Add"} custom variants (reverse / mark)
+            </button>
+            {showOverrides && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                {([
+                  ["logo_secondary_url", "Reverse logo", "For dark backgrounds"],
+                  ["logo_mark_url", "Logo mark", "Just the icon — for avatars, watermarks"],
+                ] as const).map(([key, label, hint]) => (
+                  <div key={key} className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                    <div className="aspect-video bg-muted rounded flex items-center justify-center mb-3 overflow-hidden">
+                      {kit[key] ? (
+                        <img src={kit[key]!} alt={label} className="max-h-full max-w-full object-contain" />
+                      ) : (
+                        <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                      )}
+                    </div>
+                    <p className="font-semibold text-sm">{label}</p>
+                    <p className="text-xs text-muted-foreground mb-3">{hint}</p>
+                    <label className="inline-flex items-center gap-2 text-sm font-medium text-primary cursor-pointer hover:underline">
+                      <Upload className="h-4 w-4" />
+                      {kit[key] ? "Replace" : "Upload"}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => onLogoUpload(e, key)} />
+                    </label>
+                    {kit[key] && (
+                      <button
+                        onClick={() => setKit((k) => ({ ...k, [key]: null }))}
+                        className="block mx-auto mt-1 text-xs text-muted-foreground hover:text-destructive"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </Card>
 
