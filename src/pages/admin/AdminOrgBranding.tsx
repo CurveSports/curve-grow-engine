@@ -66,6 +66,10 @@ export default function AdminOrgBranding() {
   const { user } = useAuth();
   const [orgName, setOrgName] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+  const [logoQuality, setLogoQuality] = useState<string | null>(null);
+  const [logoStatus, setLogoStatus] = useState<string | null>(null);
+  const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
   const [primaryHex, setPrimaryHex] = useState(hslToHex(DEFAULT_PRIMARY));
   const [accentHex, setAccentHex] = useState(hslToHex(DEFAULT_ACCENT));
   const [palette, setPalette] = useState<ExtractedColor[]>([]);
@@ -77,14 +81,43 @@ export default function AdminOrgBranding() {
     if (!orgId) return;
     const [{ data: org }, { data: branding }] = await Promise.all([
       supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
-      supabase.from("org_branding").select("logo_url, primary_hsl, accent_hsl").eq("org_id", orgId).maybeSingle(),
+      supabase.from("org_branding").select("logo_url, logo_original_url, logo_quality, logo_processing_status, logo_width, logo_height, primary_hsl, accent_hsl").eq("org_id", orgId).maybeSingle(),
     ]);
     setOrgName(org?.name ?? "");
     setLogoUrl(branding?.logo_url ?? null);
+    setOriginalUrl((branding as any)?.logo_original_url ?? null);
+    setLogoQuality((branding as any)?.logo_quality ?? null);
+    setLogoStatus((branding as any)?.logo_processing_status ?? null);
+    const w = (branding as any)?.logo_width;
+    const h = (branding as any)?.logo_height;
+    setLogoDims(w && h ? { w, h } : null);
     setPrimaryHex(hslToHex(branding?.primary_hsl ?? DEFAULT_PRIMARY));
     setAccentHex(hslToHex(branding?.accent_hsl ?? DEFAULT_ACCENT));
     if (branding?.logo_url) runExtraction(branding.logo_url);
   };
+
+  // Poll while processing
+  useEffect(() => {
+    if (logoStatus !== "pending" || !orgId) return;
+    const t = setInterval(async () => {
+      const { data } = await supabase
+        .from("org_branding")
+        .select("logo_url, logo_quality, logo_processing_status, logo_processing_error")
+        .eq("org_id", orgId)
+        .maybeSingle();
+      const status = (data as any)?.logo_processing_status;
+      if (status && status !== "pending") {
+        setLogoUrl(data?.logo_url ?? null);
+        setLogoQuality((data as any)?.logo_quality ?? null);
+        setLogoStatus(status);
+        if (status === "ready") toast.success("Logo enhanced");
+        else if (status === "failed") toast.warning("Couldn't enhance logo — using original");
+        if (data?.logo_url) runExtraction(data.logo_url);
+        clearInterval(t);
+      }
+    }, 2500);
+    return () => clearInterval(t);
+  }, [logoStatus, orgId]);
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
