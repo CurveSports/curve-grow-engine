@@ -256,10 +256,10 @@ export default function AdminOrgBranding() {
             <h2 className="font-display text-lg font-semibold flex items-center gap-2">
               <Upload className="h-4 w-4" /> Logo
             </h2>
-            <p className="text-sm text-muted-foreground">PNG, JPG, WEBP, or SVG. PNG or SVG with a transparent background looks best. Max 2 MB.</p>
+            <p className="text-sm text-muted-foreground">Upload one logo — we'll auto-clean and enhance it. SVG is best (lossless). PNG/JPG must be at least 512×512; we'll upscale and remove the background automatically. Max 5 MB.</p>
           </div>
           <div className="flex items-center gap-6">
-            <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden">
+            <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden relative">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="max-h-16 max-w-40 object-contain" />
               ) : (
@@ -268,14 +268,42 @@ export default function AdminOrgBranding() {
                   <span className="text-[10px] mt-1">No logo</span>
                 </div>
               )}
+              {logoStatus === "pending" && (
+                <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <label className="inline-flex">
-                <input type="file" accept="image/*" className="hidden" onChange={onLogoFile} disabled={uploading} />
+                <input type="file" accept="image/*,.svg" className="hidden" onChange={onLogoFile} disabled={uploading || logoStatus === "pending"} />
                 <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-foreground text-background text-sm font-medium cursor-pointer hover:opacity-90">
-                  <Upload className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : logoUrl ? "Replace logo" : "Upload logo"}
+                  <Upload className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : logoStatus === "pending" ? "Enhancing…" : logoUrl ? "Replace logo" : "Upload logo"}
                 </span>
               </label>
+              {logoUrl && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {logoQuality && (
+                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                      logoQuality === "vector" ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10"
+                      : logoQuality === "high" ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10"
+                      : logoQuality === "medium" ? "border-amber-500/40 text-amber-700 bg-amber-500/10"
+                      : "border-orange-500/40 text-orange-700 bg-orange-500/10"
+                    }`}>
+                      {logoQuality === "vector" ? "Vector ✓"
+                        : logoQuality === "high" ? "High res"
+                        : logoQuality === "medium" ? "Medium res"
+                        : "Low res — enhanced"}
+                    </span>
+                  )}
+                  {logoDims && logoDims.w > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{logoDims.w}×{logoDims.h}</span>
+                  )}
+                  {logoStatus === "ready" && originalUrl && originalUrl !== logoUrl && (
+                    <a href={originalUrl} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground underline">view original</a>
+                  )}
+                </div>
+              )}
               {logoUrl && <Button variant="ghost" size="sm" onClick={removeLogo}>Remove logo</Button>}
             </div>
           </div>
