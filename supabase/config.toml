@@ -1,16 +1,15 @@
 project_id = "qjcjimesqwtrvligbtla"
 
-[functions.zoom-recording-webhook]
-verify_jwt = false
-
-[functions.onboard-portal]
-verify_jwt = false
-
-[functions.resend-webhook]
-verify_jwt = false
-
-[functions.ayrshare-webhook]
-verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
+[functions]
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.ayrshare-webhook]
+    verify_jwt = false
+  [functions.onboard-portal]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.resend-webhook]
+    verify_jwt = false
+  [functions.zoom-recording-webhook]
+    verify_jwt = false
