@@ -38,7 +38,7 @@ const empty: Form = {
   organization_name: "", primary_contact_name: "", email: "", phone: "", city_state: "",
   market_type: "", org_type: "", years_in_operation: "", current_growth_trend: "",
   player_mix: "", local_market_competition: "", organization_focus: "", market_strategy: "",
-  total_players: "", hs_players: "", youth_players: "", total_teams: "", average_roster_size: "",
+  total_players: "", hs_players: "", youth_players: "", total_teams: "", average_roster_size: "", active_coaches: "",
   seasons_offered: [], team_structure: "", typical_player_participation: "",
   player_commitment_level: "", demand_for_organization: "", player_selection_approach: "",
   // Dues model
