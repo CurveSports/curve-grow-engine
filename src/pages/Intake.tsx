@@ -527,6 +527,7 @@ export default function Intake() {
               <NumberField label="Youth Players (14U and below)" value={form.youth_players} onChange={(v) => set("youth_players", v)} min={0} />
               <NumberField label="Total Teams" value={form.total_teams} onChange={(v) => set("total_teams", v)} min={0} />
               <NumberField label="Average Roster Size" value={form.average_roster_size} onChange={(v) => set("average_roster_size", v)} min={0} />
+              <NumberField label="How many coaches are active in your organization?" value={form.active_coaches} onChange={(v) => set("active_coaches", v)} min={0} />
 
               <div className="pt-4">
                 <SubsectionHeading title="Structure & participation" />
