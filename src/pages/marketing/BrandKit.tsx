@@ -359,7 +359,8 @@ export default function BrandKit() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Logos — single smart upload */}
-        <Card className="p-6 lg:col-span-3 space-y-5">
+        <Card className="p-6 lg:col-span-3 space-y-5 relative overflow-hidden">
+          <LogoEnhancingOverlay open={logoStatus === "pending"} />
           <div>
             <h2 className="font-display text-lg font-semibold flex items-center gap-2">
               <Upload className="h-4 w-4" /> Logo
