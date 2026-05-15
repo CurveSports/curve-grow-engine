@@ -76,6 +76,7 @@ const empty: Form = {
   affiliate_fee_per_player: "", affiliate_apparel_revenue: "",
   // Multiple brands
   operates_multiple_brands: "", number_of_brands: "", brand_descriptions: "",
+  facility_locations: "",
 };
 
 function SubsectionHeading({ title }: { title: string }) {
