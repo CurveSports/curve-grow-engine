@@ -1,0 +1,1 @@
+ALTER TABLE public.organization_intake ADD COLUMN IF NOT EXISTS facility_locations integer;
