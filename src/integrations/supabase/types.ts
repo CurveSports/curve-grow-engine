@@ -3391,7 +3391,14 @@ export type Database = {
       org_branding: {
         Row: {
           accent_hsl: string | null
+          logo_format: string | null
+          logo_height: number | null
+          logo_original_url: string | null
+          logo_processing_error: string | null
+          logo_processing_status: string | null
+          logo_quality: string | null
           logo_url: string | null
+          logo_width: number | null
           org_id: string
           primary_hsl: string | null
           updated_at: string
@@ -3399,7 +3406,14 @@ export type Database = {
         }
         Insert: {
           accent_hsl?: string | null
+          logo_format?: string | null
+          logo_height?: number | null
+          logo_original_url?: string | null
+          logo_processing_error?: string | null
+          logo_processing_status?: string | null
+          logo_quality?: string | null
           logo_url?: string | null
+          logo_width?: number | null
           org_id: string
           primary_hsl?: string | null
           updated_at?: string
@@ -3407,7 +3421,14 @@ export type Database = {
         }
         Update: {
           accent_hsl?: string | null
+          logo_format?: string | null
+          logo_height?: number | null
+          logo_original_url?: string | null
+          logo_processing_error?: string | null
+          logo_processing_status?: string | null
+          logo_quality?: string | null
           logo_url?: string | null
+          logo_width?: number | null
           org_id?: string
           primary_hsl?: string | null
           updated_at?: string
