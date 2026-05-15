@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Upload, Trash2, Image as ImageIcon, Save, Sparkles, Wand2, ImageOff, ChevronDown, ChevronUp } from "lucide-react";
 import { extractColors } from "@/lib/colorExtract";
+import { LogoEnhancingOverlay } from "@/components/branding/LogoEnhancingOverlay";
 
 type BrandKit = {
   id?: string;
