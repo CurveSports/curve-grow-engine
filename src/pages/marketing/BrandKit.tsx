@@ -70,6 +70,14 @@ export default function BrandKit() {
   const [hashtagInput, setHashtagInput] = useState("");
   const photoInputRef = useRef<HTMLInputElement>(null);
 
+  // Smart logo pipeline state (mirrors org_branding)
+  const [logoStatus, setLogoStatus] = useState<string | null>(null);
+  const [logoQuality, setLogoQuality] = useState<string | null>(null);
+  const [logoOriginalUrl, setLogoOriginalUrl] = useState<string | null>(null);
+  const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showOverrides, setShowOverrides] = useState(false);
+
   useGoogleFonts([kit.font_heading, kit.font_body, ...FONT_OPTIONS]);
 
   useEffect(() => {
