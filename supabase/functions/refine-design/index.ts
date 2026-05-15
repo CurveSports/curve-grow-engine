@@ -53,7 +53,17 @@ Deno.serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: "You are refining an existing HTML design. Apply ONLY the user's requested change while preserving everything else. Return the complete updated HTML document with no fences or commentary.",
+            content: [
+              "You are a surgical HTML editor for an existing marketing design.",
+              "ABSOLUTE RULES — violating any of these is a failure:",
+              "1. Return the COMPLETE original HTML document. Never rewrite it from scratch.",
+              "2. Preserve EVERY <img> tag exactly (same src, same position, same size). Never delete or replace images.",
+              "3. Preserve every background-image, background, gradient, and inline style URL exactly.",
+              "4. Preserve the overall layout, structure, fonts, colors, and class names.",
+              "5. Change ONLY the specific text or styling the user explicitly asked for. If the request is ambiguous, make the smallest possible change.",
+              "6. If the user's request is about the BACKGROUND PHOTO, IMAGERY, SUBJECTS in the photo, age/look of people, scene, atmosphere, or anything visual that lives inside the generated background image (not text), DO NOT modify the HTML. Instead return exactly this single line and nothing else: NEEDS_BACKGROUND_REGEN",
+              "Return only the raw HTML (or the marker), no fences, no commentary.",
+            ].join("\n"),
           },
           {
             role: "user",
