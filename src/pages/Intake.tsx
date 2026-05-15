@@ -38,7 +38,7 @@ const empty: Form = {
   organization_name: "", primary_contact_name: "", email: "", phone: "", city_state: "",
   market_type: "", org_type: "", years_in_operation: "", current_growth_trend: "",
   player_mix: "", local_market_competition: "", organization_focus: "", market_strategy: "",
-  total_players: "", hs_players: "", youth_players: "", total_teams: "", average_roster_size: "",
+  total_players: "", hs_players: "", youth_players: "", total_teams: "", average_roster_size: "", active_coaches: "",
   seasons_offered: [], team_structure: "", typical_player_participation: "",
   player_commitment_level: "", demand_for_organization: "", player_selection_approach: "",
   // Dues model
@@ -527,6 +527,7 @@ export default function Intake() {
               <NumberField label="Youth Players (14U and below)" value={form.youth_players} onChange={(v) => set("youth_players", v)} min={0} />
               <NumberField label="Total Teams" value={form.total_teams} onChange={(v) => set("total_teams", v)} min={0} />
               <NumberField label="Average Roster Size" value={form.average_roster_size} onChange={(v) => set("average_roster_size", v)} min={0} />
+              <NumberField label="How many coaches are active in your organization?" value={form.active_coaches} onChange={(v) => set("active_coaches", v)} min={0} />
 
               <div className="pt-4">
                 <SubsectionHeading title="Structure & participation" />

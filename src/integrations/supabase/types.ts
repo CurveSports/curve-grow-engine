@@ -6545,6 +6545,7 @@ export type Database = {
       }
       organization_intake: {
         Row: {
+          active_coaches: number | null
           addon_soft_goods_spend: string | null
           affiliate_apparel_revenue: number | null
           affiliate_fee_per_player: number | null
@@ -6653,6 +6654,7 @@ export type Database = {
           youth_players: number | null
         }
         Insert: {
+          active_coaches?: number | null
           addon_soft_goods_spend?: string | null
           affiliate_apparel_revenue?: number | null
           affiliate_fee_per_player?: number | null
@@ -6761,6 +6763,7 @@ export type Database = {
           youth_players?: number | null
         }
         Update: {
+          active_coaches?: number | null
           addon_soft_goods_spend?: string | null
           affiliate_apparel_revenue?: number | null
           affiliate_fee_per_player?: number | null

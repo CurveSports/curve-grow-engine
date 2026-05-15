@@ -1,0 +1,1 @@
+ALTER TABLE public.organization_intake ADD COLUMN IF NOT EXISTS active_coaches integer;
