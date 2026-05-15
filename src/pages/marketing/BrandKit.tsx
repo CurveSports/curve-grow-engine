@@ -84,30 +84,68 @@ export default function BrandKit() {
     if (!orgId) return;
     (async () => {
       setLoading(true);
-      const [kitRes, assetsRes, orgRes] = await Promise.all([
+      const [kitRes, assetsRes, orgRes, brandingRes] = await Promise.all([
         supabase.from("org_brand_kits").select("*").eq("org_id", orgId).maybeSingle(),
         supabase.from("org_brand_assets").select("*").eq("org_id", orgId).eq("archived", false).order("uploaded_at", { ascending: false }),
         supabase.from("organizations").select("logo_url").eq("id", orgId).maybeSingle(),
+        supabase.from("org_branding").select("logo_url, logo_original_url, logo_quality, logo_processing_status, logo_width, logo_height").eq("org_id", orgId).maybeSingle(),
       ]);
       const intakeLogo = (orgRes.data as any)?.logo_url ?? null;
+      const brandingLogo = (brandingRes.data as any)?.logo_url ?? null;
       let loaded: BrandKit = (kitRes.data as BrandKit) ?? { org_id: orgId };
-      // Backfill primary logo from intake upload so users don't re-upload
-      if (!loaded.logo_primary_url && intakeLogo) {
-        loaded = { ...loaded, logo_primary_url: intakeLogo };
+      // Prefer the enhanced branding logo, then intake fallback
+      const bestLogo = brandingLogo || intakeLogo;
+      if (!loaded.logo_primary_url && bestLogo) {
+        loaded = { ...loaded, logo_primary_url: bestLogo };
         await supabase
           .from("org_brand_kits")
-          .upsert({ org_id: orgId, logo_primary_url: intakeLogo }, { onConflict: "org_id" });
+          .upsert({ org_id: orgId, logo_primary_url: bestLogo }, { onConflict: "org_id" });
       }
       setKit(loaded);
       setAssets((assetsRes.data ?? []) as BrandAsset[]);
+      setLogoStatus((brandingRes.data as any)?.logo_processing_status ?? null);
+      setLogoQuality((brandingRes.data as any)?.logo_quality ?? null);
+      setLogoOriginalUrl((brandingRes.data as any)?.logo_original_url ?? null);
+      const w = (brandingRes.data as any)?.logo_width;
+      const h = (brandingRes.data as any)?.logo_height;
+      setLogoDims(w && h ? { w, h } : null);
       setLoading(false);
-      // Auto-pull colors from primary logo on first load if none are set yet
       const noColors = !loaded.color_primary && !loaded.color_secondary && !loaded.color_accent;
       if (loaded.logo_primary_url && noColors) {
         autofillColorsFromLogo(loaded.logo_primary_url);
       }
     })();
   }, [orgId]);
+
+  // Poll org_branding while logo is being enhanced
+  useEffect(() => {
+    if (logoStatus !== "pending" || !orgId) return;
+    const t = setInterval(async () => {
+      const { data } = await supabase
+        .from("org_branding")
+        .select("logo_url, logo_quality, logo_processing_status")
+        .eq("org_id", orgId)
+        .maybeSingle();
+      const status = (data as any)?.logo_processing_status;
+      if (status && status !== "pending") {
+        const newUrl = (data as any)?.logo_url ?? null;
+        setLogoStatus(status);
+        setLogoQuality((data as any)?.logo_quality ?? null);
+        if (newUrl) {
+          setKit((k) => ({ ...k, logo_primary_url: newUrl }));
+          await supabase.from("org_brand_kits").upsert(
+            { org_id: orgId, logo_primary_url: newUrl },
+            { onConflict: "org_id" }
+          );
+          autofillColorsFromLogo(newUrl);
+        }
+        if (status === "ready") toast.success("Logo enhanced");
+        else if (status === "failed") toast.warning("Couldn't enhance logo — using original");
+        clearInterval(t);
+      }
+    }, 2500);
+    return () => clearInterval(t);
+  }, [logoStatus, orgId]);
 
   const uploadFile = async (file: File, folder: string): Promise<string | null> => {
     if (!orgId) return null;
@@ -122,6 +160,85 @@ export default function BrandKit() {
     return data.publicUrl;
   };
 
+  // Probe image dimensions client-side; SVG returns isVector
+  const probeImage = (file: File): Promise<{ w: number; h: number; isVector: boolean }> =>
+    new Promise((resolve) => {
+      const isVector = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+      if (isVector) return resolve({ w: 0, h: 0, isVector: true });
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => { URL.revokeObjectURL(url); resolve({ w: img.naturalWidth, h: img.naturalHeight, isVector: false }); };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 0, h: 0, isVector: false }); };
+      img.src = url;
+    });
+
+  // Smart single-upload pipeline → org-logos bucket + process-org-logo edge fn
+  const onSmartLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !orgId) return;
+    if (file.size > 5 * 1024 * 1024) { e.target.value = ""; return toast.error("Logo must be under 5 MB"); }
+
+    setUploadingLogo(true);
+    const { w, h, isVector } = await probeImage(file);
+    const longEdge = Math.max(w, h);
+    const fmt = isVector ? "svg" : (file.name.split(".").pop() || "png").toLowerCase();
+
+    if (!isVector && longEdge > 0 && longEdge < 512) {
+      setUploadingLogo(false); e.target.value = "";
+      return toast.error(`Image is too small (${w}×${h}). Please upload at least 512px on the long edge.`);
+    }
+    if (!isVector && longEdge > 0 && longEdge < 1024) {
+      toast.info(`Low-resolution source (${w}×${h}) — we'll auto-enhance it.`);
+    }
+
+    const path = `${orgId}/logo-original-${Date.now()}.${fmt}`;
+    const { error: upErr } = await supabase.storage.from("org-logos").upload(path, file, {
+      cacheControl: "3600", contentType: file.type,
+    });
+    if (upErr) { setUploadingLogo(false); e.target.value = ""; return toast.error(upErr.message); }
+    const { data: pub } = supabase.storage.from("org-logos").getPublicUrl(path);
+
+    const initialQuality = isVector ? "vector" : (longEdge >= 1500 ? "high" : longEdge >= 1024 ? "medium" : "low");
+    const { error: dbErr } = await supabase.from("org_branding").upsert({
+      org_id: orgId,
+      logo_url: pub.publicUrl,
+      logo_original_url: pub.publicUrl,
+      logo_width: w || null,
+      logo_height: h || null,
+      logo_format: fmt,
+      logo_processing_status: isVector ? "skipped" : "pending",
+      logo_quality: initialQuality,
+      updated_by: profile?.user_id ?? null,
+    }, { onConflict: "org_id" });
+    if (dbErr) { setUploadingLogo(false); e.target.value = ""; return toast.error(dbErr.message); }
+
+    // Mirror immediately into the brand kit so other pages pick it up
+    await supabase.from("org_brand_kits").upsert(
+      { org_id: orgId, logo_primary_url: pub.publicUrl },
+      { onConflict: "org_id" }
+    );
+
+    setKit((k) => ({ ...k, logo_primary_url: pub.publicUrl }));
+    setLogoOriginalUrl(pub.publicUrl);
+    setLogoDims(w && h ? { w, h } : null);
+    setLogoStatus(isVector ? "skipped" : "pending");
+    setLogoQuality(initialQuality);
+    setUploadingLogo(false);
+    e.target.value = "";
+
+    if (isVector) {
+      toast.success("Vector logo uploaded — no processing needed");
+      autofillColorsFromLogo(pub.publicUrl);
+      return;
+    }
+
+    toast.success("Uploaded — enhancing in the background…");
+    supabase.functions.invoke("process-org-logo", {
+      body: { org_id: orgId, original_url: pub.publicUrl, width: w, height: h, format: fmt, is_vector: false },
+    }).catch((err) => console.warn("enhance trigger failed", err));
+  };
+
+  // Manual override uploads (reverse / mark) — keep simple direct upload
   const onLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>, key: "logo_primary_url" | "logo_secondary_url" | "logo_mark_url") => {
     const file = e.target.files?.[0];
     if (!file) return;
