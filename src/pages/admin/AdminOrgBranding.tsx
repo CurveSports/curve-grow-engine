@@ -130,27 +130,79 @@ export default function AdminOrgBranding() {
     finally { setExtracting(false); }
   };
 
+  const probeImage = (file: File): Promise<{ w: number; h: number; isVector: boolean }> =>
+    new Promise((resolve) => {
+      const isVector = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+      if (isVector) return resolve({ w: 0, h: 0, isVector: true });
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ w: img.naturalWidth, h: img.naturalHeight, isVector: false });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 0, h: 0, isVector: false }); };
+      img.src = url;
+    });
+
   const onLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !orgId || !user) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error("Logo must be under 2 MB");
+    if (file.size > 5 * 1024 * 1024) { e.target.value = ""; return toast.error("Logo must be under 5 MB"); }
+
     setUploading(true);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${orgId}/logo-${Date.now()}.${ext}`;
+    const { w, h, isVector } = await probeImage(file);
+    const longEdge = Math.max(w, h);
+    const fmt = isVector ? "svg" : (file.name.split(".").pop() || "png").toLowerCase();
+
+    if (!isVector && longEdge > 0 && longEdge < 512) {
+      setUploading(false);
+      e.target.value = "";
+      return toast.error(`Image is too small (${w}×${h}). Please upload at least 512px on the long edge.`);
+    }
+    if (!isVector && longEdge > 0 && longEdge < 1024) {
+      toast.info(`Low-resolution source (${w}×${h}) — we'll auto-enhance it.`);
+    }
+
+    const path = `${orgId}/logo-original-${Date.now()}.${fmt}`;
     const { error: upErr } = await supabase.storage.from("org-logos").upload(path, file, {
       cacheControl: "3600", contentType: file.type,
     });
-    if (upErr) { setUploading(false); return toast.error(upErr.message); }
+    if (upErr) { setUploading(false); e.target.value = ""; return toast.error(upErr.message); }
     const { data: pub } = supabase.storage.from("org-logos").getPublicUrl(path);
+
+    // Initial upsert: show the original immediately
     const { error: dbErr } = await supabase.from("org_branding").upsert({
-      org_id: orgId, logo_url: pub.publicUrl, updated_by: user.id,
+      org_id: orgId,
+      logo_url: pub.publicUrl,
+      logo_original_url: pub.publicUrl,
+      logo_width: w || null,
+      logo_height: h || null,
+      logo_format: fmt,
+      logo_processing_status: isVector ? "skipped" : "pending",
+      logo_quality: isVector ? "vector" : (longEdge >= 1500 ? "high" : longEdge >= 1024 ? "medium" : "low"),
+      updated_by: user.id,
     }, { onConflict: "org_id" });
-    setUploading(false);
-    if (dbErr) return toast.error(dbErr.message);
+    if (dbErr) { setUploading(false); e.target.value = ""; return toast.error(dbErr.message); }
+
     setLogoUrl(pub.publicUrl);
-    toast.success("Logo uploaded");
-    runExtraction(pub.publicUrl);
+    setOriginalUrl(pub.publicUrl);
+    setLogoDims(w && h ? { w, h } : null);
+    setLogoStatus(isVector ? "skipped" : "pending");
+    setLogoQuality(isVector ? "vector" : (longEdge >= 1500 ? "high" : longEdge >= 1024 ? "medium" : "low"));
+    setUploading(false);
     e.target.value = "";
+
+    if (isVector) {
+      toast.success("Vector logo uploaded — no processing needed");
+      runExtraction(pub.publicUrl);
+      return;
+    }
+
+    toast.success("Uploaded — enhancing in the background…");
+    // Fire-and-forget enhancement
+    supabase.functions.invoke("process-org-logo", {
+      body: { org_id: orgId, original_url: pub.publicUrl, width: w, height: h, format: fmt, is_vector: false },
+    }).catch((err) => console.warn("enhance trigger failed", err));
   };
 
   const removeLogo = async () => {
