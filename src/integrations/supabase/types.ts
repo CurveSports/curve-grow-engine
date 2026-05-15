@@ -6569,6 +6569,7 @@ export type Database = {
           email: string | null
           event_types_offered: string[] | null
           events_per_year: number | null
+          facility_locations: number | null
           facility_rental_revenue: number | null
           fall_hs_fee: number | null
           fall_hs_players: number | null
@@ -6676,6 +6677,7 @@ export type Database = {
           email?: string | null
           event_types_offered?: string[] | null
           events_per_year?: number | null
+          facility_locations?: number | null
           facility_rental_revenue?: number | null
           fall_hs_fee?: number | null
           fall_hs_players?: number | null
@@ -6783,6 +6785,7 @@ export type Database = {
           email?: string | null
           event_types_offered?: string[] | null
           events_per_year?: number | null
+          facility_locations?: number | null
           facility_rental_revenue?: number | null
           fall_hs_fee?: number | null
           fall_hs_players?: number | null
