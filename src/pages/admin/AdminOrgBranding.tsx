@@ -200,10 +200,19 @@ export default function AdminOrgBranding() {
     }
 
     toast.success("Uploaded — enhancing in the background…");
-    // Fire-and-forget enhancement
-    supabase.functions.invoke("process-org-logo", {
-      body: { org_id: orgId, original_url: pub.publicUrl, width: w, height: h, format: fmt, is_vector: false },
-    }).catch((err) => console.warn("enhance trigger failed", err));
+    try {
+      const { error: invErr } = await supabase.functions.invoke("process-org-logo", {
+        body: { org_id: orgId, original_url: pub.publicUrl, width: w, height: h, format: fmt, is_vector: false },
+      });
+      if (invErr) throw invErr;
+    } catch (err) {
+      console.warn("enhance trigger failed", err);
+      await supabase.from("org_branding").update({
+        logo_processing_status: "failed",
+        logo_processing_error: String((err as Error)?.message ?? err),
+      }).eq("org_id", orgId);
+      toast.error("Enhancement failed — using original logo");
+    }
   };
 
   const removeLogo = async () => {
