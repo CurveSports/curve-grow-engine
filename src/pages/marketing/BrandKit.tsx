@@ -371,18 +371,13 @@ export default function BrandKit() {
           </div>
 
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="h-24 w-52 rounded-lg border border-border bg-muted flex items-center justify-center overflow-hidden relative">
+            <div className="h-24 w-52 rounded-lg border border-border bg-muted flex items-center justify-center overflow-hidden">
               {kit.logo_primary_url ? (
                 <img src={kit.logo_primary_url} alt="Logo" className="max-h-20 max-w-48 object-contain" />
               ) : (
                 <div className="flex flex-col items-center text-muted-foreground">
                   <ImageOff className="h-5 w-5" />
                   <span className="text-[10px] mt-1">No logo yet</span>
-                </div>
-              )}
-              {logoStatus === "pending" && (
-                <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 animate-pulse" />
                 </div>
               )}
             </div>
