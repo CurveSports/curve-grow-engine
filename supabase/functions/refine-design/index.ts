@@ -82,11 +82,41 @@ Deno.serve(async (req) => {
     }
 
     const aiJson = await aiResp.json();
-    const newHtml = stripFences(aiJson.choices?.[0]?.message?.content || "");
+    const rawOut = (aiJson.choices?.[0]?.message?.content || "").trim();
+
+    // Model decided this request is about the background imagery, not the HTML.
+    if (/^NEEDS_BACKGROUND_REGEN\b/i.test(rawOut)) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "This request is about the background image (people, scene, atmosphere). HTML refinement can't change what's inside the photo. Use 'Regenerate background' with this guidance instead.",
+          needs_background_regen: true,
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const newHtml = stripFences(rawOut);
     if (!newHtml.toLowerCase().includes("<html")) {
       return new Response(JSON.stringify({ error: "Invalid HTML returned" }), {
         status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Safety: reject refinements that nuked the original images / structure.
+    const origImgs = (design.generated_html.match(/<img\b/gi) || []).length;
+    const newImgs = (newHtml.match(/<img\b/gi) || []).length;
+    const origBg = (design.generated_html.match(/background-image\s*:/gi) || []).length;
+    const newBg = (newHtml.match(/background-image\s*:/gi) || []).length;
+    if (newImgs < origImgs || newBg < origBg || newHtml.length < design.generated_html.length * 0.4) {
+      console.warn("Refinement rejected: structure shrunk", { origImgs, newImgs, origBg, newBg, origLen: design.generated_html.length, newLen: newHtml.length });
+      return new Response(
+        JSON.stringify({
+          error:
+            "The AI tried to remove images or core structure, so the refinement was discarded. Try something more specific like 'change the headline to ...', or use 'Regenerate background' for image changes.",
+        }),
+        { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     await admin.from("design_refinements").insert({
