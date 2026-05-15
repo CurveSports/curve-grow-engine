@@ -465,6 +465,14 @@ export default function Intake() {
               </div>
               <SelectField label="How would you describe your local market?" value={form.market_type} onChange={(v) => set("market_type", v)} options={MARKET_TYPES} />
               <SelectField label="Organization Type" value={form.org_type} onChange={(v) => set("org_type", v)} options={ORG_TYPES} />
+              {(form.org_type === "Facility + Teams" || form.org_type === "Facility Only") && (
+                <NumberField
+                  label="How many facility locations do you operate?"
+                  value={form.facility_locations}
+                  onChange={(v) => set("facility_locations", v)}
+                  min={1}
+                />
+              )}
 
               <PillSelectField
                 label="Do you operate multiple brands?"
