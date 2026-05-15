@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, ImageOff, Palette, RotateCcw, ArrowLeft, Sparkles } from "lucide-react";
 import { extractColors, suggestPrimaryAccent, ExtractedColor } from "@/lib/colorExtract";
+import { LogoEnhancingOverlay } from "@/components/branding/LogoEnhancingOverlay";
 
 const DEFAULT_PRIMARY = "222 47% 11%";
 const DEFAULT_ACCENT = "142 71% 45%";
@@ -251,7 +252,8 @@ export default function AdminOrgBranding() {
           Configure logo and colors on behalf of this organization. The org primary will see these immediately.
         </p>
 
-        <Card className="p-6 space-y-5 mb-6">
+        <Card className="p-6 space-y-5 mb-6 relative overflow-hidden">
+          <LogoEnhancingOverlay open={logoStatus === "pending"} />
           <div>
             <h2 className="font-display text-lg font-semibold flex items-center gap-2">
               <Upload className="h-4 w-4" /> Logo
@@ -259,18 +261,13 @@ export default function AdminOrgBranding() {
             <p className="text-sm text-muted-foreground">Upload one logo — we'll auto-clean and enhance it. SVG is best (lossless). PNG/JPG must be at least 512×512; we'll upscale and remove the background automatically. Max 5 MB.</p>
           </div>
           <div className="flex items-center gap-6">
-            <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden relative">
+            <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="max-h-16 max-w-40 object-contain" />
               ) : (
                 <div className="flex flex-col items-center text-nav-muted">
                   <ImageOff className="h-5 w-5" />
                   <span className="text-[10px] mt-1">No logo</span>
-                </div>
-              )}
-              {logoStatus === "pending" && (
-                <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 animate-pulse" />
                 </div>
               )}
             </div>
