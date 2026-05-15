@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Upload, ImageOff, Palette, RotateCcw, ArrowLeft, Sparkles } from "lucide-react";
 import { extractColors, suggestPrimaryAccent, ExtractedColor } from "@/lib/colorExtract";
+import { LogoEnhancingOverlay } from "@/components/branding/LogoEnhancingOverlay";
 
 const DEFAULT_PRIMARY = "222 47% 11%";
 const DEFAULT_ACCENT = "142 71% 45%";
