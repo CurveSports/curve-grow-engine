@@ -66,6 +66,10 @@ export default function AdminOrgBranding() {
   const { user } = useAuth();
   const [orgName, setOrgName] = useState("");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+  const [logoQuality, setLogoQuality] = useState<string | null>(null);
+  const [logoStatus, setLogoStatus] = useState<string | null>(null);
+  const [logoDims, setLogoDims] = useState<{ w: number; h: number } | null>(null);
   const [primaryHex, setPrimaryHex] = useState(hslToHex(DEFAULT_PRIMARY));
   const [accentHex, setAccentHex] = useState(hslToHex(DEFAULT_ACCENT));
   const [palette, setPalette] = useState<ExtractedColor[]>([]);
@@ -77,14 +81,43 @@ export default function AdminOrgBranding() {
     if (!orgId) return;
     const [{ data: org }, { data: branding }] = await Promise.all([
       supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
-      supabase.from("org_branding").select("logo_url, primary_hsl, accent_hsl").eq("org_id", orgId).maybeSingle(),
+      supabase.from("org_branding").select("logo_url, logo_original_url, logo_quality, logo_processing_status, logo_width, logo_height, primary_hsl, accent_hsl").eq("org_id", orgId).maybeSingle(),
     ]);
     setOrgName(org?.name ?? "");
     setLogoUrl(branding?.logo_url ?? null);
+    setOriginalUrl((branding as any)?.logo_original_url ?? null);
+    setLogoQuality((branding as any)?.logo_quality ?? null);
+    setLogoStatus((branding as any)?.logo_processing_status ?? null);
+    const w = (branding as any)?.logo_width;
+    const h = (branding as any)?.logo_height;
+    setLogoDims(w && h ? { w, h } : null);
     setPrimaryHex(hslToHex(branding?.primary_hsl ?? DEFAULT_PRIMARY));
     setAccentHex(hslToHex(branding?.accent_hsl ?? DEFAULT_ACCENT));
     if (branding?.logo_url) runExtraction(branding.logo_url);
   };
+
+  // Poll while processing
+  useEffect(() => {
+    if (logoStatus !== "pending" || !orgId) return;
+    const t = setInterval(async () => {
+      const { data } = await supabase
+        .from("org_branding")
+        .select("logo_url, logo_quality, logo_processing_status, logo_processing_error")
+        .eq("org_id", orgId)
+        .maybeSingle();
+      const status = (data as any)?.logo_processing_status;
+      if (status && status !== "pending") {
+        setLogoUrl(data?.logo_url ?? null);
+        setLogoQuality((data as any)?.logo_quality ?? null);
+        setLogoStatus(status);
+        if (status === "ready") toast.success("Logo enhanced");
+        else if (status === "failed") toast.warning("Couldn't enhance logo — using original");
+        if (data?.logo_url) runExtraction(data.logo_url);
+        clearInterval(t);
+      }
+    }, 2500);
+    return () => clearInterval(t);
+  }, [logoStatus, orgId]);
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [orgId]);
 
@@ -97,27 +130,79 @@ export default function AdminOrgBranding() {
     finally { setExtracting(false); }
   };
 
+  const probeImage = (file: File): Promise<{ w: number; h: number; isVector: boolean }> =>
+    new Promise((resolve) => {
+      const isVector = file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg");
+      if (isVector) return resolve({ w: 0, h: 0, isVector: true });
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ w: img.naturalWidth, h: img.naturalHeight, isVector: false });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve({ w: 0, h: 0, isVector: false }); };
+      img.src = url;
+    });
+
   const onLogoFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !orgId || !user) return;
-    if (file.size > 2 * 1024 * 1024) return toast.error("Logo must be under 2 MB");
+    if (file.size > 5 * 1024 * 1024) { e.target.value = ""; return toast.error("Logo must be under 5 MB"); }
+
     setUploading(true);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${orgId}/logo-${Date.now()}.${ext}`;
+    const { w, h, isVector } = await probeImage(file);
+    const longEdge = Math.max(w, h);
+    const fmt = isVector ? "svg" : (file.name.split(".").pop() || "png").toLowerCase();
+
+    if (!isVector && longEdge > 0 && longEdge < 512) {
+      setUploading(false);
+      e.target.value = "";
+      return toast.error(`Image is too small (${w}×${h}). Please upload at least 512px on the long edge.`);
+    }
+    if (!isVector && longEdge > 0 && longEdge < 1024) {
+      toast.info(`Low-resolution source (${w}×${h}) — we'll auto-enhance it.`);
+    }
+
+    const path = `${orgId}/logo-original-${Date.now()}.${fmt}`;
     const { error: upErr } = await supabase.storage.from("org-logos").upload(path, file, {
       cacheControl: "3600", contentType: file.type,
     });
-    if (upErr) { setUploading(false); return toast.error(upErr.message); }
+    if (upErr) { setUploading(false); e.target.value = ""; return toast.error(upErr.message); }
     const { data: pub } = supabase.storage.from("org-logos").getPublicUrl(path);
+
+    // Initial upsert: show the original immediately
     const { error: dbErr } = await supabase.from("org_branding").upsert({
-      org_id: orgId, logo_url: pub.publicUrl, updated_by: user.id,
+      org_id: orgId,
+      logo_url: pub.publicUrl,
+      logo_original_url: pub.publicUrl,
+      logo_width: w || null,
+      logo_height: h || null,
+      logo_format: fmt,
+      logo_processing_status: isVector ? "skipped" : "pending",
+      logo_quality: isVector ? "vector" : (longEdge >= 1500 ? "high" : longEdge >= 1024 ? "medium" : "low"),
+      updated_by: user.id,
     }, { onConflict: "org_id" });
-    setUploading(false);
-    if (dbErr) return toast.error(dbErr.message);
+    if (dbErr) { setUploading(false); e.target.value = ""; return toast.error(dbErr.message); }
+
     setLogoUrl(pub.publicUrl);
-    toast.success("Logo uploaded");
-    runExtraction(pub.publicUrl);
+    setOriginalUrl(pub.publicUrl);
+    setLogoDims(w && h ? { w, h } : null);
+    setLogoStatus(isVector ? "skipped" : "pending");
+    setLogoQuality(isVector ? "vector" : (longEdge >= 1500 ? "high" : longEdge >= 1024 ? "medium" : "low"));
+    setUploading(false);
     e.target.value = "";
+
+    if (isVector) {
+      toast.success("Vector logo uploaded — no processing needed");
+      runExtraction(pub.publicUrl);
+      return;
+    }
+
+    toast.success("Uploaded — enhancing in the background…");
+    // Fire-and-forget enhancement
+    supabase.functions.invoke("process-org-logo", {
+      body: { org_id: orgId, original_url: pub.publicUrl, width: w, height: h, format: fmt, is_vector: false },
+    }).catch((err) => console.warn("enhance trigger failed", err));
   };
 
   const removeLogo = async () => {
@@ -171,10 +256,10 @@ export default function AdminOrgBranding() {
             <h2 className="font-display text-lg font-semibold flex items-center gap-2">
               <Upload className="h-4 w-4" /> Logo
             </h2>
-            <p className="text-sm text-muted-foreground">PNG, JPG, WEBP, or SVG. PNG or SVG with a transparent background looks best. Max 2 MB.</p>
+            <p className="text-sm text-muted-foreground">Upload one logo — we'll auto-clean and enhance it. SVG is best (lossless). PNG/JPG must be at least 512×512; we'll upscale and remove the background automatically. Max 5 MB.</p>
           </div>
           <div className="flex items-center gap-6">
-            <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden">
+            <div className="h-20 w-44 rounded-lg border border-border bg-nav flex items-center justify-center overflow-hidden relative">
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo" className="max-h-16 max-w-40 object-contain" />
               ) : (
@@ -183,14 +268,42 @@ export default function AdminOrgBranding() {
                   <span className="text-[10px] mt-1">No logo</span>
                 </div>
               )}
+              {logoStatus === "pending" && (
+                <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                </div>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <label className="inline-flex">
-                <input type="file" accept="image/*" className="hidden" onChange={onLogoFile} disabled={uploading} />
+                <input type="file" accept="image/*,.svg" className="hidden" onChange={onLogoFile} disabled={uploading || logoStatus === "pending"} />
                 <span className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-foreground text-background text-sm font-medium cursor-pointer hover:opacity-90">
-                  <Upload className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : logoUrl ? "Replace logo" : "Upload logo"}
+                  <Upload className="h-3.5 w-3.5" /> {uploading ? "Uploading…" : logoStatus === "pending" ? "Enhancing…" : logoUrl ? "Replace logo" : "Upload logo"}
                 </span>
               </label>
+              {logoUrl && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {logoQuality && (
+                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                      logoQuality === "vector" ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10"
+                      : logoQuality === "high" ? "border-emerald-500/40 text-emerald-700 bg-emerald-500/10"
+                      : logoQuality === "medium" ? "border-amber-500/40 text-amber-700 bg-amber-500/10"
+                      : "border-orange-500/40 text-orange-700 bg-orange-500/10"
+                    }`}>
+                      {logoQuality === "vector" ? "Vector ✓"
+                        : logoQuality === "high" ? "High res"
+                        : logoQuality === "medium" ? "Medium res"
+                        : "Low res — enhanced"}
+                    </span>
+                  )}
+                  {logoDims && logoDims.w > 0 && (
+                    <span className="text-[10px] text-muted-foreground">{logoDims.w}×{logoDims.h}</span>
+                  )}
+                  {logoStatus === "ready" && originalUrl && originalUrl !== logoUrl && (
+                    <a href={originalUrl} target="_blank" rel="noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground underline">view original</a>
+                  )}
+                </div>
+              )}
               {logoUrl && <Button variant="ghost" size="sm" onClick={removeLogo}>Remove logo</Button>}
             </div>
           </div>
