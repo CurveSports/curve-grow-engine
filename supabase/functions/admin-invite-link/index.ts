@@ -77,9 +77,67 @@ Deno.serve(async (req) => {
     const actionLink = (linkData as any)?.properties?.action_link ?? null;
     if (!actionLink) return json({ error: "Failed to generate link" });
 
+    // Send the invitation email ourselves via Resend.
+    // Note: Supabase's generateLink does NOT send the email — only inviteUserByEmail does,
+    // and that requires SMTP to be configured at the auth level. We deliver via Resend instead.
+    let emailSent = false;
+    let emailError: string | null = null;
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+    if (resendKey) {
+      const isInvite = linkType === "invite";
+      const subject = isInvite
+        ? "You're invited to Curve OS"
+        : "Your Curve OS sign-in link";
+      const heading = isInvite ? "Welcome to Curve OS" : "Sign in to Curve OS";
+      const intro = isInvite
+        ? "Your organization has been set up on Curve OS. Click below to accept the invitation and finish creating your account."
+        : "Click the button below for one-tap sign-in to your Curve OS account.";
+      const html = `
+<!DOCTYPE html>
+<html><body style="font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#0f172a;max-width:560px;margin:0 auto;padding:24px;background:#fff;">
+  <h2 style="font-weight:600;margin:0 0 12px;">${heading}</h2>
+  <p style="color:#475569;margin:0 0 24px;line-height:1.5;">${intro}</p>
+  <p style="margin:24px 0;">
+    <a href="${actionLink}" style="display:inline-block;background:#22c55e;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;">${isInvite ? "Accept invitation" : "Sign in"}</a>
+  </p>
+  <p style="color:#94a3b8;font-size:12px;margin:32px 0 8px;">If the button doesn't work, copy and paste this link:</p>
+  <p style="color:#64748b;font-size:12px;word-break:break-all;">${actionLink}</p>
+  <p style="color:#94a3b8;font-size:12px;margin-top:24px;">This link is single-use and will expire.</p>
+</body></html>`.trim();
+
+      try {
+        const resp = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${resendKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "Curve OS <onboarding@resend.dev>",
+            to: [email],
+            subject,
+            html,
+          }),
+        });
+        if (resp.ok) {
+          emailSent = true;
+        } else {
+          emailError = await resp.text();
+          console.error("Resend send failed:", resp.status, emailError);
+        }
+      } catch (e: any) {
+        emailError = e?.message ?? String(e);
+        console.error("Resend send threw:", emailError);
+      }
+    } else {
+      emailError = "RESEND_API_KEY not configured";
+      console.warn(emailError);
+    }
+
     return json({
       action_link: actionLink,
-      sent_email: true, // generateLink for invite/magiclink also sends the email
+      sent_email: emailSent,
+      email_error: emailError,
       user_existed: !!existingUser,
       was_confirmed: wasConfirmed,
       link_type: linkType,
