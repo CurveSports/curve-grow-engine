@@ -70,13 +70,19 @@ const fallback = {
   body: "Inter, system-ui, sans-serif",
 };
 
+// Always-dark base used for backgrounds & overlays. We ignore brand-kit
+// "dark" because some orgs set pastel/light values there and it breaks
+// text contrast across every template.
+const TRUE_DARK = "#0B1220";
+const TRUE_LIGHT = "#FFFFFF";
+
 function palette(b: BrandKit) {
   return {
     primary: b.color_primary || fallback.primary,
     secondary: b.color_secondary || fallback.secondary,
     accent: b.color_accent || fallback.accent,
-    dark: b.color_dark || fallback.dark,
-    light: b.color_light || fallback.light,
+    dark: TRUE_DARK,
+    light: TRUE_LIGHT,
     heading: b.font_heading || fallback.heading,
     body: b.font_body || fallback.body,
   };
