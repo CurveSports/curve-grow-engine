@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Upload, ImageOff, Palette, RotateCcw, ArrowLeft, Sparkles } from "lucide-react";
+import { Upload, ImageOff, Palette, RotateCcw, ArrowLeft, Sparkles, Trophy } from "lucide-react";
 import { extractColors, suggestPrimaryAccent, ExtractedColor } from "@/lib/colorExtract";
 import { LogoEnhancingOverlay } from "@/components/branding/LogoEnhancingOverlay";
 
