@@ -2630,6 +2630,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           assets_used: Json
+          composition_config: Json | null
           composition_spec: Json | null
           created_at: string
           created_by: string | null
@@ -2660,6 +2661,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assets_used?: Json
+          composition_config?: Json | null
           composition_spec?: Json | null
           created_at?: string
           created_by?: string | null
@@ -2690,6 +2692,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           assets_used?: Json
+          composition_config?: Json | null
           composition_spec?: Json | null
           created_at?: string
           created_by?: string | null
