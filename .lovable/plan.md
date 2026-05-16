@@ -1,52 +1,98 @@
-# Phase 3 — Slot-based migration + auto thumbnails
+# Premium Design Templates — Build Plan
 
-## Goal
-Every template renders through the same slot-based pipeline (Stability background + composite worker overlay), and every template has an auto-generated thumbnail the org picker can show.
+Replace the current Fabric.js clip-art output with a real template system: **5 hand-built variants per type × 4 types = 20 skins**, with AI-generated hero imagery on the two photo-driven types.
 
-## What ships
+## Scope (4 template types)
 
-### 1. Default slot layouts per format
-New shared file `supabase/functions/_shared/slotPresets.ts` exporting one solid default `composition_config` per `design_type`:
-- `social_post_square` (1080×1080) — the existing Tryout layout, generalized
-- `social_post_story` (1080×1920) — stacked vertical
-- `social_post_landscape` (1200×630) — split-horizontal
-- `email_header` (1200×400) — logo + headline strip
-- `flyer_letter` (1275×1650) — top hero, middle details, bottom CTA
-- `schedule_graphic` (1080×1080) — header + body slot
+1. **College Commit** — hero player cutout + school colors + seal/wordmark
+2. **GameDay** — hero player/team cutout + opponent + date/time
+3. **Lineup Card** — typographic, position grid, team mark (no AI hero)
+4. **Tryout Announcement** — date/location/age groups, typographic flyer (no AI hero)
 
-Each preset uses `{{token}}` placeholders that resolve via existing `interpolateSpec`: `{{org_name}}`, `{{logo_url}}`, `{{color_primary/accent/dark}}`, plus per-template input fields (`{{headline}}`, `{{event_date}}`, etc.).
+## Architecture
 
-### 2. Template migration
-One SQL migration:
-- For every template where `composition_config IS NULL`, set `generation_engine = 'stability_sharp'` and `composition_config = <preset for its design_type>`.
-- Leave `base_prompt` (now used as Stability prompt seed) and `input_fields` as-is.
+```text
+Template Registry (TS)
+  ├── 20 SkinDefinition objects
+  │     ├── id, type, name, thumbnail
+  │     ├── canvas size + safe zones
+  │     ├── layered render fn (background → hero → overlays → text → marks)
+  │     └── field schema (player name, position, date, etc.)
+  │
+  ├── Brand Kit injector
+  │     ├── reads org colors/logos/fonts
+  │     └── themes every skin at render time
+  │
+  └── AI Hero pipeline (Commit + GameDay only)
+        ├── prompt builder (style modifier + seed + brand colors)
+        ├── Lovable AI image gen (Gemini image preview)
+        ├── @imgly/background-removal in browser
+        └── cached to Supabase storage per design
+```
 
-After this, all 24 templates run the same engine.
+## What gets built
 
-### 3. Auto-thumbnail edge function
-New `supabase/functions/generate-template-thumbnail/index.ts`:
-- Inputs: `template_id`
-- Builds placeholder context: generic org name "Sample Sports Club", brand kit (primary `#1E3A5F`, accent `#22C55E`, dark `#0F172A`, a stock logo URL from `brand-assets` bucket), and dummy values for every `input_field` based on its type (sample headline, today's date, etc.).
-- Runs the same Stability + composite-worker flow `generate-design` uses.
-- Uploads result to `design-renders/_thumbnails/<template_id>.png`, public-signed for 1 year.
-- Updates `design_templates.thumbnail_url`.
+### 1. Template registry (`src/lib/designTemplates/skins/`)
+- `commit/` — 5 files: `seal.ts`, `wordmark.ts`, `stadiumDuotone.ts`, `topoMap.ts`, `editorial.ts`
+- `gameday/` — 5 files: `modernSplit.ts`, `retroBadge.ts`, `brutalistType.ts`, `cinematic.ts`, `scoreboardGrid.ts`
+- `lineup/` — 5 files: `cleanGrid.ts`, `brokenGrid.ts`, `editorial.ts`, `chalkboard.ts`, `numbersDominant.ts`
+- `tryout/` — 5 files: `bold.ts`, `vintage.ts`, `minimal.ts`, `industrial.ts`, `posterArt.ts`
 
-### 4. Editor UI
-In `AdminDesignTemplates.tsx`:
-- New "Regenerate Thumbnail" button on each template row + in the editor dialog.
-- After successful save of a template, auto-invoke the thumbnail function in the background and toast when done.
-- Show current `thumbnail_url` as a preview inside the editor (instead of the now-removed upload field).
+Each exports a `SkinDefinition`:
+```ts
+{ id, type, name, thumbnailUrl, canvas:{w,h}, fields:FieldSchema[], render:(ctx, data, brandKit) => void }
+```
 
-### 5. Org picker
-Already reads `thumbnail_url` — once Phase 3 backfill runs, every card has a real preview image. No code change needed there.
+### 2. Athletic typography
+- Install: `@fontsource/bebas-neue`, `@fontsource/oswald`, `@fontsource/anton`, `@fontsource/archivo-black`, `@fontsource/jetbrains-mono` (Druk/Industry alternatives — true Druk requires paid license)
+- Import in `src/main.tsx`
+- Wire into Fabric.js font registry
 
-## What is intentionally out of scope
-- Custom per-template hand-tuned layouts beyond the format defaults — admins can edit `composition_config` JSON later (raw editor stays; visual slot editor is Phase 4).
-- Removing the `html_css` legacy path from `generate-design` — keeping it as fallback until thumbnails confirm the slot path is stable.
-- Cron / batch backfill of thumbnails — first save / explicit "Regenerate" button triggers it; we'll also run it once for all templates after the migration.
+### 3. AI hero pipeline
+- New edge function `generate-design-hero`: takes `{ skinId, prompt, brandColors, seed, photoUrl? }`, calls Lovable AI image gen with style-modifier randomization, returns image URL
+- New util `removeBackground.ts` using `@imgly/background-removal` for in-browser cutouts
+- Cache results in `design-assets` storage bucket keyed by design id
 
-## Risks
-- Composite worker must be deployed at `COMPOSITE_WORKER_URL`. If the env var is missing, thumbnails fall back to the Stability background only (still useful for picker).
-- Stability calls cost ~$0.04 each → 24 templates ≈ $1 for the initial backfill. Acceptable.
+### 4. Editor UX (`src/pages/marketing/designs/FabricEditor.tsx`)
+- Replace current template picker with **5-thumbnail variant carousel** per type
+- Add "Regenerate hero" button (Commit/GameDay only) — re-rolls AI image with new seed
+- Add style modifier dropdown ("Gritty / Clean / Retro / Cinematic / Editorial") feeding the AI prompt
+- Brand kit auto-applies — user can override colors per-design
 
-Confirm and I'll execute (migration + slot presets + thumbnail function + editor button), then trigger a one-time backfill.
+### 5. Schema updates
+- `designs` table: add `skin_id` (text), `hero_image_url` (text), `hero_seed` (text), `style_modifier` (text), `field_values` (jsonb)
+- New `design-assets` storage bucket (public read, authed write)
+- Drop / migrate the old `composition_config` workflow that broke earlier
+
+### 6. Data wiring
+- `useBranding` already returns colors/logos — pass into render fn
+- For sport-specific data (baseball positions: P, C, 1B…), seed lineup skins with baseball defaults
+
+## What this gets you
+
+- **Variety**: 20 distinct skins × random AI seed × brand-kit theming = effectively unlimited unique outputs. No two orgs' GameDay posts will look the same.
+- **Quality ceiling**: Commit/GameDay ~80% of Alabama/Sac State reference quality (limited by AI image gen consistency). Lineup/Tryout ~95% (deterministic).
+- **No external editor**: stays inside Fabric.js, so existing export/share/download paths keep working.
+
+## What this is NOT
+
+- Not pixel-perfect Canva. AI hero shots will occasionally need a re-roll.
+- Not real Druk/Industry fonts (licensing). Bebas/Anton/Archivo Black are the closest free analogues.
+- Not a real-time collaborative editor.
+
+## Build order (suggested phasing)
+
+1. Migration + storage bucket + font install (foundation)
+2. Edge function `generate-design-hero` + background-removal util
+3. Build 1 skin per type end-to-end (proves the pattern)
+4. Build remaining 16 skins
+5. Wire variant carousel + style modifier + regenerate UX
+6. QA pass: render every skin with 3 brand kits to verify theming
+
+## Risks / things to flag
+
+- **Cost**: AI hero on Commit + GameDay = ~$0.02–0.05/render. At scale (1000+/mo) this is meaningful — we should cache aggressively and not re-roll on every edit.
+- **Background removal**: `@imgly/background-removal` is ~5MB WASM. Loads lazy on first use; fine for desktop, slow on mobile.
+- **20 skins is real design work**. Even with the same renderer abstraction, each skin needs distinct composition decisions. Realistic cycle: ~1–2 hours per skin = 20–40 build hours.
+
+Ready to start with phase 1 (foundation) when you approve.
