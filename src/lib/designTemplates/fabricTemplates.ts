@@ -1,15 +1,8 @@
-// Hand-built Fabric.js templates for the Curve Designer (MVP editor flow).
-// Each template defines:
-//   - dims: canvas size (always 1080x1080 for MVP)
-//   - fields: form schema rendered in the right rail
-//   - build(values, brandKit, ctx): returns a fabric-JSON object that
-//     loadFromJSON can hydrate into the canvas.
-//
-// We re-build the canvas whenever form values change so structured panels
-// (starting lineup, dates list, locations list) stay in sync. The user can
-// still drag/resize/restyle any individual object after build — those tweaks
-// are preserved by saving the full fabric JSON snapshot to
-// designs.composition_config.
+// Hand-built Fabric.js templates for the Curve Designer.
+// V2 (2026-05-16): Rebuilt with athletic display fonts (Bebas Neue, Anton,
+// Archivo Black, Oswald) and asymmetric, edge-bleeding composition.
+// Goal: ditch the 2010s clip-art aesthetic. Look like sports-design Twitter,
+// not Microsoft Publisher.
 
 export type FieldType =
   | "text"
@@ -60,21 +53,21 @@ export type FabricTemplate = {
 const W = 1080;
 const H = 1080;
 
+// Athletic display fonts now bundled via @fontsource (see main.tsx).
+// We hard-pin so the design looks identical regardless of brand-kit fonts.
+const DISPLAY = "Anton, Impact, sans-serif";          // Tall condensed display
+const DISPLAY_WIDE = "Archivo Black, Impact, sans-serif"; // Heavy wide blocks
+const ACCENT = "Bebas Neue, Impact, sans-serif";      // Tracked-out labels
+const BODY = "Oswald, Inter, system-ui, sans-serif";  // Meta / lineup rows
+
+const TRUE_DARK = "#0B1220";
+const TRUE_LIGHT = "#FFFFFF";
+
 const fallback = {
   primary: "#1E3A5F",
   secondary: "#475569",
-  accent: "#22C55E",
-  dark: "#0F172A",
-  light: "#FFFFFF",
-  heading: "Anton, Impact, sans-serif",
-  body: "Inter, system-ui, sans-serif",
+  accent: "#E11D48",
 };
-
-// Always-dark base used for backgrounds & overlays. We ignore brand-kit
-// "dark" because some orgs set pastel/light values there and it breaks
-// text contrast across every template.
-const TRUE_DARK = "#0B1220";
-const TRUE_LIGHT = "#FFFFFF";
 
 function palette(b: BrandKit) {
   return {
@@ -83,30 +76,34 @@ function palette(b: BrandKit) {
     accent: b.color_accent || fallback.accent,
     dark: TRUE_DARK,
     light: TRUE_LIGHT,
-    heading: b.font_heading || fallback.heading,
-    body: b.font_body || fallback.body,
   };
 }
 
-// Convenience constructors -- return plain JSON Fabric understands
+// Convenience constructors
 const rect = (o: any) => ({ type: "rect", ...o });
 const text = (o: any) => ({ type: "textbox", ...o });
 const img = (src: string, o: any) => ({ type: "image", src, ...o });
+const tri = (points: { x: number; y: number }[], o: any) => ({
+  type: "polygon", points, ...o,
+});
 
-// ---------- GAME DAY ----------
+// ─────────────────────────────────────────────────────────────
+// GAME DAY — edge-bleeding hero, oversized headline, lineup
+// stack runs vertically up the right edge like a stadium sign
+// ─────────────────────────────────────────────────────────────
 const gameDay: FabricTemplate = {
   key: "game_day",
   name: "Game Day",
-  blurb: "Matchup poster with starting lineup. Drop a hero photo, set the matchup, add your starters.",
+  blurb: "Edge-bleeding hero, massive type, lineup down the side.",
   dims: { width: W, height: H },
   fields: [
     { name: "opponent", label: "Opponent", type: "text", required: true, placeholder: "Eastside Wolves" },
     { name: "game_date", label: "Date", type: "date", required: true },
     { name: "game_time", label: "Time", type: "time", placeholder: "7:00 PM" },
-    { name: "venue", label: "Venue", type: "text", placeholder: "Home / Memorial Field" },
-    { name: "hero_photo_url", label: "Hero photo", type: "photo", helper: "Full-bleed background photo" },
-    { name: "team_id", label: "Team (for roster auto-fill)", type: "team_picker", helper: "Optional. Loads starters from your roster." },
-    { name: "lineup", label: "Starting lineup", type: "lineup_repeater", helper: "Up to 11 starters shown on the design." },
+    { name: "venue", label: "Venue", type: "text", placeholder: "Memorial Field" },
+    { name: "hero_photo_url", label: "Hero photo", type: "photo", helper: "Will bleed full-canvas with dark wash for contrast." },
+    { name: "team_id", label: "Team (for lineup auto-fill)", type: "team_picker", helper: "Optional." },
+    { name: "lineup", label: "Starting lineup", type: "lineup_repeater", helper: "Up to 9 starters shown." },
   ],
   defaults: {
     opponent: "OPPONENT",
@@ -116,139 +113,152 @@ const gameDay: FabricTemplate = {
     hero_photo_url: "",
     team_id: "",
     lineup: [
-      { jersey: "7", name: "FIRST LAST", position: "P" },
+      { jersey: "7",  name: "FIRST LAST", position: "P" },
       { jersey: "12", name: "FIRST LAST", position: "C" },
-      { jersey: "3", name: "FIRST LAST", position: "1B" },
-      { jersey: "4", name: "FIRST LAST", position: "2B" },
-      { jersey: "5", name: "FIRST LAST", position: "3B" },
-      { jersey: "6", name: "FIRST LAST", position: "SS" },
-      { jersey: "9", name: "FIRST LAST", position: "LF" },
-      { jersey: "8", name: "FIRST LAST", position: "CF" },
+      { jersey: "3",  name: "FIRST LAST", position: "1B" },
+      { jersey: "4",  name: "FIRST LAST", position: "2B" },
+      { jersey: "5",  name: "FIRST LAST", position: "3B" },
+      { jersey: "6",  name: "FIRST LAST", position: "SS" },
+      { jersey: "9",  name: "FIRST LAST", position: "LF" },
+      { jersey: "8",  name: "FIRST LAST", position: "CF" },
       { jersey: "11", name: "FIRST LAST", position: "RF" },
     ],
   },
   build: (v, b) => {
     const p = palette(b);
     const objects: any[] = [];
-    const lineup = (v.lineup || []).slice(0, 11);
+    const lineup = (v.lineup || []).slice(0, 9);
 
-    // 1. Background (true dark — overlay sits on top of photo)
+    // 1. Base dark
     objects.push(rect({
       left: 0, top: 0, width: W, height: H, fill: p.dark,
       selectable: false, evented: false, name: "bg",
     }));
 
-    // 2. Hero photo — sized to cover post-load in the editor
+    // 2. Full-bleed hero photo
     if (v.hero_photo_url) {
       objects.push(img(v.hero_photo_url, {
-        left: 0, top: 0, scaleX: 1, scaleY: 1, name: "hero_photo",
+        left: 0, top: 0, name: "hero_photo",
         cropX: 0, cropY: 0,
       }));
     }
 
-    // 3. Dark gradient on bottom 65% so text is readable on any photo
+    // 3. Hard left-side color slab (the brand color anchor)
+    objects.push(rect({
+      left: 0, top: 0, width: 24, height: H, fill: p.accent,
+      selectable: false, name: "edge_accent",
+    }));
+
+    // 4. Top-to-bottom gradient wash (more on bottom)
     objects.push({
       type: "rect",
-      left: 0, top: H * 0.35, width: W, height: H * 0.65,
-      name: "gradient_overlay", selectable: false, evented: false,
+      left: 0, top: 0, width: W, height: H,
+      name: "wash", selectable: false, evented: false,
       fill: {
         type: "linear",
-        coords: { x1: 0, y1: 0, x2: 0, y2: H * 0.65 },
+        coords: { x1: 0, y1: 0, x2: 0, y2: H },
         colorStops: [
-          { offset: 0, color: "rgba(11,18,32,0)" },
-          { offset: 0.45, color: "rgba(11,18,32,0.75)" },
-          { offset: 1, color: "rgba(11,18,32,0.95)" },
+          { offset: 0, color: "rgba(11,18,32,0.55)" },
+          { offset: 0.40, color: "rgba(11,18,32,0.15)" },
+          { offset: 0.75, color: "rgba(11,18,32,0.85)" },
+          { offset: 1, color: "rgba(11,18,32,0.98)" },
         ],
       },
     });
 
-    // 4. Accent stripe
-    objects.push(rect({
-      left: 60, top: H - 320, width: 120, height: 8,
-      fill: p.accent, name: "accent_stripe",
+    // 5. Diagonal accent slash (bottom-right)
+    objects.push(tri(
+      [
+        { x: W - 280, y: H }, { x: W, y: H }, { x: W, y: H - 280 },
+      ],
+      { left: W - 280, top: H - 280, fill: p.accent, opacity: 0.92, name: "slash" }
+    ));
+
+    // 6. Top eyebrow — small tracked label
+    objects.push(text({
+      text: "TONIGHT  ·  HOME GAME",
+      left: 60, top: 56, width: W - 120,
+      fontFamily: ACCENT, fontSize: 28, letterSpacing: 8,
+      fill: p.light, opacity: 0.85, name: "eyebrow",
     }));
 
-    // 5. GAME DAY headline (bottom-left)
+    // 7. GAME DAY — massive, bleeds off bottom-left
     objects.push(text({
-      text: "GAME DAY",
-      left: 60, top: H - 300, width: W - 120,
-      fontFamily: p.heading, fontWeight: 900, fontSize: 140,
-      fill: p.light, lineHeight: 0.9, name: "headline",
+      text: "GAME\nDAY",
+      left: 48, top: H - 470, width: 800,
+      fontFamily: DISPLAY, fontSize: 280, lineHeight: 0.82,
+      fill: p.light, name: "headline",
     }));
 
-    // 6. Matchup
+    // 8. VS opponent
     objects.push(text({
-      text: `VS ${(v.opponent || "OPPONENT").toUpperCase()}`,
-      left: 60, top: H - 150, width: W - 120,
-      fontFamily: p.heading, fontWeight: 700, fontSize: 52,
+      text: `VS  ${(v.opponent || "OPPONENT").toUpperCase()}`,
+      left: 60, top: H - 180, width: W - 380,
+      fontFamily: DISPLAY_WIDE, fontSize: 56,
       fill: p.accent, name: "matchup",
     }));
 
-    // 7. Date / time / venue
+    // 9. Meta row
     const formatDate = (d: string) => {
       if (!d) return "";
       try {
         const dt = new Date(d + "T00:00:00");
-        return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase();
+        return dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
       } catch { return d; }
     };
     const meta = [formatDate(v.game_date), v.game_time, v.venue]
-      .filter(Boolean).join("   ·   ").toUpperCase();
+      .filter(Boolean).join("   /   ").toUpperCase();
     objects.push(text({
-      text: meta || "DATE   ·   TIME   ·   VENUE",
-      left: 60, top: H - 80, width: W - 120,
-      fontFamily: p.body, fontWeight: 600, fontSize: 24,
-      fill: p.light, opacity: 0.85, name: "meta",
+      text: meta || "DATE  /  TIME  /  VENUE",
+      left: 60, top: H - 100, width: W - 380,
+      fontFamily: ACCENT, fontSize: 26, letterSpacing: 4,
+      fill: p.light, opacity: 0.9, name: "meta",
     }));
 
-    // 8. Lineup panel (top-right, sized to roster length)
+    // 10. Lineup — vertical strip down the right edge, no panel chrome
     if (lineup.length > 0) {
-      const panelW = 360;
-      const panelX = W - panelW - 40;
-      const panelY = 40;
-      const rowH = 38;
-      const panelH = 70 + lineup.length * rowH + 16;
-      objects.push(rect({
-        left: panelX, top: panelY, width: panelW, height: panelH,
-        fill: p.primary, opacity: 0.92, rx: 10, ry: 10, name: "lineup_panel",
-      }));
+      const rightX = W - 320;
       objects.push(text({
-        text: "STARTING LINEUP",
-        left: panelX + 24, top: panelY + 22, width: panelW - 48,
-        fontFamily: p.heading, fontWeight: 800, fontSize: 22,
+        text: "STARTING 9",
+        left: rightX, top: 56, width: 280,
+        fontFamily: ACCENT, fontSize: 22, letterSpacing: 6,
         fill: p.accent, name: "lineup_title",
       }));
+      // Accent rule under the title
+      objects.push(rect({
+        left: rightX, top: 90, width: 60, height: 4, fill: p.accent, name: "lineup_rule",
+      }));
+      const rowH = 56;
       lineup.forEach((row: any, i: number) => {
-        const ty = panelY + 70 + i * rowH;
+        const ty = 120 + i * rowH;
+        // Big jersey number
         objects.push(text({
-          text: `#${row.jersey || "—"}`,
-          left: panelX + 24, top: ty, width: 60,
-          fontFamily: p.heading, fontWeight: 800, fontSize: 22, fill: p.accent,
+          text: row.jersey || "—",
+          left: rightX, top: ty, width: 70,
+          fontFamily: DISPLAY, fontSize: 44, fill: p.accent,
           name: `lineup_jersey_${i}`,
         }));
+        // Name
         objects.push(text({
           text: (row.name || "").toUpperCase(),
-          left: panelX + 90, top: ty + 2, width: panelW - 170,
-          fontFamily: p.body, fontWeight: 600, fontSize: 18,
+          left: rightX + 80, top: ty + 6, width: 180,
+          fontFamily: BODY, fontWeight: 700, fontSize: 18,
           fill: p.light, name: `lineup_name_${i}`,
         }));
+        // Position (small caps)
         objects.push(text({
           text: row.position || "",
-          left: panelX + panelW - 70, top: ty + 2, width: 60,
-          fontFamily: p.body, fontWeight: 700, fontSize: 16, fill: p.light,
-          opacity: 0.75, textAlign: "right", name: `lineup_pos_${i}`,
+          left: rightX + 80, top: ty + 30, width: 180,
+          fontFamily: ACCENT, fontSize: 16, letterSpacing: 2,
+          fill: p.light, opacity: 0.65, name: `lineup_pos_${i}`,
         }));
       });
     }
 
-    // 9. Logo with white backing chip (auto-fit to 140px post-load)
+    // 11. Logo — clean, top-right of left column, no white chip
     if (b.logo_primary_url) {
-      objects.push(rect({
-        left: 30, top: 30, width: 160, height: 160,
-        rx: 12, ry: 12, fill: "rgba(255,255,255,0.92)", name: "logo_chip",
-      }));
       objects.push(img(b.logo_primary_url, {
-        left: 40, top: 40, scaleX: 1, scaleY: 1, name: "logo",
+        left: 60, top: 96, scaleX: 0.18, scaleY: 0.18, name: "logo",
       }));
     }
 
@@ -256,18 +266,22 @@ const gameDay: FabricTemplate = {
   },
 };
 
-// ---------- COLLEGE COMMIT ----------
+// ─────────────────────────────────────────────────────────────
+// COLLEGE COMMIT — full-bleed photo, oversized COMMITTED type
+// running diagonal, school name as wide block at bottom
+// ─────────────────────────────────────────────────────────────
 const collegeCommit: FabricTemplate = {
   key: "college_commit",
   name: "College Commit",
-  blurb: "Announce a college commitment. Player photo, school logo, the headline writes itself.",
+  blurb: "Photo-driven announcement with monumental COMMITTED typography.",
   dims: { width: W, height: H },
   fields: [
     { name: "athlete_name", label: "Athlete name", type: "text", required: true, placeholder: "Jordan Smith" },
     { name: "school_name", label: "College / University", type: "text", required: true, placeholder: "State University" },
-    { name: "school_logo_url", label: "School logo", type: "photo", helper: "Recommended: PNG with transparent background" },
-    { name: "athlete_photo_url", label: "Athlete photo", type: "photo", required: true },
+    { name: "school_logo_url", label: "School logo", type: "photo", helper: "PNG with transparent background." },
+    { name: "athlete_photo_url", label: "Athlete photo", type: "photo", required: true, helper: "Background-removed cutout works best." },
     { name: "class_of", label: "Class of", type: "text", placeholder: "2026" },
+    { name: "sport_position", label: "Sport / position", type: "text", placeholder: "Baseball  ·  Pitcher" },
     { name: "quote", label: "Quote (optional)", type: "textarea", placeholder: "Thank you to my family, coaches, and teammates…" },
   ],
   defaults: {
@@ -275,125 +289,148 @@ const collegeCommit: FabricTemplate = {
     school_name: "UNIVERSITY",
     school_logo_url: "",
     athlete_photo_url: "",
-    class_of: "",
+    class_of: "2026",
+    sport_position: "",
     quote: "",
   },
   build: (v, b) => {
     const p = palette(b);
     const objects: any[] = [];
 
-    // Background
-    objects.push(rect({ left: 0, top: 0, width: W, height: H, fill: p.light, selectable: false, name: "bg" }));
-
-    // Color block (left side)
+    // 1. Brand-color full background
     objects.push(rect({
-      left: 0, top: 0, width: W * 0.45, height: H, fill: p.primary,
-      name: "color_block",
+      left: 0, top: 0, width: W, height: H, fill: p.primary,
+      selectable: false, name: "bg",
     }));
 
-    // Athlete photo placeholder (left side)
+    // 2. Dark wash on bottom 60%
+    objects.push({
+      type: "rect",
+      left: 0, top: H * 0.35, width: W, height: H * 0.65,
+      name: "wash", selectable: false, evented: false,
+      fill: {
+        type: "linear",
+        coords: { x1: 0, y1: 0, x2: 0, y2: H * 0.65 },
+        colorStops: [
+          { offset: 0, color: "rgba(11,18,32,0)" },
+          { offset: 1, color: "rgba(11,18,32,0.88)" },
+        ],
+      },
+    });
+
+    // 3. Athlete photo — full bleed (user can scale/position)
     if (v.athlete_photo_url) {
       objects.push(img(v.athlete_photo_url, {
-        left: 0, top: 0, name: "athlete_photo",
+        left: 0, top: 0, scaleX: 1, scaleY: 1, name: "athlete_photo",
       }));
     } else {
-      objects.push(rect({
-        left: 40, top: 200, width: W * 0.45 - 80, height: H - 400,
-        fill: p.dark, opacity: 0.4, name: "athlete_photo_placeholder",
-      }));
       objects.push(text({
-        text: "PHOTO", left: 40, top: H / 2 - 20, width: W * 0.45 - 80,
-        fontFamily: p.body, fontSize: 32, fill: p.light, opacity: 0.6,
-        textAlign: "center", name: "photo_placeholder_label",
+        text: "DROP ATHLETE PHOTO\n(BACKGROUND REMOVED)",
+        left: 0, top: H / 2 - 60, width: W,
+        fontFamily: ACCENT, fontSize: 28, letterSpacing: 4,
+        fill: p.light, opacity: 0.45, textAlign: "center",
+        name: "photo_placeholder",
       }));
     }
 
-    // "COMMITTED" banner
-    objects.push(rect({
-      left: W * 0.45 - 30, top: 100, width: 280, height: 60,
-      fill: p.accent, name: "committed_banner",
-    }));
+    // 4. Huge COMMITTED type — stacked, anchored bottom-left, bleeds off
     objects.push(text({
-      text: "COMMITTED", left: W * 0.45 - 30, top: 115, width: 280,
-      fontFamily: p.heading, fontSize: 36, fontWeight: 900, fill: p.dark,
-      textAlign: "center", name: "committed_text",
+      text: "COMM-\nITTED.",
+      left: 40, top: H - 540, width: 900,
+      fontFamily: DISPLAY, fontSize: 320, lineHeight: 0.82,
+      fill: p.light, name: "headline",
     }));
 
-    // Athlete name (huge)
+    // 5. Accent slab behind class-of pill (top-right)
+    objects.push(rect({
+      left: W - 240, top: 60, width: 180, height: 60,
+      fill: p.accent, name: "class_chip",
+    }));
+    objects.push(text({
+      text: v.class_of ? `'${String(v.class_of).slice(-2)}` : "'26",
+      left: W - 240, top: 64, width: 180,
+      fontFamily: DISPLAY_WIDE, fontSize: 52,
+      fill: p.dark, textAlign: "center", name: "class_chip_text",
+    }));
+
+    // 6. Athlete name — wide heavy block (top, on the photo)
     objects.push(text({
       text: (v.athlete_name || "ATHLETE NAME").toUpperCase(),
-      left: W * 0.48, top: 220, width: W * 0.48,
-      fontFamily: p.heading, fontWeight: 900, fontSize: 90, lineHeight: 0.9,
-      fill: p.dark, name: "athlete_name",
+      left: 60, top: 60, width: W - 320,
+      fontFamily: DISPLAY_WIDE, fontSize: 64, lineHeight: 0.95,
+      fill: p.light, name: "athlete_name",
     }));
 
-    // "is committing to"
+    if (v.sport_position) {
+      objects.push(text({
+        text: v.sport_position.toUpperCase(),
+        left: 60, top: 142, width: W - 320,
+        fontFamily: ACCENT, fontSize: 24, letterSpacing: 6,
+        fill: p.accent, name: "sport_position",
+      }));
+    }
+
+    // 7. "IS COMMITTING TO" small label
     objects.push(text({
       text: "IS COMMITTING TO",
-      left: W * 0.48, top: 440, width: W * 0.48,
-      fontFamily: p.body, fontWeight: 600, fontSize: 24,
-      fill: p.secondary, name: "is_committing_label",
+      left: 60, top: H - 200, width: W - 120,
+      fontFamily: ACCENT, fontSize: 22, letterSpacing: 6,
+      fill: p.accent, name: "is_committing_label",
     }));
 
-    // School name
+    // 8. School name — heavy wide block at bottom
     objects.push(text({
       text: (v.school_name || "UNIVERSITY").toUpperCase(),
-      left: W * 0.48, top: 480, width: W * 0.48,
-      fontFamily: p.heading, fontWeight: 800, fontSize: 64, lineHeight: 0.95,
-      fill: p.primary, name: "school_name",
+      left: 60, top: H - 160, width: v.school_logo_url ? W - 280 : W - 120,
+      fontFamily: DISPLAY_WIDE, fontSize: 68, lineHeight: 0.95,
+      fill: p.light, name: "school_name",
     }));
 
-    // School logo
+    // 9. School logo (bottom-right)
     if (v.school_logo_url) {
       objects.push(img(v.school_logo_url, {
-        left: W * 0.48, top: 660, scaleX: 0.4, scaleY: 0.4, name: "school_logo",
+        left: W - 200, top: H - 200, scaleX: 0.35, scaleY: 0.35, name: "school_logo",
       }));
     }
 
-    // Class of
-    if (v.class_of) {
-      objects.push(text({
-        text: `CLASS OF ${v.class_of}`,
-        left: W * 0.48, top: 850, width: W * 0.48,
-        fontFamily: p.heading, fontWeight: 700, fontSize: 32,
-        fill: p.accent, name: "class_of",
-      }));
-    }
-
-    // Quote
+    // 10. Quote
     if (v.quote) {
       objects.push(text({
         text: `"${v.quote}"`,
-        left: W * 0.48, top: 900, width: W * 0.48,
-        fontFamily: p.body, fontStyle: "italic", fontSize: 18,
-        fill: p.secondary, name: "quote",
+        left: 60, top: H - 60, width: W - 120,
+        fontFamily: BODY, fontStyle: "italic", fontSize: 18,
+        fill: p.light, opacity: 0.7, name: "quote",
       }));
     }
 
-    // Org logo
+    // 11. Org logo — top-left subtle
     if (b.logo_primary_url) {
       objects.push(img(b.logo_primary_url, {
-        left: 40, top: 40, scaleX: 0.25, scaleY: 0.25, name: "logo",
+        left: 60, top: H - 80, scaleX: 0.12, scaleY: 0.12,
+        opacity: 0.7, name: "logo",
       }));
     }
 
-    return { version: "6.0.0", objects, background: p.light };
+    return { version: "6.0.0", objects, background: p.primary };
   },
 };
 
-// ---------- TRYOUT ANNOUNCEMENT ----------
+// ─────────────────────────────────────────────────────────────
+// TRYOUT ANNOUNCEMENT — brutalist poster, big TRYOUTS bleed,
+// dates/locations as left-aligned data stack
+// ─────────────────────────────────────────────────────────────
 const tryout: FabricTemplate = {
   key: "tryout",
   name: "Tryout Announcement",
-  blurb: "Recruit for tryouts. Supports one date or many, one location or many.",
+  blurb: "Brutalist poster flyer. Bold type, supports multiple dates and locations.",
   dims: { width: W, height: H },
   fields: [
     { name: "program_name", label: "Program / team", type: "text", required: true, placeholder: "12U Tryouts" },
     { name: "age_group", label: "Age group / division", type: "text", placeholder: "Boys 12U" },
     { name: "dates", label: "Date(s)", type: "date_repeater", required: true, helper: "Add one date or multiple." },
     { name: "locations", label: "Location(s)", type: "location_repeater", required: true, helper: "Add one location or multiple." },
-    { name: "register_url", label: "Register URL", type: "text", placeholder: "https://…" },
-    { name: "hero_photo_url", label: "Hero photo", type: "photo" },
+    { name: "register_url", label: "Register URL", type: "text", placeholder: "register.example.com" },
+    { name: "hero_photo_url", label: "Background photo (optional)", type: "photo" },
   ],
   defaults: {
     program_name: "TRYOUTS",
@@ -407,127 +444,138 @@ const tryout: FabricTemplate = {
     const p = palette(b);
     const objects: any[] = [];
 
-    // Background
-    objects.push(rect({ left: 0, top: 0, width: W, height: H, fill: p.dark, name: "bg" }));
+    // 1. Dark background
+    objects.push(rect({
+      left: 0, top: 0, width: W, height: H, fill: p.dark,
+      selectable: false, name: "bg",
+    }));
 
-    // Hero photo (top half) with dark overlay
+    // 2. Hero photo with heavy dark wash (if provided)
     if (v.hero_photo_url) {
       objects.push(img(v.hero_photo_url, {
         left: 0, top: 0, name: "hero_photo",
       }));
       objects.push(rect({
         left: 0, top: 0, width: W, height: H,
-        fill: p.dark, opacity: 0.55, name: "overlay",
+        fill: p.dark, opacity: 0.78, name: "wash",
       }));
     }
 
-    // Top stripe
-    objects.push(rect({ left: 0, top: 0, width: W, height: 70, fill: p.accent, name: "top_stripe" }));
-    objects.push(text({
-      text: "NOW RECRUITING", left: 0, top: 18, width: W,
-      fontFamily: p.heading, fontWeight: 800, fontSize: 32,
-      fill: p.dark, textAlign: "center", name: "tag",
+    // 3. Top accent bar
+    objects.push(rect({
+      left: 0, top: 0, width: W, height: 14, fill: p.accent, name: "top_bar",
     }));
 
-    // TRYOUTS headline
+    // 4. NOW RECRUITING eyebrow
     objects.push(text({
-      text: "TRYOUTS", left: 60, top: 140, width: W - 120,
-      fontFamily: p.heading, fontWeight: 900, fontSize: 200,
-      fill: p.light, lineHeight: 0.9, textAlign: "center", name: "headline",
+      text: "NOW RECRUITING",
+      left: 60, top: 50, width: W - 120,
+      fontFamily: ACCENT, fontSize: 28, letterSpacing: 10,
+      fill: p.accent, name: "eyebrow",
     }));
 
-    // Program name
+    // 5. TRYOUTS — massive bleed (rotated style sit it tight to top-left)
+    objects.push(text({
+      text: "TRY-\nOUTS.",
+      left: 40, top: 100, width: 1000,
+      fontFamily: DISPLAY, fontSize: 360, lineHeight: 0.82,
+      fill: p.light, name: "headline",
+    }));
+
+    // 6. Program name
     objects.push(text({
       text: (v.program_name || "PROGRAM").toUpperCase(),
-      left: 60, top: 360, width: W - 120,
-      fontFamily: p.heading, fontWeight: 700, fontSize: 56,
-      fill: p.accent, textAlign: "center", name: "program",
+      left: 60, top: 720, width: W - 120,
+      fontFamily: DISPLAY_WIDE, fontSize: 52,
+      fill: p.accent, name: "program",
     }));
 
-    // Age group
+    // 7. Age group
     if (v.age_group) {
       objects.push(text({
-        text: v.age_group, left: 60, top: 430, width: W - 120,
-        fontFamily: p.body, fontWeight: 600, fontSize: 28,
-        fill: p.light, opacity: 0.85, textAlign: "center", name: "age_group",
+        text: v.age_group.toUpperCase(),
+        left: 60, top: 790, width: W - 120,
+        fontFamily: ACCENT, fontSize: 26, letterSpacing: 6,
+        fill: p.light, opacity: 0.85, name: "age_group",
       }));
     }
 
-    // Dates column (left)
+    // 8. Dates column
     const dates = (v.dates || []).filter((d: any) => d.date || d.time);
     if (dates.length > 0) {
-      const baseY = 520;
+      const baseY = 850;
       objects.push(text({
-        text: dates.length === 1 ? "DATE" : "DATES",
-        left: 60, top: baseY, width: W / 2 - 80,
-        fontFamily: p.heading, fontWeight: 800, fontSize: 28,
+        text: dates.length === 1 ? "WHEN" : "DATES",
+        left: 60, top: baseY, width: 360,
+        fontFamily: ACCENT, fontSize: 18, letterSpacing: 4,
         fill: p.accent, name: "dates_label",
       }));
-      dates.slice(0, 5).forEach((d: any, i: number) => {
-        const ty = baseY + 50 + i * 70;
+      dates.slice(0, 3).forEach((d: any, i: number) => {
+        const ty = baseY + 30 + i * 56;
         objects.push(text({
           text: d.date || "",
-          left: 60, top: ty, width: W / 2 - 80,
-          fontFamily: p.heading, fontWeight: 700, fontSize: 36,
+          left: 60, top: ty, width: 360,
+          fontFamily: DISPLAY, fontSize: 36, lineHeight: 1,
           fill: p.light, name: `date_${i}`,
         }));
         if (d.time) {
           objects.push(text({
-            text: d.time, left: 60, top: ty + 42, width: W / 2 - 80,
-            fontFamily: p.body, fontWeight: 500, fontSize: 22,
+            text: d.time.toUpperCase(),
+            left: 280, top: ty + 8, width: 200,
+            fontFamily: BODY, fontWeight: 600, fontSize: 22,
             fill: p.light, opacity: 0.8, name: `date_time_${i}`,
           }));
         }
       });
     }
 
-    // Locations column (right)
+    // 9. Locations column
     const locs = (v.locations || []).filter((l: any) => l.name || l.address);
     if (locs.length > 0) {
-      const baseY = 520;
-      const lx = W / 2 + 20;
+      const baseY = 850;
+      const lx = 560;
       objects.push(text({
-        text: locs.length === 1 ? "LOCATION" : "LOCATIONS",
-        left: lx, top: baseY, width: W / 2 - 80,
-        fontFamily: p.heading, fontWeight: 800, fontSize: 28,
+        text: locs.length === 1 ? "WHERE" : "LOCATIONS",
+        left: lx, top: baseY, width: 460,
+        fontFamily: ACCENT, fontSize: 18, letterSpacing: 4,
         fill: p.accent, name: "locations_label",
       }));
-      locs.slice(0, 5).forEach((l: any, i: number) => {
-        const ty = baseY + 50 + i * 70;
+      locs.slice(0, 3).forEach((l: any, i: number) => {
+        const ty = baseY + 30 + i * 56;
         objects.push(text({
           text: (l.name || "").toUpperCase(),
-          left: lx, top: ty, width: W / 2 - 80,
-          fontFamily: p.heading, fontWeight: 700, fontSize: 30,
+          left: lx, top: ty, width: 460,
+          fontFamily: DISPLAY, fontSize: 32, lineHeight: 1,
           fill: p.light, name: `loc_${i}`,
         }));
         if (l.address) {
           objects.push(text({
-            text: l.address, left: lx, top: ty + 38, width: W / 2 - 80,
-            fontFamily: p.body, fontWeight: 500, fontSize: 18,
-            fill: p.light, opacity: 0.8, name: `loc_addr_${i}`,
+            text: l.address, left: lx, top: ty + 38, width: 460,
+            fontFamily: BODY, fontWeight: 500, fontSize: 16,
+            fill: p.light, opacity: 0.75, name: `loc_addr_${i}`,
           }));
         }
       });
     }
 
-    // Register URL footer
+    // 10. Register footer — bold strip, no rounded chip
     if (v.register_url) {
       objects.push(rect({
-        left: 60, top: H - 130, width: W - 120, height: 70,
-        fill: p.accent, rx: 8, ry: 8, name: "register_bg",
+        left: 0, top: H - 80, width: W, height: 80,
+        fill: p.accent, name: "register_bg",
       }));
       objects.push(text({
-        text: `REGISTER → ${v.register_url}`,
-        left: 60, top: H - 110, width: W - 120,
-        fontFamily: p.heading, fontWeight: 800, fontSize: 28,
+        text: `REGISTER  →  ${v.register_url.toUpperCase()}`,
+        left: 60, top: H - 60, width: W - 120,
+        fontFamily: DISPLAY_WIDE, fontSize: 32,
         fill: p.dark, textAlign: "center", name: "register",
       }));
     }
 
-    // Org logo
+    // 11. Org logo — top-right
     if (b.logo_primary_url) {
       objects.push(img(b.logo_primary_url, {
-        left: W - 160, top: 90, scaleX: 0.25, scaleY: 0.25, name: "logo",
+        left: W - 160, top: 50, scaleX: 0.18, scaleY: 0.18, name: "logo",
       }));
     }
 
