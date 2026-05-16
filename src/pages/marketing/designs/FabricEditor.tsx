@@ -107,16 +107,55 @@ export default function FabricEditor() {
     // eslint-disable-next-line
   }, [loading, templateKey]);
 
-  // Rebuild canvas from template definition when form values change
+  // Rebuild canvas; after load, auto-fit images so user uploads don't
+  // render at native pixel size, and re-stack so bg/photo/overlay are correct.
   const rebuild = useCallback((v: TemplateValues) => {
     const c = fabricRef.current;
     if (!c) return;
     const json = template.build(v, brandKit);
     c.loadFromJSON(json).then(() => {
+      const W = template.dims.width;
+      const H = template.dims.height;
+      c.getObjects().forEach((obj: any) => {
+        if (obj.type !== "image") return;
+        const meta = obj.name as string | undefined;
+        const iw = obj.width || 1;
+        const ih = obj.height || 1;
+        if (meta === "hero_photo") {
+          const scale = Math.max(W / iw, H / ih);
+          obj.set({
+            scaleX: scale, scaleY: scale,
+            left: (W - iw * scale) / 2, top: (H - ih * scale) / 2,
+          });
+        } else if (meta === "logo") {
+          const max = 140;
+          const scale = Math.min(max / iw, max / ih);
+          obj.set({ scaleX: scale, scaleY: scale, left: 40, top: 40 });
+        } else if (meta === "athlete_photo") {
+          const targetW = W * 0.45;
+          const scale = Math.max(targetW / iw, H / ih);
+          obj.set({
+            scaleX: scale, scaleY: scale,
+            left: (targetW - iw * scale) / 2, top: (H - ih * scale) / 2,
+          });
+        } else if (meta === "school_logo") {
+          const max = 160;
+          const scale = Math.min(max / iw, max / ih);
+          obj.set({ scaleX: scale, scaleY: scale });
+        }
+        obj.setCoords();
+      });
+      // Re-stack: bg -> hero -> overlay -> rest -> logo on top
+      const order = (n?: string) => {
+        if (n === "bg") return 0;
+        if (n === "hero_photo" || n === "athlete_photo") return 1;
+        if (n === "overlay" || n === "gradient_overlay") return 2;
+        if (n === "logo") return 99;
+        return 50;
+      };
+      (c as any)._objects.sort((a: any, b: any) => order(a.name) - order(b.name));
       c.requestRenderAll();
-    }).catch((err) => {
-      console.error("loadFromJSON failed", err);
-    });
+    }).catch((err) => console.error("loadFromJSON failed", err));
   }, [template, brandKit]);
 
   useEffect(() => {
