@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown, Upload, X } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, ArrowUp, ArrowDown, Upload, X, Sparkles, Loader2 } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent,
 } from "@dnd-kit/core";
@@ -109,8 +109,8 @@ const emptyTemplate = (): Partial<Template> => ({
 
 // ---------- Sortable row in the templates list ----------
 function SortableTemplateRow({
-  t, onEdit, onDelete,
-}: { t: Template; onEdit: () => void; onDelete: () => void }) {
+  t, onEdit, onDelete, onRegenerate, regenerating,
+}: { t: Template; onEdit: () => void; onDelete: () => void; onRegenerate: () => void; regenerating: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: t.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
@@ -153,7 +153,15 @@ function SortableTemplateRow({
         </span>
       </td>
       <td className="p-3 text-right whitespace-nowrap">
-        <button onClick={onEdit} className="text-muted-foreground hover:text-foreground p-1">
+        <button
+          onClick={onRegenerate}
+          disabled={regenerating}
+          title="Regenerate thumbnail"
+          className="text-muted-foreground hover:text-primary p-1 disabled:opacity-50"
+        >
+          {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+        </button>
+        <button onClick={onEdit} className="text-muted-foreground hover:text-foreground p-1 ml-1">
           <Pencil className="h-4 w-4" />
         </button>
         <button onClick={onDelete} className="text-muted-foreground hover:text-destructive p-1 ml-1">
@@ -276,6 +284,30 @@ export default function AdminDesignTemplates() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Template>>(emptyTemplate());
   const [uploading, setUploading] = useState(false);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+
+  const regenerateThumbnail = async (templateId: string, opts?: { silent?: boolean }) => {
+    setRegeneratingId(templateId);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-template-thumbnail", {
+        body: { template_id: templateId },
+      });
+      if (error) throw error;
+      if (data?.thumbnail_url) {
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === templateId ? { ...t, thumbnail_url: data.thumbnail_url } : t)),
+        );
+        setEditing((s) => (s.id === templateId ? { ...s, thumbnail_url: data.thumbnail_url } : s));
+        if (!opts?.silent) toast.success("Thumbnail regenerated");
+      } else if (!opts?.silent) {
+        toast.error("No thumbnail returned");
+      }
+    } catch (e: any) {
+      if (!opts?.silent) toast.error(e?.message ?? "Regenerate failed");
+    } finally {
+      setRegeneratingId(null);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -374,16 +406,27 @@ export default function AdminDesignTemplates() {
       sort_order: editing.sort_order ?? 0,
     };
     let error;
+    let savedId = editing.id;
     if (editing.id) {
       ({ error } = await supabase.from("design_templates").update(payload).eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("design_templates")
-        .insert({ ...payload, is_system: false, sort_order: templates.length }));
+      const ins = await supabase.from("design_templates")
+        .insert({ ...payload, is_system: false, sort_order: templates.length })
+        .select("id").single();
+      error = ins.error;
+      savedId = ins.data?.id;
     }
     if (error) return toast.error(error.message);
     toast.success("Saved");
     setOpen(false);
     load();
+    // Auto-regenerate thumbnail in the background so the org picker stays current.
+    if (savedId) {
+      toast.info("Regenerating thumbnail…");
+      regenerateThumbnail(savedId, { silent: true }).then(() => {
+        toast.success("Thumbnail updated");
+      });
+    }
   };
 
   const remove = async (id: string) => {
@@ -453,6 +496,8 @@ export default function AdminDesignTemplates() {
                       t={t}
                       onEdit={() => openEdit(t)}
                       onDelete={() => remove(t.id)}
+                      onRegenerate={() => regenerateThumbnail(t.id)}
+                      regenerating={regeneratingId === t.id}
                     />
                   ))
                 )}
@@ -527,11 +572,26 @@ export default function AdminDesignTemplates() {
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
+                  {editing.id && (
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      disabled={regeneratingId === editing.id}
+                      onClick={() => editing.id && regenerateThumbnail(editing.id)}
+                    >
+                      {regeneratingId === editing.id ? (
+                        <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Regenerating…</>
+                      ) : (
+                        <><Sparkles className="h-3.5 w-3.5 mr-1.5" />Regenerate from sample data</>
+                      )}
+                    </Button>
+                  )}
                   <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
                     <Button asChild variant="outline" size="sm" disabled={uploading}>
                       <span>
                         <Upload className="h-3.5 w-3.5 mr-1.5" />
-                        {uploading ? "Uploading…" : "Upload thumbnail"}
+                        {uploading ? "Uploading…" : "Upload manually"}
                       </span>
                     </Button>
                     <input
@@ -541,6 +601,9 @@ export default function AdminDesignTemplates() {
                       onChange={(e) => e.target.files?.[0] && uploadThumb(e.target.files[0])}
                     />
                   </label>
+                  <p className="text-xs text-muted-foreground max-w-xs">
+                    Auto-regenerates with placeholder org/brand each time you save. Upload only if you want a fixed image.
+                  </p>
                   {editing.thumbnail_url && (
                     <button
                       type="button"
