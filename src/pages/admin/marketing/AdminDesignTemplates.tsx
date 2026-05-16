@@ -572,11 +572,26 @@ export default function AdminDesignTemplates() {
                   </div>
                 )}
                 <div className="flex flex-col gap-2">
+                  {editing.id && (
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      disabled={regeneratingId === editing.id}
+                      onClick={() => editing.id && regenerateThumbnail(editing.id)}
+                    >
+                      {regeneratingId === editing.id ? (
+                        <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Regenerating…</>
+                      ) : (
+                        <><Sparkles className="h-3.5 w-3.5 mr-1.5" />Regenerate from sample data</>
+                      )}
+                    </Button>
+                  )}
                   <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
                     <Button asChild variant="outline" size="sm" disabled={uploading}>
                       <span>
                         <Upload className="h-3.5 w-3.5 mr-1.5" />
-                        {uploading ? "Uploading…" : "Upload thumbnail"}
+                        {uploading ? "Uploading…" : "Upload manually"}
                       </span>
                     </Button>
                     <input
@@ -586,6 +601,9 @@ export default function AdminDesignTemplates() {
                       onChange={(e) => e.target.files?.[0] && uploadThumb(e.target.files[0])}
                     />
                   </label>
+                  <p className="text-xs text-muted-foreground max-w-xs">
+                    Auto-regenerates with placeholder org/brand each time you save. Upload only if you want a fixed image.
+                  </p>
                   {editing.thumbnail_url && (
                     <button
                       type="button"
