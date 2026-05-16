@@ -2637,22 +2637,27 @@ export type Database = {
           created_by_role: string | null
           design_type: string
           export_urls: Json | null
+          field_values: Json | null
           generated_html: string | null
           generation_cost_cents: number | null
           generation_engine: string | null
           generation_error: string | null
           generation_started_at: string | null
           generation_time_ms: number | null
+          hero_image_url: string | null
+          hero_seed: string | null
           id: string
           name: string | null
           org_id: string
           parent_design_id: string | null
           preview_url: string | null
           prompt_input: Json | null
+          skin_id: string | null
           stability_image_url: string | null
           stability_prompt: string | null
           stability_seed: number | null
           status: string
+          style_modifier: string | null
           template_id: string | null
           updated_at: string
         }
@@ -2668,22 +2673,27 @@ export type Database = {
           created_by_role?: string | null
           design_type: string
           export_urls?: Json | null
+          field_values?: Json | null
           generated_html?: string | null
           generation_cost_cents?: number | null
           generation_engine?: string | null
           generation_error?: string | null
           generation_started_at?: string | null
           generation_time_ms?: number | null
+          hero_image_url?: string | null
+          hero_seed?: string | null
           id?: string
           name?: string | null
           org_id: string
           parent_design_id?: string | null
           preview_url?: string | null
           prompt_input?: Json | null
+          skin_id?: string | null
           stability_image_url?: string | null
           stability_prompt?: string | null
           stability_seed?: number | null
           status?: string
+          style_modifier?: string | null
           template_id?: string | null
           updated_at?: string
         }
@@ -2699,22 +2709,27 @@ export type Database = {
           created_by_role?: string | null
           design_type?: string
           export_urls?: Json | null
+          field_values?: Json | null
           generated_html?: string | null
           generation_cost_cents?: number | null
           generation_engine?: string | null
           generation_error?: string | null
           generation_started_at?: string | null
           generation_time_ms?: number | null
+          hero_image_url?: string | null
+          hero_seed?: string | null
           id?: string
           name?: string | null
           org_id?: string
           parent_design_id?: string | null
           preview_url?: string | null
           prompt_input?: Json | null
+          skin_id?: string | null
           stability_image_url?: string | null
           stability_prompt?: string | null
           stability_seed?: number | null
           status?: string
+          style_modifier?: string | null
           template_id?: string | null
           updated_at?: string
         }
