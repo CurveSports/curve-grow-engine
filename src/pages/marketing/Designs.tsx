@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
