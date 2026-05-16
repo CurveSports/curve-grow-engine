@@ -83,11 +83,13 @@ export default function AdminOrgBranding() {
   const load = async () => {
     if (!orgId) return;
     const [{ data: org }, { data: branding }] = await Promise.all([
-      supabase.from("organizations").select("name").eq("id", orgId).maybeSingle(),
+      supabase.from("organizations").select("name, sport").eq("id", orgId).maybeSingle(),
       supabase.from("org_branding").select("logo_url, logo_original_url, logo_quality, logo_processing_status, logo_width, logo_height, primary_hsl, accent_hsl").eq("org_id", orgId).maybeSingle(),
     ]);
     setOrgName(org?.name ?? "");
+    setSport(((org as any)?.sport === "softball" ? "softball" : "baseball"));
     setLogoUrl(branding?.logo_url ?? null);
+    setOriginalUrl((branding as any)?.logo_original_url ?? null);
     setOriginalUrl((branding as any)?.logo_original_url ?? null);
     setLogoQuality((branding as any)?.logo_quality ?? null);
     setLogoStatus((branding as any)?.logo_processing_status ?? null);
