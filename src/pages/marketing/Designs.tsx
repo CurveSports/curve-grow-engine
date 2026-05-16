@@ -148,7 +148,7 @@ export default function Designs() {
       setPicked(null);
       setInputs({});
       // Optimistically navigate to the new design's editor so the user sees progress
-      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}`));
+      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}/edit`));
     } catch (e: any) {
       toast.error(e.message || "Generation failed");
     } finally {
