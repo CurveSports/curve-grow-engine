@@ -148,7 +148,7 @@ export default function Designs() {
       setPicked(null);
       setInputs({});
       // Optimistically navigate to the new design's editor so the user sees progress
-      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}`));
+      if (data?.design_id) navigate(ml(`/marketing/designs/${data.design_id}/edit`));
     } catch (e: any) {
       toast.error(e.message || "Generation failed");
     } finally {
@@ -222,7 +222,7 @@ export default function Designs() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((d) => (
             <Card key={d.id} className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 group">
-              <Link to={ml(`/marketing/designs/${d.id}${d.generation_engine === "fabric_editor" ? "/edit" : ""}`)}>
+              <Link to={ml(`/marketing/designs/${d.id}/edit`)}>
                 <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
                   {d.status === "generating" ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
