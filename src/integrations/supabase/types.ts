@@ -2508,6 +2508,42 @@ export type Database = {
           },
         ]
       }
+      design_system_prompts: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          prompt_template: string
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          prompt_template: string
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          prompt_template?: string
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       design_templates: {
         Row: {
           active: boolean

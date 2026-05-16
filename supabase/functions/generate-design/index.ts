@@ -80,13 +80,13 @@ const TYPE_LAYOUTS: Record<string, string> = {
 - Massive headline 160-220px.`,
 };
 
-function buildSystemPrompt(opts: {
+function buildTokens(opts: {
   orgName: string;
   brandKit: any;
   template: any;
   promptInput: Record<string, any>;
   styleDirection: string;
-}) {
+}): Record<string, string> {
   const { orgName, brandKit, template, promptInput, styleDirection } = opts;
   const dims = template.dimensions || {};
   const fieldsList = Object.entries(promptInput || {})
@@ -99,60 +99,37 @@ function buildSystemPrompt(opts: {
   const fontHeading = brandKit?.font_heading || "Inter";
   const fontBody = brandKit?.font_body || "Inter";
 
-  return `You are an award-winning art director designing marketing assets for "${orgName}", a youth sports organization. Your work has been featured by Awwwards and SiteInspire. You produce designs that look like they belong on a Nike, Bleacher Report, or Players' Tribune feed — NOT generic Canva templates.
-
-ORGANIZATION
-- Name: ${orgName}
-- Tagline: ${brandKit?.tagline || "(none)"}
-- Brand voice: ${brandKit?.brand_voice_notes || "Energetic, family-focused, professional."}
-
-BRAND KIT (use these EXACT hex values — do not invent new colors)
-- Primary: ${brandKit?.color_primary || "#0F172A"}
-- Secondary: ${brandKit?.color_secondary || "#475569"}
-- Accent: ${brandKit?.color_accent || "#22C55E"}
-- Dark: ${brandKit?.color_dark || "#0F172A"}
-- Light: ${brandKit?.color_light || "#FFFFFF"}
-- Heading font: ${fontHeading}
-- Body font: ${fontBody}
-- Primary logo URL: ${brandKit?.logo_primary_url || "(none — use a styled wordmark of the org name instead)"}
-
-STYLE DIRECTION — FOLLOW STRICTLY
-${styleSpec}
-
-LAYOUT SYSTEM FOR THIS FORMAT
-${layoutSpec}
-
-TEMPLATE INTENT
-${template.base_prompt}
-
-IMAGE ASSETS (use VERBATIM URLs with crossorigin="anonymous"; if a slot is empty, do NOT invent an image — fall back to typography or a brand-color block)
-- hero_photo_url: ${promptInput.hero_photo_url || "(none)"} — full-bleed background or dominant half-panel. Apply the style's photo treatment (duotone, sepia, etc.).
-- secondary_photo_url: ${promptInput.secondary_photo_url || "(none)"} — used as a sidebar inset, rotated sticker (-6deg), or collage element. Smaller than the hero.
-- sponsor_logo_url: ${promptInput.sponsor_logo_url || "(none)"} — render as a "PRESENTED BY" lockup in a corner with 14px ALL CAPS tracking-0.2em label above. Max 120px wide.
-
-CONTENT FROM USER (use VERBATIM; if a field is empty, omit it — never invent or use placeholder copy like "Lorem ipsum" or "Your text here")
-${fieldsList || "(no content provided — use only org name + tagline)"}
-
-NON-NEGOTIABLE COMPOSITION RULES
-1. The canvas MUST feel intentional and art-directed. If your first instinct is a centered white card with a logo on top — STOP and redesign asymmetrically.
-2. Establish a clear focal hierarchy: ONE dominant element (headline or hero photo) at 2-3x the visual weight of anything else.
-3. Use at least 3 type sizes with a ratio of at least 4:1 between largest and smallest.
-4. Color: 60-30-10 rule — one color covers ~60% of canvas, second ~30%, accent ~10%. Never an even split.
-5. If a hero photo URL is provided, USE IT as a full-bleed background or large half-panel — never as a small inset thumbnail. Apply the style's photo treatment.
-6. Bleed elements off at least ONE edge of the canvas (headline, shape, photo). Avoid a uniform inner margin around everything.
-7. All copy MUST come from the user's content fields. Do not invent dates, locations, names, or details.
-
-TECHNICAL OUTPUT
-- Return ONLY a complete HTML document starting with <!DOCTYPE html>. No markdown fences, no commentary.
-- <body> MUST be exactly ${dims.width}px × ${dims.height}px with margin:0; padding:0; overflow:hidden; position:relative;
-- Load fonts with: <link href="https://fonts.googleapis.com/css2?family=${fontHeading.replace(/ /g, "+")}:wght@400;700;800;900&family=${fontBody.replace(/ /g, "+")}:wght@400;500;700&display=swap" rel="stylesheet">
-- All images use crossorigin="anonymous" and object-fit:cover.
-- Use absolute positioning freely for asymmetric layouts. Use CSS transform for rotations and skews.
-- Use background-blend-mode, mix-blend-mode, filter (grayscale, contrast, sepia) for photo treatments.
-- No external scripts. No SVG icons from CDNs (you may inline simple SVG for shapes/arrows/stars).
-
-Begin. Output the HTML now.`;
+  return {
+    org_name: orgName,
+    org_tagline: brandKit?.tagline || "(none)",
+    brand_voice: brandKit?.brand_voice_notes || "Energetic, family-focused, professional.",
+    color_primary: brandKit?.color_primary || "#0F172A",
+    color_secondary: brandKit?.color_secondary || "#475569",
+    color_accent: brandKit?.color_accent || "#22C55E",
+    color_dark: brandKit?.color_dark || "#0F172A",
+    color_light: brandKit?.color_light || "#FFFFFF",
+    font_heading: fontHeading,
+    font_body: fontBody,
+    font_heading_url: fontHeading.replace(/ /g, "+"),
+    font_body_url: fontBody.replace(/ /g, "+"),
+    logo_primary_url: brandKit?.logo_primary_url || "(none — use a styled wordmark of the org name instead)",
+    style_spec: styleSpec,
+    layout_spec: layoutSpec,
+    template_intent: template.base_prompt || "",
+    hero_photo_url: promptInput.hero_photo_url || "(none)",
+    secondary_photo_url: promptInput.secondary_photo_url || "(none)",
+    sponsor_logo_url: promptInput.sponsor_logo_url || "(none)",
+    fields_list: fieldsList || "(no content provided — use only org name + tagline)",
+    canvas_width: String(dims.width || 1080),
+    canvas_height: String(dims.height || 1080),
+  };
 }
+
+function interpolatePrompt(template: string, tokens: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => tokens[k] ?? `{{${k}}}`);
+}
+
+// (Master system prompt now lives in DB table `design_system_prompts`; assembled at request time.)
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -180,11 +157,12 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const [templateRes, brandRes, orgRes, roleRes] = await Promise.all([
+    const [templateRes, brandRes, orgRes, roleRes, sysPromptRes] = await Promise.all([
       admin.from("design_templates").select("*").eq("id", template_id).single(),
       admin.from("org_brand_kits").select("*").eq("org_id", org_id).maybeSingle(),
       admin.from("organizations").select("name").eq("id", org_id).single(),
       admin.from("user_roles").select("role").eq("user_id", userData.user.id),
+      admin.from("design_system_prompts").select("prompt_template").eq("is_active", true).maybeSingle(),
     ]);
 
     if (templateRes.error || !templateRes.data) {
@@ -194,16 +172,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!sysPromptRes.data?.prompt_template) {
+      return new Response(JSON.stringify({ error: "No active design_system_prompts row. Set one in Admin → System Prompt." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const role = (roleRes.data || []).find((r: any) => r.role === "admin") ? "admin" : "org_user";
     const created_by_role = role === "admin" ? "curve_admin" : "org_user";
 
-    const systemPrompt = buildSystemPrompt({
+    const tokens = buildTokens({
       orgName: orgRes.data?.name || "Organization",
       brandKit: brandRes.data,
       template: templateRes.data,
       promptInput: prompt_input || {},
       styleDirection: style_direction || "bold_sport",
     });
+    const systemPrompt = interpolatePrompt(sysPromptRes.data.prompt_template, tokens);
 
     // 1. Insert placeholder row immediately so the UI can show a generating card
     const insertRes = await admin.from("designs").insert({

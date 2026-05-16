@@ -60,6 +60,7 @@ import DesignEditor from "@/pages/marketing/DesignEditor";
 import Emails from "@/pages/marketing/Emails";
 import EmailComposer from "@/pages/marketing/EmailComposer";
 import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
+import AdminDesignSystemPrompt from "@/pages/admin/marketing/AdminDesignSystemPrompt";
 import AdminEmailTemplates from "@/pages/admin/marketing/AdminEmailTemplates";
 import Campaigns from "@/pages/marketing/Campaigns";
 import CampaignDetail from "@/pages/marketing/CampaignDetail";
@@ -137,6 +138,7 @@ const App = () => (
             <Route path="/marketing/sms-companion" element={<ProtectedRoute><SmsCompanion /></ProtectedRoute>} />
             <Route path="/marketing/social" element={<ProtectedRoute><SocialAccounts /></ProtectedRoute>} />
             <Route path="/admin/marketing/templates" element={<ProtectedRoute role="admin" module="marketing"><AdminDesignTemplates /></ProtectedRoute>} />
+            <Route path="/admin/marketing/system-prompt" element={<ProtectedRoute role="admin" module="marketing"><AdminDesignSystemPrompt /></ProtectedRoute>} />
             <Route path="/admin/marketing/email-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminEmailTemplates /></ProtectedRoute>} />
             <Route path="/marketing/sequences" element={<ProtectedRoute><SequenceLibrary /></ProtectedRoute>} />
             <Route path="/marketing/sequences/:id" element={<ProtectedRoute><SequencePreview /></ProtectedRoute>} />
