@@ -406,16 +406,27 @@ export default function AdminDesignTemplates() {
       sort_order: editing.sort_order ?? 0,
     };
     let error;
+    let savedId = editing.id;
     if (editing.id) {
       ({ error } = await supabase.from("design_templates").update(payload).eq("id", editing.id));
     } else {
-      ({ error } = await supabase.from("design_templates")
-        .insert({ ...payload, is_system: false, sort_order: templates.length }));
+      const ins = await supabase.from("design_templates")
+        .insert({ ...payload, is_system: false, sort_order: templates.length })
+        .select("id").single();
+      error = ins.error;
+      savedId = ins.data?.id;
     }
     if (error) return toast.error(error.message);
     toast.success("Saved");
     setOpen(false);
     load();
+    // Auto-regenerate thumbnail in the background so the org picker stays current.
+    if (savedId) {
+      toast.info("Regenerating thumbnail…");
+      regenerateThumbnail(savedId, { silent: true }).then(() => {
+        toast.success("Thumbnail updated");
+      });
+    }
   };
 
   const remove = async (id: string) => {
