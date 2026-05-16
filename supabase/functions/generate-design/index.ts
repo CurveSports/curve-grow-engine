@@ -80,13 +80,13 @@ const TYPE_LAYOUTS: Record<string, string> = {
 - Massive headline 160-220px.`,
 };
 
-function buildSystemPrompt(opts: {
+function buildTokens(opts: {
   orgName: string;
   brandKit: any;
   template: any;
   promptInput: Record<string, any>;
   styleDirection: string;
-}) {
+}): Record<string, string> {
   const { orgName, brandKit, template, promptInput, styleDirection } = opts;
   const dims = template.dimensions || {};
   const fieldsList = Object.entries(promptInput || {})
@@ -98,6 +98,36 @@ function buildSystemPrompt(opts: {
   const layoutSpec = TYPE_LAYOUTS[template.design_type] || TYPE_LAYOUTS.social_post_square;
   const fontHeading = brandKit?.font_heading || "Inter";
   const fontBody = brandKit?.font_body || "Inter";
+
+  return {
+    org_name: orgName,
+    org_tagline: brandKit?.tagline || "(none)",
+    brand_voice: brandKit?.brand_voice_notes || "Energetic, family-focused, professional.",
+    color_primary: brandKit?.color_primary || "#0F172A",
+    color_secondary: brandKit?.color_secondary || "#475569",
+    color_accent: brandKit?.color_accent || "#22C55E",
+    color_dark: brandKit?.color_dark || "#0F172A",
+    color_light: brandKit?.color_light || "#FFFFFF",
+    font_heading: fontHeading,
+    font_body: fontBody,
+    font_heading_url: fontHeading.replace(/ /g, "+"),
+    font_body_url: fontBody.replace(/ /g, "+"),
+    logo_primary_url: brandKit?.logo_primary_url || "(none — use a styled wordmark of the org name instead)",
+    style_spec: styleSpec,
+    layout_spec: layoutSpec,
+    template_intent: template.base_prompt || "",
+    hero_photo_url: promptInput.hero_photo_url || "(none)",
+    secondary_photo_url: promptInput.secondary_photo_url || "(none)",
+    sponsor_logo_url: promptInput.sponsor_logo_url || "(none)",
+    fields_list: fieldsList || "(no content provided — use only org name + tagline)",
+    canvas_width: String(dims.width || 1080),
+    canvas_height: String(dims.height || 1080),
+  };
+}
+
+function interpolatePrompt(template: string, tokens: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, k) => tokens[k] ?? `{{${k}}}`);
+}
 
   return `You are an award-winning art director designing marketing assets for "${orgName}", a youth sports organization. Your work has been featured by Awwwards and SiteInspire. You produce designs that look like they belong on a Nike, Bleacher Report, or Players' Tribune feed — NOT generic Canva templates.
 
