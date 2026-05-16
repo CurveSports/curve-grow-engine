@@ -112,8 +112,10 @@ export default function FabricEditor() {
     const c = fabricRef.current;
     if (!c) return;
     const json = template.build(v, brandKit);
-    c.loadFromJSON(json, () => {
-      c.renderAll();
+    c.loadFromJSON(json).then(() => {
+      c.requestRenderAll();
+    }).catch((err) => {
+      console.error("loadFromJSON failed", err);
     });
   }, [template, brandKit]);
 
