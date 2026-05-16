@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
@@ -46,6 +46,7 @@ type Design = {
   preview_url: string | null;
   created_at: string;
   template_id: string | null;
+  generation_engine?: string | null;
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -68,7 +69,12 @@ export default function Designs() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const [searchParams] = useSearchParams();
   const [pickOpen, setPickOpen] = useState(false);
+  useEffect(() => {
+    if (searchParams.get("legacy") === "1") setPickOpen(true);
+    // eslint-disable-next-line
+  }, [searchParams]);
   const [picked, setPicked] = useState<Template | null>(null);
   const [inputs, setInputs] = useState<Record<string, any>>({});
   const [styleDirection, setStyleDirection] = useState<string>("bold_sport");
@@ -79,7 +85,7 @@ export default function Designs() {
     if (!orgId) return;
     setLoading(true);
     const [dRes, tRes, bkRes] = await Promise.all([
-      supabase.from("designs").select("id,name,design_type,status,preview_url,created_at,template_id").eq("org_id", orgId).order("created_at", { ascending: false }).limit(200),
+      supabase.from("designs").select("id,name,design_type,status,preview_url,created_at,template_id,generation_engine").eq("org_id", orgId).order("created_at", { ascending: false }).limit(200),
       supabase.from("design_templates").select("*").eq("active", true).order("sort_order"),
       supabase.from("org_brand_kits").select("logo_primary_url,logo_secondary_url,logo_mark_url,color_primary,font_heading,tagline").eq("org_id", orgId).maybeSingle(),
     ]);
@@ -171,7 +177,7 @@ export default function Designs() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Designs</h1>
           <p className="text-muted-foreground mt-1">AI-generated, on-brand assets for every campaign.</p>
         </div>
-        <Button onClick={() => setPickOpen(true)}>
+        <Button onClick={() => navigate(ml("/marketing/designs/new"))}>
           <Plus className="h-4 w-4 mr-2" /> New design
         </Button>
       </div>
@@ -216,7 +222,7 @@ export default function Designs() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((d) => (
             <Card key={d.id} className="overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 group">
-              <Link to={ml(`/marketing/designs/${d.id}`)}>
+              <Link to={ml(`/marketing/designs/${d.id}${d.generation_engine === "fabric_editor" ? "/edit" : ""}`)}>
                 <div className="aspect-square bg-muted flex items-center justify-center overflow-hidden relative">
                   {d.status === "generating" ? (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">

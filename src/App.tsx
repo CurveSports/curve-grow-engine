@@ -57,6 +57,8 @@ import EmailSetup from "@/pages/marketing/EmailSetup";
 import Designs from "@/pages/marketing/Designs";
 import Media from "@/pages/marketing/Media";
 import DesignEditor from "@/pages/marketing/DesignEditor";
+import NewDesign from "@/pages/marketing/designs/NewDesign";
+import FabricEditor from "@/pages/marketing/designs/FabricEditor";
 import Emails from "@/pages/marketing/Emails";
 import EmailComposer from "@/pages/marketing/EmailComposer";
 import AdminDesignTemplates from "@/pages/admin/marketing/AdminDesignTemplates";
@@ -127,6 +129,8 @@ const App = () => (
             <Route path="/marketing/email-setup" element={<ProtectedRoute role="org_user"><EmailSetup /></ProtectedRoute>} />
             <Route path="/marketing/designs" element={<ProtectedRoute><Designs /></ProtectedRoute>} />
             <Route path="/marketing/media" element={<ProtectedRoute><Media /></ProtectedRoute>} />
+            <Route path="/marketing/designs/new" element={<ProtectedRoute><NewDesign /></ProtectedRoute>} />
+            <Route path="/marketing/designs/:id/edit" element={<ProtectedRoute><FabricEditor /></ProtectedRoute>} />
             <Route path="/marketing/designs/:id" element={<ProtectedRoute><DesignEditor /></ProtectedRoute>} />
             <Route path="/marketing/emails" element={<ProtectedRoute><Emails /></ProtectedRoute>} />
             <Route path="/marketing/emails/new" element={<ProtectedRoute><EmailComposer /></ProtectedRoute>} />
@@ -165,6 +169,8 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/email-setup" element={<ProtectedRoute role="admin" module="marketing"><EmailSetup /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/designs" element={<ProtectedRoute role="admin" module="marketing"><Designs /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/media" element={<ProtectedRoute role="admin" module="marketing"><Media /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/designs/new" element={<ProtectedRoute role="admin" module="marketing"><NewDesign /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/designs/:id/edit" element={<ProtectedRoute role="admin" module="marketing"><FabricEditor /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/designs/:id" element={<ProtectedRoute role="admin" module="marketing"><DesignEditor /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/emails" element={<ProtectedRoute role="admin" module="marketing"><Emails /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/emails/new" element={<ProtectedRoute role="admin" module="marketing"><EmailComposer /></ProtectedRoute>} />
