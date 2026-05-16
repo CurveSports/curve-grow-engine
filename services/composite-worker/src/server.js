@@ -58,15 +58,28 @@ app.post('/composite', async (req, res) => {
       }
     }
 
-    const { background_url, composition_spec, output_format = 'png' } = req.body || {};
-    if (!background_url || !composition_spec?.canvas) {
-      return res.status(400).json({ error: 'background_url and composition_spec.canvas required' });
+    const { background_url, background_color, composition_spec, output_format = 'png' } = req.body || {};
+    if ((!background_url && !background_color) || !composition_spec?.canvas) {
+      return res.status(400).json({ error: 'background_url or background_color and composition_spec.canvas required' });
     }
 
     const { canvas, layers = [] } = composition_spec;
-    const bgBuf = await fetchBuffer(background_url);
 
-    let pipeline = sharp(bgBuf).resize(canvas.width, canvas.height, { fit: 'cover' });
+    let pipeline;
+    if (background_url) {
+      const bgBuf = await fetchBuffer(background_url);
+      pipeline = sharp(bgBuf).resize(canvas.width, canvas.height, { fit: 'cover' });
+    } else {
+      // Solid-color canvas (user_photo mode — no AI background)
+      pipeline = sharp({
+        create: {
+          width: canvas.width,
+          height: canvas.height,
+          channels: 4,
+          background: background_color,
+        },
+      });
+    }
 
     const composites = [];
 

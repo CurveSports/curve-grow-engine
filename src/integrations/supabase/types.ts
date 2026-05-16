@@ -2555,6 +2555,7 @@ export type Database = {
           dimensions: Json
           example_output: string | null
           generation_engine: string | null
+          hero_source: string
           id: string
           input_fields: Json
           is_system: boolean
@@ -2577,6 +2578,7 @@ export type Database = {
           dimensions?: Json
           example_output?: string | null
           generation_engine?: string | null
+          hero_source?: string
           id?: string
           input_fields?: Json
           is_system?: boolean
@@ -2599,6 +2601,7 @@ export type Database = {
           dimensions?: Json
           example_output?: string | null
           generation_engine?: string | null
+          hero_source?: string
           id?: string
           input_fields?: Json
           is_system?: boolean
@@ -7044,6 +7047,7 @@ export type Database = {
           plan_activated_revenue: number | null
           primary_user_id: string | null
           short_domain: string | null
+          sport: string | null
           updated_at: string
         }
         Insert: {
@@ -7064,6 +7068,7 @@ export type Database = {
           plan_activated_revenue?: number | null
           primary_user_id?: string | null
           short_domain?: string | null
+          sport?: string | null
           updated_at?: string
         }
         Update: {
@@ -7084,6 +7089,7 @@ export type Database = {
           plan_activated_revenue?: number | null
           primary_user_id?: string | null
           short_domain?: string | null
+          sport?: string | null
           updated_at?: string
         }
         Relationships: []
