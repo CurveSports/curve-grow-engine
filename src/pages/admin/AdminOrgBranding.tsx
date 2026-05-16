@@ -66,6 +66,8 @@ export default function AdminOrgBranding() {
   const { orgId } = useParams<{ orgId: string }>();
   const { user } = useAuth();
   const [orgName, setOrgName] = useState("");
+  const [sport, setSport] = useState<"baseball" | "softball">("baseball");
+  const [savingSport, setSavingSport] = useState(false);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [logoQuality, setLogoQuality] = useState<string | null>(null);
