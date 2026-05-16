@@ -485,6 +485,8 @@ export default function AdminDesignTemplates() {
                       t={t}
                       onEdit={() => openEdit(t)}
                       onDelete={() => remove(t.id)}
+                      onRegenerate={() => regenerateThumbnail(t.id)}
+                      regenerating={regeneratingId === t.id}
                     />
                   ))
                 )}
