@@ -40,23 +40,23 @@ export default function NewDesign() {
     if (!orgId) return toast.error("No org selected");
     setCreating(tpl.key);
     try {
-      const { data, error } = await supabase
-        .from("designs")
-        .insert({
-          org_id: orgId,
-          design_type: "social_post",
-          name: tpl.name,
-          status: "draft",
-          generation_engine: "fabric_editor",
-          composition_config: {
-            engine: "fabric_editor",
-            template_key: tpl.key,
-            values: tpl.defaults,
-            fabric: null, // built on first open
-          } as any,
-          created_by: profile?.id ?? null,
-          created_by_role: role ?? null,
-        })
+      const payload: any = {
+        org_id: orgId,
+        design_type: "social_post",
+        name: tpl.name,
+        status: "draft",
+        generation_engine: "fabric_editor",
+        composition_config: {
+          engine: "fabric_editor",
+          template_key: tpl.key,
+          values: tpl.defaults,
+          fabric: null,
+        },
+        created_by: profile?.user_id ?? null,
+        created_by_role: role ?? null,
+      };
+      const { data, error } = await (supabase.from("designs") as any)
+        .insert(payload)
         .select("id")
         .single();
       if (error) throw error;
