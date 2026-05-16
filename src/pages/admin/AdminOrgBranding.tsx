@@ -265,6 +265,42 @@ export default function AdminOrgBranding() {
           Configure logo and colors on behalf of this organization. The org primary will see these immediately.
         </p>
 
+        <Card className="p-6 space-y-4 mb-6">
+          <div>
+            <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+              <Trophy className="h-4 w-4" /> Sport
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              We only serve elite travel baseball and softball orgs. This drives all AI-generated imagery.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            {(["baseball", "softball"] as const).map((s) => (
+              <button
+                key={s}
+                type="button"
+                onClick={async () => {
+                  if (!orgId || s === sport) return;
+                  setSport(s);
+                  setSavingSport(true);
+                  const { error } = await supabase.from("organizations").update({ sport: s }).eq("id", orgId);
+                  setSavingSport(false);
+                  if (error) toast.error(error.message);
+                  else toast.success(`Sport set to ${s}`);
+                }}
+                className={`flex-1 px-4 py-3 rounded-lg border-2 text-sm font-medium capitalize transition ${
+                  sport === s
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border hover:border-foreground/40"
+                }`}
+                disabled={savingSport}
+              >
+                Travel {s}
+              </button>
+            ))}
+          </div>
+        </Card>
+
         <Card className="p-6 space-y-5 mb-6 relative overflow-hidden">
           <LogoEnhancingOverlay open={logoStatus === "pending"} />
           <div>
