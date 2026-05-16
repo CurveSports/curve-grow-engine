@@ -216,57 +216,164 @@ Deno.serve(async (req) => {
 
     const designId = insertRes.data.id;
 
-    // 2. Decide engine: Stability (when key present + template opts in) or HTML/CSS fallback.
+    // 2. Decide engine: Stability pipeline (when key present + template opts in) or HTML/CSS fallback.
     const stabilityKey = Deno.env.get("STABILITY_API_KEY");
     const useStability = !!stabilityKey && templateRes.data.generation_engine === "stability_sharp";
 
-    const runStabilityGeneration = async () => {
+    // Pick the user's hero photo (for user_photo + hybrid modes).
+    const findHeroPhoto = (tpl: any, input: Record<string, any>): string | null => {
+      const fields = (tpl.input_fields || []) as Array<any>;
+      const photoFields = fields.filter((f) => f.type === "photo_selector" || /photo|image/i.test(f.name));
+      // Prefer fields whose name hints at hero / player / coach / sponsor
+      for (const f of photoFields) {
+        if (/hero|player|coach|sponsor|logo|portrait/i.test(f.name) && input[f.name]) return input[f.name];
+      }
+      for (const f of photoFields) {
+        if (input[f.name]) return input[f.name];
+      }
+      for (const k of ["hero_photo_url", "photo_url", "photo", "hero_photo", "player_photo", "coach_photo"]) {
+        if (input[k]) return input[k];
+      }
+      return null;
+    };
+
+    const runStabilitySharpPipeline = async () => {
       const t0 = Date.now();
+      const workerUrl = Deno.env.get("COMPOSITE_WORKER_URL");
+      const workerToken = Deno.env.get("COMPOSITE_WORKER_TOKEN");
+      const tpl = templateRes.data as any;
+      const heroSource = (tpl.hero_source || "ai_background") as "ai_background" | "user_photo" | "hybrid";
+      const orgSport = (orgRes.data as any)?.sport || null;
+      const orgName = orgRes.data?.name || "Organization";
+      const brand = (brandRes.data || {}) as any;
+      const input = prompt_input || {};
+
       try {
-        const prompt = buildStabilityPrompt(
-          templateRes.data as any,
-          (brandRes.data || {}) as any,
-          prompt_input || {},
+        if (!workerUrl) throw new Error("COMPOSITE_WORKER_URL not configured");
+
+        const rawSpec = tpl.composition_config || null;
+        if (!rawSpec) throw new Error("Template has no composition_config — cannot composite");
+
+        // Interpolate text/colors in the composition spec
+        const compositionSpec = interpolateSpec(
+          rawSpec,
+          buildSpecContext({ orgName, brandKit: brand, promptInput: input }),
         );
-        const aspect = ASPECT_RATIOS[templateRes.data.design_type] || "1:1";
-        const model = (prompt_input?.use_premium ? "sd3.5-large" : (templateRes.data.stability_model || "core")) as StabilityModel;
 
-        const result = await callStabilityAI({ prompt, aspectRatio: aspect, model });
-
-        // Upload raw background to design-renders bucket
-        const bgPath = `${org_id}/${designId}/background.png`;
-        const up = await admin.storage.from("design-renders").upload(bgPath, result.imageBytes, {
-          contentType: "image/png",
-          upsert: true,
-        });
-        if (up.error) throw new Error(`storage upload: ${up.error.message}`);
-        const { data: signed } = await admin.storage.from("design-renders").createSignedUrl(bgPath, 86400 * 7);
-        const bgUrl = signed?.signedUrl || "";
-
-        // Phase 3: composite via Railway worker (required for stability_sharp templates).
-        let finalUrl = bgUrl;
-        const totalCost = result.costCents;
-        const workerUrl = Deno.env.get("COMPOSITE_WORKER_URL");
-        const workerToken = Deno.env.get("COMPOSITE_WORKER_TOKEN");
-        const rawSpec = templateRes.data.composition_config || null;
-        const compositionSpec = rawSpec
-          ? interpolateSpec(
-              rawSpec,
-              buildSpecContext({
-                orgName: orgRes.data?.name || "Organization",
-                brandKit: brandRes.data,
-                promptInput: prompt_input || {},
-              }),
-            )
-          : null;
-
-        if (!workerUrl) {
-          throw new Error("COMPOSITE_WORKER_URL not configured");
-        }
-        if (!compositionSpec) {
-          throw new Error("Template has no composition_config — cannot composite");
+        // Hero photo for user_photo + hybrid modes
+        const heroPhotoUrl = findHeroPhoto(tpl, input);
+        if ((heroSource === "user_photo" || heroSource === "hybrid") && !heroPhotoUrl) {
+          throw new Error(`This template requires a hero photo (mode: ${heroSource}). Upload a photo before generating.`);
         }
 
+        let bgUrl: string | null = null;
+        let bgColor: string | null = null;
+        let stabilityPrompt: string | null = null;
+        let stabilitySeed: number | null = null;
+        let totalCost = 0;
+        let model: StabilityModel = (input.use_premium ? "sd3.5-large" : (tpl.stability_model || "core")) as StabilityModel;
+
+        // ============ MODE: ai_background ============
+        if (heroSource === "ai_background") {
+          stabilityPrompt = buildStabilityPrompt(tpl, brand, input, orgSport);
+          const negativeExtra = buildStabilitySportNegative(orgSport);
+          const negativePrompt = negativeExtra
+            ? `${STABILITY_NEGATIVE_PROMPT}, ${negativeExtra}`
+            : STABILITY_NEGATIVE_PROMPT;
+          const aspect = ASPECT_RATIOS[tpl.design_type] || "1:1";
+          const r = await callStabilityAI({ prompt: stabilityPrompt, negativePrompt, aspectRatio: aspect, model });
+          stabilitySeed = r.seed;
+          totalCost += r.costCents;
+
+          const bgPath = `${org_id}/${designId}/background.png`;
+          const up = await admin.storage.from("design-renders").upload(bgPath, r.imageBytes, {
+            contentType: "image/png", upsert: true,
+          });
+          if (up.error) throw new Error(`bg upload: ${up.error.message}`);
+          const { data: signed } = await admin.storage.from("design-renders").createSignedUrl(bgPath, 86400 * 7);
+          bgUrl = signed?.signedUrl || null;
+        }
+
+        // ============ MODE: user_photo ============
+        // The user's photo IS the hero. Use it as the canvas background (full-bleed),
+        // no Stability call. Text overlays composited on top.
+        if (heroSource === "user_photo") {
+          bgUrl = heroPhotoUrl!;
+        }
+
+        // ============ MODE: hybrid ============
+        // Stability generates an environment (no people). User photo gets its
+        // background removed and is composited as the centered subject layer.
+        if (heroSource === "hybrid") {
+          // 1. AI environment
+          stabilityPrompt = buildStabilityPrompt(tpl, brand, input, orgSport);
+          const negativeExtra = buildStabilitySportNegative(orgSport);
+          const negativePrompt = [
+            STABILITY_NEGATIVE_PROMPT,
+            negativeExtra,
+            "people, person, athlete, player, human, face, silhouette, figure",
+          ].filter(Boolean).join(", ");
+          const aspect = ASPECT_RATIOS[tpl.design_type] || "1:1";
+          const r = await callStabilityAI({ prompt: stabilityPrompt, negativePrompt, aspectRatio: aspect, model });
+          stabilitySeed = r.seed;
+          totalCost += r.costCents;
+          const bgPath = `${org_id}/${designId}/background.png`;
+          const up = await admin.storage.from("design-renders").upload(bgPath, r.imageBytes, {
+            contentType: "image/png", upsert: true,
+          });
+          if (up.error) throw new Error(`bg upload: ${up.error.message}`);
+          const { data: signed } = await admin.storage.from("design-renders").createSignedUrl(bgPath, 86400 * 7);
+          bgUrl = signed?.signedUrl || null;
+
+          // 2. Remove bg from user photo → cutout
+          const photoBytes = await fetchImageBytes(heroPhotoUrl!);
+          const cutout = await removeBackground(photoBytes);
+          totalCost += cutout.costCents;
+          const cutoutPath = `${org_id}/${designId}/hero_cutout.png`;
+          const cup = await admin.storage.from("design-renders").upload(cutoutPath, cutout.bytes, {
+            contentType: "image/png", upsert: true,
+          });
+          if (cup.error) throw new Error(`cutout upload: ${cup.error.message}`);
+          const { data: csigned } = await admin.storage.from("design-renders").createSignedUrl(cutoutPath, 86400 * 7);
+          const cutoutUrl = csigned?.signedUrl || null;
+          if (!cutoutUrl) throw new Error("could not sign cutout url");
+
+          // 3. Inject cutout as an image layer in the composition spec.
+          // Honor template's hero_zone if defined, else center-cover at 70% of canvas.
+          const canvas = compositionSpec.canvas || { width: 1080, height: 1080 };
+          const zone = compositionSpec.hero_zone || {
+            width: Math.round(canvas.width * 0.70),
+            height: Math.round(canvas.height * 0.85),
+            x: Math.round(canvas.width * 0.15),
+            y: Math.round(canvas.height * 0.10),
+          };
+          const heroLayer = {
+            type: "image",
+            url: cutoutUrl,
+            x: zone.x, y: zone.y, width: zone.width, height: zone.height,
+          };
+          // Insert cutout BEFORE rect/text overlays so text reads on top of the subject silhouette
+          // but find the right insertion index: after any existing background-rect layer.
+          const existingLayers = Array.isArray(compositionSpec.layers) ? compositionSpec.layers : [];
+          // Heuristic: insert right after the first full-canvas rect (typical scrim), else at index 0.
+          let insertAt = 0;
+          for (let i = 0; i < existingLayers.length; i++) {
+            const l = existingLayers[i];
+            if (l.type === "rect" && (l.width >= canvas.width * 0.9) && (l.height >= canvas.height * 0.9)) {
+              insertAt = i + 1;
+              break;
+            }
+          }
+          existingLayers.splice(insertAt, 0, heroLayer);
+          compositionSpec.layers = existingLayers;
+        }
+
+        // For user_photo mode we have no explicit color; for ai_background/hybrid we have bgUrl.
+        if (heroSource === "user_photo" && !bgUrl) {
+          bgColor = brand.color_dark || "#0F172A";
+        }
+
+        // ============ COMPOSITE ============
         const compResp = await fetch(`${workerUrl.replace(/\/$/, "")}/composite`, {
           method: "POST",
           headers: {
@@ -274,10 +381,11 @@ Deno.serve(async (req) => {
             ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
           },
           body: JSON.stringify({
-            background_url: bgUrl,
+            ...(bgUrl ? { background_url: bgUrl } : {}),
+            ...(bgColor ? { background_color: bgColor } : {}),
             composition_spec: compositionSpec,
-            brand_kit: brandRes.data || {},
-            prompt_input: prompt_input || {},
+            brand_kit: brand,
+            prompt_input: input,
             output_format: "png",
           }),
         });
@@ -288,31 +396,35 @@ Deno.serve(async (req) => {
         const compBytes = new Uint8Array(await compResp.arrayBuffer());
         const finalPath = `${org_id}/${designId}/final.png`;
         const fup = await admin.storage.from("design-renders").upload(finalPath, compBytes, {
-          contentType: "image/png",
-          upsert: true,
+          contentType: "image/png", upsert: true,
         });
         if (fup.error) throw new Error(`final upload: ${fup.error.message}`);
         const { data: fsigned } = await admin.storage.from("design-renders").createSignedUrl(finalPath, 86400 * 7);
-        finalUrl = fsigned?.signedUrl || bgUrl;
+        const finalUrl = fsigned?.signedUrl || bgUrl || "";
+
+        const engineLabel =
+          heroSource === "user_photo" ? "user_photo_sharp" :
+          heroSource === "hybrid" ? "stability_sharp_hybrid" :
+          (model === "sd3.5-large" ? "stability_sharp_premium" : "stability_sharp");
 
         await admin.from("designs").update({
           status: "ready",
-          generation_engine: model === "sd3.5-large" ? "stability_sharp_premium" : "stability_sharp",
-          stability_prompt: prompt,
+          generation_engine: engineLabel,
+          stability_prompt: stabilityPrompt,
           stability_image_url: bgUrl,
-          stability_seed: result.seed,
+          stability_seed: stabilitySeed,
           composition_spec: compositionSpec,
           generation_cost_cents: totalCost,
           generation_time_ms: Date.now() - t0,
           preview_url: finalUrl,
-          ai_model_used: `stability/${model}`,
+          ai_model_used: heroSource === "user_photo" ? "user_photo" : `stability/${model}`,
           generation_error: null,
         }).eq("id", designId);
       } catch (err) {
-        console.error("Stability generation exception", err);
+        console.error("Stability/sharp pipeline exception", err);
         await admin.from("designs").update({
           status: "failed",
-          generation_error: `Stability AI: ${String(err).slice(0, 400)}`,
+          generation_error: String(err).slice(0, 500),
           generation_time_ms: Date.now() - t0,
         }).eq("id", designId);
       }
