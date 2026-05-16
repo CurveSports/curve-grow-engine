@@ -140,7 +140,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     items: [
       { to: "/admin/orgs", label: "Browse Orgs", icon: Building2, match: (p) => p === "/admin/orgs" || /^\/admin\/orgs\/[0-9a-fA-F-]{36}/.test(p) },
       { to: "/admin/marketing/portfolio", label: "Analytics", icon: BarChart2, match: (p) => p.startsWith("/admin/marketing/portfolio") },
-      { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/templates") },
+      { to: "/admin/marketing/templates", label: "Design Templates", icon: Sparkles, match: (p) => p === "/admin/marketing/templates" },
+      { to: "/admin/marketing/system-prompt", label: "Design System Prompt", icon: Sparkles, match: (p) => p.startsWith("/admin/marketing/system-prompt") },
       { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Mail, match: (p) => p.startsWith("/admin/marketing/email-templates") },
       { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
       { to: "/admin/marketing/schools", label: "Schools Library", icon: GraduationCap, match: (p) => p.startsWith("/admin/marketing/schools") },
