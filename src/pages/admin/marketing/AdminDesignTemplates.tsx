@@ -276,6 +276,30 @@ export default function AdminDesignTemplates() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Template>>(emptyTemplate());
   const [uploading, setUploading] = useState(false);
+  const [regeneratingId, setRegeneratingId] = useState<string | null>(null);
+
+  const regenerateThumbnail = async (templateId: string, opts?: { silent?: boolean }) => {
+    setRegeneratingId(templateId);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-template-thumbnail", {
+        body: { template_id: templateId },
+      });
+      if (error) throw error;
+      if (data?.thumbnail_url) {
+        setTemplates((prev) =>
+          prev.map((t) => (t.id === templateId ? { ...t, thumbnail_url: data.thumbnail_url } : t)),
+        );
+        setEditing((s) => (s.id === templateId ? { ...s, thumbnail_url: data.thumbnail_url } : s));
+        if (!opts?.silent) toast.success("Thumbnail regenerated");
+      } else if (!opts?.silent) {
+        toast.error("No thumbnail returned");
+      }
+    } catch (e: any) {
+      if (!opts?.silent) toast.error(e?.message ?? "Regenerate failed");
+    } finally {
+      setRegeneratingId(null);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
