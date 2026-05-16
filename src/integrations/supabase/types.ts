@@ -7047,7 +7047,7 @@ export type Database = {
           plan_activated_revenue: number | null
           primary_user_id: string | null
           short_domain: string | null
-          sport: string | null
+          sport: string
           updated_at: string
         }
         Insert: {
@@ -7068,7 +7068,7 @@ export type Database = {
           plan_activated_revenue?: number | null
           primary_user_id?: string | null
           short_domain?: string | null
-          sport?: string | null
+          sport?: string
           updated_at?: string
         }
         Update: {
@@ -7089,7 +7089,7 @@ export type Database = {
           plan_activated_revenue?: number | null
           primary_user_id?: string | null
           short_domain?: string | null
-          sport?: string | null
+          sport?: string
           updated_at?: string
         }
         Relationships: []
