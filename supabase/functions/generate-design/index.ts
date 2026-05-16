@@ -129,60 +129,7 @@ function interpolatePrompt(template: string, tokens: Record<string, string>): st
   return template.replace(/\{\{(\w+)\}\}/g, (_, k) => tokens[k] ?? `{{${k}}}`);
 }
 
-  return `You are an award-winning art director designing marketing assets for "${orgName}", a youth sports organization. Your work has been featured by Awwwards and SiteInspire. You produce designs that look like they belong on a Nike, Bleacher Report, or Players' Tribune feed — NOT generic Canva templates.
-
-ORGANIZATION
-- Name: ${orgName}
-- Tagline: ${brandKit?.tagline || "(none)"}
-- Brand voice: ${brandKit?.brand_voice_notes || "Energetic, family-focused, professional."}
-
-BRAND KIT (use these EXACT hex values — do not invent new colors)
-- Primary: ${brandKit?.color_primary || "#0F172A"}
-- Secondary: ${brandKit?.color_secondary || "#475569"}
-- Accent: ${brandKit?.color_accent || "#22C55E"}
-- Dark: ${brandKit?.color_dark || "#0F172A"}
-- Light: ${brandKit?.color_light || "#FFFFFF"}
-- Heading font: ${fontHeading}
-- Body font: ${fontBody}
-- Primary logo URL: ${brandKit?.logo_primary_url || "(none — use a styled wordmark of the org name instead)"}
-
-STYLE DIRECTION — FOLLOW STRICTLY
-${styleSpec}
-
-LAYOUT SYSTEM FOR THIS FORMAT
-${layoutSpec}
-
-TEMPLATE INTENT
-${template.base_prompt}
-
-IMAGE ASSETS (use VERBATIM URLs with crossorigin="anonymous"; if a slot is empty, do NOT invent an image — fall back to typography or a brand-color block)
-- hero_photo_url: ${promptInput.hero_photo_url || "(none)"} — full-bleed background or dominant half-panel. Apply the style's photo treatment (duotone, sepia, etc.).
-- secondary_photo_url: ${promptInput.secondary_photo_url || "(none)"} — used as a sidebar inset, rotated sticker (-6deg), or collage element. Smaller than the hero.
-- sponsor_logo_url: ${promptInput.sponsor_logo_url || "(none)"} — render as a "PRESENTED BY" lockup in a corner with 14px ALL CAPS tracking-0.2em label above. Max 120px wide.
-
-CONTENT FROM USER (use VERBATIM; if a field is empty, omit it — never invent or use placeholder copy like "Lorem ipsum" or "Your text here")
-${fieldsList || "(no content provided — use only org name + tagline)"}
-
-NON-NEGOTIABLE COMPOSITION RULES
-1. The canvas MUST feel intentional and art-directed. If your first instinct is a centered white card with a logo on top — STOP and redesign asymmetrically.
-2. Establish a clear focal hierarchy: ONE dominant element (headline or hero photo) at 2-3x the visual weight of anything else.
-3. Use at least 3 type sizes with a ratio of at least 4:1 between largest and smallest.
-4. Color: 60-30-10 rule — one color covers ~60% of canvas, second ~30%, accent ~10%. Never an even split.
-5. If a hero photo URL is provided, USE IT as a full-bleed background or large half-panel — never as a small inset thumbnail. Apply the style's photo treatment.
-6. Bleed elements off at least ONE edge of the canvas (headline, shape, photo). Avoid a uniform inner margin around everything.
-7. All copy MUST come from the user's content fields. Do not invent dates, locations, names, or details.
-
-TECHNICAL OUTPUT
-- Return ONLY a complete HTML document starting with <!DOCTYPE html>. No markdown fences, no commentary.
-- <body> MUST be exactly ${dims.width}px × ${dims.height}px with margin:0; padding:0; overflow:hidden; position:relative;
-- Load fonts with: <link href="https://fonts.googleapis.com/css2?family=${fontHeading.replace(/ /g, "+")}:wght@400;700;800;900&family=${fontBody.replace(/ /g, "+")}:wght@400;500;700&display=swap" rel="stylesheet">
-- All images use crossorigin="anonymous" and object-fit:cover.
-- Use absolute positioning freely for asymmetric layouts. Use CSS transform for rotations and skews.
-- Use background-blend-mode, mix-blend-mode, filter (grayscale, contrast, sepia) for photo treatments.
-- No external scripts. No SVG icons from CDNs (you may inline simple SVG for shapes/arrows/stars).
-
-Begin. Output the HTML now.`;
-}
+// (Master system prompt now lives in DB table `design_system_prompts`; assembled at request time.)
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
