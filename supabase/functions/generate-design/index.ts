@@ -157,11 +157,12 @@ Deno.serve(async (req) => {
 
     const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const [templateRes, brandRes, orgRes, roleRes] = await Promise.all([
+    const [templateRes, brandRes, orgRes, roleRes, sysPromptRes] = await Promise.all([
       admin.from("design_templates").select("*").eq("id", template_id).single(),
       admin.from("org_brand_kits").select("*").eq("org_id", org_id).maybeSingle(),
       admin.from("organizations").select("name").eq("id", org_id).single(),
       admin.from("user_roles").select("role").eq("user_id", userData.user.id),
+      admin.from("design_system_prompts").select("prompt_template").eq("is_active", true).maybeSingle(),
     ]);
 
     if (templateRes.error || !templateRes.data) {
@@ -171,16 +172,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (!sysPromptRes.data?.prompt_template) {
+      return new Response(JSON.stringify({ error: "No active design_system_prompts row. Set one in Admin → System Prompt." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const role = (roleRes.data || []).find((r: any) => r.role === "admin") ? "admin" : "org_user";
     const created_by_role = role === "admin" ? "curve_admin" : "org_user";
 
-    const systemPrompt = buildSystemPrompt({
+    const tokens = buildTokens({
       orgName: orgRes.data?.name || "Organization",
       brandKit: brandRes.data,
       template: templateRes.data,
       promptInput: prompt_input || {},
       styleDirection: style_direction || "bold_sport",
     });
+    const systemPrompt = interpolatePrompt(sysPromptRes.data.prompt_template, tokens);
 
     // 1. Insert placeholder row immediately so the UI can show a generating card
     const insertRes = await admin.from("designs").insert({
