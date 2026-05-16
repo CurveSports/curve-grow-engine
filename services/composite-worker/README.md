@@ -13,18 +13,24 @@ Called from the `generate-design` Supabase Edge Function once a Stability backgr
 
 Auth: `Authorization: Bearer ${WORKER_AUTH_TOKEN}` (shared secret with the edge function).
 
-## Deploy (Fly.io)
+## Deploy (Railway)
 
-```bash
-cd services/composite-worker
-fly launch --no-deploy            # first time only — accept generated app name or use curve-composite-worker
-fly secrets set WORKER_AUTH_TOKEN=$(openssl rand -hex 32)
-fly deploy
-```
+Railway auto-detects the `Dockerfile` and `railway.json` in this folder.
+
+1. Push this repo to GitHub (if not already).
+2. In Railway: **New Project → Deploy from GitHub repo** → select the repo.
+3. In the service **Settings**, set **Root Directory** to `services/composite-worker`
+   (Railway will then build from this folder's Dockerfile automatically).
+4. In **Variables**, add:
+   - `WORKER_AUTH_TOKEN` = `<output of: openssl rand -hex 32>`
+5. Under **Settings → Networking**, click **Generate Domain** to get a public URL
+   (e.g. `https://curve-composite-worker.up.railway.app`).
 
 Then, in Lovable Cloud, add two secrets:
-- `COMPOSITE_WORKER_URL` — e.g. `https://curve-composite-worker.fly.dev`
-- `COMPOSITE_WORKER_TOKEN` — same value used in `fly secrets set` above
+- `COMPOSITE_WORKER_URL` — the Railway public URL from step 5
+- `COMPOSITE_WORKER_TOKEN` — same value used for `WORKER_AUTH_TOKEN` above
+
+Subsequent pushes to the connected branch auto-deploy.
 
 ## Composition spec (v1)
 
