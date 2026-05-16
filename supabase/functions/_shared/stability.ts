@@ -92,7 +92,6 @@ export async function checkStabilityHealth(): Promise<boolean> {
   const apiKey = Deno.env.get("STABILITY_API_KEY");
   if (!apiKey) return false;
   try {
-    // Lightweight check: list engines endpoint (legacy v1, free)
     const r = await fetch("https://api.stability.ai/v1/engines/list", {
       headers: { Authorization: `Bearer ${apiKey}` },
     });
@@ -102,3 +101,35 @@ export async function checkStabilityHealth(): Promise<boolean> {
     return false;
   }
 }
+
+// Remove the background from a photo using Stability's edit endpoint.
+// Returns a transparent PNG of the foreground subject. ~2 credits (~$0.02).
+export async function removeBackground(imageBytes: Uint8Array): Promise<{ bytes: Uint8Array; costCents: number }> {
+  const apiKey = Deno.env.get("STABILITY_API_KEY");
+  if (!apiKey) throw new Error("STABILITY_API_KEY not configured");
+
+  const form = new FormData();
+  form.append("image", new Blob([imageBytes], { type: "image/png" }), "input.png");
+  form.append("output_format", "png");
+
+  const resp = await fetch("https://api.stability.ai/v2beta/stable-image/edit/remove-background", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, Accept: "image/*" },
+    body: form,
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    throw new Error(`Stability remove-bg ${resp.status}: ${errText.slice(0, 500)}`);
+  }
+
+  const buf = new Uint8Array(await resp.arrayBuffer());
+  return { bytes: buf, costCents: 2 };
+}
+
+export async function fetchImageBytes(url: string): Promise<Uint8Array> {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`fetch image failed ${r.status} for ${url.slice(0, 100)}`);
+  return new Uint8Array(await r.arrayBuffer());
+}
+
