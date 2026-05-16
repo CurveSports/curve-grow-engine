@@ -255,8 +255,11 @@ export default function FabricEditor() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => rebuild(values)}>
-            <RefreshCw className="h-4 w-4 mr-1" /> Reset layout
+          <Button variant="outline" size="sm" onClick={() => {
+            if (!confirm("Reset all fields to template defaults? Your edits will be lost.")) return;
+            setValues(template.defaults);
+          }}>
+            <RefreshCw className="h-4 w-4 mr-1" /> Reset to defaults
           </Button>
           <Button variant="outline" size="sm" onClick={save} disabled={saving}>
             {saving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
