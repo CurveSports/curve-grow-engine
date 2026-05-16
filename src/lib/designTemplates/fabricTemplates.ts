@@ -70,13 +70,19 @@ const fallback = {
   body: "Inter, system-ui, sans-serif",
 };
 
+// Always-dark base used for backgrounds & overlays. We ignore brand-kit
+// "dark" because some orgs set pastel/light values there and it breaks
+// text contrast across every template.
+const TRUE_DARK = "#0B1220";
+const TRUE_LIGHT = "#FFFFFF";
+
 function palette(b: BrandKit) {
   return {
     primary: b.color_primary || fallback.primary,
     secondary: b.color_secondary || fallback.secondary,
     accent: b.color_accent || fallback.accent,
-    dark: b.color_dark || fallback.dark,
-    light: b.color_light || fallback.light,
+    dark: TRUE_DARK,
+    light: TRUE_LIGHT,
     heading: b.font_heading || fallback.heading,
     body: b.font_body || fallback.body,
   };
@@ -124,93 +130,125 @@ const gameDay: FabricTemplate = {
   build: (v, b) => {
     const p = palette(b);
     const objects: any[] = [];
+    const lineup = (v.lineup || []).slice(0, 11);
 
-    // 1. Background fill
-    objects.push(rect({ left: 0, top: 0, width: W, height: H, fill: p.dark, selectable: false, name: "bg" }));
+    // 1. Background (true dark — overlay sits on top of photo)
+    objects.push(rect({
+      left: 0, top: 0, width: W, height: H, fill: p.dark,
+      selectable: false, evented: false, name: "bg",
+    }));
 
-    // 2. Hero photo (top 60%) — optional
+    // 2. Hero photo — sized to cover post-load in the editor
     if (v.hero_photo_url) {
       objects.push(img(v.hero_photo_url, {
         left: 0, top: 0, scaleX: 1, scaleY: 1, name: "hero_photo",
-        // We'll fit in the editor — width/height set after image load.
         cropX: 0, cropY: 0,
       }));
     }
 
-    // 3. Diagonal accent slash
+    // 3. Dark gradient on bottom 65% so text is readable on any photo
     objects.push({
-      type: "polygon",
-      points: [
-        { x: 0, y: H * 0.55 }, { x: W, y: H * 0.45 },
-        { x: W, y: H * 0.50 }, { x: 0, y: H * 0.60 },
-      ],
-      fill: p.accent, opacity: 0.95, name: "slash", selectable: true,
+      type: "rect",
+      left: 0, top: H * 0.35, width: W, height: H * 0.65,
+      name: "gradient_overlay", selectable: false, evented: false,
+      fill: {
+        type: "linear",
+        coords: { x1: 0, y1: 0, x2: 0, y2: H * 0.65 },
+        colorStops: [
+          { offset: 0, color: "rgba(11,18,32,0)" },
+          { offset: 0.45, color: "rgba(11,18,32,0.75)" },
+          { offset: 1, color: "rgba(11,18,32,0.95)" },
+        ],
+      },
     });
 
-    // 4. "GAME DAY" headline
+    // 4. Accent stripe
+    objects.push(rect({
+      left: 60, top: H - 320, width: 120, height: 8,
+      fill: p.accent, name: "accent_stripe",
+    }));
+
+    // 5. GAME DAY headline (bottom-left)
     objects.push(text({
-      text: "GAME DAY", left: 60, top: 600, width: W - 120,
-      fontFamily: p.heading, fontWeight: 900, fontSize: 160,
+      text: "GAME DAY",
+      left: 60, top: H - 300, width: W - 120,
+      fontFamily: p.heading, fontWeight: 900, fontSize: 140,
       fill: p.light, lineHeight: 0.9, name: "headline",
     }));
 
-    // 5. Matchup line
-    const matchup = `VS ${(v.opponent || "OPPONENT").toUpperCase()}`;
+    // 6. Matchup
     objects.push(text({
-      text: matchup, left: 60, top: 780, width: W - 120,
-      fontFamily: p.heading, fontWeight: 700, fontSize: 64,
+      text: `VS ${(v.opponent || "OPPONENT").toUpperCase()}`,
+      left: 60, top: H - 150, width: W - 120,
+      fontFamily: p.heading, fontWeight: 700, fontSize: 52,
       fill: p.accent, name: "matchup",
     }));
 
-    // 6. Date / time / venue strip
-    const meta = [v.game_date, v.game_time, v.venue].filter(Boolean).join("  ·  ").toUpperCase();
+    // 7. Date / time / venue
+    const formatDate = (d: string) => {
+      if (!d) return "";
+      try {
+        const dt = new Date(d + "T00:00:00");
+        return dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase();
+      } catch { return d; }
+    };
+    const meta = [formatDate(v.game_date), v.game_time, v.venue]
+      .filter(Boolean).join("   ·   ").toUpperCase();
     objects.push(text({
-      text: meta || "DATE  ·  TIME  ·  VENUE", left: 60, top: 870, width: W - 120,
-      fontFamily: p.body, fontWeight: 600, fontSize: 28,
-      fill: p.light, name: "meta",
+      text: meta || "DATE   ·   TIME   ·   VENUE",
+      left: 60, top: H - 80, width: W - 120,
+      fontFamily: p.body, fontWeight: 600, fontSize: 24,
+      fill: p.light, opacity: 0.85, name: "meta",
     }));
 
-    // 7. Lineup panel (right side, vertical column)
-    const lineup = (v.lineup || []).slice(0, 11);
+    // 8. Lineup panel (top-right, sized to roster length)
     if (lineup.length > 0) {
-      const panelW = 380;
+      const panelW = 360;
       const panelX = W - panelW - 40;
       const panelY = 40;
-      const panelH = 520;
+      const rowH = 38;
+      const panelH = 70 + lineup.length * rowH + 16;
       objects.push(rect({
         left: panelX, top: panelY, width: panelW, height: panelH,
-        fill: p.primary, opacity: 0.92, rx: 8, ry: 8, name: "lineup_panel",
+        fill: p.primary, opacity: 0.92, rx: 10, ry: 10, name: "lineup_panel",
       }));
       objects.push(text({
-        text: "STARTERS", left: panelX + 24, top: panelY + 20, width: panelW - 48,
-        fontFamily: p.heading, fontWeight: 800, fontSize: 28,
+        text: "STARTING LINEUP",
+        left: panelX + 24, top: panelY + 22, width: panelW - 48,
+        fontFamily: p.heading, fontWeight: 800, fontSize: 22,
         fill: p.accent, name: "lineup_title",
       }));
-      const rowH = Math.min(40, (panelH - 70) / lineup.length);
       lineup.forEach((row: any, i: number) => {
         const ty = panelY + 70 + i * rowH;
         objects.push(text({
-          text: `#${row.jersey || "—"}`, left: panelX + 24, top: ty, width: 70,
+          text: `#${row.jersey || "—"}`,
+          left: panelX + 24, top: ty, width: 60,
           fontFamily: p.heading, fontWeight: 800, fontSize: 22, fill: p.accent,
           name: `lineup_jersey_${i}`,
         }));
         objects.push(text({
-          text: (row.name || "").toUpperCase(), left: panelX + 100, top: ty,
-          width: panelW - 180, fontFamily: p.body, fontWeight: 600, fontSize: 20,
+          text: (row.name || "").toUpperCase(),
+          left: panelX + 90, top: ty + 2, width: panelW - 170,
+          fontFamily: p.body, fontWeight: 600, fontSize: 18,
           fill: p.light, name: `lineup_name_${i}`,
         }));
         objects.push(text({
-          text: row.position || "", left: panelX + panelW - 70, top: ty, width: 60,
-          fontFamily: p.body, fontWeight: 700, fontSize: 18, fill: p.light,
-          opacity: 0.8, textAlign: "right", name: `lineup_pos_${i}`,
+          text: row.position || "",
+          left: panelX + panelW - 70, top: ty + 2, width: 60,
+          fontFamily: p.body, fontWeight: 700, fontSize: 16, fill: p.light,
+          opacity: 0.75, textAlign: "right", name: `lineup_pos_${i}`,
         }));
       });
     }
 
-    // 8. Logo
+    // 9. Logo with white backing chip (auto-fit to 140px post-load)
     if (b.logo_primary_url) {
+      objects.push(rect({
+        left: 30, top: 30, width: 160, height: 160,
+        rx: 12, ry: 12, fill: "rgba(255,255,255,0.92)", name: "logo_chip",
+      }));
       objects.push(img(b.logo_primary_url, {
-        left: 40, top: 40, scaleX: 0.3, scaleY: 0.3, name: "logo",
+        left: 40, top: 40, scaleX: 1, scaleY: 1, name: "logo",
       }));
     }
 
