@@ -89,17 +89,13 @@ export default function FabricEditor() {
   useEffect(() => {
     if (loading || !canvasElRef.current) return;
     const c = new fabric.Canvas(canvasElRef.current, {
-      width: template.dims.width,
-      height: template.dims.height,
+      width: CANVAS_DISPLAY,
+      height: CANVAS_DISPLAY,
       backgroundColor: brandKit.color_dark || "#0F172A",
       preserveObjectStacking: true,
     });
-    // Scale display
+    // Render 1080-coord scene scaled into the 540 buffer
     const ratio = CANVAS_DISPLAY / template.dims.width;
-    c.setDimensions(
-      { width: CANVAS_DISPLAY, height: CANVAS_DISPLAY },
-      { cssOnly: true }
-    );
     c.setZoom(ratio);
     fabricRef.current = c;
     rebuild(values);
@@ -132,11 +128,13 @@ export default function FabricEditor() {
           const scale = Math.min(max / iw, max / ih);
           obj.set({ scaleX: scale, scaleY: scale, left: 40, top: 40 });
         } else if (meta === "athlete_photo") {
-          const targetW = W * 0.45;
+          // Right-biased cutout: photo fills right 70% of canvas, full height
+          const targetW = W * 0.70;
           const scale = Math.max(targetW / iw, H / ih);
           obj.set({
             scaleX: scale, scaleY: scale,
-            left: (targetW - iw * scale) / 2, top: (H - ih * scale) / 2,
+            left: W - iw * scale + (iw * scale - targetW) / 2,
+            top: (H - ih * scale) / 2,
           });
         } else if (meta === "school_logo") {
           const max = 160;
@@ -216,12 +214,12 @@ export default function FabricEditor() {
     // Render at full 1080 by temporarily resetting zoom
     const c = fabricRef.current;
     const prevZoom = c.getZoom();
-    c.setZoom(1);
     c.setDimensions({ width: template.dims.width, height: template.dims.height });
+    c.setZoom(1);
     const url = c.toDataURL({ format: "png", quality: 1, multiplier: 1 });
-    // Restore
+    // Restore display size
+    c.setDimensions({ width: CANVAS_DISPLAY, height: CANVAS_DISPLAY });
     c.setZoom(prevZoom);
-    c.setDimensions({ width: CANVAS_DISPLAY, height: CANVAS_DISPLAY }, { cssOnly: true });
     c.renderAll();
 
     const a = document.createElement("a");
@@ -275,10 +273,10 @@ export default function FabricEditor() {
         {/* Canvas */}
         <Card className="p-6 flex items-center justify-center bg-muted/30">
           <div
-            className="bg-white shadow-lg rounded-md overflow-hidden"
+            className="shadow-lg rounded-md overflow-hidden"
             style={{ width: CANVAS_DISPLAY, height: CANVAS_DISPLAY }}
           >
-            <canvas ref={canvasElRef} />
+            <canvas ref={canvasElRef} width={CANVAS_DISPLAY} height={CANVAS_DISPLAY} />
           </div>
         </Card>
 
