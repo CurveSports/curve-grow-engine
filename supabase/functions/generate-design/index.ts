@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     const [templateRes, brandRes, orgRes, roleRes, sysPromptRes] = await Promise.all([
       admin.from("design_templates").select("*").eq("id", template_id).single(),
       admin.from("org_brand_kits").select("*").eq("org_id", org_id).maybeSingle(),
-      admin.from("organizations").select("name").eq("id", org_id).single(),
+      admin.from("organizations").select("name, sport").eq("id", org_id).single(),
       admin.from("user_roles").select("role").eq("user_id", userData.user.id),
       admin.from("design_system_prompts").select("prompt_template").eq("is_active", true).maybeSingle(),
     ]);
