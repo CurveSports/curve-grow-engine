@@ -33,7 +33,7 @@ export default function Create() {
       label: "Design / Flyer",
       blurb: "AI-generated graphics on-brand. Print, social, or in-app.",
       icon: ImageIcon,
-      to: "/marketing/designs",
+      to: "/marketing/designs/new",
       accent: "from-violet-500/15 to-fuchsia-500/5",
     },
     {
