@@ -243,9 +243,9 @@ Deno.serve(async (req) => {
         const { data: signed } = await admin.storage.from("design-renders").createSignedUrl(bgPath, 86400 * 7);
         const bgUrl = signed?.signedUrl || "";
 
-        // Phase 3: composite via Fly.io worker if configured
+        // Phase 3: composite via Railway worker (required for stability_sharp templates).
         let finalUrl = bgUrl;
-        let totalCost = result.costCents;
+        const totalCost = result.costCents;
         const workerUrl = Deno.env.get("COMPOSITE_WORKER_URL");
         const workerToken = Deno.env.get("COMPOSITE_WORKER_TOKEN");
         const rawSpec = templateRes.data.composition_config || null;
@@ -260,40 +260,40 @@ Deno.serve(async (req) => {
             )
           : null;
 
-        if (workerUrl && compositionSpec) {
-          try {
-            const compResp = await fetch(`${workerUrl.replace(/\/$/, "")}/composite`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
-              },
-              body: JSON.stringify({
-                background_url: bgUrl,
-                composition_spec: compositionSpec,
-                brand_kit: brandRes.data || {},
-                output_format: "png",
-              }),
-            });
-            if (!compResp.ok) {
-              const errTxt = await compResp.text();
-              console.warn("composite worker failed", compResp.status, errTxt);
-            } else {
-              const compBytes = new Uint8Array(await compResp.arrayBuffer());
-              const finalPath = `${org_id}/${designId}/final.png`;
-              const fup = await admin.storage.from("design-renders").upload(finalPath, compBytes, {
-                contentType: "image/png",
-                upsert: true,
-              });
-              if (!fup.error) {
-                const { data: fsigned } = await admin.storage.from("design-renders").createSignedUrl(finalPath, 86400 * 7);
-                if (fsigned?.signedUrl) finalUrl = fsigned.signedUrl;
-              }
-            }
-          } catch (e) {
-            console.warn("composite worker exception", e);
-          }
+        if (!workerUrl) {
+          throw new Error("COMPOSITE_WORKER_URL not configured");
         }
+        if (!compositionSpec) {
+          throw new Error("Template has no composition_config — cannot composite");
+        }
+
+        const compResp = await fetch(`${workerUrl.replace(/\/$/, "")}/composite`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(workerToken ? { Authorization: `Bearer ${workerToken}` } : {}),
+          },
+          body: JSON.stringify({
+            background_url: bgUrl,
+            composition_spec: compositionSpec,
+            brand_kit: brandRes.data || {},
+            prompt_input: prompt_input || {},
+            output_format: "png",
+          }),
+        });
+        if (!compResp.ok) {
+          const errTxt = await compResp.text();
+          throw new Error(`composite worker ${compResp.status}: ${errTxt.slice(0, 300)}`);
+        }
+        const compBytes = new Uint8Array(await compResp.arrayBuffer());
+        const finalPath = `${org_id}/${designId}/final.png`;
+        const fup = await admin.storage.from("design-renders").upload(finalPath, compBytes, {
+          contentType: "image/png",
+          upsert: true,
+        });
+        if (fup.error) throw new Error(`final upload: ${fup.error.message}`);
+        const { data: fsigned } = await admin.storage.from("design-renders").createSignedUrl(finalPath, 86400 * 7);
+        finalUrl = fsigned?.signedUrl || bgUrl;
 
         await admin.from("designs").update({
           status: "ready",
