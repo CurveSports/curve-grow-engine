@@ -69,7 +69,12 @@ export default function Designs() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const [searchParams] = useSearchParams();
   const [pickOpen, setPickOpen] = useState(false);
+  useEffect(() => {
+    if (searchParams.get("legacy") === "1") setPickOpen(true);
+    // eslint-disable-next-line
+  }, [searchParams]);
   const [picked, setPicked] = useState<Template | null>(null);
   const [inputs, setInputs] = useState<Record<string, any>>({});
   const [styleDirection, setStyleDirection] = useState<string>("bold_sport");
