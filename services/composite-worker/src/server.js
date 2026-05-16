@@ -116,4 +116,4 @@ app.post('/composite', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`composite-worker listening on :${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`composite-worker listening on 0.0.0.0:${PORT}`));
