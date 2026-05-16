@@ -153,7 +153,15 @@ function SortableTemplateRow({
         </span>
       </td>
       <td className="p-3 text-right whitespace-nowrap">
-        <button onClick={onEdit} className="text-muted-foreground hover:text-foreground p-1">
+        <button
+          onClick={onRegenerate}
+          disabled={regenerating}
+          title="Regenerate thumbnail"
+          className="text-muted-foreground hover:text-primary p-1 disabled:opacity-50"
+        >
+          {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+        </button>
+        <button onClick={onEdit} className="text-muted-foreground hover:text-foreground p-1 ml-1">
           <Pencil className="h-4 w-4" />
         </button>
         <button onClick={onDelete} className="text-muted-foreground hover:text-destructive p-1 ml-1">
