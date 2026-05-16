@@ -171,7 +171,7 @@ export default function Designs() {
           <h1 className="font-display text-3xl font-bold tracking-tight">Designs</h1>
           <p className="text-muted-foreground mt-1">AI-generated, on-brand assets for every campaign.</p>
         </div>
-        <Button onClick={() => setPickOpen(true)}>
+        <Button onClick={() => navigate(ml("/marketing/designs/new"))}>
           <Plus className="h-4 w-4 mr-2" /> New design
         </Button>
       </div>
