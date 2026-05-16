@@ -509,7 +509,7 @@ Deno.serve(async (req) => {
       }
     };
 
-    const runGeneration = useStability ? runStabilityGeneration : runHtmlGeneration;
+    const runGeneration = useStability ? runStabilitySharpPipeline : runHtmlGeneration;
 
     // @ts-ignore Deno EdgeRuntime global
     if (typeof EdgeRuntime !== "undefined" && (EdgeRuntime as any).waitUntil) {
