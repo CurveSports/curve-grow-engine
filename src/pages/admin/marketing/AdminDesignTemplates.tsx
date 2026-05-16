@@ -109,8 +109,8 @@ const emptyTemplate = (): Partial<Template> => ({
 
 // ---------- Sortable row in the templates list ----------
 function SortableTemplateRow({
-  t, onEdit, onDelete,
-}: { t: Template; onEdit: () => void; onDelete: () => void }) {
+  t, onEdit, onDelete, onRegenerate, regenerating,
+}: { t: Template; onEdit: () => void; onDelete: () => void; onRegenerate: () => void; regenerating: boolean }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: t.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
