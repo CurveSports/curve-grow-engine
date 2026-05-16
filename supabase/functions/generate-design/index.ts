@@ -5,8 +5,8 @@
 //        follow-up step (composite-image function, Phase 4).
 //   2. Existing HTML/CSS via Lovable AI Gateway (default fallback).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { callStabilityAI, ASPECT_RATIOS, type StabilityModel } from "../_shared/stability.ts";
-import { buildStabilityPrompt } from "../_shared/buildStabilityPrompt.ts";
+import { callStabilityAI, ASPECT_RATIOS, removeBackground, fetchImageBytes, STABILITY_NEGATIVE_PROMPT, type StabilityModel } from "../_shared/stability.ts";
+import { buildStabilityPrompt, buildStabilitySportNegative } from "../_shared/buildStabilityPrompt.ts";
 import { buildSpecContext, interpolateSpec } from "../_shared/interpolateSpec.ts";
 
 const corsHeaders = {
