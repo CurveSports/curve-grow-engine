@@ -303,111 +303,123 @@ const collegeCommit: FabricTemplate = {
       selectable: false, name: "bg",
     }));
 
-    // 2. Dark wash on bottom 60%
-    objects.push({
-      type: "rect",
-      left: 0, top: H * 0.35, width: W, height: H * 0.65,
-      name: "wash", selectable: false, evented: false,
-      fill: {
-        type: "linear",
-        coords: { x1: 0, y1: 0, x2: 0, y2: H * 0.65 },
-        colorStops: [
-          { offset: 0, color: "rgba(11,18,32,0)" },
-          { offset: 1, color: "rgba(11,18,32,0.88)" },
-        ],
-      },
-    });
-
-    // 3. Athlete photo — full bleed (user can scale/position)
+    // 2. Athlete photo — right-biased full-bleed cutout (positioned by rebuild)
     if (v.athlete_photo_url) {
       objects.push(img(v.athlete_photo_url, {
-        left: 0, top: 0, scaleX: 1, scaleY: 1, name: "athlete_photo",
+        left: W * 0.30, top: 0, scaleX: 1, scaleY: 1, name: "athlete_photo",
       }));
     } else {
+      objects.push(rect({
+        left: W * 0.30, top: 0, width: W * 0.70, height: H,
+        fill: "rgba(0,0,0,0.18)", name: "photo_placeholder_bg", selectable: false,
+      }));
       objects.push(text({
         text: "DROP ATHLETE PHOTO\n(BACKGROUND REMOVED)",
-        left: 0, top: H / 2 - 60, width: W,
-        fontFamily: ACCENT, fontSize: 28, letterSpacing: 4,
-        fill: p.light, opacity: 0.45, textAlign: "center",
+        left: W * 0.30, top: H / 2 - 30, width: W * 0.70,
+        fontFamily: ACCENT, fontSize: 24, letterSpacing: 4,
+        fill: p.light, opacity: 0.55, textAlign: "center",
         name: "photo_placeholder",
       }));
     }
 
-    // 4. Huge COMMITTED type — stacked, anchored bottom-left, bleeds off
-    objects.push(text({
-      text: "COMM-\nITTED.",
-      left: 40, top: H - 540, width: 900,
-      fontFamily: DISPLAY, fontSize: 320, lineHeight: 0.82,
-      fill: p.light, name: "headline",
-    }));
+    // 3. Bottom wash gradient — dark band so headline + school text stay legible
+    objects.push({
+      type: "rect",
+      left: 0, top: H * 0.45, width: W, height: H * 0.55,
+      name: "bottom_wash", selectable: false, evented: false,
+      fill: {
+        type: "linear",
+        coords: { x1: 0, y1: 0, x2: 0, y2: H * 0.55 },
+        colorStops: [
+          { offset: 0, color: "rgba(11,18,32,0)" },
+          { offset: 0.6, color: "rgba(11,18,32,0.75)" },
+          { offset: 1, color: "rgba(11,18,32,0.95)" },
+        ],
+      },
+    });
 
-    // 5. Accent slab behind class-of pill (top-right)
-    objects.push(rect({
-      left: W - 240, top: 60, width: 180, height: 60,
-      fill: p.accent, name: "class_chip",
-    }));
-    objects.push(text({
-      text: v.class_of ? `'${String(v.class_of).slice(-2)}` : "'26",
-      left: W - 240, top: 64, width: 180,
-      fontFamily: DISPLAY_WIDE, fontSize: 52,
-      fill: p.dark, textAlign: "center", name: "class_chip_text",
-    }));
-
-    // 6. Athlete name — wide heavy block (top, on the photo)
+    // 4. Top band — athlete name + sport/position
     objects.push(text({
       text: (v.athlete_name || "ATHLETE NAME").toUpperCase(),
-      left: 60, top: 60, width: W - 320,
-      fontFamily: DISPLAY_WIDE, fontSize: 64, lineHeight: 0.95,
+      left: 60, top: 60, width: W - 280,
+      fontFamily: DISPLAY_WIDE, fontSize: 56, lineHeight: 0.95,
       fill: p.light, name: "athlete_name",
     }));
-
     if (v.sport_position) {
       objects.push(text({
         text: v.sport_position.toUpperCase(),
-        left: 60, top: 142, width: W - 320,
-        fontFamily: ACCENT, fontSize: 24, letterSpacing: 6,
+        left: 60, top: 130, width: W - 280,
+        fontFamily: ACCENT, fontSize: 22, letterSpacing: 6,
         fill: p.accent, name: "sport_position",
       }));
     }
 
-    // 7. "IS COMMITTING TO" small label
+    // 5. Class-of chip (top-right) — only when value present
+    if (v.class_of) {
+      objects.push(rect({
+        left: W - 200, top: 50, width: 140, height: 70,
+        fill: p.accent, name: "class_chip",
+      }));
+      objects.push(text({
+        text: `'${String(v.class_of).slice(-2)}`,
+        left: W - 200, top: 60, width: 140,
+        fontFamily: DISPLAY_WIDE, fontSize: 48,
+        fill: p.dark, textAlign: "center", name: "class_chip_text",
+      }));
+    }
+
+    // 6. COMMITTED — single line, anchored bottom-left, bleeds gracefully
+    objects.push(text({
+      text: "COMMITTED.",
+      left: 60, top: H - 380, width: W - 120,
+      fontFamily: DISPLAY, fontSize: 200, lineHeight: 0.9,
+      fill: p.light, name: "headline",
+    }));
+
+    // 7. Thin accent rule under headline
+    objects.push(rect({
+      left: 60, top: H - 215, width: 120, height: 5,
+      fill: p.accent, name: "headline_rule",
+    }));
+
+    // 8. "IS COMMITTING TO" eyebrow
     objects.push(text({
       text: "IS COMMITTING TO",
-      left: 60, top: H - 200, width: W - 120,
-      fontFamily: ACCENT, fontSize: 22, letterSpacing: 6,
+      left: 60, top: H - 195, width: W - 120,
+      fontFamily: ACCENT, fontSize: 20, letterSpacing: 6,
       fill: p.accent, name: "is_committing_label",
     }));
 
-    // 8. School name — heavy wide block at bottom
+    // 9. School name
     objects.push(text({
       text: (v.school_name || "UNIVERSITY").toUpperCase(),
-      left: 60, top: H - 160, width: v.school_logo_url ? W - 280 : W - 120,
-      fontFamily: DISPLAY_WIDE, fontSize: 68, lineHeight: 0.95,
+      left: 60, top: H - 155, width: v.school_logo_url ? W - 260 : W - 120,
+      fontFamily: DISPLAY_WIDE, fontSize: 56, lineHeight: 0.95,
       fill: p.light, name: "school_name",
     }));
 
-    // 9. School logo (bottom-right)
+    // 10. School logo (bottom-right)
     if (v.school_logo_url) {
       objects.push(img(v.school_logo_url, {
         left: W - 200, top: H - 200, scaleX: 0.35, scaleY: 0.35, name: "school_logo",
       }));
     }
 
-    // 10. Quote
+    // 11. Quote
     if (v.quote) {
       objects.push(text({
         text: `"${v.quote}"`,
-        left: 60, top: H - 60, width: W - 120,
-        fontFamily: BODY, fontStyle: "italic", fontSize: 18,
+        left: 60, top: H - 55, width: W - 120,
+        fontFamily: BODY, fontStyle: "italic", fontSize: 16,
         fill: p.light, opacity: 0.7, name: "quote",
       }));
     }
 
-    // 11. Org logo — top-left subtle
+    // 12. Org logo — top-left subtle (above athlete name? No — small in corner)
     if (b.logo_primary_url) {
       objects.push(img(b.logo_primary_url, {
-        left: 60, top: H - 80, scaleX: 0.12, scaleY: 0.12,
-        opacity: 0.7, name: "logo",
+        left: 60, top: 40, scaleX: 0.10, scaleY: 0.10,
+        opacity: 0.0, name: "logo",
       }));
     }
 

@@ -128,11 +128,13 @@ export default function FabricEditor() {
           const scale = Math.min(max / iw, max / ih);
           obj.set({ scaleX: scale, scaleY: scale, left: 40, top: 40 });
         } else if (meta === "athlete_photo") {
-          const targetW = W * 0.45;
+          // Right-biased cutout: photo fills right 70% of canvas, full height
+          const targetW = W * 0.70;
           const scale = Math.max(targetW / iw, H / ih);
           obj.set({
             scaleX: scale, scaleY: scale,
-            left: (targetW - iw * scale) / 2, top: (H - ih * scale) / 2,
+            left: W - iw * scale + (iw * scale - targetW) / 2,
+            top: (H - ih * scale) / 2,
           });
         } else if (meta === "school_logo") {
           const max = 160;
