@@ -12,7 +12,7 @@ import { useMarketingLink } from "@/hooks/useMarketingLink";
 import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, Loader2, Plus, Trash2, RefreshCw, Save, Image as ImageIcon, Users,
+  ArrowLeft, Download, Loader2, Plus, Trash2, RefreshCw, Save, Image as ImageIcon, Users, Sparkles, X,
 } from "lucide-react";
 import {
   FABRIC_TEMPLATES, FabricTemplate, FabricTemplateKey, FieldDef, TemplateValues, BrandKit,
