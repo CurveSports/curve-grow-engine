@@ -18,6 +18,7 @@ import {
   FABRIC_TEMPLATES, FabricTemplate, FabricTemplateKey, FieldDef, TemplateValues, BrandKit,
 } from "@/lib/designTemplates/fabricTemplates";
 import MediaPicker from "@/components/marketing/MediaPicker";
+import SchoolPicker from "@/components/marketing/SchoolPicker";
 
 type DesignRow = {
   id: string;
