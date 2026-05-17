@@ -12,7 +12,7 @@ import { useMarketingLink } from "@/hooks/useMarketingLink";
 import { useEffectiveOrg } from "@/hooks/useEffectiveOrg";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Download, Loader2, Plus, Trash2, RefreshCw, Save, Image as ImageIcon, Users,
+  ArrowLeft, Download, Loader2, Plus, Trash2, RefreshCw, Save, Image as ImageIcon, Users, Sparkles, X,
 } from "lucide-react";
 import {
   FABRIC_TEMPLATES, FabricTemplate, FabricTemplateKey, FieldDef, TemplateValues, BrandKit,
@@ -45,6 +45,30 @@ export default function FabricEditor() {
   const [values, setValues] = useState<TemplateValues>({});
   const [templateKey, setTemplateKey] = useState<FabricTemplateKey>("game_day");
   const [teams, setTeams] = useState<TeamOpt[]>([]);
+  const [aiBgStyle, setAiBgStyle] = useState<"stadium" | "halftone" | "gradient_mesh">("stadium");
+  const [aiBgLoading, setAiBgLoading] = useState(false);
+
+  const generateAiBg = async () => {
+    setAiBgLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-design-bg", {
+        body: {
+          style: aiBgStyle,
+          color_primary: brandKit.color_primary || "#E85D3A",
+          color_secondary: brandKit.color_secondary || "#0F172A",
+          sport: values.sport_position || "",
+        },
+      });
+      if (error) throw error;
+      if (!data?.image_url) throw new Error("No image returned");
+      setValues((s) => ({ ...s, ai_bg_url: data.image_url }));
+      toast.success("AI background generated");
+    } catch (e: any) {
+      toast.error(e.message || "AI background failed");
+    } finally {
+      setAiBgLoading(false);
+    }
+  };
 
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
@@ -118,7 +142,15 @@ export default function FabricEditor() {
         const meta = obj.name as string | undefined;
         const iw = obj.width || 1;
         const ih = obj.height || 1;
-        if (meta === "hero_photo") {
+        if (meta === "bg") {
+          // Cover-fit the AI-generated background across the full canvas
+          const scale = Math.max(W / iw, H / ih);
+          obj.set({
+            scaleX: scale, scaleY: scale,
+            left: (W - iw * scale) / 2, top: (H - ih * scale) / 2,
+            selectable: false, evented: false,
+          });
+        } else if (meta === "hero_photo") {
           const scale = Math.max(W / iw, H / ih);
           obj.set({
             scaleX: scale, scaleY: scale,
@@ -287,6 +319,48 @@ export default function FabricEditor() {
             <p className="font-display font-bold text-lg">{template.name}</p>
             <p className="text-xs text-muted-foreground mt-1">{template.blurb}</p>
           </div>
+
+          {templateKey === "college_commit" && (
+            <div className="rounded-lg border border-accent/30 bg-accent/5 p-3 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <span className="text-sm font-semibold">AI Background</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Generate a one-of-a-kind hero background using your school colors. Athlete cutout layers on top.
+              </p>
+              <select
+                className="w-full h-8 px-2 rounded-md border border-input bg-background text-xs"
+                value={aiBgStyle}
+                onChange={(e) => setAiBgStyle(e.target.value as any)}
+                disabled={aiBgLoading}
+              >
+                <option value="stadium">Stadium · light streaks & motion</option>
+                <option value="halftone">Halftone · comic poster grit</option>
+                <option value="gradient_mesh">Gradient mesh · smooth & modern</option>
+              </select>
+              <div className="flex gap-2">
+                <Button
+                  type="button" size="sm" className="flex-1"
+                  onClick={generateAiBg} disabled={aiBgLoading}
+                >
+                  {aiBgLoading
+                    ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Generating…</>
+                    : <><Sparkles className="h-3.5 w-3.5 mr-1" /> {values.ai_bg_url ? "Re-generate" : "Generate"}</>}
+                </Button>
+                {values.ai_bg_url && (
+                  <Button
+                    type="button" size="sm" variant="outline"
+                    onClick={() => setField("ai_bg_url", "")}
+                    disabled={aiBgLoading}
+                    title="Remove AI background"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           {template.fields.map((f) => (
             <FieldRenderer
