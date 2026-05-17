@@ -293,7 +293,11 @@ export default function FabricEditor() {
               key={f.name}
               field={f}
               value={values[f.name]}
+              values={values}
               onChange={(v) => setField(f.name, v)}
+              onPickSchool={({ name, logo_url }) =>
+                setValues((s) => ({ ...s, school_name: name, school_logo_url: logo_url || "" }))
+              }
               orgId={orgId || ""}
               teams={teams}
               onImportRoster={importRoster}
