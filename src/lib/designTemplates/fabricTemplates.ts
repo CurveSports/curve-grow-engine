@@ -11,6 +11,7 @@ export type FieldType =
   | "time"
   | "photo"
   | "team_picker"
+  | "school_picker"
   | "lineup_repeater"
   | "date_repeater"
   | "location_repeater";
@@ -277,8 +278,7 @@ const collegeCommit: FabricTemplate = {
   dims: { width: W, height: H },
   fields: [
     { name: "athlete_name", label: "Athlete name", type: "text", required: true, placeholder: "Jordan Smith" },
-    { name: "school_name", label: "College / University", type: "text", required: true, placeholder: "State University" },
-    { name: "school_logo_url", label: "School logo", type: "photo", helper: "PNG with transparent background." },
+    { name: "school_name", label: "College / University", type: "school_picker", required: true, helper: "Search the schools library — logo auto-fills." },
     { name: "athlete_photo_url", label: "Athlete photo", type: "photo", required: true, helper: "Background-removed cutout works best." },
     { name: "class_of", label: "Class of", type: "text", placeholder: "2026" },
     { name: "sport_position", label: "Sport / position", type: "text", placeholder: "Baseball  ·  Pitcher" },

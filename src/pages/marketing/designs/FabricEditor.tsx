@@ -18,6 +18,7 @@ import {
   FABRIC_TEMPLATES, FabricTemplate, FabricTemplateKey, FieldDef, TemplateValues, BrandKit,
 } from "@/lib/designTemplates/fabricTemplates";
 import MediaPicker from "@/components/marketing/MediaPicker";
+import SchoolPicker from "@/components/marketing/SchoolPicker";
 
 type DesignRow = {
   id: string;
@@ -292,7 +293,11 @@ export default function FabricEditor() {
               key={f.name}
               field={f}
               value={values[f.name]}
+              values={values}
               onChange={(v) => setField(f.name, v)}
+              onPickSchool={({ name, logo_url }) =>
+                setValues((s) => ({ ...s, school_name: name, school_logo_url: logo_url || "" }))
+              }
               orgId={orgId || ""}
               teams={teams}
               onImportRoster={importRoster}
@@ -311,11 +316,13 @@ export default function FabricEditor() {
 
 // ===================== FIELD RENDERER =====================
 function FieldRenderer({
-  field, value, onChange, orgId, teams, onImportRoster, onUseLineupSlot,
+  field, value, values, onChange, onPickSchool, orgId, teams, onImportRoster, onUseLineupSlot,
 }: {
   field: FieldDef;
   value: any;
+  values: TemplateValues;
   onChange: (v: any) => void;
+  onPickSchool: (s: { name: string; logo_url: string | null }) => void;
   orgId: string;
   teams: TeamOpt[];
   onImportRoster: (teamId: string) => void;
@@ -377,6 +384,17 @@ function FieldRenderer({
               <ImageIcon className="h-3 w-3" /> Loading…
             </div>
           )}
+        </div>
+      );
+    case "school_picker":
+      return (
+        <div className="space-y-1">
+          {labelEl}
+          <SchoolPicker
+            value={value || ""}
+            logoUrl={values.school_logo_url || ""}
+            onChange={onPickSchool}
+          />
         </div>
       );
     case "team_picker":
