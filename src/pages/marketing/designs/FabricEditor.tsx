@@ -118,7 +118,15 @@ export default function FabricEditor() {
         const meta = obj.name as string | undefined;
         const iw = obj.width || 1;
         const ih = obj.height || 1;
-        if (meta === "hero_photo") {
+        if (meta === "bg") {
+          // Cover-fit the AI-generated background across the full canvas
+          const scale = Math.max(W / iw, H / ih);
+          obj.set({
+            scaleX: scale, scaleY: scale,
+            left: (W - iw * scale) / 2, top: (H - ih * scale) / 2,
+            selectable: false, evented: false,
+          });
+        } else if (meta === "hero_photo") {
           const scale = Math.max(W / iw, H / ih);
           obj.set({
             scaleX: scale, scaleY: scale,
