@@ -11,6 +11,7 @@ export type FieldType =
   | "time"
   | "photo"
   | "team_picker"
+  | "school_picker"
   | "lineup_repeater"
   | "date_repeater"
   | "location_repeater";
