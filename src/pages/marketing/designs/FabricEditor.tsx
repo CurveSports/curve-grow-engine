@@ -386,6 +386,17 @@ function FieldRenderer({
           )}
         </div>
       );
+    case "school_picker":
+      return (
+        <div className="space-y-1">
+          {labelEl}
+          <SchoolPicker
+            value={value || ""}
+            logoUrl={values.school_logo_url || ""}
+            onChange={onPickSchool}
+          />
+        </div>
+      );
     case "team_picker":
       return (
         <div className="space-y-1">
