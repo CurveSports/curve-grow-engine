@@ -45,6 +45,30 @@ export default function FabricEditor() {
   const [values, setValues] = useState<TemplateValues>({});
   const [templateKey, setTemplateKey] = useState<FabricTemplateKey>("game_day");
   const [teams, setTeams] = useState<TeamOpt[]>([]);
+  const [aiBgStyle, setAiBgStyle] = useState<"stadium" | "halftone" | "gradient_mesh">("stadium");
+  const [aiBgLoading, setAiBgLoading] = useState(false);
+
+  const generateAiBg = async () => {
+    setAiBgLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-design-bg", {
+        body: {
+          style: aiBgStyle,
+          color_primary: brandKit.color_primary || "#E85D3A",
+          color_secondary: brandKit.color_secondary || "#0F172A",
+          sport: values.sport_position || "",
+        },
+      });
+      if (error) throw error;
+      if (!data?.image_url) throw new Error("No image returned");
+      setValues((s) => ({ ...s, ai_bg_url: data.image_url }));
+      toast.success("AI background generated");
+    } catch (e: any) {
+      toast.error(e.message || "AI background failed");
+    } finally {
+      setAiBgLoading(false);
+    }
+  };
 
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
