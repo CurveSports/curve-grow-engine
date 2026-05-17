@@ -297,11 +297,18 @@ const collegeCommit: FabricTemplate = {
     const p = palette(b);
     const objects: any[] = [];
 
-    // 1. Brand-color full background
-    objects.push(rect({
-      left: 0, top: 0, width: W, height: H, fill: p.primary,
-      selectable: false, name: "bg",
-    }));
+    // 1. Background — AI-generated image if available, otherwise brand-color fill
+    if (v.ai_bg_url) {
+      objects.push(img(v.ai_bg_url, {
+        left: 0, top: 0, scaleX: 1, scaleY: 1, name: "bg",
+        selectable: false, evented: false,
+      }));
+    } else {
+      objects.push(rect({
+        left: 0, top: 0, width: W, height: H, fill: p.primary,
+        selectable: false, name: "bg",
+      }));
+    }
 
     // 2. Athlete photo — right-biased full-bleed cutout (positioned by rebuild)
     if (v.athlete_photo_url) {
