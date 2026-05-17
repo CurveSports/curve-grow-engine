@@ -316,11 +316,13 @@ export default function FabricEditor() {
 
 // ===================== FIELD RENDERER =====================
 function FieldRenderer({
-  field, value, onChange, orgId, teams, onImportRoster, onUseLineupSlot,
+  field, value, values, onChange, onPickSchool, orgId, teams, onImportRoster, onUseLineupSlot,
 }: {
   field: FieldDef;
   value: any;
+  values: TemplateValues;
   onChange: (v: any) => void;
+  onPickSchool: (s: { name: string; logo_url: string | null }) => void;
   orgId: string;
   teams: TeamOpt[];
   onImportRoster: (teamId: string) => void;
