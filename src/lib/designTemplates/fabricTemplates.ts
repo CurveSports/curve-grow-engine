@@ -292,6 +292,7 @@ const collegeCommit: FabricTemplate = {
     class_of: "2026",
     sport_position: "",
     quote: "",
+    ai_bg_url: "",
   },
   build: (v, b) => {
     const p = palette(b);
