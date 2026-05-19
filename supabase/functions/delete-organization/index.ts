@@ -96,22 +96,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Look up profiles in this org
+    // Look up profiles in this org (we still need to delete their auth users)
     const { data: orgProfiles } = await admin
       .from("profiles").select("user_id").eq("org_id", orgId);
-    const memberUserIds = (orgProfiles ?? []).map((p: any) => p.user_id);
+    const memberUserIds = (orgProfiles ?? []).map((p: any) => p.user_id).filter(Boolean);
 
-    // Clear org primary reference
-    await admin.from("organizations").update({ primary_user_id: null }).eq("id", orgId);
-
-    // Delete org-scoped data (best effort — log but don't abort)
     const errors: string[] = [];
-    for (const t of ORG_SCOPED_TABLES) {
-      const { error } = await admin.from(t as any).delete().eq("org_id", orgId);
-      if (error) errors.push(`${t}: ${error.message}`);
-    }
 
-    // Delete member auth accounts (and their profile/roles/onboarding)
+    // Delete member auth accounts (cascades profiles/roles/onboarding via FK or handled below)
     for (const uid of memberUserIds) {
       await admin.from("user_roles").delete().eq("user_id", uid);
       await admin.from("user_onboarding").delete().eq("user_id", uid);
@@ -120,10 +112,10 @@ Deno.serve(async (req) => {
       if (delErr) errors.push(`auth ${uid}: ${delErr.message}`);
     }
 
-    // Finally delete the organization itself
-    const { error: orgErr } = await admin.from("organizations").delete().eq("id", orgId);
-    if (orgErr) {
-      return new Response(JSON.stringify({ error: orgErr.message, partial_errors: errors }), {
+    // Dynamically delete all org-scoped rows + the organization itself via SECURITY DEFINER RPC.
+    const { error: rpcErr } = await admin.rpc("admin_delete_organization_cascade", { _org_id: orgId });
+    if (rpcErr) {
+      return new Response(JSON.stringify({ error: rpcErr.message, partial_errors: errors }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -131,6 +123,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ ok: true, deleted_users: memberUserIds.length, partial_errors: errors }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
       status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },

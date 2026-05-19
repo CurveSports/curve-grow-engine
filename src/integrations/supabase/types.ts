@@ -7945,6 +7945,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_organization_cascade: {
+        Args: { _org_id: string }
+        Returns: undefined
+      }
       claim_pending_invitation: {
         Args: never
         Returns: {
