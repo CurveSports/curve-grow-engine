@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Download, Trash2, FileText, Search, CloudUpload, CheckCircle2, XCircle, X } from "lucide-react";
+import {
+  Upload, Download, Trash2, FileText, Search, CloudUpload,
+  CheckCircle2, XCircle, X, Folder, FolderPlus, ChevronRight, Home,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SharedFile = {
@@ -16,56 +19,51 @@ type SharedFile = {
   size_bytes: number | null;
   description: string | null;
   uploaded_by: string | null;
+  folder_path: string;
   created_at: string;
+};
+
+type SharedFolder = {
+  id: string;
+  org_id: string;
+  path: string;
+  created_by: string | null;
 };
 
 type UploadItem = {
   id: string;
   name: string;
   size: number;
-  progress: number; // 0–100
+  progress: number;
   status: "pending" | "uploading" | "done" | "error";
   error?: string;
 };
 
-// ─── File validation rules ─────────────────────────────
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 
-// Allow common docs, images, video, audio, archives, design files
 const ALLOWED_EXTS = new Set([
-  // docs
-  "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "txt", "rtf", "md", "pages", "numbers", "key",
-  // images
-  "png", "jpg", "jpeg", "gif", "webp", "svg", "heic", "bmp", "tiff",
-  // design
-  "psd", "ai", "sketch", "fig", "xd",
-  // video / audio
-  "mp4", "mov", "webm", "avi", "mkv", "mp3", "wav", "m4a", "aac", "ogg",
-  // archives / data
-  "zip", "rar", "7z", "tar", "gz", "json", "xml", "yaml", "yml",
+  "pdf","doc","docx","xls","xlsx","csv","ppt","pptx","txt","rtf","md","pages","numbers","key",
+  "png","jpg","jpeg","gif","webp","svg","heic","bmp","tiff",
+  "psd","ai","sketch","fig","xd",
+  "mp4","mov","webm","avi","mkv","mp3","wav","m4a","aac","ogg",
+  "zip","rar","7z","tar","gz","json","xml","yaml","yml",
 ]);
-
 const BLOCKED_EXTS = new Set([
-  "exe", "msi", "bat", "cmd", "com", "scr", "ps1", "sh", "app", "dmg", "pkg",
-  "jar", "vbs", "js", "mjs", "html", "htm",
+  "exe","msi","bat","cmd","com","scr","ps1","sh","app","dmg","pkg","jar","vbs","js","mjs","html","htm",
 ]);
 
 function extOf(name: string) {
   const m = name.toLowerCase().match(/\.([a-z0-9]+)$/);
   return m ? m[1] : "";
 }
-
 function validateFile(file: File): string | null {
-  if (file.size > MAX_FILE_SIZE) {
-    return `Too large — max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB`;
-  }
+  if (file.size > MAX_FILE_SIZE) return `Too large — max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB`;
   const ext = extOf(file.name);
   if (!ext) return "Missing file extension";
   if (BLOCKED_EXTS.has(ext)) return `Blocked file type (.${ext})`;
   if (!ALLOWED_EXTS.has(ext)) return `Unsupported file type (.${ext})`;
   return null;
 }
-
 function formatBytes(n: number | null) {
   if (!n) return "—";
   if (n < 1024) return `${n} B`;
@@ -74,34 +72,61 @@ function formatBytes(n: number | null) {
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
+// ── Path helpers ─────────────────────────────
+// path = "" (root) or "a/b/c". No leading/trailing slash.
+function normalizeSegment(s: string) {
+  return s.trim().replace(/[\/\\]/g, "").replace(/[^a-zA-Z0-9 _.\-]/g, "").trim();
+}
+function joinPath(parent: string, name: string) {
+  return parent ? `${parent}/${name}` : name;
+}
+function parentOf(p: string) {
+  if (!p) return "";
+  const i = p.lastIndexOf("/");
+  return i === -1 ? "" : p.slice(0, i);
+}
+function isDirectChild(parent: string, candidate: string) {
+  if (!candidate) return false;
+  if (candidate === parent) return false;
+  if (parent === "") return !candidate.includes("/");
+  return candidate.startsWith(parent + "/") &&
+    !candidate.slice(parent.length + 1).includes("/");
+}
+function basename(p: string) {
+  const i = p.lastIndexOf("/");
+  return i === -1 ? p : p.slice(i + 1);
+}
+
 export default function SharedFilesTab({ orgId }: { orgId: string }) {
   const { profile, role } = useAuth();
   const [files, setFiles] = useState<SharedFile[]>([]);
+  const [folders, setFolders] = useState<SharedFolder[]>([]);
   const [uploaderNames, setUploaderNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [cwd, setCwd] = useState<string>(""); // current folder
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("org_shared_files")
-      .select("*")
-      .eq("org_id", orgId)
-      .order("created_at", { ascending: false });
-    if (error) {
-      toast({ title: "Failed to load files", description: error.message, variant: "destructive" });
+    const [{ data: fdata, error: fErr }, { data: foldata, error: dErr }] = await Promise.all([
+      supabase.from("org_shared_files").select("*").eq("org_id", orgId).order("created_at", { ascending: false }),
+      supabase.from("org_shared_folders").select("*").eq("org_id", orgId),
+    ]);
+    if (fErr || dErr) {
+      toast({ title: "Failed to load", description: (fErr ?? dErr)?.message, variant: "destructive" });
       setLoading(false);
       return;
     }
-    const rows = (data ?? []) as SharedFile[];
+    const rows = (fdata ?? []) as SharedFile[];
     setFiles(rows);
+    setFolders((foldata ?? []) as SharedFolder[]);
+
     const ids = Array.from(new Set(rows.map(r => r.uploaded_by).filter(Boolean))) as string[];
     if (ids.length) {
-      const { data: profs } = await supabase
-        .from("profiles").select("user_id, full_name, email").in("user_id", ids);
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name, email").in("user_id", ids);
       const map: Record<string, string> = {};
       (profs ?? []).forEach((p: any) => { map[p.user_id] = p.full_name || p.email || "Unknown"; });
       setUploaderNames(map);
@@ -111,11 +136,49 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
 
   useEffect(() => { load(); }, [orgId]);
 
-  // Upload via signed URL with XHR for real progress
-  const uploadOne = (file: File, item: UploadItem) =>
+  // ── Derived: subfolders & files at cwd ──────────────
+  const allFolderPaths = useMemo(() => {
+    const set = new Set<string>();
+    // explicit folders
+    folders.forEach(f => set.add(f.path));
+    // derived from file paths (each ancestor)
+    files.forEach(f => {
+      if (!f.folder_path) return;
+      const parts = f.folder_path.split("/");
+      let acc = "";
+      for (const p of parts) {
+        acc = acc ? `${acc}/${p}` : p;
+        set.add(acc);
+      }
+    });
+    return set;
+  }, [folders, files]);
+
+  const subfolders = useMemo(() => {
+    return Array.from(allFolderPaths)
+      .filter(p => isDirectChild(cwd, p))
+      .sort((a, b) => a.localeCompare(b));
+  }, [allFolderPaths, cwd]);
+
+  const filesHere = useMemo(() => {
+    return files
+      .filter(f => f.folder_path === cwd)
+      .filter(f => !search ||
+        f.name.toLowerCase().includes(search.toLowerCase()) ||
+        (f.description ?? "").toLowerCase().includes(search.toLowerCase()));
+  }, [files, cwd, search]);
+
+  const breadcrumbs = useMemo(() => {
+    if (!cwd) return [] as { label: string; path: string }[];
+    const parts = cwd.split("/");
+    return parts.map((p, i) => ({ label: p, path: parts.slice(0, i + 1).join("/") }));
+  }, [cwd]);
+
+  // ── Upload (signed PUT URL + XHR for progress) ──────
+  const uploadOne = (file: File, item: UploadItem, targetFolder: string) =>
     new Promise<void>(async (resolve) => {
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const path = `${orgId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`;
+      const path = `${orgId}/${Date.now()}-${Math.random().toString(36).slice(2,7)}-${safeName}`;
 
       const { data: signed, error: signErr } = await supabase
         .storage.from("org-shared-files").createSignedUploadUrl(path);
@@ -123,19 +186,16 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
         setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: signErr?.message ?? "Sign failed" } : x));
         return resolve();
       }
-
       const xhr = new XMLHttpRequest();
       xhr.open("PUT", signed.signedUrl);
       xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
       xhr.setRequestHeader("x-upsert", "false");
-
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
           const pct = Math.round((e.loaded / e.total) * 100);
           setUploads(u => u.map(x => x.id === item.id ? { ...x, progress: pct, status: "uploading" } : x));
         }
       };
-
       xhr.onload = async () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           const { error: insErr } = await supabase.from("org_shared_files").insert({
@@ -145,44 +205,37 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
             mime_type: file.type || null,
             size_bytes: file.size,
             uploaded_by: profile?.user_id,
+            folder_path: targetFolder,
           });
-          if (insErr) {
-            setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: insErr.message } : x));
-          } else {
-            setUploads(u => u.map(x => x.id === item.id ? { ...x, progress: 100, status: "done" } : x));
-          }
+          if (insErr) setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: insErr.message } : x));
+          else setUploads(u => u.map(x => x.id === item.id ? { ...x, progress: 100, status: "done" } : x));
         } else {
           setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: `HTTP ${xhr.status}` } : x));
         }
         resolve();
       };
-
       xhr.onerror = () => {
         setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: "Network error" } : x));
         resolve();
       };
-
       xhr.send(file);
     });
 
   const startUploads = useCallback(async (incoming: File[]) => {
+    const target = cwd;
     const valid: { file: File; item: UploadItem }[] = [];
     const newItems: UploadItem[] = [];
-
     for (const file of incoming) {
-      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2,9)}`;
       const err = validateFile(file);
       const item: UploadItem = {
-        id, name: file.name, size: file.size,
-        progress: 0,
-        status: err ? "error" : "pending",
-        error: err ?? undefined,
+        id, name: file.name, size: file.size, progress: 0,
+        status: err ? "error" : "pending", error: err ?? undefined,
       };
       newItems.push(item);
       if (!err) valid.push({ file, item });
     }
     setUploads(u => [...newItems, ...u]);
-
     if (newItems.some(i => i.status === "error")) {
       toast({
         title: "Some files were rejected",
@@ -190,13 +243,9 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
         variant: "destructive",
       });
     }
-
-    // upload sequentially to keep UI smooth
-    for (const v of valid) {
-      await uploadOne(v.file, v.item);
-    }
+    for (const v of valid) await uploadOne(v.file, v.item, target);
     await load();
-  }, [orgId, profile?.user_id]);
+  }, [orgId, profile?.user_id, cwd]);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const list = e.target.files;
@@ -204,7 +253,6 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
     startUploads(Array.from(list));
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
@@ -212,30 +260,22 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
     if (dropped.length) startUploads(dropped);
   };
 
-  const dismissUpload = (id: string) =>
-    setUploads(u => u.filter(x => x.id !== id));
-
-  const clearFinished = () =>
-    setUploads(u => u.filter(x => x.status !== "done"));
+  const dismissUpload = (id: string) => setUploads(u => u.filter(x => x.id !== id));
+  const clearFinished = () => setUploads(u => u.filter(x => x.status !== "done"));
 
   const handleDownload = async (f: SharedFile) => {
     const { data, error } = await supabase.storage
-      .from("org-shared-files")
-      .createSignedUrl(f.storage_path, 60);
+      .from("org-shared-files").createSignedUrl(f.storage_path, 60);
     if (error || !data?.signedUrl) {
       toast({ title: "Download failed", description: error?.message ?? "No URL", variant: "destructive" });
       return;
     }
     const a = document.createElement("a");
-    a.href = data.signedUrl;
-    a.download = f.name;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = data.signedUrl; a.download = f.name; a.target = "_blank";
+    document.body.appendChild(a); a.click(); a.remove();
   };
 
-  const handleDelete = async (f: SharedFile) => {
+  const handleDeleteFile = async (f: SharedFile) => {
     if (!confirm(`Delete "${f.name}"? This can't be undone.`)) return;
     const { error: sErr } = await supabase.storage.from("org-shared-files").remove([f.storage_path]);
     if (sErr) { toast({ title: "Storage delete failed", description: sErr.message, variant: "destructive" }); return; }
@@ -245,13 +285,41 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
     await load();
   };
 
-  const canDelete = (f: SharedFile) =>
-    role === "admin" || f.uploaded_by === profile?.user_id;
+  const handleNewFolder = async () => {
+    const raw = prompt("Folder name");
+    if (!raw) return;
+    const name = normalizeSegment(raw);
+    if (!name) { toast({ title: "Invalid name", variant: "destructive" }); return; }
+    const newPath = joinPath(cwd, name);
+    if (allFolderPaths.has(newPath)) { toast({ title: "Folder already exists" }); return; }
+    const { error } = await supabase.from("org_shared_folders").insert({
+      org_id: orgId, path: newPath, created_by: profile?.user_id,
+    });
+    if (error) { toast({ title: "Create failed", description: error.message, variant: "destructive" }); return; }
+    await load();
+  };
 
-  const filtered = files.filter(f =>
-    !search || f.name.toLowerCase().includes(search.toLowerCase()) ||
-    (f.description ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const handleDeleteFolder = async (path: string) => {
+    // Count contents (including nested)
+    const filesInside = files.filter(f => f.folder_path === path || f.folder_path.startsWith(path + "/"));
+    const foldersInside = Array.from(allFolderPaths).filter(p => p === path || p.startsWith(path + "/"));
+    if (filesInside.length > 0) {
+      toast({ title: "Folder not empty", description: `Contains ${filesInside.length} file(s). Delete those first.`, variant: "destructive" });
+      return;
+    }
+    if (!confirm(`Delete folder "${basename(path)}"?`)) return;
+    const { error } = await supabase.from("org_shared_folders").delete()
+      .eq("org_id", orgId).in("path", foldersInside);
+    if (error) { toast({ title: "Delete failed", description: error.message, variant: "destructive" }); return; }
+    await load();
+  };
+
+  const canDeleteFile = (f: SharedFile) => role === "admin" || f.uploaded_by === profile?.user_id;
+  const canDeleteFolder = (path: string) => {
+    if (role === "admin") return true;
+    const f = folders.find(x => x.path === path);
+    return f ? f.created_by === profile?.user_id : false;
+  };
 
   const activeUploads = uploads.filter(u => u.status === "uploading" || u.status === "pending");
 
@@ -266,42 +334,57 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
               Files shared between Curve and your team. Both sides can upload and download.
             </p>
           </div>
+          <Button variant="outline" size="sm" onClick={handleNewFolder}>
+            <FolderPlus className="h-4 w-4 mr-2" /> New folder
+          </Button>
+        </div>
+
+        {/* Breadcrumbs */}
+        <div className="mt-4 flex items-center gap-1 text-sm flex-wrap">
+          <button
+            onClick={() => setCwd("")}
+            className={cn("inline-flex items-center gap-1 px-2 py-1 rounded hover:bg-secondary",
+              cwd === "" && "text-foreground font-semibold")}
+          >
+            <Home className="h-3.5 w-3.5" /> Home
+          </button>
+          {breadcrumbs.map((b, i) => (
+            <div key={b.path} className="flex items-center gap-1">
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+              <button
+                onClick={() => setCwd(b.path)}
+                className={cn("px-2 py-1 rounded hover:bg-secondary",
+                  i === breadcrumbs.length - 1 && "text-foreground font-semibold")}
+              >
+                {b.label}
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Drag-and-drop zone */}
+      {/* Drop zone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         className={cn(
-          "relative cursor-pointer rounded-xl border-2 border-dashed transition-colors p-8 text-center",
-          dragOver
-            ? "border-accent bg-accent-soft"
-            : "border-border bg-card hover:border-accent/50 hover:bg-accent-soft/30"
+          "relative cursor-pointer rounded-xl border-2 border-dashed transition-colors p-6 text-center",
+          dragOver ? "border-accent bg-accent-soft" : "border-border bg-card hover:border-accent/50 hover:bg-accent-soft/30"
         )}
       >
-        <input
-          ref={fileInputRef}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={handleFileInput}
-        />
-        <CloudUpload className={cn("h-10 w-10 mx-auto mb-3", dragOver ? "text-accent" : "text-muted-foreground")} />
-        <p className="text-sm font-semibold text-foreground">
-          {dragOver ? "Drop to upload" : "Drag & drop files here"}
+        <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileInput} />
+        <CloudUpload className={cn("h-8 w-8 mx-auto mb-2", dragOver ? "text-accent" : "text-muted-foreground")} />
+        <p className="text-sm font-semibold">
+          {dragOver ? "Drop to upload here" : `Drag & drop files into ${cwd ? `“${basename(cwd)}”` : "Home"}`}
         </p>
         <p className="text-xs text-muted-foreground mt-1">
           or click to browse · up to {Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB each
         </p>
-        <p className="text-[11px] text-muted-foreground mt-2">
-          Docs, images, video, audio, archives. Executables and scripts are blocked.
-        </p>
       </div>
 
-      {/* Upload progress list */}
+      {/* Upload progress */}
       {uploads.length > 0 && (
         <div className="curve-card">
           <div className="flex items-center justify-between mb-3">
@@ -323,18 +406,15 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
                   <span className="text-xs text-muted-foreground tabular-nums">
                     {u.status === "done" ? "Done" :
                      u.status === "error" ? (u.error ?? "Failed") :
-                     u.status === "pending" ? "Queued" :
-                     `${u.progress}%`}
+                     u.status === "pending" ? "Queued" : `${u.progress}%`}
                   </span>
                   <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => dismissUpload(u.id)}>
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
                 {u.status !== "error" && (
-                  <Progress
-                    value={u.status === "done" ? 100 : u.progress}
-                    className={cn("h-1.5", u.status === "done" && "[&>div]:bg-health")}
-                  />
+                  <Progress value={u.status === "done" ? 100 : u.progress}
+                    className={cn("h-1.5", u.status === "done" && "[&>div]:bg-health")} />
                 )}
               </div>
             ))}
@@ -342,30 +422,46 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
         </div>
       )}
 
-      {/* Files list */}
+      {/* Listing */}
       <div className="curve-card">
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search files…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
+          <Input placeholder="Search files in this folder…" value={search}
+            onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
 
         {loading ? (
           <p className="text-sm text-muted-foreground py-8 text-center">Loading…</p>
-        ) : filtered.length === 0 ? (
+        ) : subfolders.length === 0 && filesHere.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
+            <Folder className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              {files.length === 0 ? "No files yet. Drop one above to get started." : "No files match your search."}
+              This folder is empty. Drop files above or create a subfolder.
             </p>
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filtered.map((f) => (
+            {subfolders.map((path) => (
+              <div key={`f-${path}`} className="flex items-center justify-between gap-3 py-3">
+                <button
+                  onClick={() => setCwd(path)}
+                  className="flex items-center gap-3 min-w-0 flex-1 text-left hover:text-accent transition-colors"
+                >
+                  <Folder className="h-5 w-5 text-accent shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{basename(path)}</p>
+                    <p className="text-xs text-muted-foreground">Folder</p>
+                  </div>
+                </button>
+                {canDeleteFolder(path) && (
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteFolder(path)}
+                    title="Delete folder" className="text-destructive hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            {filesHere.map((f) => (
               <div key={f.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -380,8 +476,9 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
                   <Button size="sm" variant="ghost" onClick={() => handleDownload(f)} title="Download">
                     <Download className="h-4 w-4" />
                   </Button>
-                  {canDelete(f) && (
-                    <Button size="sm" variant="ghost" onClick={() => handleDelete(f)} title="Delete" className="text-destructive hover:text-destructive">
+                  {canDeleteFile(f) && (
+                    <Button size="sm" variant="ghost" onClick={() => handleDeleteFile(f)}
+                      title="Delete" className="text-destructive hover:text-destructive">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
