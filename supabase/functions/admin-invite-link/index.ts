@@ -137,6 +137,37 @@ Deno.serve(async (req) => {
       console.warn(emailError);
     }
 
+    // Best-effort: try to associate this attempt with an org via invitations
+    // (so admins can filter the diagnostics log by org).
+    let orgIdForLog: string | null = (body?.org_id as string | null) ?? null;
+    if (!orgIdForLog) {
+      const { data: inv } = await admin
+        .from("invitations")
+        .select("org_id")
+        .ilike("email", email)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      orgIdForLog = (inv as any)?.org_id ?? null;
+    }
+
+    // Persist a diagnostics row for admin-facing UI. Never block the response.
+    try {
+      await admin.from("invite_send_log").insert({
+        email,
+        org_id: orgIdForLog,
+        link_type: linkType,
+        action_link: actionLink,
+        sent_email: emailSent,
+        email_error: emailError,
+        user_existed: !!existingUser,
+        was_confirmed: wasConfirmed,
+        triggered_by: userRes.user.id,
+      });
+    } catch (logErr) {
+      console.error("Failed to write invite_send_log:", logErr);
+    }
+
     return json({
       action_link: actionLink,
       sent_email: emailSent,
