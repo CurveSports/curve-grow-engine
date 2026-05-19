@@ -38,7 +38,7 @@ const TIER_STYLES: Record<string, string> = {
   Elite: "bg-warning-soft text-warning border-warning/30",
 };
 
-type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes";
+type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes" | "files";
 
 export default function OrgDetail() {
   const { orgId } = useParams<{ orgId: string }>();
