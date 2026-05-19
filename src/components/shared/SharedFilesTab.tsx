@@ -8,8 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import {
   Upload, Download, Trash2, FileText, Search, CloudUpload,
   CheckCircle2, XCircle, X, Folder, FolderPlus, ChevronRight, Home,
+  Eye, FileImage, FileVideo, FileAudio, FileArchive, File as FileIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type SharedFile = {
   id: string;
@@ -97,6 +99,28 @@ function basename(p: string) {
   return i === -1 ? p : p.slice(i + 1);
 }
 
+type PreviewKind = "image" | "pdf" | "video" | "audio" | "text" | "none";
+function previewKind(f: { name: string; mime_type: string | null }): PreviewKind {
+  const mime = (f.mime_type ?? "").toLowerCase();
+  const ext = extOf(f.name);
+  if (mime.startsWith("image/") || ["png","jpg","jpeg","gif","webp","svg","bmp"].includes(ext)) return "image";
+  if (mime === "application/pdf" || ext === "pdf") return "pdf";
+  if (mime.startsWith("video/") || ["mp4","webm","mov"].includes(ext)) return "video";
+  if (mime.startsWith("audio/") || ["mp3","wav","m4a","aac","ogg"].includes(ext)) return "audio";
+  if (mime.startsWith("text/") || ["txt","md","csv","json","xml","yaml","yml"].includes(ext)) return "text";
+  return "none";
+}
+function fileIconFor(f: { name: string; mime_type: string | null }) {
+  const k = previewKind(f);
+  if (k === "image") return FileImage;
+  if (k === "video") return FileVideo;
+  if (k === "audio") return FileAudio;
+  if (k === "pdf" || k === "text") return FileText;
+  const ext = extOf(f.name);
+  if (["zip","rar","7z","tar","gz"].includes(ext)) return FileArchive;
+  return FileIcon;
+}
+
 export default function SharedFilesTab({ orgId }: { orgId: string }) {
   const { profile, role } = useAuth();
   const [files, setFiles] = useState<SharedFile[]>([]);
@@ -108,6 +132,8 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
   const [dragOver, setDragOver] = useState(false);
   const [cwd, setCwd] = useState<string>(""); // current folder
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<{ file: SharedFile; url: string; text?: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -273,6 +299,30 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
     const a = document.createElement("a");
     a.href = data.signedUrl; a.download = f.name; a.target = "_blank";
     document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  const handlePreview = async (f: SharedFile) => {
+    const kind = previewKind(f);
+    if (kind === "none") { handleDownload(f); return; }
+    setPreviewLoading(true);
+    const { data, error } = await supabase.storage
+      .from("org-shared-files").createSignedUrl(f.storage_path, 300);
+    if (error || !data?.signedUrl) {
+      setPreviewLoading(false);
+      toast({ title: "Preview failed", description: error?.message ?? "No URL", variant: "destructive" });
+      return;
+    }
+    let text: string | undefined;
+    if (kind === "text") {
+      try {
+        const res = await fetch(data.signedUrl);
+        text = (await res.text()).slice(0, 200_000);
+      } catch (e: any) {
+        text = `(Couldn't load preview: ${e?.message ?? "error"})`;
+      }
+    }
+    setPreview({ file: f, url: data.signedUrl, text });
+    setPreviewLoading(false);
   };
 
   const handleDeleteFile = async (f: SharedFile) => {
@@ -461,33 +511,81 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
                 )}
               </div>
             ))}
-            {filesHere.map((f) => (
-              <div key={f.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <FileText className="h-5 w-5 text-muted-foreground shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{f.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatBytes(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()} · uploaded by {f.uploaded_by ? (uploaderNames[f.uploaded_by] ?? "—") : "—"}
-                    </p>
+            {filesHere.map((f) => {
+              const Icon = fileIconFor(f);
+              const canPreview = previewKind(f) !== "none";
+              return (
+                <div key={f.id} className="flex items-center justify-between gap-3 py-3">
+                  <button
+                    onClick={() => (canPreview ? handlePreview(f) : handleDownload(f))}
+                    className="flex items-center gap-3 min-w-0 flex-1 text-left hover:text-accent transition-colors"
+                    title={canPreview ? "Preview" : "Download"}
+                  >
+                    <Icon className="h-5 w-5 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{f.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatBytes(f.size_bytes)} · {new Date(f.created_at).toLocaleDateString()} · uploaded by {f.uploaded_by ? (uploaderNames[f.uploaded_by] ?? "—") : "—"}
+                      </p>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {canPreview && (
+                      <Button size="sm" variant="ghost" onClick={() => handlePreview(f)} title="Preview">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button size="sm" variant="ghost" onClick={() => handleDownload(f)} title="Download">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    {canDeleteFile(f) && (
+                      <Button size="sm" variant="ghost" onClick={() => handleDeleteFile(f)}
+                        title="Delete" className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button size="sm" variant="ghost" onClick={() => handleDownload(f)} title="Download">
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  {canDeleteFile(f) && (
-                    <Button size="sm" variant="ghost" onClick={() => handleDeleteFile(f)}
-                      title="Delete" className="text-destructive hover:text-destructive">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
+
+      {/* Preview dialog */}
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="px-5 py-3 border-b border-border flex-row items-center justify-between gap-3 space-y-0">
+            <DialogTitle className="truncate text-base">{preview?.file.name}</DialogTitle>
+            {preview && (
+              <Button size="sm" variant="outline" onClick={() => handleDownload(preview.file)} className="mr-8">
+                <Download className="h-4 w-4 mr-2" /> Download
+              </Button>
+            )}
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/30">
+            {preview && (() => {
+              const kind = previewKind(preview.file);
+              if (kind === "image") {
+                return <img src={preview.url} alt={preview.file.name} className="mx-auto max-h-[75vh] object-contain" />;
+              }
+              if (kind === "pdf") {
+                return <iframe src={preview.url} title={preview.file.name} className="w-full h-[75vh] bg-background" />;
+              }
+              if (kind === "video") {
+                return <video src={preview.url} controls className="mx-auto max-h-[75vh]" />;
+              }
+              if (kind === "audio") {
+                return <div className="p-8 flex justify-center"><audio src={preview.url} controls /></div>;
+              }
+              if (kind === "text") {
+                return <pre className="p-4 text-xs whitespace-pre-wrap break-words font-mono">{preview.text}</pre>;
+              }
+              return <p className="p-6 text-sm text-muted-foreground">No preview available.</p>;
+            })()}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
