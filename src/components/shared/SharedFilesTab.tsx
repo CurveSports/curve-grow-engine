@@ -8,8 +8,10 @@ import { toast } from "@/hooks/use-toast";
 import {
   Upload, Download, Trash2, FileText, Search, CloudUpload,
   CheckCircle2, XCircle, X, Folder, FolderPlus, ChevronRight, Home,
+  Eye, FileImage, FileVideo, FileAudio, FileArchive, File as FileIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type SharedFile = {
   id: string;
