@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "@/hooks/use-toast";
-import { Upload, Download, Trash2, FileText, Loader2, Search } from "lucide-react";
+import { Upload, Download, Trash2, FileText, Search, CloudUpload, CheckCircle2, XCircle, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type SharedFile = {
   id: string;
@@ -16,6 +18,53 @@ type SharedFile = {
   uploaded_by: string | null;
   created_at: string;
 };
+
+type UploadItem = {
+  id: string;
+  name: string;
+  size: number;
+  progress: number; // 0–100
+  status: "pending" | "uploading" | "done" | "error";
+  error?: string;
+};
+
+// ─── File validation rules ─────────────────────────────
+const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+
+// Allow common docs, images, video, audio, archives, design files
+const ALLOWED_EXTS = new Set([
+  // docs
+  "pdf", "doc", "docx", "xls", "xlsx", "csv", "ppt", "pptx", "txt", "rtf", "md", "pages", "numbers", "key",
+  // images
+  "png", "jpg", "jpeg", "gif", "webp", "svg", "heic", "bmp", "tiff",
+  // design
+  "psd", "ai", "sketch", "fig", "xd",
+  // video / audio
+  "mp4", "mov", "webm", "avi", "mkv", "mp3", "wav", "m4a", "aac", "ogg",
+  // archives / data
+  "zip", "rar", "7z", "tar", "gz", "json", "xml", "yaml", "yml",
+]);
+
+const BLOCKED_EXTS = new Set([
+  "exe", "msi", "bat", "cmd", "com", "scr", "ps1", "sh", "app", "dmg", "pkg",
+  "jar", "vbs", "js", "mjs", "html", "htm",
+]);
+
+function extOf(name: string) {
+  const m = name.toLowerCase().match(/\.([a-z0-9]+)$/);
+  return m ? m[1] : "";
+}
+
+function validateFile(file: File): string | null {
+  if (file.size > MAX_FILE_SIZE) {
+    return `Too large — max ${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB`;
+  }
+  const ext = extOf(file.name);
+  if (!ext) return "Missing file extension";
+  if (BLOCKED_EXTS.has(ext)) return `Blocked file type (.${ext})`;
+  if (!ALLOWED_EXTS.has(ext)) return `Unsupported file type (.${ext})`;
+  return null;
+}
 
 function formatBytes(n: number | null) {
   if (!n) return "—";
@@ -30,8 +79,9 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
   const [files, setFiles] = useState<SharedFile[]>([]);
   const [uploaderNames, setUploaderNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState("");
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = async () => {
@@ -61,37 +111,112 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
 
   useEffect(() => { load(); }, [orgId]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const fileList = e.target.files;
-    if (!fileList || fileList.length === 0) return;
-    setUploading(true);
-    try {
-      for (const file of Array.from(fileList)) {
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-        const path = `${orgId}/${Date.now()}-${safeName}`;
-        const { error: upErr } = await supabase.storage
-          .from("org-shared-files")
-          .upload(path, file, { contentType: file.type, upsert: false });
-        if (upErr) throw upErr;
-        const { error: insErr } = await supabase.from("org_shared_files").insert({
-          org_id: orgId,
-          name: file.name,
-          storage_path: path,
-          mime_type: file.type || null,
-          size_bytes: file.size,
-          uploaded_by: profile?.user_id,
-        });
-        if (insErr) throw insErr;
+  // Upload via signed URL with XHR for real progress
+  const uploadOne = (file: File, item: UploadItem) =>
+    new Promise<void>(async (resolve) => {
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${orgId}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}-${safeName}`;
+
+      const { data: signed, error: signErr } = await supabase
+        .storage.from("org-shared-files").createSignedUploadUrl(path);
+      if (signErr || !signed) {
+        setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: signErr?.message ?? "Sign failed" } : x));
+        return resolve();
       }
-      toast({ title: "Upload complete", description: `${fileList.length} file(s) uploaded.` });
-      await load();
-    } catch (err: any) {
-      toast({ title: "Upload failed", description: err.message ?? String(err), variant: "destructive" });
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", signed.signedUrl);
+      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.setRequestHeader("x-upsert", "false");
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          setUploads(u => u.map(x => x.id === item.id ? { ...x, progress: pct, status: "uploading" } : x));
+        }
+      };
+
+      xhr.onload = async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const { error: insErr } = await supabase.from("org_shared_files").insert({
+            org_id: orgId,
+            name: file.name,
+            storage_path: path,
+            mime_type: file.type || null,
+            size_bytes: file.size,
+            uploaded_by: profile?.user_id,
+          });
+          if (insErr) {
+            setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: insErr.message } : x));
+          } else {
+            setUploads(u => u.map(x => x.id === item.id ? { ...x, progress: 100, status: "done" } : x));
+          }
+        } else {
+          setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: `HTTP ${xhr.status}` } : x));
+        }
+        resolve();
+      };
+
+      xhr.onerror = () => {
+        setUploads(u => u.map(x => x.id === item.id ? { ...x, status: "error", error: "Network error" } : x));
+        resolve();
+      };
+
+      xhr.send(file);
+    });
+
+  const startUploads = useCallback(async (incoming: File[]) => {
+    const valid: { file: File; item: UploadItem }[] = [];
+    const newItems: UploadItem[] = [];
+
+    for (const file of incoming) {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const err = validateFile(file);
+      const item: UploadItem = {
+        id, name: file.name, size: file.size,
+        progress: 0,
+        status: err ? "error" : "pending",
+        error: err ?? undefined,
+      };
+      newItems.push(item);
+      if (!err) valid.push({ file, item });
     }
+    setUploads(u => [...newItems, ...u]);
+
+    if (newItems.some(i => i.status === "error")) {
+      toast({
+        title: "Some files were rejected",
+        description: newItems.filter(i => i.status === "error").map(i => `${i.name}: ${i.error}`).join(" · "),
+        variant: "destructive",
+      });
+    }
+
+    // upload sequentially to keep UI smooth
+    for (const v of valid) {
+      await uploadOne(v.file, v.item);
+    }
+    await load();
+  }, [orgId, profile?.user_id]);
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const list = e.target.files;
+    if (!list || list.length === 0) return;
+    startUploads(Array.from(list));
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const dropped = Array.from(e.dataTransfer.files ?? []);
+    if (dropped.length) startUploads(dropped);
+  };
+
+  const dismissUpload = (id: string) =>
+    setUploads(u => u.filter(x => x.id !== id));
+
+  const clearFinished = () =>
+    setUploads(u => u.filter(x => x.status !== "done"));
 
   const handleDownload = async (f: SharedFile) => {
     const { data, error } = await supabase.storage
@@ -128,8 +253,11 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
     (f.description ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const activeUploads = uploads.filter(u => u.status === "uploading" || u.status === "pending");
+
   return (
     <div className="space-y-4">
+      {/* Header */}
       <div className="curve-card">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -138,26 +266,83 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
               Files shared between Curve and your team. Both sides can upload and download.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleUpload}
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploading}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            >
-              {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
-              {uploading ? "Uploading…" : "Upload files"}
-            </Button>
-          </div>
         </div>
       </div>
 
+      {/* Drag-and-drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={cn(
+          "relative cursor-pointer rounded-xl border-2 border-dashed transition-colors p-8 text-center",
+          dragOver
+            ? "border-accent bg-accent-soft"
+            : "border-border bg-card hover:border-accent/50 hover:bg-accent-soft/30"
+        )}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={handleFileInput}
+        />
+        <CloudUpload className={cn("h-10 w-10 mx-auto mb-3", dragOver ? "text-accent" : "text-muted-foreground")} />
+        <p className="text-sm font-semibold text-foreground">
+          {dragOver ? "Drop to upload" : "Drag & drop files here"}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          or click to browse · up to {Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB each
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-2">
+          Docs, images, video, audio, archives. Executables and scripts are blocked.
+        </p>
+      </div>
+
+      {/* Upload progress list */}
+      {uploads.length > 0 && (
+        <div className="curve-card">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold">
+              {activeUploads.length > 0 ? `Uploading ${activeUploads.length}…` : "Uploads"}
+            </h3>
+            {uploads.some(u => u.status === "done") && (
+              <Button size="sm" variant="ghost" onClick={clearFinished}>Clear finished</Button>
+            )}
+          </div>
+          <div className="space-y-2.5">
+            {uploads.map((u) => (
+              <div key={u.id} className="space-y-1">
+                <div className="flex items-center gap-2 text-sm">
+                  {u.status === "done" && <CheckCircle2 className="h-4 w-4 text-health shrink-0" />}
+                  {u.status === "error" && <XCircle className="h-4 w-4 text-destructive shrink-0" />}
+                  {(u.status === "uploading" || u.status === "pending") && <Upload className="h-4 w-4 text-accent shrink-0" />}
+                  <span className="truncate flex-1">{u.name}</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {u.status === "done" ? "Done" :
+                     u.status === "error" ? (u.error ?? "Failed") :
+                     u.status === "pending" ? "Queued" :
+                     `${u.progress}%`}
+                  </span>
+                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => dismissUpload(u.id)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                {u.status !== "error" && (
+                  <Progress
+                    value={u.status === "done" ? 100 : u.progress}
+                    className={cn("h-1.5", u.status === "done" && "[&>div]:bg-health")}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Files list */}
       <div className="curve-card">
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -175,7 +360,7 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
           <div className="text-center py-12">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-2" />
             <p className="text-sm text-muted-foreground">
-              {files.length === 0 ? "No files yet. Upload the first one." : "No files match your search."}
+              {files.length === 0 ? "No files yet. Drop one above to get started." : "No files match your search."}
             </p>
           </div>
         ) : (
