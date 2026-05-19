@@ -5758,6 +5758,53 @@ export type Database = {
         }
         Relationships: []
       }
+      org_shared_files: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          mime_type: string | null
+          name: string
+          org_id: string
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          mime_type?: string | null
+          name: string
+          org_id: string
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          mime_type?: string | null
+          name?: string
+          org_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_shared_files_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_shortlinks: {
         Row: {
           active: boolean

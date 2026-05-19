@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { ENGINE_SCORE_FIELD } from "@/lib/tasks";
-import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw, DollarSign, ChevronDown } from "lucide-react";
+import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw, DollarSign, ChevronDown, Folder } from "lucide-react";
+import SharedFilesTab from "@/components/shared/SharedFilesTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import OrgSponsorshipTab from "@/components/sponsorship/OrgSponsorshipTab";
 import { toast } from "@/hooks/use-toast";
@@ -37,7 +38,7 @@ const TIER_STYLES: Record<string, string> = {
   Elite: "bg-warning-soft text-warning border-warning/30",
 };
 
-type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes";
+type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes" | "files";
 
 export default function OrgDetail() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -117,6 +118,9 @@ export default function OrgDetail() {
             <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <StickyNote className="h-3.5 w-3.5" /> Notes
             </TabsTrigger>
+            <TabsTrigger value="files" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <Folder className="h-3.5 w-3.5" /> Files
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
@@ -161,6 +165,9 @@ export default function OrgDetail() {
           </TabsContent>
           <TabsContent value="notes" className="mt-6">
             <NotesTab orgId={orgId!} />
+          </TabsContent>
+          <TabsContent value="files" className="mt-6">
+            <SharedFilesTab orgId={orgId!} />
           </TabsContent>
         </Tabs>
       </AppShell>
