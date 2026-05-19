@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ORG_TYPES } from "@/lib/intakeOptions";
-import { Copy, CheckCircle2, Mail } from "lucide-react";
+import { Copy, CheckCircle2, Mail, RefreshCw } from "lucide-react";
 
 // Curve Admin: create an organization and invite the primary user via magic link.
 export default function AdminInvite() {
