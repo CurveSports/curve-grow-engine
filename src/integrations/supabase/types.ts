@@ -5762,6 +5762,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          folder_path: string
           id: string
           mime_type: string | null
           name: string
@@ -5774,6 +5775,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          folder_path?: string
           id?: string
           mime_type?: string | null
           name: string
@@ -5786,6 +5788,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          folder_path?: string
           id?: string
           mime_type?: string | null
           name?: string
@@ -5798,6 +5801,38 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "org_shared_files_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_shared_folders: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string
+          path: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id: string
+          path: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string
+          path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_shared_folders_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
