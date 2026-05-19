@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { ORG_TYPES } from "@/lib/intakeOptions";
-import { Copy, CheckCircle2, Mail } from "lucide-react";
+import { Copy, CheckCircle2, Mail, RefreshCw } from "lucide-react";
 
 // Curve Admin: create an organization and invite the primary user via magic link.
 export default function AdminInvite() {
@@ -28,6 +28,7 @@ export default function AdminInvite() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [createdOrgName, setCreatedOrgName] = useState<string>("");
+  const [regenerating, setRegenerating] = useState(false);
 
   const copyUrl = async () => {
     if (!inviteUrl) return;
@@ -35,6 +36,25 @@ export default function AdminInvite() {
     setCopied(true);
     toast.success("Invite link copied");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const regenerate = async () => {
+    if (!email) return;
+    setRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-invite-link", {
+        body: { email: email.trim(), redirect_to: `${window.location.origin}/` },
+      });
+      if (error) throw error;
+      const url = (data as any)?.action_link as string | undefined;
+      if (!url) throw new Error("No link returned");
+      setInviteUrl(url);
+      toast.success("Fresh single-use link generated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to regenerate link");
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -158,12 +178,21 @@ export default function AdminInvite() {
                   {copied ? "Copied" : "Copy"}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                <Mail className="h-3 w-3" /> Link is single-use and expires per Supabase auth settings.
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-start gap-1">
+                <Mail className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>
+                  Single-use link. Email scanners sometimes click it first and
+                  burn the token — if the recipient lands on the login screen,
+                  hit <strong>Regenerate</strong> below and resend a fresh one.
+                </span>
               </p>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={regenerate} disabled={regenerating}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${regenerating ? "animate-spin" : ""}`} />
+              {regenerating ? "Generating…" : "Regenerate link"}
+            </Button>
             <Button variant="outline" onClick={() => { setInviteUrl(null); navigate("/admin"); }}>
               Done
             </Button>

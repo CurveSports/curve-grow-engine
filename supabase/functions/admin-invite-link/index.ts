@@ -106,10 +106,13 @@ Deno.serve(async (req) => {
 </body></html>`.trim();
 
       try {
+        // Strip whitespace/non-ASCII that makes the Authorization header an
+        // invalid ByteString (this was silently breaking every send).
+        const cleanKey = (resendKey ?? "").replace(/[^\x20-\x7E]/g, "").trim();
         const resp = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${resendKey}`,
+            Authorization: `Bearer ${cleanKey}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
