@@ -119,6 +119,7 @@ const App = () => (
             <Route path="/plan" element={<ProtectedRoute role="org_user" module="allegiance"><Plan /></ProtectedRoute>} />
             <Route path="/report" element={<ProtectedRoute role="org_user" module="allegiance"><Report /></ProtectedRoute>} />
             <Route path="/team" element={<ProtectedRoute role="org_user" module="allegiance"><Team /></ProtectedRoute>} />
+            <Route path="/files" element={<ProtectedRoute role="org_user"><Files /></ProtectedRoute>} />
             <Route path="/calculators" element={<ProtectedRoute module="allegiance"><Calculators /></ProtectedRoute>} />
             <Route path="/calculators/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><Calculators /></ProtectedRoute>} />
             <Route path="/communications" element={<ProtectedRoute module="allegiance"><Communications /></ProtectedRoute>} />
