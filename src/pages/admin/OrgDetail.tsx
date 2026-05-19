@@ -24,6 +24,7 @@ import { ExplainProvider, ExplainButton } from "@/components/admin/ExplainDrawer
 import ProjectsTab from "@/components/admin/ProjectsTab";
 import { ProjectCompletionBanner } from "@/components/admin/ProjectsTab";
 import { FolderKanban } from "lucide-react";
+import ResendInviteButton from "@/components/admin/ResendInviteButton";
 import {
   operationsHealthExplain, marketPositionExplain, programHealthExplain, strategicClarityExplain,
   executionRiskExplain, marketRiskExplain, retentionRiskExplain, engagementComplexityExplain,
