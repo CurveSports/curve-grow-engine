@@ -3066,6 +3066,56 @@ export type Database = {
           },
         ]
       }
+      invite_send_log: {
+        Row: {
+          action_link: string | null
+          created_at: string
+          email: string
+          email_error: string | null
+          id: string
+          link_type: string | null
+          org_id: string | null
+          sent_email: boolean
+          triggered_by: string | null
+          user_existed: boolean | null
+          was_confirmed: boolean | null
+        }
+        Insert: {
+          action_link?: string | null
+          created_at?: string
+          email: string
+          email_error?: string | null
+          id?: string
+          link_type?: string | null
+          org_id?: string | null
+          sent_email?: boolean
+          triggered_by?: string | null
+          user_existed?: boolean | null
+          was_confirmed?: boolean | null
+        }
+        Update: {
+          action_link?: string | null
+          created_at?: string
+          email?: string
+          email_error?: string | null
+          id?: string
+          link_type?: string | null
+          org_id?: string | null
+          sent_email?: boolean
+          triggered_by?: string | null
+          user_existed?: boolean | null
+          was_confirmed?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invite_send_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       magic_links: {
         Row: {
           action: string
