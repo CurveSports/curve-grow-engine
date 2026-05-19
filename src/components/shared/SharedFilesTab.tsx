@@ -132,6 +132,8 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
   const [dragOver, setDragOver] = useState(false);
   const [cwd, setCwd] = useState<string>(""); // current folder
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<{ file: SharedFile; url: string; text?: string } | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const load = async () => {
     setLoading(true);
