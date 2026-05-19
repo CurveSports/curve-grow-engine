@@ -166,6 +166,9 @@ export default function OrgDetail() {
           <TabsContent value="notes" className="mt-6">
             <NotesTab orgId={orgId!} />
           </TabsContent>
+          <TabsContent value="files" className="mt-6">
+            <SharedFilesTab orgId={orgId!} />
+          </TabsContent>
         </Tabs>
       </AppShell>
     </ExplainProvider>
