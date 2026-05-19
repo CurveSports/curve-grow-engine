@@ -301,6 +301,30 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
     document.body.appendChild(a); a.click(); a.remove();
   };
 
+  const handlePreview = async (f: SharedFile) => {
+    const kind = previewKind(f);
+    if (kind === "none") { handleDownload(f); return; }
+    setPreviewLoading(true);
+    const { data, error } = await supabase.storage
+      .from("org-shared-files").createSignedUrl(f.storage_path, 300);
+    if (error || !data?.signedUrl) {
+      setPreviewLoading(false);
+      toast({ title: "Preview failed", description: error?.message ?? "No URL", variant: "destructive" });
+      return;
+    }
+    let text: string | undefined;
+    if (kind === "text") {
+      try {
+        const res = await fetch(data.signedUrl);
+        text = (await res.text()).slice(0, 200_000);
+      } catch (e: any) {
+        text = `(Couldn't load preview: ${e?.message ?? "error"})`;
+      }
+    }
+    setPreview({ file: f, url: data.signedUrl, text });
+    setPreviewLoading(false);
+  };
+
   const handleDeleteFile = async (f: SharedFile) => {
     if (!confirm(`Delete "${f.name}"? This can't be undone.`)) return;
     const { error: sErr } = await supabase.storage.from("org-shared-files").remove([f.storage_path]);
