@@ -80,6 +80,7 @@ const ORG_GROUPS: NavGroup[] = [
       { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: (p) => p === "/dashboard" },
       { to: "/report", label: "My Report", icon: FileText, match: (p) => p === "/report" },
       { to: "/plan", label: "Action Plan", icon: ListChecks, match: (p) => p.startsWith("/plan") },
+      { to: "/files", label: "Shared Files", icon: Folder, match: (p) => p.startsWith("/files") },
     ],
   },
   {
