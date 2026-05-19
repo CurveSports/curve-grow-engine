@@ -118,6 +118,9 @@ export default function OrgDetail() {
             <TabsTrigger value="notes" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <StickyNote className="h-3.5 w-3.5" /> Notes
             </TabsTrigger>
+            <TabsTrigger value="files" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <Folder className="h-3.5 w-3.5" /> Files
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-6">
