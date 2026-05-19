@@ -42,6 +42,7 @@ import TranscriptDetail from "@/pages/admin/acquisitions/TranscriptDetail";
 import StaffOnboard from "@/pages/StaffOnboard";
 import SellerPortal from "@/pages/seller/SellerPortal";
 import Team from "@/pages/Team";
+import Files from "@/pages/Files";
 import Dashboard from "@/pages/Dashboard";
 import Plan from "@/pages/Plan";
 import Calculators from "@/pages/Calculators";
