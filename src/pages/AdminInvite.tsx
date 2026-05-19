@@ -178,12 +178,21 @@ export default function AdminInvite() {
                   {copied ? "Copied" : "Copy"}
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1">
-                <Mail className="h-3 w-3" /> Link is single-use and expires per Supabase auth settings.
+              <p className="text-xs text-muted-foreground mt-1.5 flex items-start gap-1">
+                <Mail className="h-3 w-3 mt-0.5 shrink-0" />
+                <span>
+                  Single-use link. Email scanners sometimes click it first and
+                  burn the token — if the recipient lands on the login screen,
+                  hit <strong>Regenerate</strong> below and resend a fresh one.
+                </span>
               </p>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button type="button" variant="outline" onClick={regenerate} disabled={regenerating}>
+              <RefreshCw className={`h-4 w-4 mr-1 ${regenerating ? "animate-spin" : ""}`} />
+              {regenerating ? "Generating…" : "Regenerate link"}
+            </Button>
             <Button variant="outline" onClick={() => { setInviteUrl(null); navigate("/admin"); }}>
               Done
             </Button>
