@@ -28,6 +28,7 @@ export default function AdminInvite() {
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [createdOrgName, setCreatedOrgName] = useState<string>("");
+  const [regenerating, setRegenerating] = useState(false);
 
   const copyUrl = async () => {
     if (!inviteUrl) return;
@@ -35,6 +36,25 @@ export default function AdminInvite() {
     setCopied(true);
     toast.success("Invite link copied");
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const regenerate = async () => {
+    if (!email) return;
+    setRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-invite-link", {
+        body: { email: email.trim(), redirect_to: `${window.location.origin}/` },
+      });
+      if (error) throw error;
+      const url = (data as any)?.action_link as string | undefined;
+      if (!url) throw new Error("No link returned");
+      setInviteUrl(url);
+      toast.success("Fresh single-use link generated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Failed to regenerate link");
+    } finally {
+      setRegenerating(false);
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
