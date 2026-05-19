@@ -99,6 +99,28 @@ function basename(p: string) {
   return i === -1 ? p : p.slice(i + 1);
 }
 
+type PreviewKind = "image" | "pdf" | "video" | "audio" | "text" | "none";
+function previewKind(f: { name: string; mime_type: string | null }): PreviewKind {
+  const mime = (f.mime_type ?? "").toLowerCase();
+  const ext = extOf(f.name);
+  if (mime.startsWith("image/") || ["png","jpg","jpeg","gif","webp","svg","bmp"].includes(ext)) return "image";
+  if (mime === "application/pdf" || ext === "pdf") return "pdf";
+  if (mime.startsWith("video/") || ["mp4","webm","mov"].includes(ext)) return "video";
+  if (mime.startsWith("audio/") || ["mp3","wav","m4a","aac","ogg"].includes(ext)) return "audio";
+  if (mime.startsWith("text/") || ["txt","md","csv","json","xml","yaml","yml"].includes(ext)) return "text";
+  return "none";
+}
+function fileIconFor(f: { name: string; mime_type: string | null }) {
+  const k = previewKind(f);
+  if (k === "image") return FileImage;
+  if (k === "video") return FileVideo;
+  if (k === "audio") return FileAudio;
+  if (k === "pdf" || k === "text") return FileText;
+  const ext = extOf(f.name);
+  if (["zip","rar","7z","tar","gz"].includes(ext)) return FileArchive;
+  return FileIcon;
+}
+
 export default function SharedFilesTab({ orgId }: { orgId: string }) {
   const { profile, role } = useAuth();
   const [files, setFiles] = useState<SharedFile[]>([]);
