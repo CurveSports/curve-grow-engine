@@ -76,12 +76,15 @@ export default function OrgDetail() {
           <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4 mr-1" /> Back to Organizations
           </Link>
-          <Link
-            to={`/admin/orgs/${orgId}/marketing`}
-            className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition"
-          >
-            <Sparkles className="h-3.5 w-3.5" /> Open Marketing Tools
-          </Link>
+          <div className="flex items-center gap-2">
+            <ResendInviteButton orgId={orgId!} />
+            <Link
+              to={`/admin/orgs/${orgId}/marketing`}
+              className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition"
+            >
+              <Sparkles className="h-3.5 w-3.5" /> Open Marketing Tools
+            </Link>
+          </div>
         </div>
 
         <AdminAlertsBanner alerts={alerts} orgId={orgId!} />
