@@ -96,31 +96,47 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Look up profiles in this org (we still need to delete their auth users)
-    const { data: orgProfiles } = await admin
+    // Look up member user_ids BEFORE the cascade nukes their profiles
+    const { data: orgProfiles, error: profErr } = await admin
       .from("profiles").select("user_id").eq("org_id", orgId);
+    if (profErr) {
+      return new Response(JSON.stringify({ error: `lookup profiles: ${profErr.message}` }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const memberUserIds = (orgProfiles ?? []).map((p: any) => p.user_id).filter(Boolean);
 
     const errors: string[] = [];
 
-    // Delete member auth accounts (cascades profiles/roles/onboarding via FK or handled below)
-    for (const uid of memberUserIds) {
-      await admin.from("user_roles").delete().eq("user_id", uid);
-      await admin.from("user_onboarding").delete().eq("user_id", uid);
-      await admin.from("profiles").delete().eq("user_id", uid);
-      const { error: delErr } = await admin.auth.admin.deleteUser(uid);
-      if (delErr) errors.push(`auth ${uid}: ${delErr.message}`);
-    }
-
-    // Dynamically delete all org-scoped rows + the organization itself via SECURITY DEFINER RPC.
+    // 1) Run cascade RPC first. This deletes all org-scoped rows (incl. profiles for this org)
+    //    and the organization itself. Wrapped so any single-table failure is surfaced clearly.
     const { error: rpcErr } = await admin.rpc("admin_delete_organization_cascade", { _org_id: orgId });
     if (rpcErr) {
-      return new Response(JSON.stringify({ error: rpcErr.message, partial_errors: errors }), {
+      return new Response(JSON.stringify({ error: `cascade: ${rpcErr.message}` }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, deleted_users: memberUserIds.length, partial_errors: errors }), {
+    // 2) Now that profiles for this org are gone, clean up per-user rows and delete auth accounts.
+    //    Each step is try/caught so one bad user doesn't abort the rest.
+    for (const uid of memberUserIds) {
+      try {
+        const { error: e1 } = await admin.from("user_roles").delete().eq("user_id", uid);
+        if (e1) errors.push(`user_roles ${uid}: ${e1.message}`);
+        const { error: e2 } = await admin.from("user_onboarding").delete().eq("user_id", uid);
+        if (e2) errors.push(`user_onboarding ${uid}: ${e2.message}`);
+        const { error: delErr } = await admin.auth.admin.deleteUser(uid);
+        if (delErr) errors.push(`auth ${uid}: ${delErr.message}`);
+      } catch (e: any) {
+        errors.push(`user ${uid}: ${e?.message ?? String(e)}`);
+      }
+    }
+
+    return new Response(JSON.stringify({
+      ok: true,
+      deleted_users: memberUserIds.length,
+      partial_errors: errors,
+    }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
