@@ -56,6 +56,7 @@ export default function AdminPresentations() {
 
   // Pre-audit post URL refresh modal
   const [refreshOpen, setRefreshOpen] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [postUrls, setPostUrls] = useState<PostUrls>(emptyPostUrls());
   const [savingPosts, setSavingPosts] = useState(false);
 
