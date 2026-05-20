@@ -56,6 +56,7 @@ export default function AdminPresentations() {
 
   // Pre-audit post URL refresh modal
   const [refreshOpen, setRefreshOpen] = useState(false);
+  const [websiteUrl, setWebsiteUrl] = useState("");
   const [postUrls, setPostUrls] = useState<PostUrls>(emptyPostUrls());
   const [savingPosts, setSavingPosts] = useState(false);
 
@@ -90,7 +91,7 @@ export default function AdminPresentations() {
     if (!orgId) return;
     const { data } = await supabase
       .from("org_digital_presence")
-      .select("recent_post_urls")
+      .select("recent_post_urls, website_url")
       .eq("org_id", orgId)
       .maybeSingle();
     const existing = (data?.recent_post_urls ?? {}) as Record<string, string[]>;
@@ -100,6 +101,7 @@ export default function AdminPresentations() {
       seeded[p.key] = [arr[0] ?? "", arr[1] ?? "", arr[2] ?? ""];
     }
     setPostUrls(seeded);
+    setWebsiteUrl((data?.website_url ?? "") as string);
     setRefreshOpen(true);
   };
 
@@ -128,6 +130,7 @@ export default function AdminPresentations() {
           {
             org_id: orgId,
             recent_post_urls: cleaned,
+            website_url: websiteUrl.trim() || null,
             updated_by: userRes.user?.id ?? null,
           },
           { onConflict: "org_id" }
@@ -275,15 +278,27 @@ export default function AdminPresentations() {
       <Dialog open={refreshOpen} onOpenChange={setRefreshOpen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Refresh recent post URLs</DialogTitle>
+            <DialogTitle>Refresh audit inputs</DialogTitle>
             <DialogDescription>
-              Paste the org's three most recent posts on each platform so the audit reflects current
-              brand voice. Leave blank to skip a platform. Existing values are pre-filled — replace
-              them with fresh links.
+              Confirm the org's website and paste their three most recent posts per platform so the
+              audit reflects current brand voice. Existing values are pre-filled — replace them with
+              fresh links. Leave a platform blank to skip it.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5 py-2">
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold">Website URL</Label>
+              <Input
+                placeholder="https://yourclub.com"
+                value={websiteUrl}
+                onChange={(e) => setWebsiteUrl(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Required for the website portion of the audit. Without this, only the social audit will produce useful output.
+              </p>
+            </div>
+
             {PLATFORMS.map((p) => (
               <div key={p.key} className="space-y-2">
                 <Label className="text-sm font-semibold">{p.label}</Label>

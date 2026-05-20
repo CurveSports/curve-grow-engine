@@ -9,7 +9,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/format";
 import { ENGINE_SCORE_FIELD } from "@/lib/tasks";
-import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw, DollarSign, ChevronDown, Folder } from "lucide-react";
+import { ArrowLeft, FileText, ListChecks, Activity, StickyNote, LayoutDashboard, Sparkles, CheckCircle2, AlertCircle, Clock, Mail, RefreshCw, DollarSign, ChevronDown, Folder, ClipboardList } from "lucide-react";
+import IntakeAnswersTab from "@/components/admin/IntakeAnswersTab";
 import SharedFilesTab from "@/components/shared/SharedFilesTab";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import OrgSponsorshipTab from "@/components/sponsorship/OrgSponsorshipTab";
@@ -39,7 +40,7 @@ const TIER_STYLES: Record<string, string> = {
   Elite: "bg-warning-soft text-warning border-warning/30",
 };
 
-type Tab = "overview" | "report" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes" | "files";
+type Tab = "overview" | "report" | "intake" | "presentations" | "plan" | "projects" | "communications" | "sponsorship" | "revenue_share" | "notes" | "files";
 
 export default function OrgDetail() {
   const { orgId } = useParams<{ orgId: string }>();
@@ -101,6 +102,9 @@ export default function OrgDetail() {
             <TabsTrigger value="report" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <FileText className="h-3.5 w-3.5" /> Report
             </TabsTrigger>
+            <TabsTrigger value="intake" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <ClipboardList className="h-3.5 w-3.5" /> Intake Answers
+            </TabsTrigger>
             <TabsTrigger value="presentations" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <Sparkles className="h-3.5 w-3.5" /> Presentations
             </TabsTrigger>
@@ -132,6 +136,9 @@ export default function OrgDetail() {
           </TabsContent>
           <TabsContent value="report" className="mt-6">
             <Report bare orgIdProp={orgId} />
+          </TabsContent>
+          <TabsContent value="intake" className="mt-6">
+            <IntakeAnswersTab orgId={orgId!} />
           </TabsContent>
           <TabsContent value="presentations" className="mt-6">
             <PresentationsTab orgId={orgId!} />
