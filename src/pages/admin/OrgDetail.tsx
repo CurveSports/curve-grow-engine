@@ -137,6 +137,9 @@ export default function OrgDetail() {
           <TabsContent value="report" className="mt-6">
             <Report bare orgIdProp={orgId} />
           </TabsContent>
+          <TabsContent value="intake" className="mt-6">
+            <IntakeAnswersTab orgId={orgId!} />
+          </TabsContent>
           <TabsContent value="presentations" className="mt-6">
             <PresentationsTab orgId={orgId!} />
           </TabsContent>
