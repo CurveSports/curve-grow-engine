@@ -313,15 +313,25 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
       return;
     }
     let text: string | undefined;
-    if (kind === "text") {
-      try {
+    let displayUrl = data.signedUrl;
+    try {
+      // Fetch as blob so images/PDFs render inline reliably regardless of
+      // Content-Disposition headers on the signed URL.
+      if (kind === "pdf" || kind === "image") {
+        const res = await fetch(data.signedUrl);
+        const blob = await res.blob();
+        const typed = kind === "pdf"
+          ? new Blob([blob], { type: "application/pdf" })
+          : blob;
+        displayUrl = URL.createObjectURL(typed);
+      } else if (kind === "text") {
         const res = await fetch(data.signedUrl);
         text = (await res.text()).slice(0, 200_000);
-      } catch (e: any) {
-        text = `(Couldn't load preview: ${e?.message ?? "error"})`;
       }
+    } catch (e: any) {
+      if (kind === "text") text = `(Couldn't load preview: ${e?.message ?? "error"})`;
     }
-    setPreview({ file: f, url: data.signedUrl, text });
+    setPreview({ file: f, url: displayUrl, text });
     setPreviewLoading(false);
   };
 
