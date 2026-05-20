@@ -102,6 +102,9 @@ export default function OrgDetail() {
             <TabsTrigger value="report" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <FileText className="h-3.5 w-3.5" /> Report
             </TabsTrigger>
+            <TabsTrigger value="intake" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
+              <ClipboardList className="h-3.5 w-3.5" /> Intake Answers
+            </TabsTrigger>
             <TabsTrigger value="presentations" className="data-[state=active]:bg-accent data-[state=active]:text-accent-foreground gap-1.5">
               <Sparkles className="h-3.5 w-3.5" /> Presentations
             </TabsTrigger>
