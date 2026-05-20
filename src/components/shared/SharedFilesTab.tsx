@@ -563,7 +563,12 @@ export default function SharedFilesTab({ orgId }: { orgId: string }) {
       </div>
 
       {/* Preview dialog */}
-      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+      <Dialog open={!!preview} onOpenChange={(o) => {
+        if (!o) {
+          if (preview?.url?.startsWith("blob:")) URL.revokeObjectURL(preview.url);
+          setPreview(null);
+        }
+      }}>
         <DialogContent className="max-w-5xl w-[95vw] max-h-[90vh] p-0 flex flex-col">
           <DialogHeader className="px-5 py-3 border-b border-border flex-row items-center justify-between gap-3 space-y-0">
             <DialogTitle className="truncate text-base">{preview?.file.name}</DialogTitle>
