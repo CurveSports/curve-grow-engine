@@ -45,17 +45,31 @@ export default function AdminOrganizationsList() {
       const { data, error } = await supabase.functions.invoke("delete-organization", {
         body: { org_id: org.id },
       });
-      if (error) throw error;
-      if ((data as any)?.partial_errors?.length) {
-        console.warn("Partial errors deleting org:", (data as any).partial_errors);
+      if (error) {
+        // FunctionsHttpError hides the server JSON in error.context.response — pull it out
+        let detail = error.message;
+        try {
+          const resp = (error as any)?.context?.response;
+          if (resp && typeof resp.json === "function") {
+            const j = await resp.json();
+            if (j?.error) detail = j.error;
+          }
+        } catch { /* ignore */ }
+        throw new Error(detail);
       }
-      toast.success(`Organization "${org.name}" deleted`);
+      const partial = (data as any)?.partial_errors as string[] | undefined;
+      if (partial?.length) {
+        console.warn("Partial errors deleting org:", partial);
+        toast.success(`"${org.name}" deleted (${partial.length} warning${partial.length === 1 ? "" : "s"} — see console)`);
+      } else {
+        toast.success(`Organization "${org.name}" deleted`);
+      }
       setOpenId(null);
       setConfirmText("");
       load();
     } catch (e: any) {
-      console.error(e);
-      toast.error(e?.message ?? "Failed to delete organization");
+      console.error("delete-organization failed:", e);
+      toast.error(e?.message ?? "Failed to delete organization", { duration: 10000 });
     } finally {
       setDeletingId(null);
     }
