@@ -130,6 +130,7 @@ export default function AdminPresentations() {
           {
             org_id: orgId,
             recent_post_urls: cleaned,
+            website_url: websiteUrl.trim() || null,
             updated_by: userRes.user?.id ?? null,
           },
           { onConflict: "org_id" }
