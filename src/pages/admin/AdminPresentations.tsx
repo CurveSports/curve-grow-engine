@@ -91,7 +91,7 @@ export default function AdminPresentations() {
     if (!orgId) return;
     const { data } = await supabase
       .from("org_digital_presence")
-      .select("recent_post_urls")
+      .select("recent_post_urls, website_url")
       .eq("org_id", orgId)
       .maybeSingle();
     const existing = (data?.recent_post_urls ?? {}) as Record<string, string[]>;
@@ -101,6 +101,7 @@ export default function AdminPresentations() {
       seeded[p.key] = [arr[0] ?? "", arr[1] ?? "", arr[2] ?? ""];
     }
     setPostUrls(seeded);
+    setWebsiteUrl((data?.website_url ?? "") as string);
     setRefreshOpen(true);
   };
 
