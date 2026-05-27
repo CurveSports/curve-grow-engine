@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Palette, MailPlus, Copy, CheckCircle2 } from "lucide-react";
+import { Trash2, UserPlus, Palette, MailPlus, Copy, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -45,7 +45,7 @@ export default function AdminUsers() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [savingModulesId, setSavingModulesId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
-  const [linkDialog, setLinkDialog] = useState<{ email: string; url: string; wasConfirmed: boolean } | null>(null);
+  const [linkDialog, setLinkDialog] = useState<{ email: string; url: string; wasConfirmed: boolean; emailSent: boolean; emailError: string | null } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const resendInvite = async (row: Row) => {
@@ -57,8 +57,11 @@ export default function AdminUsers() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       const url = (data as any)?.action_link as string;
-      setLinkDialog({ email: row.email, url, wasConfirmed: !!(data as any)?.was_confirmed });
-      toast.success("Invite email re-sent");
+      const emailSent = !!(data as any)?.sent_email;
+      const emailError = ((data as any)?.email_error as string | null) ?? null;
+      setLinkDialog({ email: row.email, url, wasConfirmed: !!(data as any)?.was_confirmed, emailSent, emailError });
+      if (emailSent) toast.success("Invite email re-sent");
+      else toast.error(`Email send failed: ${emailError ?? "unknown error"}`, { duration: 12000 });
     } catch (err: any) {
       console.error(err);
       toast.error(err.message ?? "Failed to resend invite");
