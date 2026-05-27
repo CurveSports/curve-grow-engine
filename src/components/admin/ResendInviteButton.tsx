@@ -28,7 +28,7 @@ type LogRow = {
 /**
  * "Send invite email again" + admin-facing diagnostics.
  * Surfaces the live error message returned by the admin-invite-link edge
- * function (missing RESEND_API_KEY, malformed headers, Resend 4xx, etc.)
+ * function (missing email credentials, malformed headers, provider 4xx, etc.)
  * and shows recent attempts pulled from invite_send_log.
  */
 export default function ResendInviteButton({ orgId }: { orgId: string }) {
@@ -120,15 +120,17 @@ export default function ResendInviteButton({ orgId }: { orgId: string }) {
   const errorHint = (msg: string | null): string | null => {
     if (!msg) return null;
     const lower = msg.toLowerCase();
+    if (lower.includes("lovable_api_key not configured"))
+      return "Lovable Cloud email credentials are missing. Check Cloud → Emails and retry.";
     if (lower.includes("resend_api_key not configured"))
-      return "Add a RESEND_API_KEY secret in Cloud → Secrets, then retry.";
+      return "Legacy email secret is missing. This invite flow now uses Lovable Cloud email; retry the send.";
     if (lower.includes("bytestring") || lower.includes("headers"))
-      return "RESEND_API_KEY appears to contain whitespace or non-ASCII characters. Re-enter the key without trailing newlines.";
+      return "An email credential header was malformed. Re-enter the related secret without trailing newlines.";
     if (lower.includes("401") || lower.includes("unauthorized") || lower.includes("invalid api key"))
-      return "Resend rejected the API key. Verify it in Resend → API Keys and update the secret.";
+      return "The email provider rejected the configured API key. Retry now that invite email uses Lovable Cloud email.";
     if (lower.includes("domain") && lower.includes("verified"))
-      return "Sender domain is not verified in Resend. Use onboarding@resend.dev or verify your domain.";
-    if (lower.includes("rate")) return "Resend rate-limited the send. Wait a minute and retry.";
+      return "The sender domain is not verified. Check Cloud → Emails for domain status.";
+    if (lower.includes("rate")) return "Email sending was rate-limited. Wait a minute and retry.";
     return null;
   };
 
