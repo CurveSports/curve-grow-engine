@@ -90,8 +90,14 @@ export default function AdminInvite() {
       });
       if (linkErr) console.warn("Invite link warning:", linkErr.message);
       const url = (linkRes as any)?.action_link as string | undefined;
+      const emailSent = !!(linkRes as any)?.sent_email;
+      const emailError = (linkRes as any)?.email_error as string | undefined;
 
-      toast.success("Organization created — invitation sent");
+      if (emailSent) {
+        toast.success("Organization created — invitation sent");
+      } else {
+        toast.error(`Organization created, but email failed: ${emailError ?? "unknown error"}`, { duration: 12000 });
+      }
       setCreatedOrgName(name.trim());
       if (url) {
         setInviteUrl(url);
@@ -164,8 +170,8 @@ export default function AdminInvite() {
               {createdOrgName} is live
             </DialogTitle>
             <DialogDescription>
-              An invitation email is on the way to <strong>{email}</strong>. Inboxes can be flaky —
-              copy the one-tap sign-in link below so you can text or DM it directly.
+              Copy the one-tap sign-in link below as a backup. If email delivery fails,
+              this link lets you text or DM access directly to <strong>{email}</strong>.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">

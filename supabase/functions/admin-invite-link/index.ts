@@ -5,6 +5,11 @@
 //   can share for one-tap sign-in.
 // Returns: { action_link, sent_email, user_existed, was_confirmed }
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { sendLovableEmail } from "npm:@lovable.dev/email-js";
+
+const SITE_NAME = "Curve OS";
+const SENDER_DOMAIN = "notify.os.curvesports.com";
+const FROM_DOMAIN = "os.curvesports.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -77,13 +82,13 @@ Deno.serve(async (req) => {
     const actionLink = (linkData as any)?.properties?.action_link ?? null;
     if (!actionLink) return json({ error: "Failed to generate link" });
 
-    // Send the invitation email ourselves via Resend.
-    // Note: Supabase's generateLink does NOT send the email — only inviteUserByEmail does,
-    // and that requires SMTP to be configured at the auth level. We deliver via Resend instead.
+    // Send the invitation email through Lovable Cloud's verified email domain.
+    // generateLink only creates the URL; this function owns delivery so admins
+    // get a fresh single-use link even when an invite already exists.
     let emailSent = false;
     let emailError: string | null = null;
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (resendKey) {
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (lovableApiKey) {
       const isInvite = linkType === "invite";
       const subject = isInvite
         ? "You're invited to Curve OS"
@@ -106,34 +111,28 @@ Deno.serve(async (req) => {
 </body></html>`.trim();
 
       try {
-        // Strip whitespace/non-ASCII that makes the Authorization header an
-        // invalid ByteString (this was silently breaking every send).
-        const cleanKey = (resendKey ?? "").replace(/[^\x20-\x7E]/g, "").trim();
-        const resp = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${cleanKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "Curve OS <onboarding@resend.dev>",
-            to: [email],
-            subject,
-            html,
-          }),
+        const messageId = crypto.randomUUID();
+        await sendLovableEmail({
+          to: email,
+          from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject,
+          html,
+          text: `${intro}\n\n${actionLink}`,
+          purpose: "transactional",
+          label: "admin_invite_link",
+          idempotency_key: `admin-invite-${messageId}`,
+          message_id: messageId,
+        }, {
+          apiKey: lovableApiKey,
         });
-        if (resp.ok) {
-          emailSent = true;
-        } else {
-          emailError = await resp.text();
-          console.error("Resend send failed:", resp.status, emailError);
-        }
+        emailSent = true;
       } catch (e: any) {
         emailError = e?.message ?? String(e);
-        console.error("Resend send threw:", emailError);
+        console.error("Invite email send threw:", emailError);
       }
     } else {
-      emailError = "RESEND_API_KEY not configured";
+      emailError = "LOVABLE_API_KEY not configured";
       console.warn(emailError);
     }
 

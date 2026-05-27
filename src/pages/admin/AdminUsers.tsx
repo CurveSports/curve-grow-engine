@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Trash2, UserPlus, Palette, MailPlus, Copy, CheckCircle2 } from "lucide-react";
+import { Trash2, UserPlus, Palette, MailPlus, Copy, CheckCircle2, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -45,7 +45,7 @@ export default function AdminUsers() {
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [savingModulesId, setSavingModulesId] = useState<string | null>(null);
   const [resendingId, setResendingId] = useState<string | null>(null);
-  const [linkDialog, setLinkDialog] = useState<{ email: string; url: string; wasConfirmed: boolean } | null>(null);
+  const [linkDialog, setLinkDialog] = useState<{ email: string; url: string; wasConfirmed: boolean; emailSent: boolean; emailError: string | null } | null>(null);
   const [copied, setCopied] = useState(false);
 
   const resendInvite = async (row: Row) => {
@@ -57,8 +57,11 @@ export default function AdminUsers() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       const url = (data as any)?.action_link as string;
-      setLinkDialog({ email: row.email, url, wasConfirmed: !!(data as any)?.was_confirmed });
-      toast.success("Invite email re-sent");
+      const emailSent = !!(data as any)?.sent_email;
+      const emailError = ((data as any)?.email_error as string | null) ?? null;
+      setLinkDialog({ email: row.email, url, wasConfirmed: !!(data as any)?.was_confirmed, emailSent, emailError });
+      if (emailSent) toast.success("Invite email re-sent");
+      else toast.error(`Email send failed: ${emailError ?? "unknown error"}`, { duration: 12000 });
     } catch (err: any) {
       console.error(err);
       toast.error(err.message ?? "Failed to resend invite");
@@ -434,15 +437,26 @@ export default function AdminUsers() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-              Invite re-sent to {linkDialog?.email}
+              {linkDialog?.emailSent ? (
+                <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+              )}
+              {linkDialog?.emailSent ? "Invite re-sent" : "Link generated — email did not send"}
             </DialogTitle>
             <DialogDescription>
-              {linkDialog?.wasConfirmed
+              {!linkDialog?.emailSent
+                ? "Copy this one-tap sign-in link and text or DM it directly while email delivery is checked."
+                : linkDialog?.wasConfirmed
                 ? "This user has already confirmed their account — share this link only if they're locked out."
                 : "Email is on the way. If they say \"I didn't get it,\" copy this one-tap sign-in link and text or DM it directly."}
             </DialogDescription>
           </DialogHeader>
+          {linkDialog?.emailError && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive font-mono break-all">
+              {linkDialog.emailError}
+            </div>
+          )}
           <div className="space-y-2 py-2">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">One-tap sign-in link</Label>
             <div className="flex gap-2">
