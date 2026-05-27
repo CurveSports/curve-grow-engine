@@ -117,6 +117,24 @@ Deno.serve(async (req) => {
 </body></html>`.trim();
 
       try {
+        // Lovable Email API requires an unsubscribe_token for transactional sends.
+        // Reuse an existing token for this email or create a fresh one.
+        let unsubscribeToken: string | null = null;
+        const { data: existingTok } = await admin
+          .from("email_unsubscribe_tokens")
+          .select("token")
+          .eq("email", email)
+          .maybeSingle();
+        if (existingTok?.token) {
+          unsubscribeToken = existingTok.token;
+        } else {
+          unsubscribeToken = crypto.randomUUID();
+          await admin.from("email_unsubscribe_tokens").insert({
+            email,
+            token: unsubscribeToken,
+          });
+        }
+
         const messageId = crypto.randomUUID();
         await sendLovableEmail({
           to: email,
@@ -129,6 +147,7 @@ Deno.serve(async (req) => {
           label: "admin_invite_link",
           idempotency_key: `admin-invite-${messageId}`,
           message_id: messageId,
+          unsubscribe_token: unsubscribeToken,
         }, {
           apiKey: lovableApiKey,
         });
