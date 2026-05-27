@@ -52,9 +52,8 @@ Deno.serve(async (req) => {
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return json({ error: "Valid email required" });
     }
-    const redirectTo: string =
-      body?.redirect_to ||
-      `${req.headers.get("origin") ?? ""}/`;
+    const origin = req.headers.get("origin") ?? "";
+    const callerRedirect: string = body?.redirect_to || `${origin}/`;
 
     // Find existing auth user by email
     let existingUser: any = null;
@@ -72,11 +71,18 @@ Deno.serve(async (req) => {
     // Choose link type: invite for brand-new emails, magiclink otherwise
     const linkType: "invite" | "magiclink" = existingUser ? "magiclink" : "invite";
 
+    // For new invites, force the landing page to /set-password so the user
+    // creates a password instead of being silently signed in with none.
+    const redirectTo = linkType === "invite"
+      ? `${(callerRedirect.match(/^https?:\/\/[^/]+/)?.[0]) ?? origin}/set-password`
+      : callerRedirect;
+
     const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
       type: linkType,
       email,
       options: { redirectTo },
     });
+
 
     if (linkErr) return json({ error: linkErr.message });
     const actionLink = (linkData as any)?.properties?.action_link ?? null;
