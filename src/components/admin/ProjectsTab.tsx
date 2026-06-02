@@ -152,6 +152,7 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
               orgId={orgId}
               expanded={expanded.has(p.id)}
               onToggle={() => toggleExpand(p.id)}
+              onEdit={() => setEditTarget(p)}
               onChanged={load}
             />
           ))}
