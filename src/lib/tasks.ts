@@ -119,6 +119,8 @@ export type OrgTask = {
   source: TaskSource;
   owner_type: TaskOwnerType;
   project_id: string | null;
+  phase: number;
+  display_order: number;
   suggested_due_date: string | null;
   due_date: string | null;
   assigned_by: string | null;
