@@ -68,3 +68,29 @@ export function buildProjectWithTasks(project: OrgProject, allTasks: OrgTask[]):
   const progressPct = taskTotal > 0 ? Math.round((taskComplete / taskTotal) * 100) : 0;
   return { ...project, tasks, taskTotal, taskComplete, progressPct };
 }
+
+/** Group tasks by phase number, returning sorted phase numbers and the tasks in each. */
+export function groupTasksByPhase(tasks: OrgTask[]): { phase: number; tasks: OrgTask[] }[] {
+  const map = new Map<number, OrgTask[]>();
+  for (const t of tasks) {
+    const phase = (t as any).phase ?? 1;
+    if (!map.has(phase)) map.set(phase, []);
+    map.get(phase)!.push(t);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([phase, list]) => ({
+      phase,
+      tasks: list.sort(
+        (a, b) =>
+          ((a as any).display_order ?? 0) - ((b as any).display_order ?? 0) ||
+          a.title.localeCompare(b.title),
+      ),
+    }));
+}
+
+/** A phase is unlocked when every task in every earlier phase is completed. */
+export function isPhaseUnlocked(tasks: OrgTask[], phase: number): boolean {
+  if (phase <= 1) return true;
+  return tasks.every((t) => ((t as any).phase ?? 1) >= phase || t.status === "completed");
+}
