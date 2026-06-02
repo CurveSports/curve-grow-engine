@@ -6552,12 +6552,14 @@ export type Database = {
           completed_by: string | null
           created_at: string
           description: string
+          display_order: number
           due_date: string | null
           engine: Database["public"]["Enums"]["task_engine"]
           id: string
           last_activity_at: string
           org_id: string
           owner_type: Database["public"]["Enums"]["task_owner_type"]
+          phase: number
           plan_status: Database["public"]["Enums"]["plan_status"]
           priority: Database["public"]["Enums"]["task_priority"]
           project_id: string | null
@@ -6574,12 +6576,14 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           description: string
+          display_order?: number
           due_date?: string | null
           engine: Database["public"]["Enums"]["task_engine"]
           id?: string
           last_activity_at?: string
           org_id: string
           owner_type?: Database["public"]["Enums"]["task_owner_type"]
+          phase?: number
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -6596,12 +6600,14 @@ export type Database = {
           completed_by?: string | null
           created_at?: string
           description?: string
+          display_order?: number
           due_date?: string | null
           engine?: Database["public"]["Enums"]["task_engine"]
           id?: string
           last_activity_at?: string
           org_id?: string
           owner_type?: Database["public"]["Enums"]["task_owner_type"]
+          phase?: number
           plan_status?: Database["public"]["Enums"]["plan_status"]
           priority?: Database["public"]["Enums"]["task_priority"]
           project_id?: string | null
@@ -8062,6 +8068,7 @@ export type Database = {
         Args: { _acq_id: string; _state: string }
         Returns: undefined
       }
+      task_phase_is_unlocked: { Args: { _task_id: string }; Returns: boolean }
       update_acquisition_phases: { Args: never; Returns: undefined }
     }
     Enums: {

@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, ChevronDown, ChevronRight, CheckCircle2, Lock, Sparkles, Pencil, PlayCircle, X, BookmarkPlus } from "lucide-react";
+import { Plus, ChevronDown, ChevronRight, CheckCircle2, Lock, Sparkles, Pencil, PlayCircle, X, BookmarkPlus, ExternalLink, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { ENGINES, TASK_SOURCE_LABEL, TASK_SOURCE_STYLE, type OrgTask } from "@/lib/tasks";
 import TaskLibraryPicker from "@/components/admin/TaskLibraryPicker";
 import {
@@ -151,6 +152,7 @@ export default function ProjectsTab({ orgId, orgName }: Props) {
               orgId={orgId}
               expanded={expanded.has(p.id)}
               onToggle={() => toggleExpand(p.id)}
+              onEdit={() => setEditTarget(p)}
               onChanged={load}
             />
           ))}
@@ -337,11 +339,35 @@ function ProjectCard({
             Awaiting Approval
           </span>
         )}
-        {onEdit && project.status !== "completed" && (
-          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="h-7 px-2 text-xs ml-auto">
+        <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs ml-auto" onClick={(e) => e.stopPropagation()}>
+          <Link to={`/admin/org/${orgId}/projects/${project.id}`}>
+            <ExternalLink className="h-3 w-3 mr-1" /> Manage
+          </Link>
+        </Button>
+        {onEdit && (
+          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="h-7 px-2 text-xs">
             <Pencil className="h-3 w-3 mr-1" /> Edit
           </Button>
         )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!confirm(`Delete project "${project.name}"? Tasks inside it will be unassigned (not deleted).`)) return;
+            (async () => {
+              const { error: e1 } = await supabase.from("org_tasks").update({ project_id: null }).eq("project_id", project.id);
+              if (e1) { toast.error(e1.message); return; }
+              const { error: e2 } = await supabase.from("org_projects").delete().eq("id", project.id);
+              if (e2) { toast.error(e2.message); return; }
+              toast.success("Project deleted");
+              onChanged();
+            })();
+          }}
+          className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
         {onRelease && (
           <Button size="sm" onClick={(e) => { e.stopPropagation(); onRelease(); }} className="h-7 px-2 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
             <PlayCircle className="h-3 w-3 mr-1" /> Release

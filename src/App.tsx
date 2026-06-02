@@ -19,6 +19,7 @@ import AdminTasksPage from "@/pages/admin/AdminTasksPage";
 import AdminTasksThisWeek from "@/pages/admin/AdminTasksThisWeek";
 import AdminTaskTracker from "@/pages/admin/AdminTaskTracker";
 import OrgDetail from "@/pages/admin/OrgDetail";
+import OrgProjectDetail from "@/pages/admin/OrgProjectDetail";
 import AdminOrgBranding from "@/pages/admin/AdminOrgBranding";
 import AdminEngineFocus from "@/pages/admin/AdminEngineFocus";
 import AdminHealthReports from "@/pages/admin/AdminHealthReports";
@@ -226,6 +227,7 @@ const App = () => (
             
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
+            <Route path="/admin/org/:orgId/projects/:projectId" element={<ProtectedRoute role="admin" module="allegiance"><OrgProjectDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/engine/:engine" element={<ProtectedRoute role="admin" module="allegiance"><AdminEngineFocus /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/branding" element={<ProtectedRoute role="admin"><AdminOrgBranding /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
