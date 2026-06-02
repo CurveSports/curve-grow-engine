@@ -338,11 +338,35 @@ function ProjectCard({
             Awaiting Approval
           </span>
         )}
+        <Button asChild size="sm" variant="outline" className="h-7 px-2 text-xs ml-auto" onClick={(e) => e.stopPropagation()}>
+          <Link to={`/admin/org/${orgId}/projects/${project.id}`}>
+            <ExternalLink className="h-3 w-3 mr-1" /> Manage
+          </Link>
+        </Button>
         {onEdit && project.status !== "completed" && (
-          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="h-7 px-2 text-xs ml-auto">
+          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="h-7 px-2 text-xs">
             <Pencil className="h-3 w-3 mr-1" /> Edit
           </Button>
         )}
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!confirm(`Delete project "${project.name}"? Tasks inside it will be unassigned (not deleted).`)) return;
+            (async () => {
+              const { error: e1 } = await supabase.from("org_tasks").update({ project_id: null }).eq("project_id", project.id);
+              if (e1) { toast.error(e1.message); return; }
+              const { error: e2 } = await supabase.from("org_projects").delete().eq("id", project.id);
+              if (e2) { toast.error(e2.message); return; }
+              toast.success("Project deleted");
+              onChanged();
+            })();
+          }}
+          className="h-7 px-2 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
         {onRelease && (
           <Button size="sm" onClick={(e) => { e.stopPropagation(); onRelease(); }} className="h-7 px-2 text-xs bg-accent hover:bg-accent/90 text-accent-foreground">
             <PlayCircle className="h-3 w-3 mr-1" /> Release
