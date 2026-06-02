@@ -11,7 +11,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft, Plus, Lock, Trash2, CheckCircle2, Circle, Loader2,
+  ArrowLeft, Plus, Lock, Trash2, CheckCircle2, Circle, Loader2, GripVertical,
 } from "lucide-react";
 import {
   groupTasksByPhase, isPhaseUnlocked, PROJECT_STATUS_LABEL,
@@ -24,6 +24,14 @@ import TaskAssigneePicker from "@/components/tasks/TaskAssigneePicker";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  DndContext, DragEndEvent, DragOverlay, DragStartEvent, PointerSensor,
+  useDroppable, useSensor, useSensors, closestCorners,
+} from "@dnd-kit/core";
+import {
+  SortableContext, useSortable, verticalListSortingStrategy, arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export default function OrgProjectDetail() {
   const { orgId, projectId } = useParams<{ orgId: string; projectId: string }>();
@@ -34,6 +42,9 @@ export default function OrgProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const load = async () => {
     if (!projectId || !orgId) return;
@@ -57,9 +68,9 @@ export default function OrgProjectDetail() {
   const completePct = tasks.length
     ? Math.round((tasks.filter((t) => t.status === "completed").length / tasks.length) * 100)
     : 0;
+  const activeTask = activeId ? tasks.find((t) => t.id === activeId) ?? null : null;
 
   const addPhase = async () => {
-    // No-op until a task gets added there; create a placeholder task at next phase.
     const nextPhase = maxPhase + 1;
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("org_tasks").insert({
@@ -83,6 +94,91 @@ export default function OrgProjectDetail() {
     if (e2) { toast.error(e2.message); setDeleting(false); return; }
     toast.success("Project deleted. Tasks moved back to the task pool.");
     navigate(`/admin/org/${orgId}`);
+  };
+
+  const persistOrder = async (next: OrgTask[]) => {
+    // Build patches: any task whose phase or display_order changed.
+    const prevById = new Map(tasks.map((t) => [t.id, t]));
+    const changes = next.filter((t) => {
+      const p = prevById.get(t.id);
+      return !p || p.phase !== t.phase || p.display_order !== t.display_order;
+    });
+    if (!changes.length) return;
+    const results = await Promise.all(
+      changes.map((c) =>
+        supabase.from("org_tasks")
+          .update({ phase: c.phase, display_order: c.display_order } as any)
+          .eq("id", c.id)
+      )
+    );
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      toast.error(failed.error.message);
+      load();
+    }
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    setActiveId(null);
+    const { active, over } = e;
+    if (!over) return;
+    const activeIdStr = String(active.id);
+    const overIdStr = String(over.id);
+    const moved = tasks.find((t) => t.id === activeIdStr);
+    if (!moved) return;
+
+    // Determine target phase: if dropped on a phase container, use that; else use the over-task's phase.
+    let targetPhase: number;
+    let overTaskId: string | null = null;
+    if (overIdStr.startsWith("phase-")) {
+      targetPhase = parseInt(overIdStr.slice("phase-".length), 10);
+    } else {
+      const overTask = tasks.find((t) => t.id === overIdStr);
+      if (!overTask) return;
+      targetPhase = overTask.phase ?? 1;
+      overTaskId = overTask.id;
+    }
+
+    const sourcePhase = moved.phase ?? 1;
+
+    // Snapshot grouped lists per phase (ordered).
+    const byPhase = new Map<number, OrgTask[]>();
+    for (const t of tasks) {
+      const ph = t.phase ?? 1;
+      if (!byPhase.has(ph)) byPhase.set(ph, []);
+      byPhase.get(ph)!.push(t);
+    }
+
+    if (sourcePhase === targetPhase) {
+      const list = byPhase.get(sourcePhase) ?? [];
+      const from = list.findIndex((t) => t.id === activeIdStr);
+      const to = overTaskId
+        ? list.findIndex((t) => t.id === overTaskId)
+        : list.length - 1;
+      if (from === -1 || to === -1 || from === to) return;
+      const reordered = arrayMove(list, from, to).map((t, i) => ({ ...t, display_order: i }));
+      byPhase.set(sourcePhase, reordered);
+    } else {
+      const src = (byPhase.get(sourcePhase) ?? []).filter((t) => t.id !== activeIdStr)
+        .map((t, i) => ({ ...t, display_order: i }));
+      const dest = [...(byPhase.get(targetPhase) ?? [])];
+      let insertAt = dest.length;
+      if (overTaskId) {
+        const idx = dest.findIndex((t) => t.id === overTaskId);
+        if (idx !== -1) insertAt = idx;
+      }
+      const movedUpdated = { ...moved, phase: targetPhase };
+      dest.splice(insertAt, 0, movedUpdated);
+      byPhase.set(sourcePhase, src);
+      byPhase.set(targetPhase, dest.map((t, i) => ({ ...t, display_order: i })));
+    }
+
+    const next: OrgTask[] = [];
+    Array.from(byPhase.keys()).sort((a, b) => a - b).forEach((ph) => {
+      next.push(...(byPhase.get(ph) ?? []));
+    });
+    setTasks(next);
+    persistOrder(next);
   };
 
   if (loading) {
@@ -132,27 +228,47 @@ export default function OrgProjectDetail() {
         <div className="h-full bg-accent transition-all" style={{ width: `${completePct}%` }} />
       </div>
 
+      <p className="text-[11px] text-muted-foreground">
+        Tip: drag tasks by the grip handle to move them between phases or reorder within a phase.
+      </p>
+
       {phases.length === 0 && (
         <div className="curve-card p-6 text-sm text-muted-foreground text-center border-dashed">
           No tasks in this project yet.
         </div>
       )}
 
-      {phases.map(({ phase, tasks: phaseTasks }) => {
-        const unlocked = isPhaseUnlocked(tasks, phase);
-        return (
-          <PhaseSection
-            key={phase}
-            phase={phase}
-            unlocked={unlocked}
-            tasks={phaseTasks}
-            orgId={orgId!}
-            projectId={projectId!}
-            maxPhase={maxPhase}
-            onChanged={load}
-          />
-        );
-      })}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={(e: DragStartEvent) => setActiveId(String(e.active.id))}
+        onDragCancel={() => setActiveId(null)}
+        onDragEnd={handleDragEnd}
+      >
+        {phases.map(({ phase, tasks: phaseTasks }) => {
+          const unlocked = isPhaseUnlocked(tasks, phase);
+          return (
+            <PhaseSection
+              key={phase}
+              phase={phase}
+              unlocked={unlocked}
+              tasks={phaseTasks}
+              orgId={orgId!}
+              projectId={projectId!}
+              maxPhase={maxPhase}
+              onChanged={load}
+            />
+          );
+        })}
+        <DragOverlay>
+          {activeTask ? (
+            <div className="rounded-md border border-border bg-card p-3 shadow-lg opacity-95">
+              <div className="text-sm font-medium">{activeTask.title}</div>
+              <div className="text-[11px] text-muted-foreground">Phase {activeTask.phase}</div>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <AlertDialogContent>
@@ -191,6 +307,7 @@ function PhaseSection({
 }) {
   const [adding, setAdding] = useState(false);
   const [newTitle, setNewTitle] = useState("");
+  const { setNodeRef, isOver } = useDroppable({ id: `phase-${phase}` });
 
   const addTask = async () => {
     if (!newTitle.trim()) return;
@@ -206,10 +323,14 @@ function PhaseSection({
   };
 
   return (
-    <div className={cn(
-      "curve-card p-4 space-y-3",
-      !unlocked && "bg-muted/30",
-    )}>
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "curve-card p-4 space-y-3 mt-4 transition-colors",
+        !unlocked && "bg-muted/30",
+        isOver && "ring-2 ring-accent ring-offset-2 ring-offset-background",
+      )}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 className="font-semibold text-base">Phase {phase}</h2>
@@ -227,18 +348,25 @@ function PhaseSection({
         </span>
       </div>
 
-      <div className="space-y-2">
-        {tasks.map((t) => (
-          <TaskRow
-            key={t.id}
-            task={t}
-            orgId={orgId}
-            unlocked={unlocked}
-            maxPhase={maxPhase}
-            onChanged={onChanged}
-          />
-        ))}
-      </div>
+      <SortableContext items={tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2 min-h-[40px]">
+          {tasks.length === 0 && (
+            <div className="text-[11px] text-muted-foreground italic border border-dashed border-border rounded-md p-3 text-center">
+              Drop tasks here
+            </div>
+          )}
+          {tasks.map((t) => (
+            <TaskRow
+              key={t.id}
+              task={t}
+              orgId={orgId}
+              unlocked={unlocked}
+              maxPhase={maxPhase}
+              onChanged={onChanged}
+            />
+          ))}
+        </div>
+      </SortableContext>
 
       {adding ? (
         <div className="flex items-center gap-2">
@@ -269,6 +397,15 @@ function TaskRow({
   task: OrgTask; orgId: string; unlocked: boolean; maxPhase: number; onChanged: () => void;
 }) {
   const [saving, setSaving] = useState(false);
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
 
   const update = async (patch: Partial<OrgTask>) => {
     setSaving(true);
@@ -294,11 +431,24 @@ function TaskRow({
   const phaseOptions = Array.from({ length: Math.max(maxPhase, task.phase) + 1 }, (_, i) => i + 1);
 
   return (
-    <div className={cn(
-      "rounded-md border border-border bg-card p-3 space-y-2",
-      task.status === "completed" && "opacity-70",
-    )}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "rounded-md border border-border bg-card p-3 space-y-2",
+        task.status === "completed" && "opacity-70",
+      )}
+    >
       <div className="flex items-start gap-2">
+        <button
+          {...attributes}
+          {...listeners}
+          className="mt-0.5 flex-shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none"
+          title="Drag to reorder or move to another phase"
+          aria-label="Drag task"
+        >
+          <GripVertical className="h-5 w-5" />
+        </button>
         <button
           onClick={toggleComplete}
           disabled={saving || (!unlocked && task.status !== "completed")}
@@ -324,7 +474,7 @@ function TaskRow({
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pl-7">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pl-14">
         <div>
           <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Phase</label>
           <Select value={String(task.phase)} onValueChange={(v) => update({ phase: parseInt(v, 10) } as any)}>
@@ -370,7 +520,7 @@ function TaskRow({
         </div>
       </div>
 
-      <div className="pl-7 flex items-center justify-between gap-3 flex-wrap">
+      <div className="pl-14 flex items-center justify-between gap-3 flex-wrap">
         <TaskAssigneePicker taskId={task.id} orgId={orgId} />
         {task.due_date && (
           <span className="text-[11px] text-muted-foreground">
