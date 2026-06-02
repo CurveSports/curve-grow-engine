@@ -343,7 +343,7 @@ function ProjectCard({
             <ExternalLink className="h-3 w-3 mr-1" /> Manage
           </Link>
         </Button>
-        {onEdit && project.status !== "completed" && (
+        {onEdit && (
           <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onEdit(); }} className="h-7 px-2 text-xs">
             <Pencil className="h-3 w-3 mr-1" /> Edit
           </Button>
