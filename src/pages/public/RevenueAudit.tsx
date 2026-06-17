@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -23,7 +22,7 @@ import {
 import curveLogo from "@/assets/curve-sports-logo.png.asset.json";
 
 // ---------------------------------------------------------------------------
-// Types & helpers
+// Engines (display + priority picker only — math is driven by flat numbers below)
 // ---------------------------------------------------------------------------
 
 type EngineKey =
@@ -35,72 +34,24 @@ type EngineKey =
   | "events"
   | "wallet";
 
-const ENGINES: Array<{
-  key: EngineKey;
-  name: string;
-  icon: any;
-  thesis: string;
-  doToday: string;
-  spendLabel?: string;
-}> = [
-  {
-    key: "pricing",
-    name: "Pricing",
-    icon: DollarSign,
-    thesis: "Right-size fees to the value you actually deliver — without losing players.",
-    doToday: "We do this today",
-  },
-  {
-    key: "sponsorships",
-    name: "Sponsorships",
-    icon: Handshake,
-    thesis: "Turn your reach into real local & regional sponsor revenue.",
-    doToday: "We have sponsors today",
-  },
-  {
-    key: "apparel",
-    name: "Apparel & Hard Goods",
-    icon: Shirt,
-    thesis: "Secure the best uniform, fan gear, and equipment deals, ensuring your margins are strong and parents aren't overpaying",
-    doToday: "We sell apparel today",
-  },
-  {
-    key: "retention",
-    name: "Retention & Referrals",
-    icon: Users,
-    thesis: "Keep more families season-to-season and turn them into your best recruiters.",
-    doToday: "We have a referral program",
-  },
-  {
-    key: "training",
-    name: "Training / Player Development",
-    icon: GraduationCap,
-    thesis: "Capture private training, skills work, and player development that's leaving the ecosystem today.",
-    doToday: "We offer training today",
-  },
-  {
-    key: "events",
-    name: "Events",
-    icon: CalendarDays,
-    thesis: "Data Days, Camps, Tournaments, Showcases — your brand as a revenue engine.",
-    doToday: "We run events today",
-  },
-  {
-    key: "wallet",
-    name: "Share of Wallet & Overall Spend",
-    icon: Wallet,
-    thesis: "The meta-engine: capture more share of wallet - while decreasing the amount of money families are spending overall",
-    doToday: "",
-  },
+const ENGINES: Array<{ key: EngineKey; name: string; icon: any; thesis: string }> = [
+  { key: "pricing", name: "Pricing", icon: DollarSign, thesis: "Right-size fees to the value you actually deliver — without losing players." },
+  { key: "sponsorships", name: "Sponsorships", icon: Handshake, thesis: "Turn your reach into real local & regional sponsor revenue." },
+  { key: "apparel", name: "Apparel & Hard Goods", icon: Shirt, thesis: "Secure the best uniform, fan gear, and equipment deals, ensuring your margins are strong and parents aren't overpaying" },
+  { key: "retention", name: "Retention & Referrals", icon: Users, thesis: "Keep more families season-to-season and turn them into your best recruiters." },
+  { key: "training", name: "Training / Player Development", icon: GraduationCap, thesis: "Capture private training, skills work, and player development that's leaving the ecosystem today." },
+  { key: "events", name: "Events", icon: CalendarDays, thesis: "Data Days, Camps, Tournaments, Showcases — your brand as a revenue engine." },
+  { key: "wallet", name: "Share of Wallet & Overall Spend", icon: Wallet, thesis: "The meta-engine: capture more share of wallet - while decreasing the amount of money families are spending overall" },
 ];
 
-type EngineState = {
-  active: boolean; // doing this today
-  revenue: string;
-  maturity: number; // 1-5
-};
+// ---------------------------------------------------------------------------
+// Form state
+// ---------------------------------------------------------------------------
+
+type MarketType = "small" | "mid" | "major";
 
 type FormState = {
+  // Step 1 — org
   org_name: string;
   contact_name: string;
   email: string;
@@ -108,21 +59,25 @@ type FormState = {
   role: string;
   city_state: string;
   sport: string;
-  num_teams: string;
+  // Step 2 — the base
   totalPlayers: string;
+  numTeams: string;
   avgFeePerPlayer: string;
   currentRetentionPct: string;
-  outsideSpendPerFamily: number; // share-of-wallet slider
-  engines: Record<EngineKey, EngineState>;
-  priorities: EngineKey[]; // top 3
-  website: string; // honeypot
+  numSponsors: string;
+  sponsorshipRevenue: string;
+  // Step 3 — money flow
+  apparelRevenue: string;
+  eventsRevenue: string;
+  facilityRevenue: string;
+  trainingRevenue: string;
+  outsideSpendPerFamily: number;
+  marketType: MarketType;
+  // Step 4 — priorities
+  priorities: EngineKey[];
+  // honeypot
+  website: string;
 };
-
-const initialEngines = (): Record<EngineKey, EngineState> =>
-  ENGINES.reduce((acc, e) => {
-    acc[e.key] = { active: true, revenue: "", maturity: 2 };
-    return acc;
-  }, {} as Record<EngineKey, EngineState>);
 
 const initial: FormState = {
   org_name: "",
@@ -132,18 +87,30 @@ const initial: FormState = {
   role: "",
   city_state: "",
   sport: "",
-  num_teams: "",
   totalPlayers: "",
+  numTeams: "",
   avgFeePerPlayer: "",
   currentRetentionPct: "",
+  numSponsors: "",
+  sponsorshipRevenue: "",
+  apparelRevenue: "",
+  eventsRevenue: "",
+  facilityRevenue: "",
+  trainingRevenue: "",
   outsideSpendPerFamily: 15000,
-  engines: initialEngines(),
+  marketType: "mid",
   priorities: [],
   website: "",
 };
 
 const fmtUSD = (n: number) =>
   "$" + Math.round(Math.max(0, n)).toLocaleString("en-US");
+
+const MARKET_MULT: Record<MarketType, number> = {
+  small: 0.8,
+  mid: 1.0,
+  major: 1.3,
+};
 
 // ---------------------------------------------------------------------------
 // Page
@@ -157,12 +124,6 @@ export default function RevenueAudit() {
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
     setForm((f) => ({ ...f, [k]: v }));
 
-  const setEngine = (key: EngineKey, patch: Partial<EngineState>) =>
-    setForm((f) => ({
-      ...f,
-      engines: { ...f.engines, [key]: { ...f.engines[key], ...patch } },
-    }));
-
   const togglePriority = (key: EngineKey) =>
     setForm((f) => {
       const exists = f.priorities.includes(key);
@@ -171,17 +132,11 @@ export default function RevenueAudit() {
       return { ...f, priorities: [...f.priorities, key] };
     });
 
-  // Live opportunity estimate
-  const liveOpportunity = useMemo(() => estimateOpportunity(form), [form]);
+  const live = useMemo(() => estimateLeak(form), [form]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !form.org_name.trim() ||
-      !form.contact_name.trim() ||
-      !form.email.trim() ||
-      !form.phone.trim()
-    ) {
+    if (!form.org_name.trim() || !form.contact_name.trim() || !form.email.trim() || !form.phone.trim()) {
       toast({
         title: "Missing info",
         description: "Please fill in org name, your name, email, and phone.",
@@ -191,15 +146,6 @@ export default function RevenueAudit() {
     }
     setSubmitting(true);
     try {
-      const enginesPayload: Record<string, any> = {};
-      for (const e of ENGINES) {
-        enginesPayload[e.key] = {
-          active: form.engines[e.key].active,
-          revenue: Number(form.engines[e.key].revenue) || 0,
-          maturity: form.engines[e.key].maturity,
-        };
-      }
-
       const { data, error } = await supabase.functions.invoke("submit-revenue-audit", {
         body: {
           org_name: form.org_name,
@@ -210,22 +156,19 @@ export default function RevenueAudit() {
           city_state: form.city_state,
           website: form.website,
           inputs: {
-            // legacy fields the existing function understands
             totalPlayers: Number(form.totalPlayers) || 0,
             avgFeePerPlayer: Number(form.avgFeePerPlayer) || 0,
             currentRetentionPct: Number(form.currentRetentionPct) || 0,
-            apparelRevenue: Number(form.engines.apparel.revenue) || 0,
-            sponsorshipRevenue: Number(form.engines.sponsorships.revenue) || 0,
-            campsClinicsRevenue: Number(form.engines.events.revenue) || 0,
-            apparelToggle: form.engines.apparel.active,
-            sponsorshipToggle: form.engines.sponsorships.active,
-            retentionToggle: form.engines.retention.active,
-            campsToggle: form.engines.events.active,
-            // extended fields
+            apparelRevenue: Number(form.apparelRevenue) || 0,
+            sponsorshipRevenue: Number(form.sponsorshipRevenue) || 0,
+            campsClinicsRevenue: Number(form.eventsRevenue) || 0,
+            facilityRevenue: Number(form.facilityRevenue) || 0,
+            trainingRevenue: Number(form.trainingRevenue) || 0,
+            numSponsors: Number(form.numSponsors) || 0,
             sport: form.sport,
-            numTeams: Number(form.num_teams) || 0,
+            numTeams: Number(form.numTeams) || 0,
             outsideSpendPerFamily: form.outsideSpendPerFamily,
-            engines: enginesPayload,
+            marketType: form.marketType,
             priorities: form.priorities,
           },
         },
@@ -248,12 +191,9 @@ export default function RevenueAudit() {
     }
   };
 
-  // Smooth-scroll anchors
   useEffect(() => {
     document.documentElement.style.scrollBehavior = "smooth";
-    return () => {
-      document.documentElement.style.scrollBehavior = "";
-    };
+    return () => { document.documentElement.style.scrollBehavior = ""; };
   }, []);
 
   return (
@@ -270,10 +210,7 @@ export default function RevenueAudit() {
             <a href="#process" className="hover:text-white transition">Process</a>
             <a href="#audit" className="hover:text-white transition">Audit</a>
           </nav>
-          <a
-            href="#audit"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#c5ff3d] text-black text-sm font-semibold hover:bg-[#b8f229] transition"
-          >
+          <a href="#audit" className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#c5ff3d] text-black text-sm font-semibold hover:bg-[#b8f229] transition">
             Start my audit <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
@@ -288,55 +225,32 @@ export default function RevenueAudit() {
           </div>
           <div className="relative max-w-6xl mx-auto px-6 pt-20 md:pt-28 pb-20 md:pb-32 grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-[0.18em] text-white/70 mb-6"
-              >
+              <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-[0.18em] text-white/70 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#c5ff3d]" />
                 Free Revenue Audit
               </motion.div>
-              <motion.h1
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.05 }}
+              <motion.h1 initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.05 }}
                 className="font-display text-4xl md:text-6xl leading-[1.05] tracking-tight font-bold"
-                style={{ fontFamily: "'Archivo Black', 'Oswald', sans-serif" }}
-              >
+                style={{ fontFamily: "'Archivo Black', 'Oswald', sans-serif" }}>
                 Your families already spend
                 <span className="block text-[#c5ff3d]">$15,000 a year.</span>
                 <span className="block text-white/80 text-2xl md:text-3xl font-normal mt-4 leading-snug" style={{ fontFamily: "Inter, sans-serif" }}>
                   How much of it stays inside your club?
                 </span>
               </motion.h1>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="mt-6 text-white/70 text-lg max-w-lg leading-relaxed"
-              >
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.2 }}
+                className="mt-6 text-white/70 text-lg max-w-lg leading-relaxed">
                 Curve Sports is a Growth Partner for youth sports organizations. We don't charge your families more — we help you capture more of what they already spend.
               </motion.p>
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.35 }}
-                className="mt-10 flex flex-wrap items-center gap-4"
-              >
-                <a
-                  href="#audit"
-                  className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[#c5ff3d] text-black font-semibold hover:bg-[#b8f229] transition text-base"
-                >
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.35 }}
+                className="mt-10 flex flex-wrap items-center gap-4">
+                <a href="#audit" className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[#c5ff3d] text-black font-semibold hover:bg-[#b8f229] transition text-base">
                   Start my audit <ArrowRight className="w-4 h-4" />
                 </a>
-                <a href="#engines" className="text-sm text-white/60 hover:text-white">
-                  See the 7 engines →
-                </a>
+                <a href="#engines" className="text-sm text-white/60 hover:text-white">See the 7 engines →</a>
               </motion.div>
             </div>
-
-            {/* Share of wallet ring */}
             <div className="flex justify-center md:justify-end">
               <ShareOfWalletRing capturedPct={12} />
             </div>
@@ -357,30 +271,12 @@ export default function RevenueAudit() {
             </div>
             <div className="grid md:grid-cols-3 gap-5">
               {[
-                {
-                  k: "01",
-                  t: "Families are already spending",
-                  d: "Roughly $15,000 a year per travel family — fees, uniforms, training, travel, tournaments, hotels, hard goods.",
-                },
-                {
-                  k: "02",
-                  t: "Most of it leaves.",
-                  d: "Outside vendors, distant tournaments, third-party trainers. Your brand fronts the experience; someone else collects the margin.",
-                },
-                {
-                  k: "03",
-                  t: "We bring it home.",
-                  d: "Every dollar recaptured and every dollar saved for parents compounds into retention, referrals, and a healthier, more independent organization.",
-                },
+                { k: "01", t: "Families are already spending", d: "Roughly $15,000 a year per travel family — fees, uniforms, training, travel, tournaments, hotels, hard goods." },
+                { k: "02", t: "Most of it leaves.", d: "Outside vendors, distant tournaments, third-party trainers. Your brand fronts the experience; someone else collects the margin." },
+                { k: "03", t: "We bring it home.", d: "Every dollar recaptured and every dollar saved for parents compounds into retention, referrals, and a healthier, more independent organization." },
               ].map((c) => (
-                <motion.div
-                  key={c.k}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.5 }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-7 hover:bg-white/[0.04] transition"
-                >
+                <motion.div key={c.k} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.5 }}
+                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-7 hover:bg-white/[0.04] transition">
                   <div className="text-xs text-[#c5ff3d] tracking-widest mb-4">{c.k}</div>
                   <div className="font-display text-xl font-bold mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>{c.t}</div>
                   <p className="text-white/60 text-sm leading-relaxed">{c.d}</p>
@@ -407,14 +303,8 @@ export default function RevenueAudit() {
               {ENGINES.map((e, i) => {
                 const Icon = e.icon;
                 return (
-                  <motion.div
-                    key={e.key}
-                    initial={{ opacity: 0, y: 12 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-60px" }}
-                    transition={{ duration: 0.4, delay: (i % 3) * 0.06 }}
-                    className="group rounded-2xl border border-white/10 bg-white/[0.02] p-6 hover:border-[#c5ff3d]/40 hover:bg-white/[0.04] transition"
-                  >
+                  <motion.div key={e.key} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4, delay: (i % 3) * 0.06 }}
+                    className="group rounded-2xl border border-white/10 bg-white/[0.02] p-6 hover:border-[#c5ff3d]/40 hover:bg-white/[0.04] transition">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-lg bg-[#c5ff3d]/10 border border-[#c5ff3d]/20 flex items-center justify-center">
                         <Icon className="w-5 h-5 text-[#c5ff3d]" />
@@ -447,14 +337,8 @@ export default function RevenueAudit() {
                 { n: "03", t: "Build", d: "We design and stand up the playbooks, partnerships, and systems with you." },
                 { n: "04", t: "Operate", d: "We stay on the field with you — measuring, iterating, and compounding the wins." },
               ].map((s) => (
-                <motion.div
-                  key={s.n}
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-60px" }}
-                  transition={{ duration: 0.4 }}
-                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-6"
-                >
+                <motion.div key={s.n} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.4 }}
+                  className="rounded-2xl border border-white/10 bg-white/[0.02] p-6">
                   <div className="text-[#c5ff3d] text-sm font-mono mb-3">{s.n}</div>
                   <div className="font-display text-lg font-bold mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>{s.t}</div>
                   <p className="text-white/60 text-sm leading-relaxed">{s.d}</p>
@@ -462,10 +346,7 @@ export default function RevenueAudit() {
               ))}
             </div>
             <div className="mt-12 text-center">
-              <a
-                href="#audit"
-                className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[#c5ff3d] text-black font-semibold hover:bg-[#b8f229] transition"
-              >
+              <a href="#audit" className="inline-flex items-center gap-2 px-7 py-4 rounded-full bg-[#c5ff3d] text-black font-semibold hover:bg-[#b8f229] transition">
                 Start the audit <ArrowRight className="w-4 h-4" />
               </a>
             </div>
@@ -478,11 +359,11 @@ export default function RevenueAudit() {
             <div className="max-w-3xl mb-12">
               <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-3">Act 2 — The Audit</div>
               <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
-                Tell us about your engines.<br />
-                <span className="text-white/60">We'll show you the map.</span>
+                Four short steps.<br />
+                <span className="text-white/60">A live revenue leak report.</span>
               </h2>
               <p className="mt-5 text-white/60">
-                Best estimates are fine. The more honest your inputs, the sharper your report.
+                Best estimates are fine — the more honest your inputs, the sharper the leak. The number on the right updates as you type.
               </p>
             </div>
 
@@ -494,7 +375,7 @@ export default function RevenueAudit() {
                   <Input id="website" tabIndex={-1} autoComplete="off" value={form.website} onChange={(e) => set("website", e.target.value)} />
                 </div>
 
-                {/* About */}
+                {/* Step 1 — About */}
                 <FormCard step="01" title="About your organization">
                   <div className="grid md:grid-cols-2 gap-4">
                     <Field label="Organization name *"><DarkInput value={form.org_name} onChange={(e) => set("org_name", e.target.value)} required /></Field>
@@ -504,38 +385,44 @@ export default function RevenueAudit() {
                     <Field label="Email *"><DarkInput type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required /></Field>
                     <Field label="Phone *"><DarkInput type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} required /></Field>
                     <Field label="Primary sport"><DarkInput value={form.sport} onChange={(e) => set("sport", e.target.value)} /></Field>
-                    <Field label="Number of teams"><DarkInput type="number" min="0" value={form.num_teams} onChange={(e) => set("num_teams", e.target.value)} /></Field>
+                    <Field label="Number of teams"><DarkInput type="number" min="0" value={form.numTeams} onChange={(e) => set("numTeams", e.target.value)} /></Field>
                   </div>
                 </FormCard>
 
-                {/* Base numbers */}
-                <FormCard step="02" title="The base">
+                {/* Step 2 — The base */}
+                <FormCard step="02" title="The base — your fee & retention engine">
                   <div className="grid md:grid-cols-3 gap-4">
                     <Field label="Total players"><DarkInput type="number" min="0" value={form.totalPlayers} onChange={(e) => set("totalPlayers", e.target.value)} /></Field>
                     <Field label="Avg annual fee per player ($)"><DarkInput type="number" min="0" value={form.avgFeePerPlayer} onChange={(e) => set("avgFeePerPlayer", e.target.value)} /></Field>
                     <Field label="CURRENT YEAR OVER YEAR RETENTION (%)"><DarkInput type="number" min="0" max="100" value={form.currentRetentionPct} onChange={(e) => set("currentRetentionPct", e.target.value)} /></Field>
+                    <Field label="# of sponsors today"><DarkInput type="number" min="0" value={form.numSponsors} onChange={(e) => set("numSponsors", e.target.value)} /></Field>
+                    <Field label="Total sponsorship revenue ($/yr)"><DarkInput type="number" min="0" value={form.sponsorshipRevenue} onChange={(e) => set("sponsorshipRevenue", e.target.value)} /></Field>
+                    <Field label="Market type">
+                      <MarketPicker value={form.marketType} onChange={(v) => set("marketType", v)} />
+                    </Field>
                   </div>
                 </FormCard>
 
-                {/* Share of wallet slider */}
-                <FormCard step="03" title="Share of wallet">
-                  <p className="text-sm text-white/60 mb-6">
-                    Estimate how much an average travel family in your org spends per year across <em>everything</em> — fees, uniforms, training, travel, hotels, food, gear, tournaments.
+                {/* Step 3 — Money flow */}
+                <FormCard step="03" title="Where the money flows today">
+                  <p className="text-sm text-white/60 mb-5">
+                    Your best estimate of in-house annual revenue across the other engines. Leave blank if you don't do it today.
                   </p>
-                  <div className="rounded-xl bg-black/30 border border-white/10 p-6">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <Field label="Apparel & hard-goods revenue ($/yr)"><DarkInput type="number" min="0" value={form.apparelRevenue} onChange={(e) => set("apparelRevenue", e.target.value)} /></Field>
+                    <Field label="Camps / clinics / tournaments revenue ($/yr)"><DarkInput type="number" min="0" value={form.eventsRevenue} onChange={(e) => set("eventsRevenue", e.target.value)} /></Field>
+                    <Field label="Facility rental revenue ($/yr)"><DarkInput type="number" min="0" value={form.facilityRevenue} onChange={(e) => set("facilityRevenue", e.target.value)} /></Field>
+                    <Field label="Training / player-dev revenue ($/yr)"><DarkInput type="number" min="0" value={form.trainingRevenue} onChange={(e) => set("trainingRevenue", e.target.value)} /></Field>
+                  </div>
+
+                  <div className="mt-6 rounded-xl bg-black/30 border border-white/10 p-6">
                     <div className="flex items-baseline justify-between mb-4">
-                      <div className="text-sm text-white/60">Outside + in-house spend / family / year</div>
+                      <div className="text-sm text-white/60">Est. outside + in-house spend / family / year</div>
                       <div className="font-display text-3xl text-[#c5ff3d] font-bold tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
                         {fmtUSD(form.outsideSpendPerFamily)}
                       </div>
                     </div>
-                    <Slider
-                      min={5000}
-                      max={25000}
-                      step={500}
-                      value={[form.outsideSpendPerFamily]}
-                      onValueChange={(v) => set("outsideSpendPerFamily", v[0])}
-                    />
+                    <Slider min={5000} max={25000} step={500} value={[form.outsideSpendPerFamily]} onValueChange={(v) => set("outsideSpendPerFamily", v[0])} />
                     <div className="flex justify-between text-xs text-white/40 mt-2">
                       <span>$5,000</span>
                       <span>Industry avg ≈ $15,000</span>
@@ -544,94 +431,22 @@ export default function RevenueAudit() {
                   </div>
                 </FormCard>
 
-                {/* The 7 engines */}
-                <FormCard step="04" title="The 7 engines — current state">
+                {/* Step 4 — Priorities */}
+                <FormCard step="04" title="Pick your top 3 priorities">
                   <p className="text-sm text-white/60 mb-5">
-                    For each engine: are you doing it today, how much revenue does it bring, and how mature is it?
-                  </p>
-                  <div className="space-y-3">
-                    {ENGINES.map((e) => {
-                      const st = form.engines[e.key];
-                      const Icon = e.icon;
-                      return (
-                        <div key={e.key} className="rounded-xl border border-white/10 bg-black/20 p-5">
-                          <div className="flex items-start gap-4">
-                            <div className="w-9 h-9 rounded-lg bg-[#c5ff3d]/10 border border-[#c5ff3d]/20 flex items-center justify-center shrink-0">
-                              <Icon className="w-4 h-4 text-[#c5ff3d]" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-4 mb-1">
-                                <div className="font-semibold">{e.name}</div>
-                                <label className="flex items-center gap-2 text-xs text-white/60">
-                                  Active
-                                  <Switch
-                                    checked={st.active}
-                                    onCheckedChange={(v) => setEngine(e.key, { active: v })}
-                                  />
-                                </label>
-                              </div>
-                              <p className="text-xs text-white/50 mb-4">{e.thesis}</p>
-
-                              {e.key !== "wallet" && (
-                                <div className="grid md:grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-xs text-white/60 mb-1.5 block">Annual revenue ($)</Label>
-                                    <DarkInput
-                                      type="number"
-                                      min="0"
-                                      value={st.revenue}
-                                      onChange={(ev) => setEngine(e.key, { revenue: ev.target.value })}
-                                      disabled={!st.active}
-                                      placeholder="0"
-                                    />
-                                  </div>
-                                  <div>
-                                    <div className="flex justify-between mb-1.5">
-                                      <Label className="text-xs text-white/60">Maturity</Label>
-                                      <span className="text-xs text-white/40">{maturityLabel(st.maturity)}</span>
-                                    </div>
-                                    <Slider
-                                      min={1}
-                                      max={5}
-                                      step={1}
-                                      value={[st.maturity]}
-                                      onValueChange={(v) => setEngine(e.key, { maturity: v[0] })}
-                                      disabled={!st.active}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </FormCard>
-
-                {/* Priorities */}
-                <FormCard step="05" title="Pick your top 3 priorities">
-                  <p className="text-sm text-white/60 mb-5">
-                    Which engines do you most want to move on first? ({form.priorities.length}/3 selected)
+                    Which engines do you most want to move on first? ({form.priorities.length}/3 selected). This orders your report.
                   </p>
                   <div className="grid sm:grid-cols-2 gap-2">
                     {ENGINES.map((e) => {
                       const selected = form.priorities.includes(e.key);
                       const disabled = !selected && form.priorities.length >= 3;
                       return (
-                        <button
-                          type="button"
-                          key={e.key}
-                          onClick={() => togglePriority(e.key)}
-                          disabled={disabled}
+                        <button type="button" key={e.key} onClick={() => togglePriority(e.key)} disabled={disabled}
                           className={`flex items-center justify-between gap-3 px-4 py-3 rounded-lg border text-left text-sm transition ${
-                            selected
-                              ? "border-[#c5ff3d] bg-[#c5ff3d]/10 text-white"
-                              : disabled
-                              ? "border-white/5 bg-white/[0.02] text-white/30 cursor-not-allowed"
+                            selected ? "border-[#c5ff3d] bg-[#c5ff3d]/10 text-white"
+                              : disabled ? "border-white/5 bg-white/[0.02] text-white/30 cursor-not-allowed"
                               : "border-white/10 bg-white/[0.02] text-white/80 hover:border-white/30"
-                          }`}
-                        >
+                          }`}>
                           <span>{e.name}</span>
                           {selected && <Check className="w-4 h-4 text-[#c5ff3d]" />}
                         </button>
@@ -640,11 +455,7 @@ export default function RevenueAudit() {
                   </div>
                 </FormCard>
 
-                <Button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full h-14 text-base bg-[#c5ff3d] text-black hover:bg-[#b8f229] font-semibold"
-                >
+                <Button type="submit" disabled={submitting} className="w-full h-14 text-base bg-[#c5ff3d] text-black hover:bg-[#b8f229] font-semibold">
                   {submitting ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Building your revenue map…</>
                   ) : (
@@ -659,21 +470,32 @@ export default function RevenueAudit() {
               {/* Sticky live opportunity panel */}
               <aside className="hidden lg:block">
                 <div className="sticky top-24 rounded-2xl border border-[#c5ff3d]/30 bg-gradient-to-b from-[#c5ff3d]/5 to-transparent p-6">
-                  <div className="text-xs uppercase tracking-widest text-[#c5ff3d] mb-3">Live Estimate</div>
-                  <div className="text-sm text-white/60 mb-1">Annual revenue opportunity</div>
+                  <div className="text-xs uppercase tracking-widest text-[#c5ff3d] mb-3">Live Revenue Leak</div>
+                  <div className="text-sm text-white/60 mb-1">Estimated annual opportunity</div>
                   <div className="font-display text-4xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                    {fmtUSD(liveOpportunity.total)}
+                    {fmtUSD(live.total)}
+                  </div>
+                  <div className="mt-2 text-xs text-white/50">
+                    Share of wallet captured today: <span className="text-white/80 font-semibold">{live.capturedPct}%</span>
                   </div>
                   <div className="mt-5 space-y-2">
-                    {liveOpportunity.lines.map((l) => (
-                      <div key={l.key} className="flex items-center justify-between text-xs">
-                        <span className="text-white/60">{l.label}</span>
-                        <span className="text-white/80 tabular-nums">{fmtUSD(l.amount)}</span>
-                      </div>
-                    ))}
+                    {live.lines.map((l) => {
+                      const pct = live.total > 0 ? (l.amount / live.total) * 100 : 0;
+                      return (
+                        <div key={l.key}>
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-white/60">{l.label}</span>
+                            <span className="text-white/80 tabular-nums">{fmtUSD(l.amount)}</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-white/5 overflow-hidden">
+                            <div className="h-full bg-[#c5ff3d]/70" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="mt-5 pt-5 border-t border-white/10 text-xs text-white/40 leading-relaxed">
-                    Updates as you fill in the audit. Final report uses sharper math.
+                    Same math as the Curve OS calculators. Final report sharpens against your market.
                   </div>
                 </div>
               </aside>
@@ -719,10 +541,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function DarkInput(props: React.ComponentProps<typeof Input>) {
   return (
-    <Input
-      {...props}
-      className="bg-black/40 border-white/10 text-white placeholder:text-white/30 focus-visible:border-[#c5ff3d] focus-visible:ring-[#c5ff3d]/20"
-    />
+    <Input {...props}
+      className="bg-black/40 border-white/10 text-white placeholder:text-white/30 focus-visible:border-[#c5ff3d] focus-visible:ring-[#c5ff3d]/20" />
+  );
+}
+
+function MarketPicker({ value, onChange }: { value: MarketType; onChange: (v: MarketType) => void }) {
+  const opts: Array<{ v: MarketType; l: string }> = [
+    { v: "small", l: "Small" },
+    { v: "mid", l: "Mid-market" },
+    { v: "major", l: "Major metro" },
+  ];
+  return (
+    <div className="grid grid-cols-3 gap-1.5 bg-black/40 border border-white/10 rounded-md p-1">
+      {opts.map((o) => (
+        <button key={o.v} type="button" onClick={() => onChange(o.v)}
+          className={`text-xs px-2 py-2 rounded transition ${
+            value === o.v ? "bg-[#c5ff3d] text-black font-semibold" : "text-white/70 hover:text-white"
+          }`}>
+          {o.l}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -735,19 +575,11 @@ function ShareOfWalletRing({ capturedPct }: { capturedPct: number }) {
     <div className="relative" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="transform -rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={28} />
-        <motion.circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke="#c5ff3d"
-          strokeWidth={28}
-          strokeLinecap="round"
+        <motion.circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#c5ff3d" strokeWidth={28} strokeLinecap="round"
           strokeDasharray={`${dash} ${c - dash}`}
           initial={{ strokeDasharray: `0 ${c}` }}
           animate={{ strokeDasharray: `${dash} ${c - dash}` }}
-          transition={{ duration: 1.4, ease: "easeOut", delay: 0.3 }}
-        />
+          transition={{ duration: 1.4, ease: "easeOut", delay: 0.3 }} />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
         <div className="text-xs uppercase tracking-widest text-white/50 mb-2">Typical club captures</div>
@@ -759,52 +591,82 @@ function ShareOfWalletRing({ capturedPct }: { capturedPct: number }) {
   );
 }
 
-function maturityLabel(n: number) {
-  return ["Nonexistent", "", "Defined", "Operating", "Optimized"][n - 1] ?? "";
-}
-
 // ---------------------------------------------------------------------------
-// Live (client-side) opportunity estimator — rough mirror of server logic
+// Live revenue-leak estimator — mirrors the Curve OS calculator formulas.
 // ---------------------------------------------------------------------------
 
-function estimateOpportunity(f: FormState) {
+function estimateLeak(f: FormState) {
   const players = Number(f.totalPlayers) || 0;
   const fee = Number(f.avgFeePerPlayer) || 0;
   const retention = Math.min(100, Number(f.currentRetentionPct) || 0);
+  const apparelRev = Number(f.apparelRevenue) || 0;
+  const eventsRev = Number(f.eventsRevenue) || 0;
+  const facilityRev = Number(f.facilityRevenue) || 0;
+  const trainingRev = Number(f.trainingRevenue) || 0;
+  const sponsorshipRev = Number(f.sponsorshipRevenue) || 0;
+  const numSponsors = Number(f.numSponsors) || 0;
+  const outsideSpend = f.outsideSpendPerFamily || 15000;
+  const mult = MARKET_MULT[f.marketType];
+
+  const dues = players * fee;
 
   const lines: Array<{ key: string; label: string; amount: number }> = [];
 
-  if (f.engines.pricing.active && players && fee) {
-    const lift = players * fee * 0.05 * 0.98 - players * fee * 0;
-    lines.push({ key: "pricing", label: "Pricing", amount: players * fee * 0.05 * 0.98 });
+  // Pricing — 5% lift net of 2% attrition (matches PricingSensitivityCalculator default)
+  if (players && fee) {
+    const newDues = players * 0.98 * fee * 1.05;
+    lines.push({ key: "pricing", label: "Pricing", amount: Math.max(0, newDues - dues) });
   }
-  if (f.engines.retention.active && players && fee) {
-    const target = Math.min(95, retention + 5);
-    const extra = players * Math.max(0, (target - retention) / 100);
-    lines.push({ key: "retention", label: "Retention & Referrals", amount: extra * fee });
+
+  // Retention & Referrals — +5pt × fee + 10% referral boost on retained
+  if (players && fee) {
+    const lift = Math.max(0, Math.min(95, retention + 5) - retention) / 100;
+    const retained = players * lift * fee;
+    const referral = retained * 0.1;
+    lines.push({ key: "retention", label: "Retention & Referrals", amount: retained + referral });
   }
-  if (f.engines.apparel.active && players) {
+
+  // Apparel & Hard Goods — $120/player × 30% margin (RosterGrowthCalculator basis)
+  if (players) {
     const potential = players * 120 * 0.3;
-    lines.push({ key: "apparel", label: "Apparel & Hard Goods", amount: Math.max(0, potential - (Number(f.engines.apparel.revenue) || 0)) });
+    lines.push({ key: "apparel", label: "Apparel & Hard Goods", amount: Math.max(0, potential - apparelRev) });
   }
-  if (f.engines.sponsorships.active && players) {
-    const potential = players * 50;
-    lines.push({ key: "sponsorships", label: "Sponsorships", amount: Math.max(0, potential - (Number(f.engines.sponsorships.revenue) || 0)) });
+
+  // Sponsorships — benchmark $50/player × market multiplier (SponsorshipValueCalculator)
+  if (players) {
+    const potential = players * 50 * mult;
+    // Also consider per-sponsor benchmark of $2,000 mid market
+    const perSponsorPotential = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
+    const opp = Math.max(0, Math.max(potential, perSponsorPotential) - sponsorshipRev);
+    lines.push({ key: "sponsorships", label: "Sponsorships", amount: opp });
   }
-  if (f.engines.events.active && players) {
-    const potential = players * 40;
-    lines.push({ key: "events", label: "Events", amount: Math.max(0, potential - (Number(f.engines.events.revenue) || 0)) });
+
+  // Events — $40/player + facility benchmark gap ($2,400/team or $20/player)
+  if (players) {
+    const eventsPotential = players * 40;
+    const facilityPotential = players * 20;
+    const opp = Math.max(0, eventsPotential - eventsRev) + Math.max(0, facilityPotential - facilityRev);
+    lines.push({ key: "events", label: "Events & Facility", amount: opp });
   }
-  if (f.engines.training.active && players) {
+
+  // Training — $60/player captured in-house
+  if (players) {
     const potential = players * 60;
-    lines.push({ key: "training", label: "Training / Player Dev", amount: Math.max(0, potential - (Number(f.engines.training.revenue) || 0)) });
+    lines.push({ key: "training", label: "Training / Player Dev", amount: Math.max(0, potential - trainingRev) });
   }
-  if (f.engines.wallet.active && players) {
-    // Capture an additional 3% of outside spend per family
-    const wallet = players * f.outsideSpendPerFamily * 0.03;
+
+  // Share of Wallet — recapture 3% of outside spend per family
+  if (players) {
+    const wallet = players * outsideSpend * 0.03;
     lines.push({ key: "wallet", label: "Share of Wallet", amount: wallet });
   }
 
   const total = lines.reduce((s, l) => s + l.amount, 0);
-  return { total, lines: lines.filter((l) => l.amount > 0) };
+
+  // Captured % = current in-house revenue / total family spend pool
+  const currentInHouse = dues + apparelRev + eventsRev + facilityRev + trainingRev + sponsorshipRev;
+  const walletPool = players * outsideSpend;
+  const capturedPct = walletPool > 0 ? Math.min(100, Math.round((currentInHouse / walletPool) * 100)) : 0;
+
+  return { lines: lines.filter((l) => l.amount > 0).sort((a, b) => b.amount - a.amount), total, capturedPct };
 }
