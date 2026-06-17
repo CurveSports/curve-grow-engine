@@ -231,7 +231,10 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsersPage /></ProtectedRoute>} />
             <Route path="/admin/users/lookup" element={<ProtectedRoute role="admin"><AdminUserLookup /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />
+            <Route path="/admin/revenue-audits" element={<ProtectedRoute role="admin"><AdminRevenueAudits /></ProtectedRoute>} />
+            <Route path="/admin/revenue-audits/:id" element={<ProtectedRoute role="admin"><AdminRevenueAuditDetail /></ProtectedRoute>} />
             <Route path="/admin/system/wiring-status" element={<ProtectedRoute role="admin"><SystemIntegrations /></ProtectedRoute>} />
+
             
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
