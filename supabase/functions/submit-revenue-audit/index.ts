@@ -38,6 +38,8 @@ const num = (v: unknown, fallback = 0): number => {
 const fmt$ = (n: number) =>
   "$" + Math.round(Math.max(0, n)).toLocaleString("en-US");
 
+type EngineState = { active?: boolean; revenue?: number; maturity?: number };
+
 type AuditInputs = {
   totalPlayers?: number;
   avgFeePerPlayer?: number;
@@ -50,6 +52,12 @@ type AuditInputs = {
   sponsorshipToggle?: boolean;
   retentionToggle?: boolean;
   campsToggle?: boolean;
+  // extended
+  sport?: string;
+  numTeams?: number;
+  outsideSpendPerFamily?: number;
+  engines?: Record<string, EngineState>;
+  priorities?: string[];
 };
 
 function computeReport(raw: AuditInputs) {
@@ -88,20 +96,102 @@ function computeReport(raw: AuditInputs) {
     ? Math.max(0, sponsorshipPotential - sponsorshipRev)
     : 0;
 
-  // 5) Camps & clinics — typical org adds ~$40 per player annually
+  // 5) Events (camps, tournaments, showcases) — typical org adds ~$40 per player annually
   const campsToggle = raw.campsToggle !== false;
   const campsPotential = totalPlayers * 40;
   const campsOpportunity = campsToggle ? Math.max(0, campsPotential - campsRev) : 0;
+
+  // 6) Training / Player Development — ~$60 per player captured in-house
+  const engines = raw.engines ?? {};
+  const trainingState = engines.training ?? {};
+  const trainingToggle = trainingState.active !== false;
+  const trainingRev = num(trainingState.revenue);
+  const trainingPotential = totalPlayers * 60;
+  const trainingOpportunity = trainingToggle ? Math.max(0, trainingPotential - trainingRev) : 0;
+
+  // 7) Share of Wallet — capture an additional 3% of outside spend per family
+  const walletState = engines.wallet ?? {};
+  const walletToggle = walletState.active !== false;
+  const outsideSpend = num(raw.outsideSpendPerFamily) || 15000;
+  // Family count ≈ players (1 family per player as an approximation)
+  const walletOpportunity = walletToggle ? totalPlayers * outsideSpend * 0.03 : 0;
 
   const totalOpportunity =
     pricingOpportunity +
     retentionOpportunity +
     apparelOpportunity +
     sponsorshipOpportunity +
-    campsOpportunity;
+    campsOpportunity +
+    trainingOpportunity +
+    walletOpportunity;
 
   const projectedTotal = currentTotal + totalOpportunity;
   const upliftPct = currentTotal > 0 ? (totalOpportunity / currentTotal) * 100 : 0;
+
+  const allOpps = [
+    {
+      key: "pricing",
+      label: "Pricing — right-size your fees",
+      amount: pricingOpportunity,
+      amountFormatted: fmt$(pricingOpportunity),
+      detail: `A ${feeLiftPct}% fee adjustment, net of ${attritionPct}% attrition.`,
+    },
+    {
+      key: "retention",
+      label: "Retention & Referrals — keep 5 more points",
+      amount: retentionOpportunity,
+      amountFormatted: fmt$(retentionOpportunity),
+      detail: `Holding on to ${Math.round(retainedExtra)} more players at $${Math.round(avgFee)}/player.`,
+    },
+    {
+      key: "apparel",
+      label: "Apparel & Hard Goods — capture wallet share",
+      amount: apparelOpportunity,
+      amountFormatted: fmt$(apparelOpportunity),
+      detail: `30% of players buying a $120 apparel package, brought in-house.`,
+    },
+    {
+      key: "sponsorships",
+      label: "Sponsorships — unlock your reach",
+      amount: sponsorshipOpportunity,
+      amountFormatted: fmt$(sponsorshipOpportunity),
+      detail: `Industry benchmark: $50 per player in sponsorship revenue.`,
+    },
+    {
+      key: "events",
+      label: "Events — camps, tournaments, showcases",
+      amount: campsOpportunity,
+      amountFormatted: fmt$(campsOpportunity),
+      detail: `Add ~$40/player in incremental program revenue.`,
+    },
+    {
+      key: "training",
+      label: "Training / Player Development",
+      amount: trainingOpportunity,
+      amountFormatted: fmt$(trainingOpportunity),
+      detail: `Capture ~$60/player in private training that's leaving the building today.`,
+    },
+    {
+      key: "wallet",
+      label: "Share of Wallet — bring spend in-house",
+      amount: walletOpportunity,
+      amountFormatted: fmt$(walletOpportunity),
+      detail: `Recapture 3% of the ~${fmt$(outsideSpend)}/year an average family spends across youth sports.`,
+    },
+  ];
+
+  // Order opportunities by user priority if provided, then by amount desc
+  const priorities = Array.isArray(raw.priorities) ? raw.priorities : [];
+  const opportunities = allOpps
+    .filter((o) => o.amount > 0)
+    .sort((a, b) => {
+      const ai = priorities.indexOf(a.key);
+      const bi = priorities.indexOf(b.key);
+      if (ai !== -1 && bi !== -1) return ai - bi;
+      if (ai !== -1) return -1;
+      if (bi !== -1) return 1;
+      return b.amount - a.amount;
+    });
 
   return {
     inputs: {
@@ -111,6 +201,9 @@ function computeReport(raw: AuditInputs) {
       apparelRev,
       sponsorshipRev,
       campsRev,
+      trainingRev,
+      outsideSpendPerFamily: outsideSpend,
+      priorities,
     },
     current: {
       duesRevenue: currentDuesRevenue,
@@ -118,43 +211,7 @@ function computeReport(raw: AuditInputs) {
       duesRevenueFormatted: fmt$(currentDuesRevenue),
       totalFormatted: fmt$(currentTotal),
     },
-    opportunities: [
-      {
-        key: "pricing",
-        label: "Right-size your pricing",
-        amount: pricingOpportunity,
-        amountFormatted: fmt$(pricingOpportunity),
-        detail: `A ${feeLiftPct}% fee adjustment, net of ${attritionPct}% attrition.`,
-      },
-      {
-        key: "retention",
-        label: "Improve retention by 5 points",
-        amount: retentionOpportunity,
-        amountFormatted: fmt$(retentionOpportunity),
-        detail: `Holding on to ${Math.round(retainedExtra)} more players at $${Math.round(avgFee)}/player.`,
-      },
-      {
-        key: "apparel",
-        label: "Capture apparel wallet share",
-        amount: apparelOpportunity,
-        amountFormatted: fmt$(apparelOpportunity),
-        detail: `30% of players buying a $120 apparel package.`,
-      },
-      {
-        key: "sponsorship",
-        label: "Unlock sponsorship value",
-        amount: sponsorshipOpportunity,
-        amountFormatted: fmt$(sponsorshipOpportunity),
-        detail: `Industry benchmark: $50 per player in sponsorship revenue.`,
-      },
-      {
-        key: "camps",
-        label: "Launch camps & clinics",
-        amount: campsOpportunity,
-        amountFormatted: fmt$(campsOpportunity),
-        detail: `Add ~$40/player in incremental program revenue.`,
-      },
-    ].filter((o) => o.amount > 0),
+    opportunities,
     totals: {
       totalOpportunity,
       totalOpportunityFormatted: fmt$(totalOpportunity),
@@ -231,6 +288,41 @@ Deno.serve(async (req) => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     const body = await req.json().catch(() => ({}));
+
+    // ----- Action: email-me-my-report (from the report page) -----
+    if (body?.action === "email_report") {
+      const token = strField(body?.token, 200);
+      if (!token) return json({ error: "Missing token" }, 400);
+      const { data: lead, error: leadErr } = await admin
+        .from("public_audit_leads")
+        .select("id, email, contact_name, org_name, report_payload, report_token")
+        .eq("report_token", token)
+        .maybeSingle();
+      if (leadErr || !lead) return json({ error: "Report not found" }, 404);
+      if (!LOVABLE_API_KEY) return json({ error: "Email not configured" }, 500);
+      const reportUrl = `${PUBLIC_APP_BASE}/revenue-audit/report/${lead.report_token}`;
+      try {
+        const unsub = await ensureUnsubscribeToken(admin, lead.email);
+        const messageId = crypto.randomUUID();
+        await sendLovableEmail({
+          to: lead.email,
+          from: `${SITE_NAME} <hello@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject: "Your Curve Revenue Audit (re-sent)",
+          html: confirmEmailHtml(lead.contact_name, reportUrl, (lead.report_payload as any)?.totals ?? {}),
+          text: `Hi ${lead.contact_name}, your Curve Revenue Audit is here: ${reportUrl}`,
+          purpose: "transactional",
+          label: "revenue_audit_resend",
+          idempotency_key: `revenue-audit-resend-${lead.id}-${Date.now()}`,
+          message_id: messageId,
+          unsubscribe_token: unsub,
+        }, { apiKey: LOVABLE_API_KEY });
+        return json({ ok: true, email: lead.email });
+      } catch (e: any) {
+        console.error("resend email failed:", e);
+        return json({ error: "Could not send email" }, 500);
+      }
+    }
 
     // Honeypot: silently accept and discard
     if (body?.website || body?.honeypot) {
