@@ -12,8 +12,20 @@ import {
   CalendarCheck,
   Share2,
   Wallet,
+  Lock,
 } from "lucide-react";
 import curveLogo from "@/assets/curve-sports-logo.png.asset.json";
+
+type EngineDetail = {
+  key: string;
+  label: string;
+  locked: boolean;
+  teaser: string;
+  benchmarkFormatted?: string;
+  currentFormatted?: string;
+  gapFormatted?: string;
+  insight?: string;
+};
 
 type Opportunity = {
   key: string;
@@ -26,9 +38,18 @@ type Opportunity = {
 type ReportPayload = {
   inputs: {
     totalPlayers: number;
-    avgFee: number;
-    currentRetention: number;
+    totalAnnualRevenue?: number;
+    priorities?: string[];
   };
+  hero?: {
+    capturedPct: number;
+    leakingDollars: number;
+    leakingDollarsFormatted: string;
+    walletPool: number;
+    walletPoolFormatted: string;
+    totalAnnualRevenueFormatted: string;
+  };
+  engines?: EngineDetail[];
   current: {
     totalFormatted: string;
     duesRevenueFormatted: string;
@@ -40,6 +61,7 @@ type ReportPayload = {
     projectedTotalFormatted: string;
     upliftPct: number;
     walletCapturedPct?: number;
+    leakingDollarsFormatted?: string;
   };
 };
 
@@ -146,7 +168,7 @@ export default function RevenueAuditReport() {
         {/* Hero */}
         <div className="relative">
           <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#c5ff3d]/10 blur-[100px] pointer-events-none" />
-          <div className="relative text-center mb-14">
+          <div className="relative text-center mb-12">
             <div className="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-[0.18em] text-white/70 mb-6">
               Revenue Audit · {lead.org_name}
             </div>
@@ -154,86 +176,64 @@ export default function RevenueAuditReport() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="font-display text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]"
+              className="font-display text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]"
               style={{ fontFamily: "'Archivo Black', sans-serif" }}
             >
-              You're sitting on
+              Your families already spend the money.
               <br />
-              <span className="text-[#c5ff3d]">{r.totals.totalOpportunityFormatted}</span>
-              <br />
-              <span className="text-white/70 text-2xl md:text-3xl font-normal" style={{ fontFamily: "Inter, sans-serif" }}>
-                in untapped annual revenue.
+              <span className="text-white/60 text-xl md:text-2xl font-normal" style={{ fontFamily: "Inter, sans-serif" }}>
+                Here's how much of it stays inside your club.
               </span>
             </motion.h1>
           </div>
         </div>
 
-        {/* Stat row */}
-        <div className="grid md:grid-cols-3 gap-4 mb-16">
-          <Stat label="Current annual revenue" value={r.current.totalFormatted} />
-          <Stat label="Projected with Curve" value={r.totals.projectedTotalFormatted} highlight />
-          <Stat label="Total uplift" value={`+${r.totals.upliftPct}%`} />
+        {/* Two-stat hero: % captured + $ leaving */}
+        <div className="grid md:grid-cols-2 gap-4 mb-16">
+          <CapturedRing
+            pct={r.hero?.capturedPct ?? r.totals.walletCapturedPct ?? 0}
+            poolFormatted={r.hero?.walletPoolFormatted}
+            currentFormatted={r.hero?.totalAnnualRevenueFormatted ?? r.current.totalFormatted}
+          />
+          <LeakingCard
+            valueFormatted={r.hero?.leakingDollarsFormatted ?? r.totals.leakingDollarsFormatted ?? r.totals.totalOpportunityFormatted}
+            pct={100 - (r.hero?.capturedPct ?? r.totals.walletCapturedPct ?? 0)}
+          />
         </div>
 
-        {/* Share of wallet callout */}
-        <div className="mb-16 rounded-2xl border border-white/10 bg-gradient-to-br from-[#c5ff3d]/8 to-transparent p-8 md:p-10">
-          <div className="flex items-start gap-5">
-            <div className="w-12 h-12 rounded-xl bg-[#c5ff3d]/10 border border-[#c5ff3d]/20 flex items-center justify-center shrink-0">
-              <Wallet className="w-6 h-6 text-[#c5ff3d]" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-2">Share of Wallet</div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                Your families already spend the money. We help you capture more of it.
-              </h2>
-              {typeof r.totals.walletCapturedPct === "number" && (
-                <div className="flex items-baseline gap-3 mb-3">
-                  <div className="font-display text-4xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                    {r.totals.walletCapturedPct}%
-                  </div>
-                  <div className="text-sm text-white/60">of family spend captured today · {100 - r.totals.walletCapturedPct}% leaves the building</div>
-                </div>
-              )}
-              <p className="text-white/60 leading-relaxed">
-                Every line below is dollars already flowing through youth sports for {lead.org_name} — to outside vendors, third-party trainers, distant tournaments, and tournament-trip hotels. Bringing even a slice in-house compounds into retention, brand strength, and a healthier organization.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Opportunities */}
-        <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+        {/* Engines */}
+        <h2 className="font-display text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
           <TrendingUp className="w-6 h-6 text-[#c5ff3d]" /> Where the opportunity is
         </h2>
+        <p className="text-white/60 text-sm mb-6">
+          You picked 3 engines to focus on — here's the directional read. The rest unlock on your Growth Partner call.
+        </p>
 
-        <div className="space-y-3 mb-20">
-          {r.opportunities.length === 0 ? (
-            <p className="text-white/60">
-              Looks like you're already running a tight ship. Let's talk anyway — there's always a next level.
-            </p>
-          ) : (
-            r.opportunities.map((o, i) => (
-              <motion.div
-                key={o.key}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: i * 0.05 }}
-                className="rounded-xl border border-white/10 bg-white/[0.02] p-5 md:p-6 flex items-start justify-between gap-6 hover:border-[#c5ff3d]/40 transition-colors"
-              >
-                <div className="flex items-start gap-4 min-w-0">
-                  <div className="text-xs font-mono text-[#c5ff3d] mt-1">0{i + 1}</div>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-lg">{o.label}</div>
-                    <div className="text-sm text-white/60 mt-1">{o.detail}</div>
-                  </div>
-                </div>
-                <div className="font-display text-2xl md:text-3xl font-bold text-[#c5ff3d] whitespace-nowrap tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                  {o.amountFormatted}
-                </div>
-              </motion.div>
-            ))
+        <div className="grid md:grid-cols-2 gap-3 mb-20">
+          {(r.engines ?? []).map((e, i) =>
+            e.locked ? (
+              <LockedEngineCard key={e.key} engine={e} />
+            ) : (
+              <PickedEngineCard key={e.key} engine={e} index={i} />
+            )
           )}
+          {(!r.engines || r.engines.length === 0) &&
+            r.opportunities.map((o, i) => (
+              <PickedEngineCard
+                key={o.key}
+                engine={{
+                  key: o.key,
+                  label: o.label,
+                  locked: false,
+                  teaser: "",
+                  gapFormatted: o.amountFormatted,
+                  insight: o.detail,
+                }}
+                index={i}
+              />
+            ))}
         </div>
+
 
         {/* ACT 4: Next steps */}
         <section className="border-t border-white/10 pt-16">
@@ -346,6 +346,107 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
       <div className="font-display text-3xl md:text-4xl font-bold tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
         {value}
       </div>
+    </div>
+  );
+}
+
+function CapturedRing({ pct, poolFormatted, currentFormatted }: { pct: number; poolFormatted?: string; currentFormatted?: string }) {
+  const size = 240;
+  const r = 96;
+  const c = 2 * Math.PI * r;
+  const dash = (Math.max(0, Math.min(100, pct)) / 100) * c;
+  return (
+    <div className="rounded-2xl border border-[#c5ff3d]/30 bg-gradient-to-br from-[#c5ff3d]/8 to-transparent p-6 md:p-8 flex flex-col items-center justify-center">
+      <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-3">Share of Wallet Captured</div>
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={20} />
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#c5ff3d"
+            strokeWidth={20}
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${c - dash}`}
+            initial={{ strokeDasharray: `0 ${c}` }}
+            animate={{ strokeDasharray: `${dash} ${c - dash}` }}
+            transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="font-display text-5xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{pct}%</div>
+          <div className="text-xs text-white/60 mt-1">captured</div>
+        </div>
+      </div>
+      {(poolFormatted || currentFormatted) && (
+        <div className="text-xs text-white/50 mt-5 text-center leading-relaxed">
+          {currentFormatted && <>You: <span className="text-white/80 font-semibold">{currentFormatted}</span></>}
+          {poolFormatted && <> · Family-spend pool: <span className="text-white/80 font-semibold">{poolFormatted}</span></>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeakingCard({ valueFormatted, pct }: { valueFormatted: string; pct: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8 flex flex-col justify-center">
+      <div className="text-xs uppercase tracking-[0.18em] text-white/50 mb-3">Leaving the Building / yr</div>
+      <div className="font-display text-5xl md:text-6xl font-bold text-white tabular-nums leading-none" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+        {valueFormatted}
+      </div>
+      <div className="text-sm text-white/60 mt-4 leading-relaxed">
+        Roughly <span className="text-white font-semibold">{pct}%</span> of what your families spend on youth sports goes to outside vendors, third-party trainers, distant tournaments, and travel.
+      </div>
+    </div>
+  );
+}
+
+function PickedEngineCard({ engine, index }: { engine: EngineDetail; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
+      className="rounded-xl border border-[#c5ff3d]/30 bg-[#c5ff3d]/5 p-5 md:p-6"
+    >
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="font-semibold text-lg">{engine.label}</div>
+        {engine.gapFormatted && (
+          <div className="font-display text-2xl font-bold text-[#c5ff3d] whitespace-nowrap tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
+            {engine.gapFormatted}
+          </div>
+        )}
+      </div>
+      {(engine.benchmarkFormatted || engine.currentFormatted) && (
+        <div className="flex gap-4 text-xs text-white/50 mb-3">
+          {engine.currentFormatted && <span>You: <span className="text-white/80 font-semibold">{engine.currentFormatted}</span></span>}
+          {engine.benchmarkFormatted && <span>Benchmark: <span className="text-white/80 font-semibold">{engine.benchmarkFormatted}</span></span>}
+        </div>
+      )}
+      {engine.insight && <p className="text-sm text-white/70 leading-relaxed">{engine.insight}</p>}
+    </motion.div>
+  );
+}
+
+function LockedEngineCard({ engine }: { engine: EngineDetail }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 md:p-6 relative overflow-hidden">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="font-semibold text-base text-white/80">{engine.label}</div>
+        <Lock className="w-4 h-4 text-white/30 shrink-0" />
+      </div>
+      <p className="text-sm text-white/50 leading-relaxed mb-4">{engine.teaser}</p>
+      <a
+        href="https://www.curvesports.com/contact"
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center text-xs font-semibold text-[#c5ff3d] hover:text-[#b8f229]"
+      >
+        Unlock on the call <ArrowRight className="w-3 h-3 ml-1" />
+      </a>
     </div>
   );
 }

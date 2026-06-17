@@ -62,18 +62,21 @@ type FormState = {
   // Step 2 — the base
   totalPlayers: string;
   numTeams: string;
-  avgFeePerPlayer: string;
-  currentRetentionPct: string;
-  numSponsors: string;
-  sponsorshipRevenue: string;
-  // Step 3 — money flow
-  apparelRevenue: string;
-  eventsRevenue: string;
-  trainingRevenue: string;
+  totalAnnualRevenue: string;
   outsideSpendPerFamily: number;
   marketType: MarketType;
-  // Step 4 — priorities
+  // Step 3 — priorities (required, gates Step 4)
   priorities: EngineKey[];
+  // Step 4 — engine-specific diagnostics (only used if the engine is picked)
+  avgFeePerPlayer: string;
+  lastFeeRaiseYear: string;
+  numSponsors: string;
+  sponsorshipRevenue: string;
+  parentApparelSpendPerPlayer: string;
+  apparelRevenue: string;
+  currentRetentionPct: string;
+  trainingRevenue: string;
+  eventsRevenue: string;
   // honeypot
   website: string;
 };
@@ -88,17 +91,19 @@ const initial: FormState = {
   sport: "",
   totalPlayers: "",
   numTeams: "",
-  avgFeePerPlayer: "",
-  currentRetentionPct: "",
-  numSponsors: "",
-  sponsorshipRevenue: "",
-  apparelRevenue: "",
-  eventsRevenue: "",
-  
-  trainingRevenue: "",
+  totalAnnualRevenue: "",
   outsideSpendPerFamily: 15000,
   marketType: "mid",
   priorities: [],
+  avgFeePerPlayer: "",
+  lastFeeRaiseYear: "",
+  numSponsors: "",
+  sponsorshipRevenue: "",
+  parentApparelSpendPerPlayer: "600",
+  apparelRevenue: "",
+  currentRetentionPct: "",
+  trainingRevenue: "",
+  eventsRevenue: "",
   website: "",
 };
 
@@ -131,7 +136,7 @@ export default function RevenueAudit() {
       return { ...f, priorities: [...f.priorities, key] };
     });
 
-  const live = useMemo(() => estimateLeak(form), [form]);
+  const live = useMemo(() => estimateWallet(form), [form]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,6 +144,14 @@ export default function RevenueAudit() {
       toast({
         title: "Missing info",
         description: "Please fill in org name, your name, email, and phone.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (form.priorities.length === 0) {
+      toast({
+        title: "Pick your engines",
+        description: "Select up to 3 engines you most want to grow.",
         variant: "destructive",
       });
       return;
@@ -156,18 +169,22 @@ export default function RevenueAudit() {
           website: form.website,
           inputs: {
             totalPlayers: Number(form.totalPlayers) || 0,
-            avgFeePerPlayer: Number(form.avgFeePerPlayer) || 0,
-            currentRetentionPct: Number(form.currentRetentionPct) || 0,
-            apparelRevenue: Number(form.apparelRevenue) || 0,
-            sponsorshipRevenue: Number(form.sponsorshipRevenue) || 0,
-            campsClinicsRevenue: Number(form.eventsRevenue) || 0,
-            trainingRevenue: Number(form.trainingRevenue) || 0,
-            numSponsors: Number(form.numSponsors) || 0,
-            sport: form.sport,
-            numTeams: Number(form.numTeams) || 0,
+            totalAnnualRevenue: Number(form.totalAnnualRevenue) || 0,
             outsideSpendPerFamily: form.outsideSpendPerFamily,
             marketType: form.marketType,
+            sport: form.sport,
+            numTeams: Number(form.numTeams) || 0,
             priorities: form.priorities,
+            // engine diagnostics (only meaningful for picked engines)
+            avgFeePerPlayer: Number(form.avgFeePerPlayer) || 0,
+            lastFeeRaiseYear: form.lastFeeRaiseYear,
+            numSponsors: Number(form.numSponsors) || 0,
+            sponsorshipRevenue: Number(form.sponsorshipRevenue) || 0,
+            parentApparelSpendPerPlayer: Number(form.parentApparelSpendPerPlayer) || 600,
+            apparelRevenue: Number(form.apparelRevenue) || 0,
+            currentRetentionPct: Number(form.currentRetentionPct) || 0,
+            trainingRevenue: Number(form.trainingRevenue) || 0,
+            eventsRevenue: Number(form.eventsRevenue) || 0,
           },
         },
       });
@@ -387,34 +404,24 @@ export default function RevenueAudit() {
                   </div>
                 </FormCard>
 
-                {/* Step 2 — The base */}
-                <FormCard step="02" title="The base — your fee & retention engine">
-                  <div className="grid md:grid-cols-3 gap-4">
+                {/* Step 2 — Share-of-wallet base */}
+                <FormCard step="02" title="Your share-of-wallet baseline">
+                  <p className="text-sm text-white/60 mb-5">
+                    Just the high-level numbers — we use these to estimate how much of your families' spend you capture today.
+                  </p>
+                  <div className="grid md:grid-cols-2 gap-4">
                     <Field label="Total players"><DarkInput type="number" min="0" value={form.totalPlayers} onChange={(e) => set("totalPlayers", e.target.value)} /></Field>
-                    <Field label="Avg annual fee per player ($)"><DarkInput type="number" min="0" value={form.avgFeePerPlayer} onChange={(e) => set("avgFeePerPlayer", e.target.value)} /></Field>
-                    <Field label="CURRENT YEAR OVER YEAR RETENTION (%)"><DarkInput type="number" min="0" max="100" value={form.currentRetentionPct} onChange={(e) => set("currentRetentionPct", e.target.value)} /></Field>
-                    <Field label="# of sponsors today"><DarkInput type="number" min="0" value={form.numSponsors} onChange={(e) => set("numSponsors", e.target.value)} /></Field>
-                    <Field label="Total sponsorship revenue ($/yr)"><DarkInput type="number" min="0" value={form.sponsorshipRevenue} onChange={(e) => set("sponsorshipRevenue", e.target.value)} /></Field>
+                    <Field label="Approximate total annual revenue ($)">
+                      <DarkInput type="number" min="0" value={form.totalAnnualRevenue} onChange={(e) => set("totalAnnualRevenue", e.target.value)} placeholder="Dues, apparel, sponsorships, events — everything that comes through the club" />
+                    </Field>
                     <Field label="Market type">
                       <MarketPicker value={form.marketType} onChange={(v) => set("marketType", v)} />
                     </Field>
                   </div>
-                </FormCard>
-
-                {/* Step 3 — Money flow */}
-                <FormCard step="03" title="Where the money flows today">
-                  <p className="text-sm text-white/60 mb-5">
-                    Your best estimate of in-house annual revenue across the other engines. Leave blank if you don't do it today.
-                  </p>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <Field label="Apparel & hard-goods revenue ($/yr)"><DarkInput type="number" min="0" value={form.apparelRevenue} onChange={(e) => set("apparelRevenue", e.target.value)} /></Field>
-                    <Field label="Events revenue — camps, clinics, tournaments ($/yr)"><DarkInput type="number" min="0" value={form.eventsRevenue} onChange={(e) => set("eventsRevenue", e.target.value)} /></Field>
-                    <Field label="Training / player-dev revenue ($/yr)"><DarkInput type="number" min="0" value={form.trainingRevenue} onChange={(e) => set("trainingRevenue", e.target.value)} /></Field>
-                  </div>
 
                   <div className="mt-6 rounded-xl bg-black/30 border border-white/10 p-6">
                     <div className="flex items-baseline justify-between mb-4">
-                      <div className="text-sm text-white/60">Est. outside + in-house spend / family / year</div>
+                      <div className="text-sm text-white/60">Est. total youth-sports spend / family / year</div>
                       <div className="font-display text-3xl text-[#c5ff3d] font-bold tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
                         {fmtUSD(form.outsideSpendPerFamily)}
                       </div>
@@ -428,10 +435,10 @@ export default function RevenueAudit() {
                   </div>
                 </FormCard>
 
-                {/* Step 4 — Priorities */}
-                <FormCard step="04" title="Pick your top 3 priorities">
+                {/* Step 3 — Pick top 3 engines (gates Step 4) */}
+                <FormCard step="03" title="Pick the 3 engines you most want to grow *">
                   <p className="text-sm text-white/60 mb-5">
-                    Which engines do you most want to move on first? ({form.priorities.length}/3 selected). This orders your report.
+                    We'll ask one quick diagnostic question for each engine you select. ({form.priorities.length}/3 selected)
                   </p>
                   <div className="grid sm:grid-cols-2 gap-2">
                     {ENGINES.map((e) => {
@@ -452,6 +459,20 @@ export default function RevenueAudit() {
                   </div>
                 </FormCard>
 
+                {/* Step 4 — Diagnostic questions for the 3 picked engines */}
+                {form.priorities.length > 0 && (
+                  <FormCard step="04" title="Quick diagnostic on the engines you picked">
+                    <p className="text-sm text-white/60 mb-5">
+                      One question per engine — best estimates are fine. We use these to size the directional opportunity in your report.
+                    </p>
+                    <div className="space-y-6">
+                      {form.priorities.map((key) => (
+                        <EngineDiagnostic key={key} engineKey={key} form={form} set={set} />
+                      ))}
+                    </div>
+                  </FormCard>
+                )}
+
                 <Button type="submit" disabled={submitting} className="w-full h-14 text-base bg-[#c5ff3d] text-black hover:bg-[#b8f229] font-semibold">
                   {submitting ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Building your revenue map…</>
@@ -464,35 +485,24 @@ export default function RevenueAudit() {
                 </p>
               </div>
 
-              {/* Sticky live opportunity panel */}
+              {/* Sticky live share-of-wallet panel */}
               <aside className="hidden lg:block">
                 <div className="sticky top-24 rounded-2xl border border-[#c5ff3d]/30 bg-gradient-to-b from-[#c5ff3d]/5 to-transparent p-6">
-                  <div className="text-xs uppercase tracking-widest text-[#c5ff3d] mb-3">Live Revenue Leak</div>
-                  <div className="text-sm text-white/60 mb-1">Estimated annual opportunity</div>
-                  <div className="font-display text-4xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                    {fmtUSD(live.total)}
+                  <div className="text-xs uppercase tracking-widest text-[#c5ff3d] mb-3">Live Share-of-Wallet</div>
+                  <div className="text-sm text-white/60 mb-1">% of family spend you capture</div>
+                  <div className="font-display text-5xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                    {live.capturedPct}%
                   </div>
-                  <div className="mt-2 text-xs text-white/50">
-                    Share of wallet captured today: <span className="text-white/80 font-semibold">{live.capturedPct}%</span>
+                  <div className="mt-6 pt-5 border-t border-white/10">
+                    <div className="text-sm text-white/60 mb-1">$ leaving the building / year</div>
+                    <div className="font-display text-3xl font-bold text-white tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                      {fmtUSD(live.leaking)}
+                    </div>
                   </div>
-                  <div className="mt-5 space-y-2">
-                    {live.lines.map((l) => {
-                      const pct = live.total > 0 ? (l.amount / live.total) * 100 : 0;
-                      return (
-                        <div key={l.key}>
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-white/60">{l.label}</span>
-                            <span className="text-white/80 tabular-nums">{fmtUSD(l.amount)}</span>
-                          </div>
-                          <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                            <div className="h-full bg-[#c5ff3d]/70" style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-5 pt-5 border-t border-white/10 text-xs text-white/40 leading-relaxed">
-                    Same math as the Curve OS calculators. Final report sharpens against your market.
+                  <div className="mt-6 pt-5 border-t border-white/10 text-xs text-white/50 leading-relaxed">
+                    {live.walletPool > 0
+                      ? <>Total family-spend pool: <span className="text-white/80 font-semibold">{fmtUSD(live.walletPool)}</span>. Your report will detail the 3 engines you picked.</>
+                      : <>Add total players and revenue above to see your live share-of-wallet.</>}
                   </div>
                 </div>
               </aside>
@@ -589,77 +599,79 @@ function ShareOfWalletRing({ capturedPct }: { capturedPct: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Live revenue-leak estimator — mirrors the Curve OS calculator formulas.
+// Engine diagnostic questions — only shown for picked engines
 // ---------------------------------------------------------------------------
 
-function estimateLeak(f: FormState) {
+function EngineDiagnostic({
+  engineKey,
+  form,
+  set,
+}: {
+  engineKey: EngineKey;
+  form: FormState;
+  set: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+}) {
+  const engine = ENGINES.find((e) => e.key === engineKey);
+  if (!engine) return null;
+  const Icon = engine.icon;
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/30 p-5">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-9 h-9 rounded-lg bg-[#c5ff3d]/10 border border-[#c5ff3d]/20 flex items-center justify-center">
+          <Icon className="w-4 h-4 text-[#c5ff3d]" />
+        </div>
+        <div className="font-display text-base font-bold" style={{ fontFamily: "'Oswald', sans-serif" }}>{engine.name}</div>
+      </div>
+      {engineKey === "pricing" && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Field label="Avg annual fee per player ($)"><DarkInput type="number" min="0" value={form.avgFeePerPlayer} onChange={(e) => set("avgFeePerPlayer", e.target.value)} /></Field>
+          <Field label="Year of last fee raise"><DarkInput type="text" placeholder="e.g. 2023" value={form.lastFeeRaiseYear} onChange={(e) => set("lastFeeRaiseYear", e.target.value)} /></Field>
+        </div>
+      )}
+      {engineKey === "sponsorships" && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Field label="# of sponsors today"><DarkInput type="number" min="0" value={form.numSponsors} onChange={(e) => set("numSponsors", e.target.value)} /></Field>
+          <Field label="Total sponsorship revenue ($/yr)"><DarkInput type="number" min="0" value={form.sponsorshipRevenue} onChange={(e) => set("sponsorshipRevenue", e.target.value)} /></Field>
+        </div>
+      )}
+      {engineKey === "apparel" && (
+        <div className="grid md:grid-cols-2 gap-4">
+          <Field label="Total parent spend on apparel & gear per player ($/yr)">
+            <DarkInput type="number" min="0" value={form.parentApparelSpendPerPlayer} onChange={(e) => set("parentApparelSpendPerPlayer", e.target.value)} />
+          </Field>
+          <Field label="How much flows through your club ($/yr)">
+            <DarkInput type="number" min="0" value={form.apparelRevenue} onChange={(e) => set("apparelRevenue", e.target.value)} />
+          </Field>
+        </div>
+      )}
+      {engineKey === "retention" && (
+        <Field label="Current year-over-year retention (%)"><DarkInput type="number" min="0" max="100" value={form.currentRetentionPct} onChange={(e) => set("currentRetentionPct", e.target.value)} /></Field>
+      )}
+      {engineKey === "training" && (
+        <Field label="Training / player-dev revenue ($/yr)"><DarkInput type="number" min="0" value={form.trainingRevenue} onChange={(e) => set("trainingRevenue", e.target.value)} /></Field>
+      )}
+      {engineKey === "events" && (
+        <Field label="Events revenue — camps, clinics, tournaments ($/yr)"><DarkInput type="number" min="0" value={form.eventsRevenue} onChange={(e) => set("eventsRevenue", e.target.value)} /></Field>
+      )}
+      {engineKey === "wallet" && (
+        <p className="text-sm text-white/60">
+          Share of Wallet is the meta-engine — we'll quantify it on the report from the numbers above.
+        </p>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Live share-of-wallet estimator
+// ---------------------------------------------------------------------------
+
+function estimateWallet(f: FormState) {
   const players = Number(f.totalPlayers) || 0;
-  const fee = Number(f.avgFeePerPlayer) || 0;
-  const retention = Math.min(100, Number(f.currentRetentionPct) || 0);
-  const apparelRev = Number(f.apparelRevenue) || 0;
-  const eventsRev = Number(f.eventsRevenue) || 0;
-  const trainingRev = Number(f.trainingRevenue) || 0;
-  const sponsorshipRev = Number(f.sponsorshipRevenue) || 0;
-  const numSponsors = Number(f.numSponsors) || 0;
+  const totalRev = Number(f.totalAnnualRevenue) || 0;
   const outsideSpend = f.outsideSpendPerFamily || 15000;
-  const mult = MARKET_MULT[f.marketType];
-
-  const dues = players * fee;
-
-  const lines: Array<{ key: string; label: string; amount: number }> = [];
-
-  // Pricing — 5% lift net of 2% attrition (matches PricingSensitivityCalculator default)
-  if (players && fee) {
-    const newDues = players * 0.98 * fee * 1.05;
-    lines.push({ key: "pricing", label: "Pricing", amount: Math.max(0, newDues - dues) });
-  }
-
-  // Retention & Referrals — +5pt × fee + 10% referral boost on retained
-  if (players && fee) {
-    const lift = Math.max(0, Math.min(95, retention + 5) - retention) / 100;
-    const retained = players * lift * fee;
-    const referral = retained * 0.1;
-    lines.push({ key: "retention", label: "Retention & Referrals", amount: retained + referral });
-  }
-
-  // Apparel & Hard Goods — $150/player benchmark
-  if (players) {
-    const potential = players * 150;
-    lines.push({ key: "apparel", label: "Apparel & Hard Goods", amount: Math.max(0, potential - apparelRev) });
-  }
-
-  // Sponsorships — benchmark $150/player × market multiplier
-  if (players) {
-    const potential = players * 150 * mult;
-    const perSponsorPotential = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
-    const opp = Math.max(0, Math.max(potential, perSponsorPotential) - sponsorshipRev);
-    lines.push({ key: "sponsorships", label: "Sponsorships", amount: opp });
-  }
-
-  // Events — $450/player benchmark (camps, clinics, tournaments, showcases)
-  if (players) {
-    const eventsPotential = players * 450;
-    lines.push({ key: "events", label: "Events", amount: Math.max(0, eventsPotential - eventsRev) });
-  }
-
-  // Training — $100/month × 12 = $1,200/player/year captured in-house
-  if (players) {
-    const potential = players * 100 * 12;
-    lines.push({ key: "training", label: "Training / Player Dev", amount: Math.max(0, potential - trainingRev) });
-  }
-
-  // Share of Wallet — recapture 3% of outside spend per family
-  if (players) {
-    const wallet = players * outsideSpend * 0.03;
-    lines.push({ key: "wallet", label: "Share of Wallet", amount: wallet });
-  }
-
-  const total = lines.reduce((s, l) => s + l.amount, 0);
-
-  // Captured % = current in-house revenue / total family spend pool
-  const currentInHouse = dues + apparelRev + eventsRev + trainingRev + sponsorshipRev;
   const walletPool = players * outsideSpend;
-  const capturedPct = walletPool > 0 ? Math.min(100, Math.round((currentInHouse / walletPool) * 100)) : 0;
-
-  return { lines: lines.filter((l) => l.amount > 0).sort((a, b) => b.amount - a.amount), total, capturedPct };
+  const capturedPct = walletPool > 0 ? Math.min(100, Math.round((totalRev / walletPool) * 100)) : 0;
+  const leaking = Math.max(0, walletPool - totalRev);
+  return { capturedPct, leaking, walletPool };
 }
