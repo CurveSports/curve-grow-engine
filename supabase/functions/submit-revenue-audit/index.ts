@@ -38,187 +38,229 @@ const num = (v: unknown, fallback = 0): number => {
 const fmt$ = (n: number) =>
   "$" + Math.round(Math.max(0, n)).toLocaleString("en-US");
 
-type EngineState = { active?: boolean; revenue?: number; maturity?: number };
-
 type AuditInputs = {
   totalPlayers?: number;
-  avgFeePerPlayer?: number;
-  currentRetentionPct?: number;
-  apparelRevenue?: number;
-  sponsorshipRevenue?: number;
-  campsClinicsRevenue?: number;
-  
-  trainingRevenue?: number;
-  numSponsors?: number;
-  feeIncreasePct?: number;
-  apparelToggle?: boolean;
-  sponsorshipToggle?: boolean;
-  retentionToggle?: boolean;
-  campsToggle?: boolean;
-  sport?: string;
-  numTeams?: number;
+  totalAnnualRevenue?: number;
   outsideSpendPerFamily?: number;
   marketType?: "small" | "mid" | "major";
-  engines?: Record<string, EngineState>;
+  sport?: string;
+  numTeams?: number;
   priorities?: string[];
+  // engine-specific (only meaningful when the engine is picked)
+  avgFeePerPlayer?: number;
+  lastFeeRaiseYear?: string;
+  numSponsors?: number;
+  sponsorshipRevenue?: number;
+  parentApparelSpendPerPlayer?: number;
+  apparelRevenue?: number;
+  currentRetentionPct?: number;
+  trainingRevenue?: number;
+  eventsRevenue?: number;
 };
 
 const MARKET_MULT: Record<string, number> = { small: 0.8, mid: 1.0, major: 1.3 };
 
+const ENGINE_META: Record<string, { label: string; teaser: string }> = {
+  pricing:      { label: "Pricing",                       teaser: "Right-size fees to the value you deliver — without losing players." },
+  sponsorships: { label: "Sponsorships",                  teaser: "Turn your reach into real local & regional sponsor revenue." },
+  apparel:      { label: "Apparel & Hard Goods",          teaser: "Capture more of what parents already spend on uniforms and gear." },
+  retention:    { label: "Retention & Referrals",         teaser: "Keep more families season-to-season and turn them into recruiters." },
+  training:     { label: "Training / Player Development", teaser: "Recapture private training and skills work leaving the ecosystem." },
+  events:       { label: "Events",                        teaser: "Camps, clinics, tournaments, showcases — your brand as a revenue engine." },
+  wallet:       { label: "Share of Wallet",               teaser: "The meta-engine — capture more while decreasing total family spend." },
+};
+
 function computeReport(raw: AuditInputs) {
   const totalPlayers = num(raw.totalPlayers);
-  const avgFee = num(raw.avgFeePerPlayer);
-  const currentRetention = Math.min(100, num(raw.currentRetentionPct));
-  const apparelRev = num(raw.apparelRevenue);
-  const sponsorshipRev = num(raw.sponsorshipRevenue);
-  const campsRev = num(raw.campsClinicsRevenue);
-  const numSponsors = num(raw.numSponsors);
-  const mult = MARKET_MULT[raw.marketType ?? "mid"] ?? 1.0;
-
-  const currentDuesRevenue = totalPlayers * avgFee;
-  const currentTotal =
-    currentDuesRevenue + apparelRev + sponsorshipRev + campsRev + num(raw.trainingRevenue);
-
-  // 1) Pricing — 5% fee lift net of 2% attrition
-  const feeLiftPct = raw.feeIncreasePct ? num(raw.feeIncreasePct) : 5;
-  const attritionPct = 2;
-  const remainingPlayers = totalPlayers * (1 - attritionPct / 100);
-  const newDues = remainingPlayers * avgFee * (1 + feeLiftPct / 100);
-  const pricingOpportunity = Math.max(0, newDues - currentDuesRevenue);
-
-  // 2) Retention & Referrals — +5pt × fee + 10% referral boost
-  const targetRetention = Math.min(95, currentRetention + 5);
-  const retainedExtra = totalPlayers * Math.max(0, (targetRetention - currentRetention) / 100);
-  const retentionBase = retainedExtra * avgFee;
-  const retentionOpportunity = retentionBase + retentionBase * 0.1;
-
-  // 3) Apparel — $150/player benchmark
-  const apparelPotential = totalPlayers * 150;
-  const apparelOpportunity = Math.max(0, apparelPotential - apparelRev);
-
-  // 4) Sponsorship — max of $150/player or $2,000/sponsor, × market multiplier
-  const sponsorPotentialPerPlayer = totalPlayers * 150 * mult;
-  const sponsorPotentialPerDeal = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
-  const sponsorshipPotential = Math.max(sponsorPotentialPerPlayer, sponsorPotentialPerDeal);
-  const sponsorshipOpportunity = Math.max(0, sponsorshipPotential - sponsorshipRev);
-
-  // 5) Events — $450/player benchmark (camps, clinics, tournaments, showcases)
-  const campsPotential = totalPlayers * 450;
-  const campsOpportunity = Math.max(0, campsPotential - campsRev);
-
-  // 6) Training — $100/month × 12 = $1,200/player/year
-  const engines = raw.engines ?? {};
-  const trainingRev = num(raw.trainingRevenue) || num(engines.training?.revenue);
-  const trainingPotential = totalPlayers * 100 * 12;
-  const trainingOpportunity = Math.max(0, trainingPotential - trainingRev);
-
-  // 7) Share of Wallet — 3% of outside spend per family
+  const totalAnnualRevenue = num(raw.totalAnnualRevenue);
   const outsideSpend = num(raw.outsideSpendPerFamily) || 15000;
-  const walletOpportunity = totalPlayers * outsideSpend * 0.03;
+  const mult = MARKET_MULT[raw.marketType ?? "mid"] ?? 1.0;
+  const prioritiesArr = Array.isArray(raw.priorities) ? raw.priorities.slice(0, 3) : [];
+  const picked = new Set(prioritiesArr);
 
-  const totalOpportunity =
-    pricingOpportunity + retentionOpportunity + apparelOpportunity +
-    sponsorshipOpportunity + campsOpportunity + trainingOpportunity + walletOpportunity;
-
-  const projectedTotal = currentTotal + totalOpportunity;
-  const upliftPct = currentTotal > 0 ? (totalOpportunity / currentTotal) * 100 : 0;
-
-  // Share of wallet captured today
+  // ----- Hero: Share of Wallet -----
   const walletPool = totalPlayers * outsideSpend;
-  const walletCapturedPct = walletPool > 0 ? Math.min(100, Math.round((currentTotal / walletPool) * 100)) : 0;
+  const capturedPct = walletPool > 0 ? Math.min(100, Math.round((totalAnnualRevenue / walletPool) * 100)) : 0;
+  const leakingDollars = Math.max(0, walletPool - totalAnnualRevenue);
 
+  // ----- Per-engine details (locked unless picked) -----
+  const engines: Array<{
+    key: string;
+    label: string;
+    locked: boolean;
+    teaser: string;
+    benchmark?: number;
+    benchmarkFormatted?: string;
+    current?: number;
+    currentFormatted?: string;
+    gap?: number;
+    gapFormatted?: string;
+    insight?: string;
+  }> = [];
 
-  const allOpps = [
-    {
-      key: "pricing",
-      label: "Pricing — right-size your fees",
-      amount: pricingOpportunity,
-      amountFormatted: fmt$(pricingOpportunity),
-      detail: `A ${feeLiftPct}% fee adjustment, net of ${attritionPct}% attrition.`,
-    },
-    {
-      key: "retention",
-      label: "Retention & Referrals — keep 5 more points",
-      amount: retentionOpportunity,
-      amountFormatted: fmt$(retentionOpportunity),
-      detail: `Holding on to ${Math.round(retainedExtra)} more players at $${Math.round(avgFee)}/player.`,
-    },
-    {
-      key: "apparel",
-      label: "Apparel & Hard Goods — capture wallet share",
-      amount: apparelOpportunity,
-      amountFormatted: fmt$(apparelOpportunity),
-      detail: `Industry benchmark: $150 per player in apparel & hard-goods revenue brought in-house.`,
-    },
-    {
-      key: "sponsorships",
-      label: "Sponsorships — unlock your reach",
-      amount: sponsorshipOpportunity,
-      amountFormatted: fmt$(sponsorshipOpportunity),
-      detail: `Industry benchmark: $150 per player in sponsorship revenue.`,
-    },
-    {
-      key: "events",
-      label: "Events",
-      amount: campsOpportunity,
-      amountFormatted: fmt$(campsOpportunity),
-      detail: `Industry benchmark: $450 per player in event revenue (camps, clinics, tournaments, showcases).`,
-    },
-    {
-      key: "training",
-      label: "Training / Player Development",
-      amount: trainingOpportunity,
-      amountFormatted: fmt$(trainingOpportunity),
-      detail: `Capture ~$100/month per player in private training that's leaving the building today.`,
-    },
-    {
-      key: "wallet",
-      label: "Share of Wallet — bring spend in-house",
-      amount: walletOpportunity,
-      amountFormatted: fmt$(walletOpportunity),
-      detail: `Recapture 3% of the ~${fmt$(outsideSpend)}/year an average family spends across youth sports.`,
-    },
-  ];
-
-  // Order opportunities by user priority if provided, then by amount desc
-  const priorities = Array.isArray(raw.priorities) ? raw.priorities : [];
-  const opportunities = allOpps
-    .filter((o) => o.amount > 0)
-    .sort((a, b) => {
-      const ai = priorities.indexOf(a.key);
-      const bi = priorities.indexOf(b.key);
-      if (ai !== -1 && bi !== -1) return ai - bi;
-      if (ai !== -1) return -1;
-      if (bi !== -1) return 1;
-      return b.amount - a.amount;
+  function pushEngine(key: string, detail: Partial<typeof engines[number]> = {}) {
+    const meta = ENGINE_META[key];
+    engines.push({
+      key,
+      label: meta.label,
+      teaser: meta.teaser,
+      locked: !picked.has(key),
+      ...detail,
     });
+  }
+
+  // Pricing
+  if (picked.has("pricing")) {
+    const fee = num(raw.avgFeePerPlayer);
+    const newDues = totalPlayers * 0.98 * fee * 1.05;
+    const dues = totalPlayers * fee;
+    const gap = Math.max(0, newDues - dues);
+    pushEngine("pricing", {
+      benchmark: newDues, benchmarkFormatted: fmt$(newDues),
+      current: dues, currentFormatted: fmt$(dues),
+      gap, gapFormatted: fmt$(gap),
+      insight: raw.lastFeeRaiseYear
+        ? `Last raise: ${raw.lastFeeRaiseYear}. A 5% adjustment net of 2% attrition unlocks ~${fmt$(gap)}.`
+        : `A 5% fee adjustment net of 2% attrition would unlock ~${fmt$(gap)}.`,
+    });
+  } else pushEngine("pricing");
+
+  // Sponsorships
+  if (picked.has("sponsorships")) {
+    const sponsors = num(raw.numSponsors);
+    const sponsorshipRev = num(raw.sponsorshipRevenue);
+    const perPlayer = totalPlayers * 150 * mult;
+    const perDeal = sponsors > 0 ? sponsors * 2000 * mult : 0;
+    const benchmark = Math.max(perPlayer, perDeal);
+    const gap = Math.max(0, benchmark - sponsorshipRev);
+    pushEngine("sponsorships", {
+      benchmark, benchmarkFormatted: fmt$(benchmark),
+      current: sponsorshipRev, currentFormatted: fmt$(sponsorshipRev),
+      gap, gapFormatted: fmt$(gap),
+      insight: `Benchmark: ~$150/player or $2,000/sponsor (market-adjusted). Gap to close: ${fmt$(gap)}.`,
+    });
+  } else pushEngine("sponsorships");
+
+  // Apparel — parent spend, not $150 profit
+  if (picked.has("apparel")) {
+    const parentSpendPerPlayer = num(raw.parentApparelSpendPerPlayer) || 600;
+    const apparelRev = num(raw.apparelRevenue);
+    const benchmark = totalPlayers * parentSpendPerPlayer;
+    const gap = Math.max(0, benchmark - apparelRev);
+    pushEngine("apparel", {
+      benchmark, benchmarkFormatted: fmt$(benchmark),
+      current: apparelRev, currentFormatted: fmt$(apparelRev),
+      gap, gapFormatted: fmt$(gap),
+      insight: `Parents spend ~${fmt$(parentSpendPerPlayer)}/player/yr on apparel & gear — ${fmt$(gap)} is flowing outside your club.`,
+    });
+  } else pushEngine("apparel");
+
+  // Retention
+  if (picked.has("retention")) {
+    const fee = num(raw.avgFeePerPlayer);
+    const retention = Math.min(100, num(raw.currentRetentionPct));
+    const target = Math.min(95, retention + 5);
+    const retainedExtra = totalPlayers * Math.max(0, (target - retention) / 100);
+    const base = retainedExtra * (fee || 0);
+    const gap = base + base * 0.1;
+    pushEngine("retention", {
+      benchmark: target, benchmarkFormatted: `${target}%`,
+      current: retention, currentFormatted: `${retention}%`,
+      gap, gapFormatted: fmt$(gap),
+      insight: `Holding ${Math.round(retainedExtra)} more players + a 10% referral boost is worth ~${fmt$(gap)}/yr.`,
+    });
+  } else pushEngine("retention");
+
+  // Training
+  if (picked.has("training")) {
+    const trainingRev = num(raw.trainingRevenue);
+    const benchmark = totalPlayers * 100 * 12;
+    const gap = Math.max(0, benchmark - trainingRev);
+    pushEngine("training", {
+      benchmark, benchmarkFormatted: fmt$(benchmark),
+      current: trainingRev, currentFormatted: fmt$(trainingRev),
+      gap, gapFormatted: fmt$(gap),
+      insight: `Benchmark: ~$100/player/month in private training that's leaving the building today.`,
+    });
+  } else pushEngine("training");
+
+  // Events
+  if (picked.has("events")) {
+    const eventsRev = num(raw.eventsRevenue);
+    const benchmark = totalPlayers * 450;
+    const gap = Math.max(0, benchmark - eventsRev);
+    pushEngine("events", {
+      benchmark, benchmarkFormatted: fmt$(benchmark),
+      current: eventsRev, currentFormatted: fmt$(eventsRev),
+      gap, gapFormatted: fmt$(gap),
+      insight: `Benchmark: ~$450/player/yr in event spend across camps, clinics, tournaments and showcases.`,
+    });
+  } else pushEngine("events");
+
+  // Wallet (meta)
+  pushEngine("wallet", picked.has("wallet") ? {
+    benchmark: walletPool, benchmarkFormatted: fmt$(walletPool),
+    current: totalAnnualRevenue, currentFormatted: fmt$(totalAnnualRevenue),
+    gap: leakingDollars, gapFormatted: fmt$(leakingDollars),
+    insight: `You currently capture ${capturedPct}% of the ~${fmt$(outsideSpend)}/yr each family spends across youth sports.`,
+  } : {});
+
+  // Order: picked engines first (in user order), then locked engines
+  engines.sort((a, b) => {
+    const ai = prioritiesArr.indexOf(a.key);
+    const bi = prioritiesArr.indexOf(b.key);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return 0;
+  });
+
+  // Keep a `totalOpportunity` summary for legacy emails — sum picked-engine gaps
+  const totalOpportunity = engines
+    .filter((e) => !e.locked && typeof e.gap === "number" && e.key !== "wallet")
+    .reduce((s, e) => s + (e.gap || 0), 0);
 
   return {
     inputs: {
       totalPlayers,
-      avgFee,
-      currentRetention,
-      apparelRev,
-      sponsorshipRev,
-      campsRev,
-      trainingRev,
+      totalAnnualRevenue,
       outsideSpendPerFamily: outsideSpend,
-      priorities,
+      marketType: raw.marketType ?? "mid",
+      priorities: prioritiesArr,
     },
+    hero: {
+      capturedPct,
+      leakingDollars,
+      leakingDollarsFormatted: fmt$(leakingDollars),
+      walletPool,
+      walletPoolFormatted: fmt$(walletPool),
+      totalAnnualRevenueFormatted: fmt$(totalAnnualRevenue),
+    },
+    engines,
+    // Legacy fields used by existing email templates / report page
     current: {
-      duesRevenue: currentDuesRevenue,
-      total: currentTotal,
-      duesRevenueFormatted: fmt$(currentDuesRevenue),
-      totalFormatted: fmt$(currentTotal),
+      total: totalAnnualRevenue,
+      totalFormatted: fmt$(totalAnnualRevenue),
+      duesRevenue: 0,
+      duesRevenueFormatted: fmt$(0),
     },
-    opportunities,
+    opportunities: engines
+      .filter((e) => !e.locked && (e.gap ?? 0) > 0 && e.key !== "wallet")
+      .map((e) => ({
+        key: e.key,
+        label: e.label,
+        amount: e.gap || 0,
+        amountFormatted: e.gapFormatted || fmt$(0),
+        detail: e.insight || "",
+      })),
     totals: {
       totalOpportunity,
       totalOpportunityFormatted: fmt$(totalOpportunity),
-      projectedTotal,
-      projectedTotalFormatted: fmt$(projectedTotal),
-      upliftPct: Math.round(upliftPct),
-      walletCapturedPct,
+      projectedTotal: totalAnnualRevenue + totalOpportunity,
+      projectedTotalFormatted: fmt$(totalAnnualRevenue + totalOpportunity),
+      upliftPct: totalAnnualRevenue > 0 ? Math.round((totalOpportunity / totalAnnualRevenue) * 100) : 0,
+      walletCapturedPct: capturedPct,
+      leakingDollarsFormatted: fmt$(leakingDollars),
     },
   };
 }
