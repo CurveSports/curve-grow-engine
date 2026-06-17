@@ -48,6 +48,12 @@ const ADMIN_GROUPS: NavGroup[] = [
     ],
   },
   {
+    label: "Sales",
+    items: [
+      { to: "/admin/revenue-audits", label: "Revenue Audits", icon: ClipboardList, match: (p) => p.startsWith("/admin/revenue-audits") },
+    ],
+  },
+  {
     label: "Library",
     items: [
       { to: "/admin/templates", label: "Task Library", icon: FileText, match: (p) => p.startsWith("/admin/templates") },
