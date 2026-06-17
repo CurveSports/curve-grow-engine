@@ -150,7 +150,7 @@ function computeReport(raw: AuditInputs) {
       label: "Apparel & Hard Goods — capture wallet share",
       amount: apparelOpportunity,
       amountFormatted: fmt$(apparelOpportunity),
-      detail: `30% of players buying a $120 apparel package, brought in-house.`,
+      detail: `Industry benchmark: $150 per player in apparel & hard-goods revenue brought in-house.`,
     },
     {
       key: "sponsorships",
