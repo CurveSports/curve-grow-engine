@@ -47,7 +47,7 @@ type AuditInputs = {
   apparelRevenue?: number;
   sponsorshipRevenue?: number;
   campsClinicsRevenue?: number;
-  facilityRevenue?: number;
+  
   trainingRevenue?: number;
   numSponsors?: number;
   feeIncreasePct?: number;
@@ -72,13 +72,12 @@ function computeReport(raw: AuditInputs) {
   const apparelRev = num(raw.apparelRevenue);
   const sponsorshipRev = num(raw.sponsorshipRevenue);
   const campsRev = num(raw.campsClinicsRevenue);
-  const facilityRev = num(raw.facilityRevenue);
   const numSponsors = num(raw.numSponsors);
   const mult = MARKET_MULT[raw.marketType ?? "mid"] ?? 1.0;
 
   const currentDuesRevenue = totalPlayers * avgFee;
   const currentTotal =
-    currentDuesRevenue + apparelRev + sponsorshipRev + campsRev + facilityRev + num(raw.trainingRevenue);
+    currentDuesRevenue + apparelRev + sponsorshipRev + campsRev + num(raw.trainingRevenue);
 
   // 1) Pricing — 5% fee lift net of 2% attrition
   const feeLiftPct = raw.feeIncreasePct ? num(raw.feeIncreasePct) : 5;
@@ -103,10 +102,9 @@ function computeReport(raw: AuditInputs) {
   const sponsorshipPotential = Math.max(sponsorPotentialPerPlayer, sponsorPotentialPerDeal);
   const sponsorshipOpportunity = Math.max(0, sponsorshipPotential - sponsorshipRev);
 
-  // 5) Events & Facility — $40/player events + $20/player facility
-  const campsPotential = totalPlayers * 40;
-  const facilityPotential = totalPlayers * 20;
-  const campsOpportunity = Math.max(0, campsPotential - campsRev) + Math.max(0, facilityPotential - facilityRev);
+  // 5) Events — $450/player benchmark (camps, clinics, tournaments, showcases)
+  const campsPotential = totalPlayers * 450;
+  const campsOpportunity = Math.max(0, campsPotential - campsRev);
 
   // 6) Training — $100/month × 12 = $1,200/player/year
   const engines = raw.engines ?? {};
@@ -161,10 +159,10 @@ function computeReport(raw: AuditInputs) {
     },
     {
       key: "events",
-      label: "Events & Facility",
+      label: "Events",
       amount: campsOpportunity,
       amountFormatted: fmt$(campsOpportunity),
-      detail: `Add ~$40/player in events plus ~$20/player in facility usage.`,
+      detail: `Industry benchmark: $450 per player in event revenue (camps, clinics, tournaments, showcases).`,
     },
     {
       key: "training",
