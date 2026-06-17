@@ -116,12 +116,7 @@ export default function RevenueAuditReport() {
 
   const r = lead.report_payload;
 
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  const mailtoForward = `mailto:?subject=${encodeURIComponent(
-    `Curve Sports Revenue Audit — ${lead.org_name}`,
-  )}&body=${encodeURIComponent(
-    `Our Curve Sports Revenue Audit identified ${r.totals.totalOpportunityFormatted} in untapped annual revenue.\n\nView the full report: ${shareUrl}`,
-  )}`;
+
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
