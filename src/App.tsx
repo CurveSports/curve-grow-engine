@@ -93,8 +93,13 @@ import AdminAudits from "@/pages/admin/marketing/AdminAudits";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import EventIntake from "@/pages/events/EventIntake";
 import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
+import RevenueAudit from "@/pages/public/RevenueAudit";
+import RevenueAuditReport from "@/pages/public/RevenueAuditReport";
+import AdminRevenueAudits from "@/pages/admin/AdminRevenueAudits";
+import AdminRevenueAuditDetail from "@/pages/admin/AdminRevenueAuditDetail";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
+
 
 const queryClient = new QueryClient();
 
