@@ -171,7 +171,7 @@ function computeReport(raw: AuditInputs) {
       label: "Training / Player Development",
       amount: trainingOpportunity,
       amountFormatted: fmt$(trainingOpportunity),
-      detail: `Capture ~$60/player in private training that's leaving the building today.`,
+      detail: `Capture ~$100/month per player in private training that's leaving the building today.`,
     },
     {
       key: "wallet",
