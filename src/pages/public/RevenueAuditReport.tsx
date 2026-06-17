@@ -8,9 +8,7 @@ import {
   Loader2,
   ArrowRight,
   TrendingUp,
-  Mail,
   CalendarCheck,
-  Share2,
   Wallet,
   Lock,
 } from "lucide-react";
