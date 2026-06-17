@@ -7291,6 +7291,72 @@ export type Database = {
           },
         ]
       }
+      public_audit_leads: {
+        Row: {
+          admin_notes: string | null
+          city_state: string | null
+          confirmation_sent_at: string | null
+          contact_name: string
+          created_at: string
+          email: string
+          honeypot_tripped: boolean
+          id: string
+          inputs: Json
+          internal_alert_sent_at: string | null
+          ip_address: string | null
+          org_name: string
+          phone: string | null
+          report_payload: Json
+          report_token: string
+          role: string | null
+          status: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          city_state?: string | null
+          confirmation_sent_at?: string | null
+          contact_name: string
+          created_at?: string
+          email: string
+          honeypot_tripped?: boolean
+          id?: string
+          inputs?: Json
+          internal_alert_sent_at?: string | null
+          ip_address?: string | null
+          org_name: string
+          phone?: string | null
+          report_payload?: Json
+          report_token: string
+          role?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          city_state?: string | null
+          confirmation_sent_at?: string | null
+          contact_name?: string
+          created_at?: string
+          email?: string
+          honeypot_tripped?: boolean
+          id?: string
+          inputs?: Json
+          internal_alert_sent_at?: string | null
+          ip_address?: string | null
+          org_name?: string
+          phone?: string | null
+          report_payload?: Json
+          report_token?: string
+          role?: string | null
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       schools: {
         Row: {
           active: boolean
@@ -8005,6 +8071,15 @@ export type Database = {
           submitted_at: string
           warm_notes: string
           warm_reasons: string[]
+        }[]
+      }
+      get_public_audit_report: {
+        Args: { _token: string }
+        Returns: {
+          contact_name: string
+          created_at: string
+          org_name: string
+          report_payload: Json
         }[]
       }
       has_module_access: {

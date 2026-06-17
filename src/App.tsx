@@ -93,8 +93,13 @@ import AdminAudits from "@/pages/admin/marketing/AdminAudits";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import EventIntake from "@/pages/events/EventIntake";
 import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
+import RevenueAudit from "@/pages/public/RevenueAudit";
+import RevenueAuditReport from "@/pages/public/RevenueAuditReport";
+import AdminRevenueAudits from "@/pages/admin/AdminRevenueAudits";
+import AdminRevenueAuditDetail from "@/pages/admin/AdminRevenueAuditDetail";
 import { BrandingProvider } from "@/hooks/useBranding";
 import NotFound from "./pages/NotFound.tsx";
+
 
 const queryClient = new QueryClient();
 
@@ -162,7 +167,10 @@ const App = () => (
             <Route path="/nps/preview/:surveyId" element={<NpsResponse />} />
             <Route path="/events/intake/:slug" element={<EventIntake />} />
             <Route path="/events/intake" element={<EventIntake />} />
+            <Route path="/revenue-audit" element={<RevenueAudit />} />
+            <Route path="/revenue-audit/report/:token" element={<RevenueAuditReport />} />
             <Route path="/admin/events/intake" element={<ProtectedRoute role="admin" module="events"><AdminEventIntake /></ProtectedRoute>} />
+
 
             {/* Admin "act on behalf of org" — same components, scoped via URL :orgId */}
             <Route path="/admin/orgs" element={<ProtectedRoute role="admin" module="marketing"><AdminBrowseOrgs /></ProtectedRoute>} />
@@ -223,7 +231,10 @@ const App = () => (
             <Route path="/admin/users" element={<ProtectedRoute role="admin"><AdminUsersPage /></ProtectedRoute>} />
             <Route path="/admin/users/lookup" element={<ProtectedRoute role="admin"><AdminUserLookup /></ProtectedRoute>} />
             <Route path="/admin/invite" element={<ProtectedRoute role="admin"><AdminInvite /></ProtectedRoute>} />
+            <Route path="/admin/revenue-audits" element={<ProtectedRoute role="admin"><AdminRevenueAudits /></ProtectedRoute>} />
+            <Route path="/admin/revenue-audits/:id" element={<ProtectedRoute role="admin"><AdminRevenueAuditDetail /></ProtectedRoute>} />
             <Route path="/admin/system/wiring-status" element={<ProtectedRoute role="admin"><SystemIntegrations /></ProtectedRoute>} />
+
             
             <Route path="/admin/org/:orgId" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
             <Route path="/admin/org/:orgId/tasks" element={<ProtectedRoute role="admin" module="allegiance"><OrgDetail /></ProtectedRoute>} />
