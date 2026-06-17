@@ -349,3 +349,104 @@ function Stat({ label, value, highlight }: { label: string; value: string; highl
     </div>
   );
 }
+
+function CapturedRing({ pct, poolFormatted, currentFormatted }: { pct: number; poolFormatted?: string; currentFormatted?: string }) {
+  const size = 240;
+  const r = 96;
+  const c = 2 * Math.PI * r;
+  const dash = (Math.max(0, Math.min(100, pct)) / 100) * c;
+  return (
+    <div className="rounded-2xl border border-[#c5ff3d]/30 bg-gradient-to-br from-[#c5ff3d]/8 to-transparent p-6 md:p-8 flex flex-col items-center justify-center">
+      <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-3">Share of Wallet Captured</div>
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={20} />
+          <motion.circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#c5ff3d"
+            strokeWidth={20}
+            strokeLinecap="round"
+            strokeDasharray={`${dash} ${c - dash}`}
+            initial={{ strokeDasharray: `0 ${c}` }}
+            animate={{ strokeDasharray: `${dash} ${c - dash}` }}
+            transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className="font-display text-5xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{pct}%</div>
+          <div className="text-xs text-white/60 mt-1">captured</div>
+        </div>
+      </div>
+      {(poolFormatted || currentFormatted) && (
+        <div className="text-xs text-white/50 mt-5 text-center leading-relaxed">
+          {currentFormatted && <>You: <span className="text-white/80 font-semibold">{currentFormatted}</span></>}
+          {poolFormatted && <> · Family-spend pool: <span className="text-white/80 font-semibold">{poolFormatted}</span></>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LeakingCard({ valueFormatted, pct }: { valueFormatted: string; pct: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 md:p-8 flex flex-col justify-center">
+      <div className="text-xs uppercase tracking-[0.18em] text-white/50 mb-3">Leaving the Building / yr</div>
+      <div className="font-display text-5xl md:text-6xl font-bold text-white tabular-nums leading-none" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+        {valueFormatted}
+      </div>
+      <div className="text-sm text-white/60 mt-4 leading-relaxed">
+        Roughly <span className="text-white font-semibold">{pct}%</span> of what your families spend on youth sports goes to outside vendors, third-party trainers, distant tournaments, and travel.
+      </div>
+    </div>
+  );
+}
+
+function PickedEngineCard({ engine, index }: { engine: EngineDetail; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: index * 0.05 }}
+      className="rounded-xl border border-[#c5ff3d]/30 bg-[#c5ff3d]/5 p-5 md:p-6"
+    >
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="font-semibold text-lg">{engine.label}</div>
+        {engine.gapFormatted && (
+          <div className="font-display text-2xl font-bold text-[#c5ff3d] whitespace-nowrap tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
+            {engine.gapFormatted}
+          </div>
+        )}
+      </div>
+      {(engine.benchmarkFormatted || engine.currentFormatted) && (
+        <div className="flex gap-4 text-xs text-white/50 mb-3">
+          {engine.currentFormatted && <span>You: <span className="text-white/80 font-semibold">{engine.currentFormatted}</span></span>}
+          {engine.benchmarkFormatted && <span>Benchmark: <span className="text-white/80 font-semibold">{engine.benchmarkFormatted}</span></span>}
+        </div>
+      )}
+      {engine.insight && <p className="text-sm text-white/70 leading-relaxed">{engine.insight}</p>}
+    </motion.div>
+  );
+}
+
+function LockedEngineCard({ engine }: { engine: EngineDetail }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-5 md:p-6 relative overflow-hidden">
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="font-semibold text-base text-white/80">{engine.label}</div>
+        <Lock className="w-4 h-4 text-white/30 shrink-0" />
+      </div>
+      <p className="text-sm text-white/50 leading-relaxed mb-4">{engine.teaser}</p>
+      <a
+        href="https://www.curvesports.com/contact"
+        target="_blank"
+        rel="noreferrer"
+        className="inline-flex items-center text-xs font-semibold text-[#c5ff3d] hover:text-[#b8f229]"
+      >
+        Unlock on the call <ArrowRight className="w-3 h-3 ml-1" />
+      </a>
+    </div>
+  );
+}
