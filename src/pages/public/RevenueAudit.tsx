@@ -162,7 +162,6 @@ export default function RevenueAudit() {
             apparelRevenue: Number(form.apparelRevenue) || 0,
             sponsorshipRevenue: Number(form.sponsorshipRevenue) || 0,
             campsClinicsRevenue: Number(form.eventsRevenue) || 0,
-            facilityRevenue: Number(form.facilityRevenue) || 0,
             trainingRevenue: Number(form.trainingRevenue) || 0,
             numSponsors: Number(form.numSponsors) || 0,
             sport: form.sport,
