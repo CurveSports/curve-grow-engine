@@ -159,10 +159,10 @@ function computeReport(raw: AuditInputs) {
     },
     {
       key: "events",
-      label: "Events & Facility",
+      label: "Events",
       amount: campsOpportunity,
       amountFormatted: fmt$(campsOpportunity),
-      detail: `Add ~$40/player in events plus ~$20/player in facility usage.`,
+      detail: `Industry benchmark: $450 per player in event revenue (camps, clinics, tournaments, showcases).`,
     },
     {
       key: "training",
