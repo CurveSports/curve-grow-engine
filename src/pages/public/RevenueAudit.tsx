@@ -598,7 +598,6 @@ function estimateLeak(f: FormState) {
   const retention = Math.min(100, Number(f.currentRetentionPct) || 0);
   const apparelRev = Number(f.apparelRevenue) || 0;
   const eventsRev = Number(f.eventsRevenue) || 0;
-  const facilityRev = Number(f.facilityRevenue) || 0;
   const trainingRev = Number(f.trainingRevenue) || 0;
   const sponsorshipRev = Number(f.sponsorshipRevenue) || 0;
   const numSponsors = Number(f.numSponsors) || 0;
@@ -637,12 +636,10 @@ function estimateLeak(f: FormState) {
     lines.push({ key: "sponsorships", label: "Sponsorships", amount: opp });
   }
 
-  // Events — $40/player + facility benchmark gap ($2,400/team or $20/player)
+  // Events — $450/player benchmark (camps, clinics, tournaments, showcases)
   if (players) {
-    const eventsPotential = players * 40;
-    const facilityPotential = players * 20;
-    const opp = Math.max(0, eventsPotential - eventsRev) + Math.max(0, facilityPotential - facilityRev);
-    lines.push({ key: "events", label: "Events & Facility", amount: opp });
+    const eventsPotential = players * 450;
+    lines.push({ key: "events", label: "Events", amount: Math.max(0, eventsPotential - eventsRev) });
   }
 
   // Training — $100/month × 12 = $1,200/player/year captured in-house
@@ -660,7 +657,7 @@ function estimateLeak(f: FormState) {
   const total = lines.reduce((s, l) => s + l.amount, 0);
 
   // Captured % = current in-house revenue / total family spend pool
-  const currentInHouse = dues + apparelRev + eventsRev + facilityRev + trainingRev + sponsorshipRev;
+  const currentInHouse = dues + apparelRev + eventsRev + trainingRev + sponsorshipRev;
   const walletPool = players * outsideSpend;
   const capturedPct = walletPool > 0 ? Math.min(100, Math.round((currentInHouse / walletPool) * 100)) : 0;
 
