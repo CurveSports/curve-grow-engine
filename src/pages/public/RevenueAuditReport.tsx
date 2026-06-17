@@ -39,6 +39,7 @@ type ReportPayload = {
     totalOpportunityFormatted: string;
     projectedTotalFormatted: string;
     upliftPct: number;
+    walletCapturedPct?: number;
   };
 };
 

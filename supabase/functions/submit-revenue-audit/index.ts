@@ -161,10 +161,10 @@ function computeReport(raw: AuditInputs) {
     },
     {
       key: "events",
-      label: "Events — camps, tournaments, showcases",
+      label: "Events & Facility",
       amount: campsOpportunity,
       amountFormatted: fmt$(campsOpportunity),
-      detail: `Add ~$40/player in incremental program revenue.`,
+      detail: `Add ~$40/player in events plus ~$20/player in facility usage.`,
     },
     {
       key: "training",
@@ -220,6 +220,7 @@ function computeReport(raw: AuditInputs) {
       projectedTotal,
       projectedTotalFormatted: fmt$(projectedTotal),
       upliftPct: Math.round(upliftPct),
+      walletCapturedPct,
     },
   };
 }
