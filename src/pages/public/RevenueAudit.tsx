@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import curveLogo from "@/assets/curve-sports-logo.png.asset.json";
 
 type FormState = {
   org_name: string;
@@ -58,8 +59,8 @@ export default function RevenueAudit() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.org_name.trim() || !form.contact_name.trim() || !form.email.trim()) {
-      toast({ title: "Missing info", description: "Please fill in org name, your name, and email.", variant: "destructive" });
+    if (!form.org_name.trim() || !form.contact_name.trim() || !form.email.trim() || !form.phone.trim()) {
+      toast({ title: "Missing info", description: "Please fill in org name, your name, email, and phone.", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -104,11 +105,8 @@ export default function RevenueAudit() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <header className="border-b border-slate-100">
-        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
-          <div className="text-2xl font-bold tracking-tight">
-            Curve<span className="text-emerald-600">Sports</span>
-          </div>
-          <a href="https://www.curvesports.com" className="text-sm text-slate-600 hover:text-emerald-600">curvesports.com</a>
+        <div className="max-w-4xl mx-auto px-6 py-5 flex items-center justify-center">
+          <img src={curveLogo.url} alt="Curve Sports" className="h-12 w-auto" />
         </div>
       </header>
 
@@ -136,22 +134,22 @@ export default function RevenueAudit() {
             <h2 className="font-semibold text-lg">About your organization</h2>
             <div className="grid md:grid-cols-2 gap-4">
               <Field label="Organization name *">
-                <Input value={form.org_name} onChange={(e) => set("org_name", e.target.value)} placeholder="e.g. Westside Soccer Club" required />
+                <Input value={form.org_name} onChange={(e) => set("org_name", e.target.value)} required />
               </Field>
               <Field label="City, State">
-                <Input value={form.city_state} onChange={(e) => set("city_state", e.target.value)} placeholder="Tampa, FL" />
+                <Input value={form.city_state} onChange={(e) => set("city_state", e.target.value)} />
               </Field>
               <Field label="Your name *">
                 <Input value={form.contact_name} onChange={(e) => set("contact_name", e.target.value)} required />
               </Field>
               <Field label="Your role">
-                <Input value={form.role} onChange={(e) => set("role", e.target.value)} placeholder="Executive Director" />
+                <Input value={form.role} onChange={(e) => set("role", e.target.value)} />
               </Field>
               <Field label="Email *">
                 <Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} required />
               </Field>
-              <Field label="Phone">
-                <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} />
+              <Field label="Phone *">
+                <Input type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} required />
               </Field>
             </div>
           </section>
