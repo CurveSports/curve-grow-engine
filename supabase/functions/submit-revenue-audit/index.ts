@@ -157,7 +157,7 @@ function computeReport(raw: AuditInputs) {
       label: "Sponsorships — unlock your reach",
       amount: sponsorshipOpportunity,
       amountFormatted: fmt$(sponsorshipOpportunity),
-      detail: `Industry benchmark: $50 per player in sponsorship revenue.`,
+      detail: `Industry benchmark: $150 per player in sponsorship revenue.`,
     },
     {
       key: "events",
