@@ -121,7 +121,7 @@ export default function RevenueAudit() {
             See your untapped revenue in 2 minutes.
           </h1>
           <p className="text-lg text-slate-600 max-w-xl mx-auto">
-            Tell us about your sports organization and we'll show you exactly where the dollars are sitting — and how to capture them.
+            Tell us about your organization and we'll show you exactly where the dollars are sitting — and how to capture them.
           </p>
         </div>
 
@@ -187,7 +187,7 @@ export default function RevenueAudit() {
             <ToggleRow label="Improve retention" checked={form.retentionToggle} onChange={(v) => set("retentionToggle", v)} />
             <ToggleRow label="Capture apparel wallet share" checked={form.apparelToggle} onChange={(v) => set("apparelToggle", v)} />
             <ToggleRow label="Unlock sponsorship value" checked={form.sponsorshipToggle} onChange={(v) => set("sponsorshipToggle", v)} />
-            <ToggleRow label="Launch camps & clinics" checked={form.campsToggle} onChange={(v) => set("campsToggle", v)} />
+            <ToggleRow label="Events - Data Days, Camps, Tournaments, Showcases" checked={form.campsToggle} onChange={(v) => set("campsToggle", v)} />
           </section>
 
           <Button type="submit" disabled={submitting} className="w-full h-14 text-base bg-emerald-600 hover:bg-emerald-700">
