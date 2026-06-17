@@ -108,10 +108,10 @@ function computeReport(raw: AuditInputs) {
   const facilityPotential = totalPlayers * 20;
   const campsOpportunity = Math.max(0, campsPotential - campsRev) + Math.max(0, facilityPotential - facilityRev);
 
-  // 6) Training — $60/player (prefer flat field, fallback to engines.training.revenue)
+  // 6) Training — $100/month × 12 = $1,200/player/year
   const engines = raw.engines ?? {};
   const trainingRev = num(raw.trainingRevenue) || num(engines.training?.revenue);
-  const trainingPotential = totalPlayers * 60;
+  const trainingPotential = totalPlayers * 100 * 12;
   const trainingOpportunity = Math.max(0, trainingPotential - trainingRev);
 
   // 7) Share of Wallet — 3% of outside spend per family
