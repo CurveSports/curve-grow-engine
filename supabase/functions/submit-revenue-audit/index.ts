@@ -93,12 +93,12 @@ function computeReport(raw: AuditInputs) {
   const retentionBase = retainedExtra * avgFee;
   const retentionOpportunity = retentionBase + retentionBase * 0.1;
 
-  // 3) Apparel — $120/player × 30% margin
-  const apparelPotential = totalPlayers * 120 * 0.3;
+  // 3) Apparel — $150/player benchmark
+  const apparelPotential = totalPlayers * 150;
   const apparelOpportunity = Math.max(0, apparelPotential - apparelRev);
 
-  // 4) Sponsorship — max of $50/player or $2,000/sponsor, × market multiplier
-  const sponsorPotentialPerPlayer = totalPlayers * 50 * mult;
+  // 4) Sponsorship — max of $150/player or $2,000/sponsor, × market multiplier
+  const sponsorPotentialPerPlayer = totalPlayers * 150 * mult;
   const sponsorPotentialPerDeal = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
   const sponsorshipPotential = Math.max(sponsorPotentialPerPlayer, sponsorPotentialPerDeal);
   const sponsorshipOpportunity = Math.max(0, sponsorshipPotential - sponsorshipRev);
@@ -108,10 +108,10 @@ function computeReport(raw: AuditInputs) {
   const facilityPotential = totalPlayers * 20;
   const campsOpportunity = Math.max(0, campsPotential - campsRev) + Math.max(0, facilityPotential - facilityRev);
 
-  // 6) Training — $60/player (prefer flat field, fallback to engines.training.revenue)
+  // 6) Training — $100/month × 12 = $1,200/player/year
   const engines = raw.engines ?? {};
   const trainingRev = num(raw.trainingRevenue) || num(engines.training?.revenue);
-  const trainingPotential = totalPlayers * 60;
+  const trainingPotential = totalPlayers * 100 * 12;
   const trainingOpportunity = Math.max(0, trainingPotential - trainingRev);
 
   // 7) Share of Wallet — 3% of outside spend per family
@@ -150,14 +150,14 @@ function computeReport(raw: AuditInputs) {
       label: "Apparel & Hard Goods — capture wallet share",
       amount: apparelOpportunity,
       amountFormatted: fmt$(apparelOpportunity),
-      detail: `30% of players buying a $120 apparel package, brought in-house.`,
+      detail: `Industry benchmark: $150 per player in apparel & hard-goods revenue brought in-house.`,
     },
     {
       key: "sponsorships",
       label: "Sponsorships — unlock your reach",
       amount: sponsorshipOpportunity,
       amountFormatted: fmt$(sponsorshipOpportunity),
-      detail: `Industry benchmark: $50 per player in sponsorship revenue.`,
+      detail: `Industry benchmark: $150 per player in sponsorship revenue.`,
     },
     {
       key: "events",
@@ -171,7 +171,7 @@ function computeReport(raw: AuditInputs) {
       label: "Training / Player Development",
       amount: trainingOpportunity,
       amountFormatted: fmt$(trainingOpportunity),
-      detail: `Capture ~$60/player in private training that's leaving the building today.`,
+      detail: `Capture ~$100/month per player in private training that's leaving the building today.`,
     },
     {
       key: "wallet",

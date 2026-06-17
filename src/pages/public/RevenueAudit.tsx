@@ -626,16 +626,15 @@ function estimateLeak(f: FormState) {
     lines.push({ key: "retention", label: "Retention & Referrals", amount: retained + referral });
   }
 
-  // Apparel & Hard Goods — $120/player × 30% margin (RosterGrowthCalculator basis)
+  // Apparel & Hard Goods — $150/player benchmark
   if (players) {
-    const potential = players * 120 * 0.3;
+    const potential = players * 150;
     lines.push({ key: "apparel", label: "Apparel & Hard Goods", amount: Math.max(0, potential - apparelRev) });
   }
 
-  // Sponsorships — benchmark $50/player × market multiplier (SponsorshipValueCalculator)
+  // Sponsorships — benchmark $150/player × market multiplier
   if (players) {
-    const potential = players * 50 * mult;
-    // Also consider per-sponsor benchmark of $2,000 mid market
+    const potential = players * 150 * mult;
     const perSponsorPotential = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
     const opp = Math.max(0, Math.max(potential, perSponsorPotential) - sponsorshipRev);
     lines.push({ key: "sponsorships", label: "Sponsorships", amount: opp });
@@ -649,9 +648,9 @@ function estimateLeak(f: FormState) {
     lines.push({ key: "events", label: "Events & Facility", amount: opp });
   }
 
-  // Training — $60/player captured in-house
+  // Training — $100/month × 12 = $1,200/player/year captured in-house
   if (players) {
-    const potential = players * 60;
+    const potential = players * 100 * 12;
     lines.push({ key: "training", label: "Training / Player Dev", amount: Math.max(0, potential - trainingRev) });
   }
 
