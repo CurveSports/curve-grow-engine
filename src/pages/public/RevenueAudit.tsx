@@ -69,7 +69,6 @@ type FormState = {
   // Step 3 — money flow
   apparelRevenue: string;
   eventsRevenue: string;
-  facilityRevenue: string;
   trainingRevenue: string;
   outsideSpendPerFamily: number;
   marketType: MarketType;
