@@ -93,12 +93,12 @@ function computeReport(raw: AuditInputs) {
   const retentionBase = retainedExtra * avgFee;
   const retentionOpportunity = retentionBase + retentionBase * 0.1;
 
-  // 3) Apparel — $120/player × 30% margin
-  const apparelPotential = totalPlayers * 120 * 0.3;
+  // 3) Apparel — $150/player benchmark
+  const apparelPotential = totalPlayers * 150;
   const apparelOpportunity = Math.max(0, apparelPotential - apparelRev);
 
-  // 4) Sponsorship — max of $50/player or $2,000/sponsor, × market multiplier
-  const sponsorPotentialPerPlayer = totalPlayers * 50 * mult;
+  // 4) Sponsorship — max of $150/player or $2,000/sponsor, × market multiplier
+  const sponsorPotentialPerPlayer = totalPlayers * 150 * mult;
   const sponsorPotentialPerDeal = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
   const sponsorshipPotential = Math.max(sponsorPotentialPerPlayer, sponsorPotentialPerDeal);
   const sponsorshipOpportunity = Math.max(0, sponsorshipPotential - sponsorshipRev);
