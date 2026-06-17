@@ -61,7 +61,7 @@ const ENGINES: Array<{
     key: "apparel",
     name: "Apparel & Hard Goods",
     icon: Shirt,
-    thesis: "Bring uniforms, fan gear, and equipment in-house instead of sending margin to outside vendors.",
+    thesis: "Secure the best uniform, fan gear, and equipment deals, ensuring your margins are strong and parents aren't overpaying",
     doToday: "We sell apparel today",
   },
   {
@@ -75,21 +75,21 @@ const ENGINES: Array<{
     key: "training",
     name: "Training / Player Development",
     icon: GraduationCap,
-    thesis: "Capture private training, skills work, and player development that's leaving the building today.",
+    thesis: "Capture private training, skills work, and player development that's leaving the ecosystem today.",
     doToday: "We offer training today",
   },
   {
     key: "events",
     name: "Events",
     icon: CalendarDays,
-    thesis: "Data Days, Camps, Tournaments, Showcases — your facility & brand as a revenue engine.",
+    thesis: "Data Days, Camps, Tournaments, Showcases — your brand as a revenue engine.",
     doToday: "We run events today",
   },
   {
     key: "wallet",
-    name: "Share of Wallet",
+    name: "Share of Wallet & Overall Spend",
     icon: Wallet,
-    thesis: "The meta-engine: capture more of the $15k a travel family already spends each year.",
+    thesis: "The meta-engine: capture more share of wallet - while decreasing the amount of money families are spending overall",
     doToday: "",
   },
 ];
@@ -350,15 +350,17 @@ export default function RevenueAudit() {
               <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-3">The Share-of-Wallet Thesis</div>
               <h2 className="font-display text-3xl md:text-5xl font-bold tracking-tight leading-tight" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
                 It's not about charging more.<br />
-                <span className="text-white/60">It's about keeping more in-house.</span>
+                <span className="text-white/60 text-2xl md:text-3xl font-normal mt-4 leading-snug" style={{ fontFamily: "Inter, sans-serif" }}>
+                  What if you could decrease total parent spend and increase your share of wallet?
+                </span>
               </h2>
             </div>
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
                   k: "01",
-                  t: "Parents already pay.",
-                  d: "Roughly $15,000 a year per travel family — fees, uniforms, training, travel, tournaments, hotels, gear.",
+                  t: "Families are already spending",
+                  d: "Roughly $15,000 a year per travel family — fees, uniforms, training, travel, tournaments, hotels, hard goods.",
                 },
                 {
                   k: "02",
@@ -368,7 +370,7 @@ export default function RevenueAudit() {
                 {
                   k: "03",
                   t: "We bring it home.",
-                  d: "Every dollar recaptured compounds into retention, referrals, and a healthier, more independent organization.",
+                  d: "Every dollar recaptured and every dollar saved for parents compounds into retention, referrals, and a healthier, more independent organization.",
                 },
               ].map((c) => (
                 <motion.div
@@ -511,7 +513,7 @@ export default function RevenueAudit() {
                   <div className="grid md:grid-cols-3 gap-4">
                     <Field label="Total players"><DarkInput type="number" min="0" value={form.totalPlayers} onChange={(e) => set("totalPlayers", e.target.value)} /></Field>
                     <Field label="Avg annual fee per player ($)"><DarkInput type="number" min="0" value={form.avgFeePerPlayer} onChange={(e) => set("avgFeePerPlayer", e.target.value)} /></Field>
-                    <Field label="Current YoY retention (%)"><DarkInput type="number" min="0" max="100" value={form.currentRetentionPct} onChange={(e) => set("currentRetentionPct", e.target.value)} /></Field>
+                    <Field label="CURRENT YEAR OVER YEAR RETENTION (%)"><DarkInput type="number" min="0" max="100" value={form.currentRetentionPct} onChange={(e) => set("currentRetentionPct", e.target.value)} /></Field>
                   </div>
                 </FormCard>
 
@@ -758,7 +760,7 @@ function ShareOfWalletRing({ capturedPct }: { capturedPct: number }) {
 }
 
 function maturityLabel(n: number) {
-  return ["Nonexistent", "Ad hoc", "Defined", "Operating", "Optimized"][n - 1] ?? "";
+  return ["Nonexistent", "", "Defined", "Operating", "Optimized"][n - 1] ?? "";
 }
 
 // ---------------------------------------------------------------------------
