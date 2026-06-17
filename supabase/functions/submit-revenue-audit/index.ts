@@ -289,6 +289,41 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
 
+    // ----- Action: email-me-my-report (from the report page) -----
+    if (body?.action === "email_report") {
+      const token = strField(body?.token, 200);
+      if (!token) return json({ error: "Missing token" }, 400);
+      const { data: lead, error: leadErr } = await admin
+        .from("public_audit_leads")
+        .select("id, email, contact_name, org_name, report_payload, report_token")
+        .eq("report_token", token)
+        .maybeSingle();
+      if (leadErr || !lead) return json({ error: "Report not found" }, 404);
+      if (!LOVABLE_API_KEY) return json({ error: "Email not configured" }, 500);
+      const reportUrl = `${PUBLIC_APP_BASE}/revenue-audit/report/${lead.report_token}`;
+      try {
+        const unsub = await ensureUnsubscribeToken(admin, lead.email);
+        const messageId = crypto.randomUUID();
+        await sendLovableEmail({
+          to: lead.email,
+          from: `${SITE_NAME} <hello@${FROM_DOMAIN}>`,
+          sender_domain: SENDER_DOMAIN,
+          subject: "Your Curve Revenue Audit (re-sent)",
+          html: confirmEmailHtml(lead.contact_name, reportUrl, (lead.report_payload as any)?.totals ?? {}),
+          text: `Hi ${lead.contact_name}, your Curve Revenue Audit is here: ${reportUrl}`,
+          purpose: "transactional",
+          label: "revenue_audit_resend",
+          idempotency_key: `revenue-audit-resend-${lead.id}-${Date.now()}`,
+          message_id: messageId,
+          unsubscribe_token: unsub,
+        }, { apiKey: LOVABLE_API_KEY });
+        return json({ ok: true, email: lead.email });
+      } catch (e: any) {
+        console.error("resend email failed:", e);
+        return json({ error: "Could not send email" }, 500);
+      }
+    }
+
     // Honeypot: silently accept and discard
     if (body?.website || body?.honeypot) {
       return json({ ok: true, leadId: null, reportToken: null });
