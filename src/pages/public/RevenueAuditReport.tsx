@@ -39,6 +39,7 @@ type ReportPayload = {
     totalOpportunityFormatted: string;
     projectedTotalFormatted: string;
     upliftPct: number;
+    walletCapturedPct?: number;
   };
 };
 
@@ -180,11 +181,19 @@ export default function RevenueAuditReport() {
             <div className="w-12 h-12 rounded-xl bg-[#c5ff3d]/10 border border-[#c5ff3d]/20 flex items-center justify-center shrink-0">
               <Wallet className="w-6 h-6 text-[#c5ff3d]" />
             </div>
-            <div>
+            <div className="flex-1">
               <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-2">Share of Wallet</div>
               <h2 className="font-display text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
                 Your families already spend the money. We help you capture more of it.
               </h2>
+              {typeof r.totals.walletCapturedPct === "number" && (
+                <div className="flex items-baseline gap-3 mb-3">
+                  <div className="font-display text-4xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                    {r.totals.walletCapturedPct}%
+                  </div>
+                  <div className="text-sm text-white/60">of family spend captured today · {100 - r.totals.walletCapturedPct}% leaves the building</div>
+                </div>
+              )}
               <p className="text-white/60 leading-relaxed">
                 Every line below is dollars already flowing through youth sports for {lead.org_name} — to outside vendors, third-party trainers, distant tournaments, and tournament-trip hotels. Bringing even a slice in-house compounds into retention, brand strength, and a healthier organization.
               </p>

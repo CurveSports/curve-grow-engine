@@ -47,18 +47,23 @@ type AuditInputs = {
   apparelRevenue?: number;
   sponsorshipRevenue?: number;
   campsClinicsRevenue?: number;
+  facilityRevenue?: number;
+  trainingRevenue?: number;
+  numSponsors?: number;
   feeIncreasePct?: number;
   apparelToggle?: boolean;
   sponsorshipToggle?: boolean;
   retentionToggle?: boolean;
   campsToggle?: boolean;
-  // extended
   sport?: string;
   numTeams?: number;
   outsideSpendPerFamily?: number;
+  marketType?: "small" | "mid" | "major";
   engines?: Record<string, EngineState>;
   priorities?: string[];
 };
+
+const MARKET_MULT: Record<string, number> = { small: 0.8, mid: 1.0, major: 1.3 };
 
 function computeReport(raw: AuditInputs) {
   const totalPlayers = num(raw.totalPlayers);
@@ -67,66 +72,63 @@ function computeReport(raw: AuditInputs) {
   const apparelRev = num(raw.apparelRevenue);
   const sponsorshipRev = num(raw.sponsorshipRevenue);
   const campsRev = num(raw.campsClinicsRevenue);
+  const facilityRev = num(raw.facilityRevenue);
+  const numSponsors = num(raw.numSponsors);
+  const mult = MARKET_MULT[raw.marketType ?? "mid"] ?? 1.0;
 
   const currentDuesRevenue = totalPlayers * avgFee;
-  const currentTotal = currentDuesRevenue + apparelRev + sponsorshipRev + campsRev;
+  const currentTotal =
+    currentDuesRevenue + apparelRev + sponsorshipRev + campsRev + facilityRev + num(raw.trainingRevenue);
 
-  // 1) Pricing — small, conservative fee lift (5%) net of typical attrition (2%)
+  // 1) Pricing — 5% fee lift net of 2% attrition
   const feeLiftPct = raw.feeIncreasePct ? num(raw.feeIncreasePct) : 5;
   const attritionPct = 2;
   const remainingPlayers = totalPlayers * (1 - attritionPct / 100);
   const newDues = remainingPlayers * avgFee * (1 + feeLiftPct / 100);
   const pricingOpportunity = Math.max(0, newDues - currentDuesRevenue);
 
-  // 2) Retention — every 5pt retention improvement = recovered fee revenue
-  const retentionToggle = raw.retentionToggle !== false;
+  // 2) Retention & Referrals — +5pt × fee + 10% referral boost
   const targetRetention = Math.min(95, currentRetention + 5);
   const retainedExtra = totalPlayers * Math.max(0, (targetRetention - currentRetention) / 100);
-  const retentionOpportunity = retentionToggle ? retainedExtra * avgFee : 0;
+  const retentionBase = retainedExtra * avgFee;
+  const retentionOpportunity = retentionBase + retentionBase * 0.1;
 
-  // 3) Wallet share — apparel capture: assume potential = $120 per player at 30% capture
-  const apparelToggle = raw.apparelToggle !== false;
+  // 3) Apparel — $120/player × 30% margin
   const apparelPotential = totalPlayers * 120 * 0.3;
-  const apparelOpportunity = apparelToggle ? Math.max(0, apparelPotential - apparelRev) : 0;
+  const apparelOpportunity = Math.max(0, apparelPotential - apparelRev);
 
-  // 4) Sponsorship — typical org our size lands ~$50 per player in sponsorship
-  const sponsorshipToggle = raw.sponsorshipToggle !== false;
-  const sponsorshipPotential = totalPlayers * 50;
-  const sponsorshipOpportunity = sponsorshipToggle
-    ? Math.max(0, sponsorshipPotential - sponsorshipRev)
-    : 0;
+  // 4) Sponsorship — max of $50/player or $2,000/sponsor, × market multiplier
+  const sponsorPotentialPerPlayer = totalPlayers * 50 * mult;
+  const sponsorPotentialPerDeal = numSponsors > 0 ? numSponsors * 2000 * mult : 0;
+  const sponsorshipPotential = Math.max(sponsorPotentialPerPlayer, sponsorPotentialPerDeal);
+  const sponsorshipOpportunity = Math.max(0, sponsorshipPotential - sponsorshipRev);
 
-  // 5) Events (camps, tournaments, showcases) — typical org adds ~$40 per player annually
-  const campsToggle = raw.campsToggle !== false;
+  // 5) Events & Facility — $40/player events + $20/player facility
   const campsPotential = totalPlayers * 40;
-  const campsOpportunity = campsToggle ? Math.max(0, campsPotential - campsRev) : 0;
+  const facilityPotential = totalPlayers * 20;
+  const campsOpportunity = Math.max(0, campsPotential - campsRev) + Math.max(0, facilityPotential - facilityRev);
 
-  // 6) Training / Player Development — ~$60 per player captured in-house
+  // 6) Training — $60/player (prefer flat field, fallback to engines.training.revenue)
   const engines = raw.engines ?? {};
-  const trainingState = engines.training ?? {};
-  const trainingToggle = trainingState.active !== false;
-  const trainingRev = num(trainingState.revenue);
+  const trainingRev = num(raw.trainingRevenue) || num(engines.training?.revenue);
   const trainingPotential = totalPlayers * 60;
-  const trainingOpportunity = trainingToggle ? Math.max(0, trainingPotential - trainingRev) : 0;
+  const trainingOpportunity = Math.max(0, trainingPotential - trainingRev);
 
-  // 7) Share of Wallet — capture an additional 3% of outside spend per family
-  const walletState = engines.wallet ?? {};
-  const walletToggle = walletState.active !== false;
+  // 7) Share of Wallet — 3% of outside spend per family
   const outsideSpend = num(raw.outsideSpendPerFamily) || 15000;
-  // Family count ≈ players (1 family per player as an approximation)
-  const walletOpportunity = walletToggle ? totalPlayers * outsideSpend * 0.03 : 0;
+  const walletOpportunity = totalPlayers * outsideSpend * 0.03;
 
   const totalOpportunity =
-    pricingOpportunity +
-    retentionOpportunity +
-    apparelOpportunity +
-    sponsorshipOpportunity +
-    campsOpportunity +
-    trainingOpportunity +
-    walletOpportunity;
+    pricingOpportunity + retentionOpportunity + apparelOpportunity +
+    sponsorshipOpportunity + campsOpportunity + trainingOpportunity + walletOpportunity;
 
   const projectedTotal = currentTotal + totalOpportunity;
   const upliftPct = currentTotal > 0 ? (totalOpportunity / currentTotal) * 100 : 0;
+
+  // Share of wallet captured today
+  const walletPool = totalPlayers * outsideSpend;
+  const walletCapturedPct = walletPool > 0 ? Math.min(100, Math.round((currentTotal / walletPool) * 100)) : 0;
+
 
   const allOpps = [
     {
@@ -159,10 +161,10 @@ function computeReport(raw: AuditInputs) {
     },
     {
       key: "events",
-      label: "Events — camps, tournaments, showcases",
+      label: "Events & Facility",
       amount: campsOpportunity,
       amountFormatted: fmt$(campsOpportunity),
-      detail: `Add ~$40/player in incremental program revenue.`,
+      detail: `Add ~$40/player in events plus ~$20/player in facility usage.`,
     },
     {
       key: "training",
@@ -218,6 +220,7 @@ function computeReport(raw: AuditInputs) {
       projectedTotal,
       projectedTotalFormatted: fmt$(projectedTotal),
       upliftPct: Math.round(upliftPct),
+      walletCapturedPct,
     },
   };
 }
