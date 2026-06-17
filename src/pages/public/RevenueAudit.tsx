@@ -94,7 +94,7 @@ const initial: FormState = {
   sponsorshipRevenue: "",
   apparelRevenue: "",
   eventsRevenue: "",
-  facilityRevenue: "",
+  
   trainingRevenue: "",
   outsideSpendPerFamily: 15000,
   marketType: "mid",
