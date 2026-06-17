@@ -184,7 +184,7 @@ export default function RevenueAudit() {
           <section className="bg-slate-50 rounded-xl p-6 space-y-3">
             <h2 className="font-semibold text-lg">Which revenue streams would you actually pursue?</h2>
             <p className="text-sm text-slate-600">Toggle off anything that isn't realistic for you — we'll skip it in your report.</p>
-            <ToggleRow label="Improve retention" checked={form.retentionToggle} onChange={(v) => set("retentionToggle", v)} />
+            <ToggleRow label="Improve retention and referrals" checked={form.retentionToggle} onChange={(v) => set("retentionToggle", v)} />
             <ToggleRow label="Capture apparel wallet share" checked={form.apparelToggle} onChange={(v) => set("apparelToggle", v)} />
             <ToggleRow label="Unlock sponsorship value" checked={form.sponsorshipToggle} onChange={(v) => set("sponsorshipToggle", v)} />
             <ToggleRow label="Events - Data Days, Camps, Tournaments, Showcases" checked={form.campsToggle} onChange={(v) => set("campsToggle", v)} />
