@@ -168,7 +168,7 @@ export default function RevenueAuditReport() {
         {/* Hero */}
         <div className="relative">
           <div className="absolute -top-20 -left-20 w-96 h-96 rounded-full bg-[#c5ff3d]/10 blur-[100px] pointer-events-none" />
-          <div className="relative text-center mb-14">
+          <div className="relative text-center mb-12">
             <div className="inline-block px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs uppercase tracking-[0.18em] text-white/70 mb-6">
               Revenue Audit · {lead.org_name}
             </div>
@@ -176,86 +176,64 @@ export default function RevenueAuditReport() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="font-display text-4xl md:text-6xl font-bold tracking-tight leading-[1.05]"
+              className="font-display text-3xl md:text-5xl font-bold tracking-tight leading-[1.05]"
               style={{ fontFamily: "'Archivo Black', sans-serif" }}
             >
-              You're sitting on
+              Your families already spend the money.
               <br />
-              <span className="text-[#c5ff3d]">{r.totals.totalOpportunityFormatted}</span>
-              <br />
-              <span className="text-white/70 text-2xl md:text-3xl font-normal" style={{ fontFamily: "Inter, sans-serif" }}>
-                in untapped annual revenue.
+              <span className="text-white/60 text-xl md:text-2xl font-normal" style={{ fontFamily: "Inter, sans-serif" }}>
+                Here's how much of it stays inside your club.
               </span>
             </motion.h1>
           </div>
         </div>
 
-        {/* Stat row */}
-        <div className="grid md:grid-cols-3 gap-4 mb-16">
-          <Stat label="Current annual revenue" value={r.current.totalFormatted} />
-          <Stat label="Projected with Curve" value={r.totals.projectedTotalFormatted} highlight />
-          <Stat label="Total uplift" value={`+${r.totals.upliftPct}%`} />
+        {/* Two-stat hero: % captured + $ leaving */}
+        <div className="grid md:grid-cols-2 gap-4 mb-16">
+          <CapturedRing
+            pct={r.hero?.capturedPct ?? r.totals.walletCapturedPct ?? 0}
+            poolFormatted={r.hero?.walletPoolFormatted}
+            currentFormatted={r.hero?.totalAnnualRevenueFormatted ?? r.current.totalFormatted}
+          />
+          <LeakingCard
+            valueFormatted={r.hero?.leakingDollarsFormatted ?? r.totals.leakingDollarsFormatted ?? r.totals.totalOpportunityFormatted}
+            pct={100 - (r.hero?.capturedPct ?? r.totals.walletCapturedPct ?? 0)}
+          />
         </div>
 
-        {/* Share of wallet callout */}
-        <div className="mb-16 rounded-2xl border border-white/10 bg-gradient-to-br from-[#c5ff3d]/8 to-transparent p-8 md:p-10">
-          <div className="flex items-start gap-5">
-            <div className="w-12 h-12 rounded-xl bg-[#c5ff3d]/10 border border-[#c5ff3d]/20 flex items-center justify-center shrink-0">
-              <Wallet className="w-6 h-6 text-[#c5ff3d]" />
-            </div>
-            <div className="flex-1">
-              <div className="text-xs uppercase tracking-[0.18em] text-[#c5ff3d] mb-2">Share of Wallet</div>
-              <h2 className="font-display text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                Your families already spend the money. We help you capture more of it.
-              </h2>
-              {typeof r.totals.walletCapturedPct === "number" && (
-                <div className="flex items-baseline gap-3 mb-3">
-                  <div className="font-display text-4xl font-bold text-[#c5ff3d] tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                    {r.totals.walletCapturedPct}%
-                  </div>
-                  <div className="text-sm text-white/60">of family spend captured today · {100 - r.totals.walletCapturedPct}% leaves the building</div>
-                </div>
-              )}
-              <p className="text-white/60 leading-relaxed">
-                Every line below is dollars already flowing through youth sports for {lead.org_name} — to outside vendors, third-party trainers, distant tournaments, and tournament-trip hotels. Bringing even a slice in-house compounds into retention, brand strength, and a healthier organization.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Opportunities */}
-        <h2 className="font-display text-2xl md:text-3xl font-bold mb-6 flex items-center gap-3" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
+        {/* Engines */}
+        <h2 className="font-display text-2xl md:text-3xl font-bold mb-2 flex items-center gap-3" style={{ fontFamily: "'Archivo Black', sans-serif" }}>
           <TrendingUp className="w-6 h-6 text-[#c5ff3d]" /> Where the opportunity is
         </h2>
+        <p className="text-white/60 text-sm mb-6">
+          You picked 3 engines to focus on — here's the directional read. The rest unlock on your Growth Partner call.
+        </p>
 
-        <div className="space-y-3 mb-20">
-          {r.opportunities.length === 0 ? (
-            <p className="text-white/60">
-              Looks like you're already running a tight ship. Let's talk anyway — there's always a next level.
-            </p>
-          ) : (
-            r.opportunities.map((o, i) => (
-              <motion.div
-                key={o.key}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: i * 0.05 }}
-                className="rounded-xl border border-white/10 bg-white/[0.02] p-5 md:p-6 flex items-start justify-between gap-6 hover:border-[#c5ff3d]/40 transition-colors"
-              >
-                <div className="flex items-start gap-4 min-w-0">
-                  <div className="text-xs font-mono text-[#c5ff3d] mt-1">0{i + 1}</div>
-                  <div className="min-w-0">
-                    <div className="font-semibold text-lg">{o.label}</div>
-                    <div className="text-sm text-white/60 mt-1">{o.detail}</div>
-                  </div>
-                </div>
-                <div className="font-display text-2xl md:text-3xl font-bold text-[#c5ff3d] whitespace-nowrap tabular-nums" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                  {o.amountFormatted}
-                </div>
-              </motion.div>
-            ))
+        <div className="grid md:grid-cols-2 gap-3 mb-20">
+          {(r.engines ?? []).map((e, i) =>
+            e.locked ? (
+              <LockedEngineCard key={e.key} engine={e} />
+            ) : (
+              <PickedEngineCard key={e.key} engine={e} index={i} />
+            )
           )}
+          {(!r.engines || r.engines.length === 0) &&
+            r.opportunities.map((o, i) => (
+              <PickedEngineCard
+                key={o.key}
+                engine={{
+                  key: o.key,
+                  label: o.label,
+                  locked: false,
+                  teaser: "",
+                  gapFormatted: o.amountFormatted,
+                  insight: o.detail,
+                }}
+                index={i}
+              />
+            ))}
         </div>
+
 
         {/* ACT 4: Next steps */}
         <section className="border-t border-white/10 pt-16">
