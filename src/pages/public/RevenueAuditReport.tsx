@@ -75,7 +75,6 @@ export default function RevenueAuditReport() {
   const [lead, setLead] = useState<LeadView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [emailing, setEmailing] = useState(false);
 
   useEffect(() => {
     if (!token) return;
