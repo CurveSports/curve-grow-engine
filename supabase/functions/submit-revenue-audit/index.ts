@@ -47,7 +47,7 @@ type AuditInputs = {
   apparelRevenue?: number;
   sponsorshipRevenue?: number;
   campsClinicsRevenue?: number;
-  facilityRevenue?: number;
+  
   trainingRevenue?: number;
   numSponsors?: number;
   feeIncreasePct?: number;
