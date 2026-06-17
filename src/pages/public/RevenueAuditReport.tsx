@@ -12,8 +12,20 @@ import {
   CalendarCheck,
   Share2,
   Wallet,
+  Lock,
 } from "lucide-react";
 import curveLogo from "@/assets/curve-sports-logo.png.asset.json";
+
+type EngineDetail = {
+  key: string;
+  label: string;
+  locked: boolean;
+  teaser: string;
+  benchmarkFormatted?: string;
+  currentFormatted?: string;
+  gapFormatted?: string;
+  insight?: string;
+};
 
 type Opportunity = {
   key: string;
@@ -26,9 +38,18 @@ type Opportunity = {
 type ReportPayload = {
   inputs: {
     totalPlayers: number;
-    avgFee: number;
-    currentRetention: number;
+    totalAnnualRevenue?: number;
+    priorities?: string[];
   };
+  hero?: {
+    capturedPct: number;
+    leakingDollars: number;
+    leakingDollarsFormatted: string;
+    walletPool: number;
+    walletPoolFormatted: string;
+    totalAnnualRevenueFormatted: string;
+  };
+  engines?: EngineDetail[];
   current: {
     totalFormatted: string;
     duesRevenueFormatted: string;
@@ -40,6 +61,7 @@ type ReportPayload = {
     projectedTotalFormatted: string;
     upliftPct: number;
     walletCapturedPct?: number;
+    leakingDollarsFormatted?: string;
   };
 };
 
