@@ -215,72 +215,28 @@ export default function RevenueAuditReport() {
             </h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            {/* Primary: book a call */}
+          <div className="max-w-2xl mx-auto">
             <a
-              href="https://www.curvesports.com/contact"
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3fU0wAjS8lvvlPgBYW04RqTzaf8qDpkYQtZ6wSZuzGcOdDzLsvRSdqexBtsWgR3lmmqk7bZCop"
               target="_blank"
               rel="noreferrer"
-              className="group rounded-2xl border border-[#c5ff3d] bg-[#c5ff3d]/10 p-6 hover:bg-[#c5ff3d]/15 transition flex flex-col"
+              className="group block rounded-2xl border border-[#c5ff3d] bg-[#c5ff3d]/10 p-8 md:p-10 hover:bg-[#c5ff3d]/15 transition text-center"
             >
-              <div className="w-11 h-11 rounded-lg bg-[#c5ff3d]/20 border border-[#c5ff3d]/30 flex items-center justify-center mb-4">
-                <CalendarCheck className="w-5 h-5 text-[#c5ff3d]" />
+              <div className="w-14 h-14 rounded-xl bg-[#c5ff3d]/20 border border-[#c5ff3d]/30 flex items-center justify-center mb-5 mx-auto">
+                <CalendarCheck className="w-6 h-6 text-[#c5ff3d]" />
               </div>
-              <div className="font-display text-lg font-bold mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                Book a Growth Partner call
+              <div className="font-display text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "'Oswald', sans-serif" }}>
+                Book a call to learn more about Curve Sports Allegiance
               </div>
-              <p className="text-sm text-white/60 mb-6 flex-1">
-                30 minutes with a Curve strategist to walk through your audit and the first engines we'd activate.
+              <p className="text-sm md:text-base text-white/60 mb-6 max-w-lg mx-auto">
+                30 minutes with a Curve strategist to walk through your audit and the first engines we'd activate together.
               </p>
-              <span className="inline-flex items-center text-sm font-semibold text-[#c5ff3d]">
-                Schedule <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition" />
-              </span>
-            </a>
-
-            {/* Email me my report */}
-            <button
-              type="button"
-              onClick={handleEmailReport}
-              disabled={emailing}
-              className="text-left group rounded-2xl border border-white/10 bg-white/[0.02] p-6 hover:border-white/30 hover:bg-white/[0.04] transition flex flex-col disabled:opacity-60"
-            >
-              <div className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                {emailing ? (
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                ) : (
-                  <Mail className="w-5 h-5 text-white" />
-                )}
-              </div>
-              <div className="font-display text-lg font-bold mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                Email me my report
-              </div>
-              <p className="text-sm text-white/60 mb-6 flex-1">
-                Send a fresh copy of this report to the email on file so you can come back to it later.
-              </p>
-              <span className="inline-flex items-center text-sm font-semibold text-white">
-                {emailing ? "Sending…" : "Send it"} <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition" />
-              </span>
-            </button>
-
-            {/* Forward to board */}
-            <a
-              href={mailtoForward}
-              className="group rounded-2xl border border-white/10 bg-white/[0.02] p-6 hover:border-white/30 hover:bg-white/[0.04] transition flex flex-col"
-            >
-              <div className="w-11 h-11 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center mb-4">
-                <Share2 className="w-5 h-5 text-white" />
-              </div>
-              <div className="font-display text-lg font-bold mb-2" style={{ fontFamily: "'Oswald', sans-serif" }}>
-                Forward to your board
-              </div>
-              <p className="text-sm text-white/60 mb-6 flex-1">
-                Open a pre-filled email with a link to this report so you can share it with your leadership team.
-              </p>
-              <span className="inline-flex items-center text-sm font-semibold text-white">
-                Compose <ArrowRight className="w-4 h-4 ml-1.5 group-hover:translate-x-0.5 transition" />
+              <span className="inline-flex items-center text-base font-semibold text-[#c5ff3d]">
+                Schedule your call <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-0.5 transition" />
               </span>
             </a>
           </div>
+
 
           <p className="text-xs text-center text-white/30 mt-10 max-w-xl mx-auto">
             Estimates based on the inputs you provided and Curve Sports industry benchmarks. Actual results vary — your Growth Partner call will sharpen the math against your specific market.
