@@ -410,8 +410,7 @@ export default function RevenueAudit() {
                   </p>
                   <div className="grid md:grid-cols-2 gap-4">
                     <Field label="Apparel & hard-goods revenue ($/yr)"><DarkInput type="number" min="0" value={form.apparelRevenue} onChange={(e) => set("apparelRevenue", e.target.value)} /></Field>
-                    <Field label="Camps / clinics / tournaments revenue ($/yr)"><DarkInput type="number" min="0" value={form.eventsRevenue} onChange={(e) => set("eventsRevenue", e.target.value)} /></Field>
-                    <Field label="Facility rental revenue ($/yr)"><DarkInput type="number" min="0" value={form.facilityRevenue} onChange={(e) => set("facilityRevenue", e.target.value)} /></Field>
+                    <Field label="Events revenue — camps, clinics, tournaments ($/yr)"><DarkInput type="number" min="0" value={form.eventsRevenue} onChange={(e) => set("eventsRevenue", e.target.value)} /></Field>
                     <Field label="Training / player-dev revenue ($/yr)"><DarkInput type="number" min="0" value={form.trainingRevenue} onChange={(e) => set("trainingRevenue", e.target.value)} /></Field>
                   </div>
 
