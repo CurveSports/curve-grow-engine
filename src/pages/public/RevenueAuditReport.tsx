@@ -92,29 +92,7 @@ export default function RevenueAuditReport() {
     })();
   }, [token]);
 
-  const handleEmailReport = async () => {
-    if (!token) return;
-    setEmailing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("submit-revenue-audit", {
-        body: { action: "email_report", token },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      toast({
-        title: "On its way",
-        description: `We just emailed your report${data?.email ? ` to ${data.email}` : ""}.`,
-      });
-    } catch (err: any) {
-      toast({
-        title: "Couldn't send",
-        description: err?.message ?? "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setEmailing(false);
-    }
-  };
+
 
   if (loading) {
     return (
