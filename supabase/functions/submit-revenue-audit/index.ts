@@ -72,13 +72,12 @@ function computeReport(raw: AuditInputs) {
   const apparelRev = num(raw.apparelRevenue);
   const sponsorshipRev = num(raw.sponsorshipRevenue);
   const campsRev = num(raw.campsClinicsRevenue);
-  const facilityRev = num(raw.facilityRevenue);
   const numSponsors = num(raw.numSponsors);
   const mult = MARKET_MULT[raw.marketType ?? "mid"] ?? 1.0;
 
   const currentDuesRevenue = totalPlayers * avgFee;
   const currentTotal =
-    currentDuesRevenue + apparelRev + sponsorshipRev + campsRev + facilityRev + num(raw.trainingRevenue);
+    currentDuesRevenue + apparelRev + sponsorshipRev + campsRev + num(raw.trainingRevenue);
 
   // 1) Pricing — 5% fee lift net of 2% attrition
   const feeLiftPct = raw.feeIncreasePct ? num(raw.feeIncreasePct) : 5;
