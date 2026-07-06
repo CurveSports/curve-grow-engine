@@ -34,11 +34,11 @@ type Row = {
 
 type Org = { id: string; name: string };
 
-const OWNER_EMAIL = "matt.gerber@curvesports.com";
+const OWNER_EMAILS = ["matt.gerber@curvesports.com", "dan.lee@curvesports.com"];
 
 export default function AdminUsers() {
   const { user, refresh } = useAuth();
-  const isOwner = (user?.email ?? "").toLowerCase() === OWNER_EMAIL;
+  const isOwner = OWNER_EMAILS.includes((user?.email ?? "").toLowerCase());
   const [rows, setRows] = useState<Row[]>([]);
   const [orgs, setOrgs] = useState<Org[]>([]);
   const [loading, setLoading] = useState(true);
@@ -242,7 +242,7 @@ export default function AdminUsers() {
                 </Select>
                 {!isOwner && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Only {OWNER_EMAIL} can create new Curve Admin accounts.
+                    Only {OWNER_EMAILS.join(" or ")} can create new Curve Admin accounts.
                   </p>
                 )}
               </div>
