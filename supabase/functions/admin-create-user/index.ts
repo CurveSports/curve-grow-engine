@@ -77,11 +77,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only the platform owner can create new Curve Admin accounts.
-    const OWNER_EMAIL = "matt.gerber@curvesports.com";
+    // Only platform owners can create new Curve Admin accounts.
+    const OWNER_EMAILS = ["matt.gerber@curvesports.com", "dan.lee@curvesports.com"];
     const callerEmail = (userRes.user.email ?? "").toLowerCase();
-    if (role === "admin" && callerEmail !== OWNER_EMAIL) {
-      return new Response(JSON.stringify({ error: `Only ${OWNER_EMAIL} can create new Curve Admin accounts.` }), {
+    if (role === "admin" && !OWNER_EMAILS.includes(callerEmail)) {
+      return new Response(JSON.stringify({ error: `Only ${OWNER_EMAILS.join(" or ")} can create new Curve Admin accounts.` }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
