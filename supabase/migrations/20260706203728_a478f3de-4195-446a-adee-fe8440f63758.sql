@@ -1,0 +1,1 @@
+UPDATE public.profiles SET module_access = ARRAY['allegiance','acquisitions','marketing','events'] WHERE email = 'dan.lee@curvesports.com';
