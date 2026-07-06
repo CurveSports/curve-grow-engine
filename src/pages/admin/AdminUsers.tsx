@@ -242,7 +242,7 @@ export default function AdminUsers() {
                 </Select>
                 {!isOwner && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Only {OWNER_EMAIL} can create new Curve Admin accounts.
+                    Only {OWNER_EMAILS.join(" or ")} can create new Curve Admin accounts.
                   </p>
                 )}
               </div>
