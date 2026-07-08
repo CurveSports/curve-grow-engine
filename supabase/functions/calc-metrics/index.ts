@@ -121,9 +121,10 @@ const PRICING_BENCHMARKS: Record<string, { hsLow: number; hsHigh: number; youthL
 };
 
 function calculate(intake: any) {
-  const total_players = Math.max(num(intake.total_players), 1);
   const hs_players = num(intake.hs_players);
   const youth_players = num(intake.youth_players);
+  const total_players = Math.max(num(intake.total_players) || (hs_players + youth_players), 1);
+
   const sponsors = num(intake.number_of_sponsors);
   const sponsor_rev = num(intake.total_sponsorship_revenue);
   const events_per_year = num(intake.events_per_year);
