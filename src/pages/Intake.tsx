@@ -512,22 +512,41 @@ export default function Intake() {
           {step === 1 && (
             <>
               <SubsectionHeading title="Player & team counts" />
+              <NumberField
+                label="High School Players"
+                value={form.hs_players}
+                onChange={(v) => {
+                  const hs = Number(v) || 0;
+                  const youth = Number(form.youth_players) || 0;
+                  setForm((f) => ({ ...f, hs_players: v, total_players: hs + youth }));
+                }}
+                min={0}
+              />
+              <NumberField
+                label="Youth Players (14U and below)"
+                value={form.youth_players}
+                onChange={(v) => {
+                  const youth = Number(v) || 0;
+                  const hs = Number(form.hs_players) || 0;
+                  setForm((f) => ({ ...f, youth_players: v, total_players: hs + youth }));
+                }}
+                min={0}
+              />
               <div>
-                <NumberField
-                  label="Total Players"
-                  value={form.total_players}
-                  onChange={(v) => set("total_players", v)}
-                  min={0}
-                />
+                <div className="rounded-md border border-border bg-muted/40 px-4 py-3">
+                  <div className="text-xs uppercase tracking-wide text-muted-foreground font-semibold">Total Players</div>
+                  <div className="text-2xl font-bold tabular-nums mt-1">
+                    {((Number(form.hs_players) || 0) + (Number(form.youth_players) || 0)).toLocaleString()}
+                  </div>
+                </div>
                 <div className="mt-2 rounded-md border-l-2 border-accent bg-accent-soft/40 px-3 py-2 text-xs text-foreground">
-                  <span className="font-semibold">Important:</span> this number must be as accurate as possible. Many of your assessment calculations — revenue per player, opportunity sizing, and benchmarks — depend directly on your organization size.
+                  <span className="font-semibold">Auto-calculated</span> from High School + Youth players above. Make sure both segment counts are accurate — revenue per player, opportunity sizing, and benchmarks all depend on this total.
                 </div>
               </div>
-              <NumberField label="High School Players" value={form.hs_players} onChange={(v) => set("hs_players", v)} min={0} />
-              <NumberField label="Youth Players (14U and below)" value={form.youth_players} onChange={(v) => set("youth_players", v)} min={0} />
               <NumberField label="Total Teams" value={form.total_teams} onChange={(v) => set("total_teams", v)} min={0} />
               <NumberField label="Average Roster Size" value={form.average_roster_size} onChange={(v) => set("average_roster_size", v)} min={0} />
               <NumberField label="How many coaches are active in your organization?" value={form.active_coaches} onChange={(v) => set("active_coaches", v)} min={0} />
+
 
               <div className="pt-4">
                 <SubsectionHeading title="Structure & participation" />
