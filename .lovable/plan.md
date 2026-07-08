@@ -1,22 +1,23 @@
 ## Problem
 
-KSA Bombers' derived_metrics shows `revenue_per_player = 262,248` — identical to `calculated_total_revenue`. That happens when `total_players = 1` (the clamp floor).
-
-The intake row is now correct (`total_players = 162` after last week's backfill), and `calc-metrics` already has the defensive fallback (`hs_players + youth_players`). But **derived_metrics was never recomputed after the backfill**, so it still holds the stale divide-by-1 result.
+When an org user creates a Communication Calendar season, the app inserts the season row plus a batch of auto-generated calendar items into `org_calendar_items`. Those generated items are flagged `is_system_item = true, is_custom = false`, but the only INSERT policy available to org members requires `is_custom = true AND is_system_item = false`. The insert is therefore rejected with "new row violates row-level security policy for table org_calendar_items". Admins are unaffected because the `admins manage org_calendar_items` policy covers everything.
 
 ## Fix
 
-Re-run the existing `calc-metrics` edge function for KSA Bombers (`org_id = 28b70e67-ddf6-4190-85e9-a5710543715d`). No code changes.
+Add an RLS INSERT policy on `public.org_calendar_items` that lets org members create system-generated items for their own org (i.e. the seeded season calendar), while keeping the existing narrower "custom items" policy intact.
 
-Expected after recompute:
-- `revenue_per_player` ≈ 262,248 / 162 ≈ $1,619
-- `hs_player_pct`, `non_dues_revenue_per_player`, `revenue_gap`, benchmark comparisons, opportunity numbers all realign
+New policy (INSERT):
+- `org_id = current_org_id()`
+- `created_by = auth.uid()`
+- `is_system_item = true`
+- `is_custom = false`
 
-## Verification
+No changes to SELECT/UPDATE/DELETE policies — org members can already read and update their org's items, and season deletion is admin-driven.
 
-Query `derived_metrics` for KSA and confirm `revenue_per_player` ≠ `calculated_total_revenue` and matches the expected ~$1,619.
+No frontend changes required. Once the policy is in place, the "Build My Calendar" flow in `SeasonSetupModal` will succeed for org users on their own org.
 
 ## Out of scope
 
-- No schema / calc changes (the bug was already fixed; only stale data remains).
-- Not sweeping other orgs — if you want, I can also scan for any other rows where `revenue_per_player = calculated_total_revenue` and recompute those too. Say the word.
+- Any changes to `is_custom` / `is_system_item` semantics.
+- Adjustments to the admin or delete policies.
+- Backfilling the failed season attempt (user can retry after the policy is deployed).
