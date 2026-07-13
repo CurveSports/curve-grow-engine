@@ -9,8 +9,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
-import { CheckCircle2, FileDown, Upload, PenLine } from "lucide-react";
+import { CheckCircle2, FileDown, Upload, PenLine, Calendar as CalendarIcon, MapPin } from "lucide-react";
 import { PDFDocument, StandardFonts } from "pdf-lib";
+import type { CustomField } from "@/lib/eventIntake";
 
 const W9_TEMPLATE_URL = "/forms/fw9.pdf";
 
