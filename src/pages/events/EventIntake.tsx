@@ -210,12 +210,24 @@ export default function EventIntake() {
     if (form.payment_method === "echeck" && (!form.check_payable_to.trim() || !form.check_delivery_email.trim())) {
       toast.error("Enter check payable name and delivery email"); return;
     }
-    if (w9Mode === "upload" && !w9File) {
-      toast.error("Please upload your completed W-9"); return;
+    if (survey.role_required && !role.trim()) {
+      toast.error("Please select your role"); return;
     }
-    if (w9Mode === "online") {
-      const err = validateW9Online();
-      if (err) { toast.error(err); return; }
+    for (const f of survey.fields ?? []) {
+      if (f.required) {
+        const v = customAnswers[f.key];
+        const empty = v === undefined || v === null || (typeof v === "string" && !v.trim()) || (f.type === "yes_no" && v === undefined);
+        if (empty) { toast.error(`Please answer: ${f.label}`); return; }
+      }
+    }
+    if (survey.w9_required) {
+      if (w9Mode === "upload" && !w9File) {
+        toast.error("Please upload your completed W-9"); return;
+      }
+      if (w9Mode === "online") {
+        const err = validateW9Online();
+        if (err) { toast.error(err); return; }
+      }
     }
 
     // Show feedback IMMEDIATELY before heavy work
