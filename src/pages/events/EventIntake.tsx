@@ -79,15 +79,24 @@ export default function EventIntake() {
     check_payable_to: "", check_delivery_email: "",
     notes: "",
   });
+  const [role, setRole] = useState<string>("");
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string | boolean>>({});
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("event_surveys")
-        .select("id, slug, title, description, instructions, w9_template_url, is_active")
+        .select("id, slug, title, description, instructions, w9_template_url, is_active, event_date, event_location, w9_required, role_required, role_options, fields")
         .eq("slug", slug)
         .maybeSingle();
-      setSurvey(data as Survey | null);
+      const s = data ? ({
+        ...(data as any),
+        role_options: Array.isArray((data as any).role_options) ? (data as any).role_options : [],
+        fields: Array.isArray((data as any).fields) ? (data as any).fields : [],
+        w9_required: (data as any).w9_required ?? true,
+        role_required: (data as any).role_required ?? false,
+      } as Survey) : null;
+      setSurvey(s);
       setLoading(false);
     })();
   }, [slug]);
