@@ -2923,6 +2923,7 @@ export type Database = {
           payment_method: string
           personal_email: string
           phone: string
+          role: string | null
           submitted_at: string
           survey_id: string
           w9_file_name: string | null
@@ -2943,6 +2944,7 @@ export type Database = {
           payment_method: string
           personal_email: string
           phone: string
+          role?: string | null
           submitted_at?: string
           survey_id: string
           w9_file_name?: string | null
@@ -2963,6 +2965,7 @@ export type Database = {
           payment_method?: string
           personal_email?: string
           phone?: string
+          role?: string | null
           submitted_at?: string
           survey_id?: string
           w9_file_name?: string | null
@@ -2982,42 +2985,60 @@ export type Database = {
       }
       event_surveys: {
         Row: {
+          archived_at: string | null
           created_at: string
           created_by: string | null
           description: string | null
+          event_date: string | null
+          event_location: string | null
           fields: Json
           id: string
           instructions: string | null
           is_active: boolean
+          role_options: string[]
+          role_required: boolean
           slug: string
           title: string
           updated_at: string
+          w9_required: boolean
           w9_template_url: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          event_date?: string | null
+          event_location?: string | null
           fields?: Json
           id?: string
           instructions?: string | null
           is_active?: boolean
+          role_options?: string[]
+          role_required?: boolean
           slug: string
           title?: string
           updated_at?: string
+          w9_required?: boolean
           w9_template_url?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
+          event_date?: string | null
+          event_location?: string | null
           fields?: Json
           id?: string
           instructions?: string | null
           is_active?: boolean
+          role_options?: string[]
+          role_required?: boolean
           slug?: string
           title?: string
           updated_at?: string
+          w9_required?: boolean
           w9_template_url?: string | null
         }
         Relationships: []
