@@ -456,7 +456,9 @@ export default function EventIntake() {
           )}
 
           {/* W-9 section */}
+          {survey.w9_required && (
           <div className="rounded-md border border-border p-4 space-y-4">
+
             <div>
               <Label className="text-sm font-medium">W-9 (required) *</Label>
               <p className="text-xs text-muted-foreground mt-1">
