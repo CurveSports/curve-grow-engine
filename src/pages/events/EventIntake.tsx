@@ -9,8 +9,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { z } from "zod";
-import { CheckCircle2, FileDown, Upload, PenLine } from "lucide-react";
+import { CheckCircle2, FileDown, Upload, PenLine, Calendar as CalendarIcon, MapPin } from "lucide-react";
 import { PDFDocument, StandardFonts } from "pdf-lib";
+import type { CustomField } from "@/lib/eventIntake";
 
 const W9_TEMPLATE_URL = "/forms/fw9.pdf";
 
@@ -22,6 +23,12 @@ type Survey = {
   instructions: string | null;
   w9_template_url: string | null;
   is_active: boolean;
+  event_date: string | null;
+  event_location: string | null;
+  w9_required: boolean;
+  role_required: boolean;
+  role_options: string[];
+  fields: CustomField[];
 };
 
 type W9Class = "individual" | "c_corp" | "s_corp" | "partnership" | "trust" | "llc" | "other";
@@ -72,15 +79,24 @@ export default function EventIntake() {
     check_payable_to: "", check_delivery_email: "",
     notes: "",
   });
+  const [role, setRole] = useState<string>("");
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string | boolean>>({});
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("event_surveys")
-        .select("id, slug, title, description, instructions, w9_template_url, is_active")
+        .select("id, slug, title, description, instructions, w9_template_url, is_active, event_date, event_location, w9_required, role_required, role_options, fields")
         .eq("slug", slug)
         .maybeSingle();
-      setSurvey(data as Survey | null);
+      const s = data ? ({
+        ...(data as any),
+        role_options: Array.isArray((data as any).role_options) ? (data as any).role_options : [],
+        fields: Array.isArray((data as any).fields) ? (data as any).fields : [],
+        w9_required: (data as any).w9_required ?? true,
+        role_required: (data as any).role_required ?? false,
+      } as Survey) : null;
+      setSurvey(s);
       setLoading(false);
     })();
   }, [slug]);
@@ -194,12 +210,24 @@ export default function EventIntake() {
     if (form.payment_method === "echeck" && (!form.check_payable_to.trim() || !form.check_delivery_email.trim())) {
       toast.error("Enter check payable name and delivery email"); return;
     }
-    if (w9Mode === "upload" && !w9File) {
-      toast.error("Please upload your completed W-9"); return;
+    if (survey.role_required && !role.trim()) {
+      toast.error("Please select your role"); return;
     }
-    if (w9Mode === "online") {
-      const err = validateW9Online();
-      if (err) { toast.error(err); return; }
+    for (const f of survey.fields ?? []) {
+      if (f.required) {
+        const v = customAnswers[f.key];
+        const empty = v === undefined || v === null || (typeof v === "string" && !v.trim()) || (f.type === "yes_no" && v === undefined);
+        if (empty) { toast.error(`Please answer: ${f.label}`); return; }
+      }
+    }
+    if (survey.w9_required) {
+      if (w9Mode === "upload" && !w9File) {
+        toast.error("Please upload your completed W-9"); return;
+      }
+      if (w9Mode === "online") {
+        const err = validateW9Online();
+        if (err) { toast.error(err); return; }
+      }
     }
 
     // Show feedback IMMEDIATELY before heavy work
@@ -209,22 +237,22 @@ export default function EventIntake() {
     // Yield to the browser so the spinner/toast can paint before blocking PDF generation
     await new Promise((r) => setTimeout(r, 50));
 
-    let uploadFile: Blob;
-    let uploadName: string;
-    let uploadType: string;
-    let extra: Record<string, unknown> | null = null;
+    let uploadFile: Blob | null = null;
+    let uploadName: string | null = null;
+    let uploadType: string | null = null;
+    let extra: Record<string, unknown> = {};
 
-    if (w9Mode === "upload" && w9File) {
-      uploadFile = w9File;
-      uploadName = w9File.name;
-      uploadType = w9File.type || "application/pdf";
-    } else {
-      uploadFile = await generateW9Pdf();
-      uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
-      uploadType = "application/pdf";
-      extra = {
-        w9_completed_online: true,
-        w9_data: {
+    if (survey.w9_required) {
+      if (w9Mode === "upload" && w9File) {
+        uploadFile = w9File;
+        uploadName = w9File.name;
+        uploadType = w9File.type || "application/pdf";
+      } else {
+        uploadFile = await generateW9Pdf();
+        uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
+        uploadType = "application/pdf";
+        extra.w9_completed_online = true;
+        extra.w9_data = {
           legal_name: w9.legal_name,
           business_name: w9.business_name,
           tax_class: w9.tax_class,
@@ -237,18 +265,27 @@ export default function EventIntake() {
           signature: w9.signature,
           sign_date: w9.sign_date,
           signed_at: new Date().toISOString(),
-        },
-      };
+        };
+      }
+    }
+
+    // Fold custom answers into extra
+    for (const f of survey.fields ?? []) {
+      const v = customAnswers[f.key];
+      if (v !== undefined && v !== "") extra[f.key] = v;
     }
 
     setSubmitting(true);
     try {
-      const ext = uploadName.split(".").pop() || "pdf";
-      const path = `${survey.slug}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("event-w9s")
-        .upload(path, uploadFile, { contentType: uploadType, upsert: false });
-      if (upErr) throw upErr;
+      let path: string | null = null;
+      if (uploadFile && uploadName && uploadType) {
+        const ext = uploadName.split(".").pop() || "pdf";
+        path = `${survey.slug}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("event-w9s")
+          .upload(path, uploadFile, { contentType: uploadType, upsert: false });
+        if (upErr) throw upErr;
+      }
 
       const { error: insErr } = await supabase.from("event_survey_responses").insert({
         survey_id: survey.id,
@@ -264,8 +301,9 @@ export default function EventIntake() {
         check_delivery_email: form.payment_method === "echeck" ? form.check_delivery_email.trim() : null,
         w9_file_path: path,
         w9_file_name: uploadName,
+        role: survey.role_required ? role.trim() : null,
         notes: form.notes.trim() || null,
-        extra: extra as any,
+        extra: Object.keys(extra).length ? (extra as any) : null,
       });
       if (insErr) throw insErr;
       toast.success("Submission received", { id: toastId });
@@ -300,13 +338,27 @@ export default function EventIntake() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <h1 className="font-display text-3xl font-semibold tracking-tight">{survey.title}</h1>
-          {survey.description && <p className="mt-2 text-muted-foreground">{survey.description}</p>}
+          {(survey.event_date || survey.event_location) && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {survey.event_date && (
+                <span className="flex items-center gap-1.5">
+                  <CalendarIcon className="h-4 w-4" />
+                  {new Date(survey.event_date + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+              {survey.event_location && (
+                <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{survey.event_location}</span>
+              )}
+            </div>
+          )}
+          {survey.description && <p className="mt-3 text-muted-foreground">{survey.description}</p>}
           {survey.instructions && (
             <div className="mt-4 rounded-md border border-border bg-secondary/40 p-4 text-sm leading-relaxed whitespace-pre-line">
               {survey.instructions}
             </div>
           )}
         </div>
+
 
         <div className="curve-card p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -330,6 +382,33 @@ export default function EventIntake() {
               <Input value={form.personal_email} onChange={(e) => set("personal_email", e.target.value)} className="h-11" type="email" />
             </Field>
           </div>
+
+          {survey.role_required && (
+            <Field label="Role at this event *">
+              {survey.role_options.length > 0 ? (
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Select…</option>
+                  {survey.role_options.map((r) => (<option key={r} value={r}>{r}</option>))}
+                </select>
+              ) : (
+                <Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" placeholder="e.g., Umpire" />
+              )}
+            </Field>
+          )}
+
+          {(survey.fields ?? []).map((f) => (
+            <CustomFieldInput
+              key={f.key}
+              field={f}
+              value={customAnswers[f.key]}
+              onChange={(v) => setCustomAnswers((prev) => ({ ...prev, [f.key]: v }))}
+            />
+          ))}
+
 
           <div className="space-y-2">
             <Label className="text-sm font-medium">Payment method *</Label>
@@ -377,7 +456,9 @@ export default function EventIntake() {
           )}
 
           {/* W-9 section */}
+          {survey.w9_required && (
           <div className="rounded-md border border-border p-4 space-y-4">
+
             <div>
               <Label className="text-sm font-medium">W-9 (required) *</Label>
               <p className="text-xs text-muted-foreground mt-1">
@@ -510,6 +591,9 @@ export default function EventIntake() {
               </div>
             )}
           </div>
+          )}
+
+
 
           <Field label="Notes (optional)">
             <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} />
@@ -565,5 +649,60 @@ function PayOption({ value, current, label }: { value: string; current: string; 
       <RadioGroupItem value={value} />
       <span className="text-sm font-medium">{label}</span>
     </label>
+  );
+}
+
+function CustomFieldInput({
+  field, value, onChange,
+}: {
+  field: CustomField;
+  value: string | boolean | undefined;
+  onChange: (v: string | boolean) => void;
+}) {
+  const label = `${field.label}${field.required ? " *" : ""}`;
+  if (field.type === "long_text") {
+    return (
+      <Field label={label}>
+        <Textarea value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} />
+      </Field>
+    );
+  }
+  if (field.type === "single_choice") {
+    return (
+      <Field label={label}>
+        <select
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">Select…</option>
+          {(field.options ?? []).map((o) => (<option key={o} value={o}>{o}</option>))}
+        </select>
+      </Field>
+    );
+  }
+  if (field.type === "yes_no") {
+    const v = value === true ? "yes" : value === false ? "no" : "";
+    return (
+      <Field label={label}>
+        <div className="flex gap-3">
+          {(["yes", "no"] as const).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt === "yes")}
+              className={`flex-1 h-11 rounded-md border text-sm font-medium transition ${v === opt ? "border-accent bg-accent/10" : "border-border hover:border-foreground/30"}`}
+            >
+              {opt === "yes" ? "Yes" : "No"}
+            </button>
+          ))}
+        </div>
+      </Field>
+    );
+  }
+  return (
+    <Field label={label}>
+      <Input value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} className="h-11" />
+    </Field>
   );
 }

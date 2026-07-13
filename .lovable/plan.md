@@ -1,23 +1,59 @@
-## Problem
+# Easier Event W-9 Intake
 
-When an org user creates a Communication Calendar season, the app inserts the season row plus a batch of auto-generated calendar items into `org_calendar_items`. Those generated items are flagged `is_system_item = true, is_custom = false`, but the only INSERT policy available to org members requires `is_custom = true AND is_system_item = false`. The insert is therefore rejected with "new row violates row-level security policy for table org_calendar_items". Admins are unaffected because the `admins manage org_calendar_items` policy covers everything.
+The Events area already has an admin page (`/admin/events/intake`) that creates tokenized public forms at `/events/intake/:slug` and collects W-9s. It works, but "new form" today only asks for title / slug / description / instructions — no event date, no role field, no way to add custom questions, no shortcut for common event types. This plan makes creating a new event a 30-second job.
 
-## Fix
+## What the user gets
 
-Add an RLS INSERT policy on `public.org_calendar_items` that lets org members create system-generated items for their own org (i.e. the seeded season calendar), while keeping the existing narrower "custom items" policy intact.
+**Redesigned "New event intake" modal** with:
+1. **Preset picker** at the top — one click seeds the whole form:
+   - *Tournament staff W-9* — umpires, scorekeepers, field crew
+   - *Camp / clinic coaches* — coach role + payment + W-9
+   - *Vendor / contractor payout* — company info + payment + W-9
+   - *Blank* — start empty
+2. **Event date** (optional) and **event location** — shown on the public form header and in the admin list.
+3. **Role / position** toggle — when on, the public form adds a required "Role at event" dropdown (options editable inline: Umpire, Scorekeeper, Coach, Vendor, Other…).
+4. **Custom questions** — small builder (short text, long text, single-choice, yes/no) stored in `event_surveys.fields` (already exists). Responses land in `event_survey_responses.extra` (already exists).
+5. **W-9 required?** switch — some events (e.g. volunteers) don't need one.
 
-New policy (INSERT):
-- `org_id = current_org_id()`
-- `created_by = auth.uid()`
-- `is_system_item = true`
-- `is_custom = false`
+**List improvements:**
+- Cards show event date and response count; sort by upcoming date.
+- Row actions: **Copy link**, **Duplicate form** (clones settings + fields with a new slug), **Archive**.
 
-No changes to SELECT/UPDATE/DELETE policies — org members can already read and update their org's items, and season deletion is admin-driven.
+**Public form** (`EventIntake.tsx`):
+- Renders event date/location in header when set.
+- Renders role dropdown when enabled; renders each custom question; skips the W-9 section when W-9 is turned off.
+- Stores role + custom answers in `extra` jsonb; role also stored in a dedicated indexable column for filtering.
 
-No frontend changes required. Once the policy is in place, the "Build My Calendar" flow in `SeasonSetupModal` will succeed for org users on their own org.
+**Response viewer:**
+- Adds Role and event-date columns; role filter alongside payment filter; CSV export includes all custom fields.
 
 ## Out of scope
+- Emailing participants their link from inside the app (they still copy/paste the link out).
+- Payment processing — this stays a data-collection form.
+- Linking events to `organizations` or the acquisitions module.
+- Reusing a person's prior W-9 across events (persistence is per-response for now).
 
-- Any changes to `is_custom` / `is_system_item` semantics.
-- Adjustments to the admin or delete policies.
-- Backfilling the failed season attempt (user can retry after the policy is deployed).
+## Technical notes
+
+**Migration** adds to `public.event_surveys`:
+- `event_date date`, `event_location text`, `w9_required boolean not null default true`, `role_required boolean not null default false`, `role_options text[] not null default '{}'`, `archived_at timestamptz`.
+
+Adds to `public.event_survey_responses`:
+- `role text` (nullable), index on `(survey_id, role)`.
+
+Existing `fields jsonb` on `event_surveys` will hold custom-question schema:
+```json
+[{ "key": "shirt_size", "label": "Shirt size", "type": "single_choice", "options": ["S","M","L","XL"], "required": false }]
+```
+Existing `extra jsonb` on responses will hold the answers keyed by `key`.
+
+No RLS changes needed — existing admin-manage + public-insert policies on both tables cover the new columns.
+
+**Files to change:**
+- New migration adding the columns + index above (with GRANTs already in place — additive).
+- `src/pages/admin/events/AdminEventIntake.tsx` — new modal (presets, date, role, custom-fields builder, w9 toggle), list card updates, duplicate/archive actions, CSV export widened.
+- `src/pages/events/EventIntake.tsx` — render new header fields, role dropdown, custom-question renderer, gate W-9 section on `w9_required`, submit `role` + `extra`.
+- `src/lib/eventIntake.ts` (new) — preset definitions and field-builder types shared by both pages.
+
+## Open questions before build
+None — proceeding on the answers already given (admin-only creation, tokenized public link, event has a date but no cross-event W-9 reuse yet).
