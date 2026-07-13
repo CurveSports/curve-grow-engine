@@ -338,13 +338,27 @@ export default function EventIntake() {
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
           <h1 className="font-display text-3xl font-semibold tracking-tight">{survey.title}</h1>
-          {survey.description && <p className="mt-2 text-muted-foreground">{survey.description}</p>}
+          {(survey.event_date || survey.event_location) && (
+            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {survey.event_date && (
+                <span className="flex items-center gap-1.5">
+                  <CalendarIcon className="h-4 w-4" />
+                  {new Date(survey.event_date + "T00:00:00").toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                </span>
+              )}
+              {survey.event_location && (
+                <span className="flex items-center gap-1.5"><MapPin className="h-4 w-4" />{survey.event_location}</span>
+              )}
+            </div>
+          )}
+          {survey.description && <p className="mt-3 text-muted-foreground">{survey.description}</p>}
           {survey.instructions && (
             <div className="mt-4 rounded-md border border-border bg-secondary/40 p-4 text-sm leading-relaxed whitespace-pre-line">
               {survey.instructions}
             </div>
           )}
         </div>
+
 
         <div className="curve-card p-6 space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
