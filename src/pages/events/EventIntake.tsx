@@ -237,22 +237,22 @@ export default function EventIntake() {
     // Yield to the browser so the spinner/toast can paint before blocking PDF generation
     await new Promise((r) => setTimeout(r, 50));
 
-    let uploadFile: Blob;
-    let uploadName: string;
-    let uploadType: string;
-    let extra: Record<string, unknown> | null = null;
+    let uploadFile: Blob | null = null;
+    let uploadName: string | null = null;
+    let uploadType: string | null = null;
+    let extra: Record<string, unknown> = {};
 
-    if (w9Mode === "upload" && w9File) {
-      uploadFile = w9File;
-      uploadName = w9File.name;
-      uploadType = w9File.type || "application/pdf";
-    } else {
-      uploadFile = await generateW9Pdf();
-      uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
-      uploadType = "application/pdf";
-      extra = {
-        w9_completed_online: true,
-        w9_data: {
+    if (survey.w9_required) {
+      if (w9Mode === "upload" && w9File) {
+        uploadFile = w9File;
+        uploadName = w9File.name;
+        uploadType = w9File.type || "application/pdf";
+      } else {
+        uploadFile = await generateW9Pdf();
+        uploadName = `W9_${w9.legal_name.replace(/\s+/g, "_")}.pdf`;
+        uploadType = "application/pdf";
+        extra.w9_completed_online = true;
+        extra.w9_data = {
           legal_name: w9.legal_name,
           business_name: w9.business_name,
           tax_class: w9.tax_class,
@@ -265,18 +265,27 @@ export default function EventIntake() {
           signature: w9.signature,
           sign_date: w9.sign_date,
           signed_at: new Date().toISOString(),
-        },
-      };
+        };
+      }
+    }
+
+    // Fold custom answers into extra
+    for (const f of survey.fields ?? []) {
+      const v = customAnswers[f.key];
+      if (v !== undefined && v !== "") extra[f.key] = v;
     }
 
     setSubmitting(true);
     try {
-      const ext = uploadName.split(".").pop() || "pdf";
-      const path = `${survey.slug}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("event-w9s")
-        .upload(path, uploadFile, { contentType: uploadType, upsert: false });
-      if (upErr) throw upErr;
+      let path: string | null = null;
+      if (uploadFile && uploadName && uploadType) {
+        const ext = uploadName.split(".").pop() || "pdf";
+        path = `${survey.slug}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from("event-w9s")
+          .upload(path, uploadFile, { contentType: uploadType, upsert: false });
+        if (upErr) throw upErr;
+      }
 
       const { error: insErr } = await supabase.from("event_survey_responses").insert({
         survey_id: survey.id,
@@ -292,8 +301,9 @@ export default function EventIntake() {
         check_delivery_email: form.payment_method === "echeck" ? form.check_delivery_email.trim() : null,
         w9_file_path: path,
         w9_file_name: uploadName,
+        role: survey.role_required ? role.trim() : null,
         notes: form.notes.trim() || null,
-        extra: extra as any,
+        extra: Object.keys(extra).length ? (extra as any) : null,
       });
       if (insErr) throw insErr;
       toast.success("Submission received", { id: toastId });
