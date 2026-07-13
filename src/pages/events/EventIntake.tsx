@@ -651,3 +651,58 @@ function PayOption({ value, current, label }: { value: string; current: string; 
     </label>
   );
 }
+
+function CustomFieldInput({
+  field, value, onChange,
+}: {
+  field: CustomField;
+  value: string | boolean | undefined;
+  onChange: (v: string | boolean) => void;
+}) {
+  const label = `${field.label}${field.required ? " *" : ""}`;
+  if (field.type === "long_text") {
+    return (
+      <Field label={label}>
+        <Textarea value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} />
+      </Field>
+    );
+  }
+  if (field.type === "single_choice") {
+    return (
+      <Field label={label}>
+        <select
+          value={(value as string) ?? ""}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+        >
+          <option value="">Select…</option>
+          {(field.options ?? []).map((o) => (<option key={o} value={o}>{o}</option>))}
+        </select>
+      </Field>
+    );
+  }
+  if (field.type === "yes_no") {
+    const v = value === true ? "yes" : value === false ? "no" : "";
+    return (
+      <Field label={label}>
+        <div className="flex gap-3">
+          {(["yes", "no"] as const).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => onChange(opt === "yes")}
+              className={`flex-1 h-11 rounded-md border text-sm font-medium transition ${v === opt ? "border-accent bg-accent/10" : "border-border hover:border-foreground/30"}`}
+            >
+              {opt === "yes" ? "Yes" : "No"}
+            </button>
+          ))}
+        </div>
+      </Field>
+    );
+  }
+  return (
+    <Field label={label}>
+      <Input value={(value as string) ?? ""} onChange={(e) => onChange(e.target.value)} className="h-11" />
+    </Field>
+  );
+}
