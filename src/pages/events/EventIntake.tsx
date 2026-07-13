@@ -383,6 +383,33 @@ export default function EventIntake() {
             </Field>
           </div>
 
+          {survey.role_required && (
+            <Field label="Role at this event *">
+              {survey.role_options.length > 0 ? (
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="">Select…</option>
+                  {survey.role_options.map((r) => (<option key={r} value={r}>{r}</option>))}
+                </select>
+              ) : (
+                <Input value={role} onChange={(e) => setRole(e.target.value)} className="h-11" placeholder="e.g., Umpire" />
+              )}
+            </Field>
+          )}
+
+          {(survey.fields ?? []).map((f) => (
+            <CustomFieldInput
+              key={f.key}
+              field={f}
+              value={customAnswers[f.key]}
+              onChange={(v) => setCustomAnswers((prev) => ({ ...prev, [f.key]: v }))}
+            />
+          ))}
+
+
           <div className="space-y-2">
             <Label className="text-sm font-medium">Payment method *</Label>
             <RadioGroup
