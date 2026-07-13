@@ -23,6 +23,12 @@ type Survey = {
   instructions: string | null;
   w9_template_url: string | null;
   is_active: boolean;
+  event_date: string | null;
+  event_location: string | null;
+  w9_required: boolean;
+  role_required: boolean;
+  role_options: string[];
+  fields: CustomField[];
 };
 
 type W9Class = "individual" | "c_corp" | "s_corp" | "partnership" | "trust" | "llc" | "other";
