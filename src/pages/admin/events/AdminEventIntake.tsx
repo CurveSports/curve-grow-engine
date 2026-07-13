@@ -16,7 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  EVENT_PRESETS, type CustomField, type CustomFieldType, type EventPreset,
+  EVENT_PRESETS, type CustomField, type CustomFieldType,
   CUSTOM_FIELD_TYPE_LABEL, fieldKeyFromLabel, slugify,
 } from "@/lib/eventIntake";
 
