@@ -591,6 +591,9 @@ export default function EventIntake() {
               </div>
             )}
           </div>
+          )}
+
+
 
           <Field label="Notes (optional)">
             <Textarea value={form.notes} onChange={(e) => set("notes", e.target.value)} rows={3} />
