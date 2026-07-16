@@ -53,6 +53,24 @@ export function categoryLabel(cat: string): string {
   return CATEGORY_LABELS[cat] ?? cat;
 }
 
+// Apply a per-survey ordering of master question IDs. Unknown/new IDs are appended
+// in default sort_order so newly added core questions still surface.
+export function orderMasterQuestions<T extends { id: string }>(
+  questions: T[],
+  order: string[] | null | undefined,
+): T[] {
+  if (!order || order.length === 0) return questions;
+  const byId = new Map(questions.map((q) => [q.id, q]));
+  const seen = new Set<string>();
+  const ordered: T[] = [];
+  for (const id of order) {
+    const q = byId.get(id);
+    if (q && !seen.has(id)) { ordered.push(q); seen.add(id); }
+  }
+  for (const q of questions) if (!seen.has(q.id)) ordered.push(q);
+  return ordered;
+}
+
 // NPS = %promoters (9-10) − %detractors (0-6)
 export function calcNps(scores: number[]): number | null {
   if (!scores.length) return null;
