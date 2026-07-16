@@ -193,7 +193,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   if (impersonatedOrgId) {
     const prefix = `/admin/orgs/${impersonatedOrgId}`;
     const rewriteItem = (it: NavItem): NavItem => {
-      if (!it.to || !it.to.startsWith("/marketing")) return it;
+      if (!it.to || !(it.to.startsWith("/marketing") || it.to.startsWith("/retention"))) return it;
       const newTo = `${prefix}${it.to}`;
       return {
         ...it,
@@ -202,7 +202,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       };
     };
     groups = ORG_GROUPS
-      .filter((g) => g.label === "Marketing")
+      .filter((g) => g.label === "Marketing" || g.label === "Retention & Referrals")
       .map((g) => ({ ...g, items: g.items.map(rewriteItem) }));
   }
   if (isCurveOwner) groups = [...groups, systemGroup];
