@@ -1,6 +1,8 @@
 // End-of-season parent survey response page.
-// Renders master + org custom questions with respondent name/team/age fields.
-// Falls back to the legacy 0-10-only flow if the survey has no master version bound.
+// Handles three routes:
+//   /s/:slug             — public shareable link (anon RPC)
+//   /nps/preview/:surveyId — authenticated/public preview by id (no submission)
+//   /nps/:token          — legacy magic-link flow
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,21 +15,39 @@ import { categoryLabel, MasterQuestion, OrgQuestion, SurveyQuestionType } from "
 
 type AnyQ = (MasterQuestion & { _source: "master" }) | (OrgQuestion & { _source: "org"; category?: string });
 
+type PublicSurvey = {
+  id: string;
+  name: string;
+  question: string | null;
+  master_version: number | null;
+  collect_team: boolean | null;
+  collect_age_group: boolean | null;
+  is_open: boolean;
+  public_slug: string;
+  org_id: string;
+  org_name: string | null;
+  org_logo_url: string | null;
+};
+
 export default function NpsResponse() {
-  const { token, surveyId: surveyIdParam } = useParams();
+  const { token, surveyId, slug } = useParams();
   const location = useLocation();
   const isPreview = location.pathname.startsWith("/nps/preview/");
+  const isPublicSlug = location.pathname.startsWith("/s/");
+  const isLegacyToken = !isPreview && !isPublicSlug;
 
-  const [survey, setSurvey] = useState<any>(null);
-  const [org, setOrg] = useState<{ name: string; logoUrl?: string | null } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notAvailable, setNotAvailable] = useState<string | null>(null);
+  const [survey, setSurvey] = useState<PublicSurvey | null>(null);
   const [master, setMaster] = useState<MasterQuestion[]>([]);
   const [orgQs, setOrgQs] = useState<OrgQuestion[]>([]);
-  const [teams, setTeams] = useState<any[]>([]);
+  const [teams, setTeams] = useState<{ id: string; name: string }[]>([]);
   const [teamNameOptions, setTeamNameOptions] = useState<string[]>([]);
   const [ageOptions, setAgeOptions] = useState<string[]>([]);
   const [contactId, setContactId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [teamId, setTeamId] = useState("");
   const [teamText, setTeamText] = useState("");
   const [ageGroup, setAgeGroup] = useState("");
@@ -37,41 +57,49 @@ export default function NpsResponse() {
 
   useEffect(() => {
     (async () => {
-      let surveyId: string | undefined = surveyIdParam;
-      let cid: string | null = null;
-      if (!isPreview) {
-        const { data: link } = await (supabase as any).from("magic_links").select("*").eq("token", token).maybeSingle();
-        if (!link) return;
-        surveyId = link.payload?.survey_id;
-        cid = link.payload?.contact_id ?? link.contact_id ?? null;
-        setContactId(cid);
+      setLoading(true);
+      let publicSurvey: PublicSurvey | null = null;
+
+      if (isLegacyToken) {
+        const { data: link } = await (supabase as any)
+          .from("magic_links").select("*").eq("token", token).maybeSingle();
+        if (!link) { setNotAvailable("This link is invalid or expired."); setLoading(false); return; }
+        const sid = link.payload?.survey_id;
+        setContactId(link.payload?.contact_id ?? link.contact_id ?? null);
+        if (!sid) { setNotAvailable("This link is invalid."); setLoading(false); return; }
+        const { data } = await (supabase as any).rpc("get_public_survey", { _slug: null, _preview_id: sid });
+        publicSurvey = data as PublicSurvey | null;
+      } else if (isPreview) {
+        const { data } = await (supabase as any).rpc("get_public_survey", { _slug: null, _preview_id: surveyId });
+        publicSurvey = data as PublicSurvey | null;
+      } else {
+        const { data } = await (supabase as any).rpc("get_public_survey", { _slug: slug, _preview_id: null });
+        publicSurvey = data as PublicSurvey | null;
+        if (!publicSurvey) {
+          setNotAvailable("This survey isn't accepting responses right now.");
+          setLoading(false);
+          return;
+        }
       }
-      if (!surveyId) return;
-      const { data: s } = await (supabase as any)
-        .from("org_nps_surveys")
-        .select("*, organizations(name, logo_url)")
-        .eq("id", surveyId)
-        .single();
-      setSurvey(s);
-      setOrg({ name: s?.organizations?.name || "our club", logoUrl: s?.organizations?.logo_url });
-      const version = s?.master_version ?? 1;
+
+      if (!publicSurvey) { setNotAvailable("Survey not found."); setLoading(false); return; }
+      setSurvey(publicSurvey);
+
+      const version = publicSurvey.master_version ?? 1;
       const [{ data: m }, { data: oq }, { data: tt }, { data: settings }] = await Promise.all([
         (supabase as any).from("survey_master_questions").select("*").eq("version", version).eq("is_active", true).order("sort_order"),
-        (supabase as any).from("org_survey_questions").select("*").eq("survey_id", surveyId).order("sort_order"),
-        s?.org_id
-          ? (supabase as any).from("org_teams").select("id,name").eq("org_id", s.org_id).order("name")
-          : Promise.resolve({ data: [] }),
-        s?.org_id
-          ? (supabase as any).from("org_retention_settings").select("team_name_options,age_group_options").eq("org_id", s.org_id).maybeSingle()
-          : Promise.resolve({ data: null }),
+        (supabase as any).from("org_survey_questions").select("*").eq("survey_id", publicSurvey.id).order("sort_order"),
+        (supabase as any).from("org_teams").select("id,name").eq("org_id", publicSurvey.org_id).order("name"),
+        (supabase as any).from("org_retention_settings").select("team_name_options,age_group_options").eq("org_id", publicSurvey.org_id).maybeSingle(),
       ]);
       setMaster((m as MasterQuestion[]) || []);
       setOrgQs((oq as OrgQuestion[]) || []);
-      setTeams(tt || []);
-      setTeamNameOptions(settings?.team_name_options ?? []);
-      setAgeOptions(settings?.age_group_options ?? []);
+      setTeams((tt as any[]) || []);
+      setTeamNameOptions((settings as any)?.team_name_options ?? []);
+      setAgeOptions((settings as any)?.age_group_options ?? []);
+      setLoading(false);
     })();
-  }, [token, surveyIdParam, isPreview]);
+  }, [token, surveyId, slug, isPreview, isPublicSlug, isLegacyToken]);
 
   const submit = async () => {
     if (!survey) return;
@@ -87,7 +115,27 @@ export default function NpsResponse() {
       return;
     }
 
-    // Determine an NPS score for the aggregate summary columns (finds the 0-10 master q if present)
+    const answersArr = Object.entries(answers).map(([key, value]) => {
+      const [source, question_id] = key.split(":");
+      return { question_id, question_source: source, answer_value: value };
+    });
+
+    if (isPublicSlug) {
+      const { error } = await (supabase as any).rpc("submit_public_survey_response", {
+        _slug: survey.public_slug,
+        _respondent_name: name.trim(),
+        _team_id: teamId && /^[0-9a-f-]{36}$/i.test(teamId) ? teamId : null,
+        _team_name_text: teamText.trim() || teams.find((t) => t.id === teamId)?.name || null,
+        _age_group: ageGroup || null,
+        _email: email.trim() || null,
+        _answers: answersArr,
+      });
+      if (error) { setSubmitting(false); toast.error(error.message || "Could not save"); return; }
+      setSubmitting(false); setDone(true);
+      return;
+    }
+
+    // Legacy magic-link path — direct inserts (existing RLS grants covered this)
     const npsQ = master.find((q) => q.question_type === "rating_10");
     const npsAnswer = npsQ ? Number(answers[`master:${npsQ.id}`]) : NaN;
     const npsScore = Number.isFinite(npsAnswer) ? npsAnswer : null;
@@ -103,23 +151,31 @@ export default function NpsResponse() {
       responded_via: "public_form",
     }).select().single();
     if (rErr || !resp) { setSubmitting(false); toast.error("Could not save"); return; }
-
-    const rows = Object.entries(answers).map(([key, value]) => {
-      const [source, question_id] = key.split(":");
-      return { response_id: resp.id, question_id, question_source: source, answer_value: value };
-    });
-    if (rows.length) {
+    if (answersArr.length) {
+      const rows = answersArr.map((a) => ({ ...a, response_id: resp.id }));
       const { error: aErr } = await (supabase as any).from("org_nps_answers").insert(rows);
       if (aErr) { setSubmitting(false); toast.error("Could not save answers"); return; }
     }
-
     setSubmitting(false);
     setDone(true);
   };
 
   const setA = (key: string, value: string) => setAnswers((prev) => ({ ...prev, [key]: value }));
 
-  if (!survey) return <div className="min-h-screen flex items-center justify-center p-6 text-muted-foreground">Loading…</div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center p-6 text-muted-foreground">Loading…</div>;
+
+  if (notAvailable) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-card rounded-2xl shadow-xl p-8 text-center space-y-3">
+          <h2 className="text-xl font-bold">Survey unavailable</h2>
+          <p className="text-muted-foreground">{notAvailable}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!survey) return null;
 
   if (done) {
     return (
@@ -127,7 +183,7 @@ export default function NpsResponse() {
         <div className="max-w-xl w-full bg-card rounded-2xl shadow-xl p-8 text-center space-y-3">
           <div className="text-5xl">🙏</div>
           <h2 className="text-2xl font-bold">Thank you!</h2>
-          <p className="text-muted-foreground">Your feedback helps {org?.name} keep improving.</p>
+          <p className="text-muted-foreground">Your feedback helps {survey.org_name} keep improving.</p>
         </div>
       </div>
     );
@@ -148,8 +204,8 @@ export default function NpsResponse() {
         )}
 
         <div className="text-center space-y-2">
-          {org?.logoUrl && <img src={org.logoUrl} alt={org.name} className="h-14 mx-auto object-contain" />}
-          <h1 className="text-2xl font-bold">{org?.name}</h1>
+          {survey.org_logo_url && <img src={survey.org_logo_url} alt={survey.org_name || ""} className="h-14 mx-auto object-contain" />}
+          <h1 className="text-2xl font-bold">{survey.org_name}</h1>
           <p className="text-sm text-muted-foreground">End-of-season parent survey · takes about 3 minutes</p>
         </div>
 
@@ -157,6 +213,10 @@ export default function NpsResponse() {
           <div>
             <Label>Your name *</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Jane Smith" />
+          </div>
+          <div>
+            <Label>Email (optional)</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
           </div>
           {survey.collect_team !== false && (
             <div>
@@ -170,7 +230,7 @@ export default function NpsResponse() {
                 }}>
                   <option value="">— Choose your team —</option>
                   {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  {teamNameOptions.map((name) => <option key={`c:${name}`} value={`__custom:${name}`}>{name}</option>)}
+                  {teamNameOptions.map((n) => <option key={`c:${n}`} value={`__custom:${n}`}>{n}</option>)}
                   <option value="__other">Other / not listed</option>
                 </select>
               ) : null}
