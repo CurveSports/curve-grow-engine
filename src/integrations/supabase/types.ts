@@ -5197,6 +5197,7 @@ export type Database = {
           ip_address: string | null
           responded_at: string | null
           responded_via: string | null
+          respondent_email: string | null
           respondent_name: string | null
           score: number | null
           survey_id: string | null
@@ -5218,6 +5219,7 @@ export type Database = {
           ip_address?: string | null
           responded_at?: string | null
           responded_via?: string | null
+          respondent_email?: string | null
           respondent_name?: string | null
           score?: number | null
           survey_id?: string | null
@@ -5239,6 +5241,7 @@ export type Database = {
           ip_address?: string | null
           responded_at?: string | null
           responded_via?: string | null
+          respondent_email?: string | null
           respondent_name?: string | null
           score?: number | null
           survey_id?: string | null
@@ -5283,12 +5286,14 @@ export type Database = {
           followup_question_passive: string | null
           followup_question_promoter: string | null
           id: string
+          is_open: boolean
           master_version: number | null
           name: string | null
           nps_score: number | null
           org_id: string | null
           passive_count: number | null
           promoter_count: number | null
+          public_slug: string
           question: string | null
           recipient_count: number | null
           response_count: number | null
@@ -5314,12 +5319,14 @@ export type Database = {
           followup_question_passive?: string | null
           followup_question_promoter?: string | null
           id?: string
+          is_open?: boolean
           master_version?: number | null
           name?: string | null
           nps_score?: number | null
           org_id?: string | null
           passive_count?: number | null
           promoter_count?: number | null
+          public_slug: string
           question?: string | null
           recipient_count?: number | null
           response_count?: number | null
@@ -5345,12 +5352,14 @@ export type Database = {
           followup_question_passive?: string | null
           followup_question_promoter?: string | null
           id?: string
+          is_open?: boolean
           master_version?: number | null
           name?: string | null
           nps_score?: number | null
           org_id?: string | null
           passive_count?: number | null
           promoter_count?: number | null
+          public_slug?: string
           question?: string | null
           recipient_count?: number | null
           response_count?: number | null
@@ -8322,6 +8331,10 @@ export type Database = {
           report_payload: Json
         }[]
       }
+      get_public_survey: {
+        Args: { _preview_id: string; _slug: string }
+        Returns: Json
+      }
       has_module_access: {
         Args: { _module: string; _user_id: string }
         Returns: boolean
@@ -8382,6 +8395,18 @@ export type Database = {
       seed_portal_config: {
         Args: { _acq_id: string; _state: string }
         Returns: undefined
+      }
+      submit_public_survey_response: {
+        Args: {
+          _age_group: string
+          _answers: Json
+          _email: string
+          _respondent_name: string
+          _slug: string
+          _team_id: string
+          _team_name_text: string
+        }
+        Returns: string
       }
       task_phase_is_unlocked: { Args: { _task_id: string }; Returns: boolean }
       update_acquisition_phases: { Args: never; Returns: undefined }

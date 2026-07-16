@@ -11,12 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Eye, Plus, Trash2, GripVertical, Copy, Download, Send } from "lucide-react";
+import { ArrowLeft, Eye, Plus, Trash2, Copy, Download, ExternalLink, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import {
   avgRating, buildResponseCsv, calcNps, categoryLabel, distributeChoices,
   MasterQuestion, OrgQuestion, QUESTION_TYPE_LABELS, SurveyQuestionType,
 } from "@/lib/surveys";
+import { SortableQuestionList } from "@/components/retention/SortableQuestionList";
 
 type Response = {
   id: string;
@@ -39,15 +40,13 @@ export default function SurveyDetail() {
   const [responses, setResponses] = useState<Response[]>([]);
   const [answers, setAnswers] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
-  const [segments, setSegments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [addOpen, setAddOpen] = useState(false);
   const [newQ, setNewQ] = useState<{ text: string; type: SurveyQuestionType; required: boolean }>({ text: "", type: "rating_5", required: false });
   const [teamFilter, setTeamFilter] = useState<string>("");
-  const [sending, setSending] = useState(false);
-  const [testEmail, setTestEmail] = useState("");
+  const [toggling, setToggling] = useState(false);
 
   const locked = survey?.status === "sent" && (survey?.response_count ?? 0) > 0;
 
@@ -63,14 +62,13 @@ export default function SurveyDetail() {
     const version = s.master_version ?? 1;
     const [
       { data: m }, { data: oq }, { data: r }, { data: a },
-      { data: ss }, { data: seg }, { data: tt },
+      { data: ss }, { data: tt },
     ] = await Promise.all([
       (supabase as any).from("survey_master_questions").select("*").eq("version", version).eq("is_active", true).order("sort_order"),
       (supabase as any).from("org_survey_questions").select("*").eq("survey_id", id).order("sort_order"),
       (supabase as any).from("org_nps_responses").select("*").eq("survey_id", id).order("responded_at", { ascending: false }),
       (supabase as any).from("org_nps_answers").select("*, org_nps_responses!inner(survey_id)").eq("org_nps_responses.survey_id", id),
       (supabase as any).from("org_seasons").select("id,name").eq("org_id", s.org_id).order("season_end_date", { ascending: false }),
-      (supabase as any).from("org_contact_segments").select("id,name,contact_count").eq("org_id", s.org_id).order("name"),
       (supabase as any).from("org_teams").select("id,name").eq("org_id", s.org_id).order("name"),
     ]);
     setMaster((m as MasterQuestion[]) || []);
@@ -78,7 +76,6 @@ export default function SurveyDetail() {
     setResponses((r as Response[]) || []);
     setAnswers(a || []);
     setSeasons(ss || []);
-    setSegments(seg || []);
     setTeams(tt || []);
   };
 
@@ -88,7 +85,6 @@ export default function SurveyDetail() {
     setEditForm({
       name: survey.name || "",
       question: survey.question || "",
-      audience_segment_id: survey.audience_segment_id || "",
       season_id: survey.season_id || "",
       collect_team: survey.collect_team ?? true,
       collect_age_group: survey.collect_age_group ?? false,
@@ -101,7 +97,6 @@ export default function SurveyDetail() {
 
   const saveEdit = async () => {
     const payload = { ...editForm };
-    if (!payload.audience_segment_id) payload.audience_segment_id = null;
     if (!payload.season_id) payload.season_id = null;
     const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -133,44 +128,45 @@ export default function SurveyDetail() {
     load();
   };
 
-  const moveQ = async (qid: string, dir: -1 | 1) => {
-    const idx = orgQs.findIndex((q) => q.id === qid);
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= orgQs.length) return;
-    const a = orgQs[idx], b = orgQs[swapIdx];
-    await Promise.all([
-      (supabase as any).from("org_survey_questions").update({ sort_order: b.sort_order }).eq("id", a.id),
-      (supabase as any).from("org_survey_questions").update({ sort_order: a.sort_order }).eq("id", b.id),
-    ]);
+  const reorderQs = async (orderedIds: string[]) => {
+    // Optimistic UI: renumber locally, then persist in a batch (10, 20, 30…)
+    const byId = new Map(orgQs.map((q) => [q.id, q]));
+    const next = orderedIds.map((qid, i) => ({ ...(byId.get(qid) as OrgQuestion), sort_order: (i + 1) * 10 }));
+    setOrgQs(next);
+    await Promise.all(next.map((q) =>
+      (supabase as any).from("org_survey_questions").update({ sort_order: q.sort_order }).eq("id", q.id)
+    ));
+  };
+
+  const toggleOpen = async () => {
+    const nextOpen = !survey.is_open;
+    if (nextOpen && !confirm("Open this survey? The public link will start accepting responses.")) return;
+    if (!nextOpen && !confirm("Close this survey? The public link will stop accepting responses.")) return;
+    setToggling(true);
+    const payload: any = { is_open: nextOpen };
+    if (nextOpen && !survey.sent_at) payload.sent_at = new Date().toISOString();
+    if (nextOpen) payload.status = "sent"; // keep legacy status for existing analytics
+    const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
+    setToggling(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(nextOpen ? "Survey opened" : "Survey closed");
     load();
   };
 
-  const sendSurvey = async () => {
-    if (!survey?.audience_segment_id) { toast.error("Pick an audience under Edit first."); return; }
-    if (!confirm("Send this survey to everyone in the audience now?")) return;
-    setSending(true);
-    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id } });
-    setSending(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Sent to ${data?.sent ?? 0} of ${data?.total ?? 0}`);
-    load();
+  const publicUrl = survey?.public_slug ? `${window.location.origin}/s/${survey.public_slug}` : "";
+
+  const copyPublicLink = async () => {
+    if (!publicUrl) return;
+    await navigator.clipboard.writeText(publicUrl);
+    toast.success("Public link copied — paste it into your email or text");
   };
 
-  const sendTest = async () => {
-    if (!testEmail) return toast.error("Enter your email");
-    setSending(true);
-    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id, test_email: testEmail } });
-    setSending(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(data?.sent ? "Test sent — check your inbox" : "Test failed");
-  };
-
-  const copyLink = async () => {
-    // Legacy public preview URL still works; per-recipient tokens are minted by the send function.
+  const copyPreviewLink = async () => {
     const url = `${window.location.origin}/nps/preview/${id}`;
     await navigator.clipboard.writeText(url);
     toast.success("Preview link copied");
   };
+
 
   const answersByResponse = new Map<string, any[]>();
   for (const a of answers) {
@@ -233,18 +229,38 @@ export default function SurveyDetail() {
           <div>
             <h1 className="text-3xl font-bold">{survey.name}</h1>
             <div className="flex gap-2 mt-2 items-center flex-wrap">
-              <Badge>{survey.status}</Badge>
+              <Badge variant={survey.is_open ? "default" : "secondary"}>{survey.is_open ? "Open — accepting responses" : "Closed"}</Badge>
               {survey.org_seasons?.name && <Badge variant="outline">{survey.org_seasons.name}</Badge>}
               {locked && <Badge variant="secondary">Locked — has responses</Badge>}
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-4 w-4 mr-1" />Preview link</Button>
             <Button variant="outline" size="sm" onClick={() => window.open(`/nps/preview/${id}`, "_blank")}><Eye className="h-4 w-4 mr-1" />Preview</Button>
             <Button variant="outline" size="sm" onClick={openEdit}>Edit</Button>
-            {survey.status === "draft" && <Button size="sm" onClick={sendSurvey} disabled={sending}><Send className="h-4 w-4 mr-1" />{sending ? "Sending…" : "Send"}</Button>}
+            <Button size="sm" variant={survey.is_open ? "outline" : "default"} onClick={toggleOpen} disabled={toggling}>
+              {survey.is_open ? <><Lock className="h-4 w-4 mr-1" />Close survey</> : <><Unlock className="h-4 w-4 mr-1" />Open survey</>}
+            </Button>
           </div>
         </div>
+
+        {/* SHARE LINK */}
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Share this survey</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Copy the public link below and send it out from your own email tool, text blast, or team app.
+              {!survey.is_open && <span className="block mt-1 text-amber-700">The survey is currently <b>closed</b> — open it above before sharing.</span>}
+            </p>
+            <div className="flex gap-2">
+              <Input readOnly value={publicUrl} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+              <Button variant="outline" onClick={copyPublicLink}><Copy className="h-4 w-4 mr-1" />Copy</Button>
+              <Button variant="outline" onClick={() => window.open(publicUrl, "_blank")} disabled={!publicUrl}><ExternalLink className="h-4 w-4 mr-1" />Open</Button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Preview (won't record answers): <button className="underline" onClick={copyPreviewLink}>copy preview link</button>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-4 gap-4">
           <StatCard label="NPS Score" value={survey.nps_score != null ? Number(survey.nps_score).toFixed(0) : "—"} />
@@ -258,7 +274,6 @@ export default function SurveyDetail() {
             <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="responses">Responses ({responses.length})</TabsTrigger>
             <TabsTrigger value="results">Per-question results</TabsTrigger>
-            <TabsTrigger value="send">Send</TabsTrigger>
           </TabsList>
 
           {/* QUESTIONS */}
@@ -288,24 +303,27 @@ export default function SurveyDetail() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {locked && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">This survey has responses — questions are locked. Create a new survey for the next season to change them.</p>}
-                {orgQs.map((q, idx) => (
-                  <div key={q.id} className="flex items-start gap-2 border rounded p-2">
-                    <div className="flex flex-col">
-                      <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === 0 || locked} onClick={() => moveQ(q.id, -1)}>↑</button>
-                      <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === orgQs.length - 1 || locked} onClick={() => moveQ(q.id, 1)}>↓</button>
+                {!locked && orgQs.length > 0 && <p className="text-xs text-muted-foreground">Drag <span className="inline-block align-middle">⋮⋮</span> to reorder.</p>}
+                <SortableQuestionList
+                  items={orgQs}
+                  disabled={locked}
+                  onReorder={reorderQs}
+                  renderItem={(q, handle) => (
+                    <div className="flex items-start gap-2 border rounded p-2 bg-card">
+                      <div className="pt-1">{handle}</div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{q.question_text}</div>
+                        <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}{q.is_required ? " · required" : ""}</div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeQ(q.id)} disabled={locked}><Trash2 className="h-4 w-4" /></Button>
                     </div>
-                    <GripVertical className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{q.question_text}</div>
-                      <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}{q.is_required ? " · required" : ""}</div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeQ(q.id)} disabled={locked}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                ))}
+                  )}
+                />
                 {orgQs.length === 0 && <p className="text-sm text-muted-foreground">No custom questions yet.</p>}
               </CardContent>
             </Card>
           </TabsContent>
+
 
           {/* RESPONSES */}
           <TabsContent value="responses" className="space-y-3">
@@ -373,28 +391,6 @@ export default function SurveyDetail() {
             })}
           </TabsContent>
 
-          {/* SEND */}
-          <TabsContent value="send" className="space-y-3">
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Audience</Label>
-                  <div className="font-medium">
-                    {segments.find((s) => s.id === survey.audience_segment_id)?.name || (
-                      <span className="text-destructive">No audience — open Edit to choose one.</span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Send a test to yourself</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input placeholder="you@example.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
-                    <Button variant="outline" onClick={sendTest} disabled={sending || !testEmail}>Test send</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Edit dialog */}
@@ -408,13 +404,6 @@ export default function SurveyDetail() {
                 <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={editForm.season_id || ""} onChange={(e) => setEditForm({ ...editForm, season_id: e.target.value })}>
                   <option value="">— None —</option>
                   {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                </select>
-              </div>
-              <div>
-                <Label>Audience segment</Label>
-                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={editForm.audience_segment_id || ""} onChange={(e) => setEditForm({ ...editForm, audience_segment_id: e.target.value })}>
-                  <option value="">— Choose a segment —</option>
-                  {segments.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.contact_count ?? 0})</option>)}
                 </select>
               </div>
               <div className="flex gap-4">
