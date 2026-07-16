@@ -391,28 +391,6 @@ export default function SurveyDetail() {
             })}
           </TabsContent>
 
-          {/* SEND */}
-          <TabsContent value="send" className="space-y-3">
-            <Card>
-              <CardContent className="p-4 space-y-3">
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Audience</Label>
-                  <div className="font-medium">
-                    {segments.find((s) => s.id === survey.audience_segment_id)?.name || (
-                      <span className="text-destructive">No audience — open Edit to choose one.</span>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <Label className="text-xs uppercase text-muted-foreground">Send a test to yourself</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input placeholder="you@example.com" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
-                    <Button variant="outline" onClick={sendTest} disabled={sending || !testEmail}>Test send</Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Edit dialog */}
