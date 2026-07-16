@@ -232,6 +232,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/retention" element={<ProtectedRoute role="admin" module="marketing"><RetentionHub /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/retention/surveys" element={<ProtectedRoute role="admin" module="marketing"><Surveys /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/retention/surveys/:id" element={<ProtectedRoute role="admin" module="marketing"><SurveyDetail /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/retention/settings" element={<ProtectedRoute role="admin" module="marketing"><RetentionSettings /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/insights" element={<ProtectedRoute role="admin" module="marketing"><Insights /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
