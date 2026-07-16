@@ -336,30 +336,39 @@ export default function SurveyDetail() {
             <Card>
               <CardHeader><CardTitle className="text-base">Core questions (Curve — cross-org benchmark)</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                <p className="text-xs text-muted-foreground">Check the template questions you want to include on this survey. Unchecked questions won't appear in the public link or the report.</p>
-                {master.map((q) => {
-                  const included = isMasterIncluded(q.id);
-                  const isNps = q.question_type === "rating_10";
-                  return (
-                    <div key={q.id} className="flex items-start gap-3 border-b last:border-b-0 py-2">
-                      <Checkbox
-                        checked={included}
-                        onCheckedChange={(v) => toggleMasterIncluded(q.id, !!v)}
-                        disabled={locked}
-                        className="mt-1"
-                      />
-                      <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">{q.question_text}</div>
-                        <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}</div>
-                        {isNps && !included && (
-                          <div className="text-xs text-amber-700 mt-1">Excluding this removes the NPS score from this survey.</div>
-                        )}
+                <p className="text-xs text-muted-foreground">
+                  Check the template questions you want to include on this survey. Unchecked questions won't appear in the public link or the report.
+                  {!locked && orderedMaster.length > 1 && <> Drag <span className="inline-block align-middle">⋮⋮</span> to reorder.</>}
+                </p>
+                <SortableQuestionList
+                  items={orderedMaster}
+                  disabled={locked}
+                  onReorder={reorderMaster}
+                  renderItem={(q, handle) => {
+                    const included = isMasterIncluded(q.id);
+                    const isNps = q.question_type === "rating_10";
+                    return (
+                      <div className="flex items-start gap-3 border rounded p-2 bg-card">
+                        <div className="pt-1">{handle}</div>
+                        <Checkbox
+                          checked={included}
+                          onCheckedChange={(v) => toggleMasterIncluded(q.id, !!v)}
+                          disabled={locked}
+                          className="mt-1"
+                        />
+                        <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{q.question_text}</div>
+                          <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}</div>
+                          {isNps && !included && (
+                            <div className="text-xs text-amber-700 mt-1">Excluding this removes the NPS score from this survey.</div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-                {master.length === 0 && <p className="text-sm text-muted-foreground">No core questions in this version.</p>}
+                    );
+                  }}
+                />
+                {orderedMaster.length === 0 && <p className="text-sm text-muted-foreground">No core questions in this version.</p>}
               </CardContent>
             </Card>
 
