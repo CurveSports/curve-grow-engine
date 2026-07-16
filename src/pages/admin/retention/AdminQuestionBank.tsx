@@ -107,23 +107,42 @@ export default function AdminQuestionBank() {
         <Card>
           <CardHeader><CardTitle className="text-base">Version {selectedVersion} — {inVersion.length} questions</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            {inVersion.map((q) => (
-              <div key={q.id} className="flex items-start gap-3 border rounded p-3">
-                <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
-                <div className="flex-1">
-                  <div className="text-sm font-medium">{q.question_text}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {QUESTION_TYPE_LABELS[q.question_type]} · sort {q.sort_order}{q.is_required ? " · required" : ""}
-                    {!q.is_active && <span className="ml-2 text-destructive">(hidden)</span>}
+            {inVersion.length > 0 && <p className="text-xs text-muted-foreground">Drag ⋮⋮ to reorder — order is saved automatically.</p>}
+            <SortableQuestionList
+              items={inVersion}
+              onReorder={async (ids) => {
+                const byId = new Map(inVersion.map((q) => [q.id, q]));
+                const next = ids.map((qid, i) => ({ ...(byId.get(qid) as MasterQuestion), sort_order: (i + 1) * 10 }));
+                // optimistic
+                setQuestions((prev) => {
+                  const others = prev.filter((q) => q.version !== selectedVersion);
+                  return [...others, ...next];
+                });
+                await Promise.all(next.map((q) =>
+                  (supabase as any).from("survey_master_questions").update({ sort_order: q.sort_order }).eq("id", q.id)
+                ));
+                load();
+              }}
+              renderItem={(q, handle) => (
+                <div className="flex items-start gap-3 border rounded p-3 bg-card">
+                  <div className="pt-1">{handle}</div>
+                  <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">{q.question_text}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {QUESTION_TYPE_LABELS[q.question_type]}{q.is_required ? " · required" : ""}
+                      {!q.is_active && <span className="ml-2 text-destructive">(hidden)</span>}
+                    </div>
                   </div>
+                  <Button variant="outline" size="sm" onClick={() => toggleActive(q)}>{q.is_active ? "Hide" : "Show"}</Button>
+                  <Button variant="ghost" size="icon" onClick={() => remove(q)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => toggleActive(q)}>{q.is_active ? "Hide" : "Show"}</Button>
-                <Button variant="ghost" size="icon" onClick={() => remove(q)}><Trash2 className="h-4 w-4" /></Button>
-              </div>
-            ))}
+              )}
+            />
             {inVersion.length === 0 && <p className="text-muted-foreground p-2">No questions in this version.</p>}
           </CardContent>
         </Card>
+
 
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogContent>
