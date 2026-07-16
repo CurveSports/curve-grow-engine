@@ -106,6 +106,26 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+function PathRedirect({ from, to }: { from: string; to: string }) {
+  // simple param substitution: replace :name tokens in `to` with values from `from` matched against location.
+  const path = window.location.pathname;
+  const fromParts = from.split("/");
+  const pathParts = path.split("/");
+  const params: Record<string, string> = {};
+  fromParts.forEach((p, i) => { if (p.startsWith(":")) params[p.slice(1)] = pathParts[i] ?? ""; });
+  const dest = to.replace(/:([a-zA-Z]+)/g, (_, k) => params[k] ?? "");
+  return <Navigate to={dest} replace />;
+}
+function OrgRedirect({ suffix }: { suffix: string }) {
+  const match = window.location.pathname.match(/^\/admin\/orgs\/([0-9a-fA-F-]{36})/);
+  const orgId = match?.[1] ?? "";
+  const idMatch = window.location.pathname.match(/\/nps\/([^/]+)$/);
+  const id = idMatch?.[1] ?? "";
+  const dest = `/admin/orgs/${orgId}${suffix}`.replace(":id", id);
+  return <Navigate to={dest} replace />;
+}
+
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
