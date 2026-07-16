@@ -167,7 +167,6 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     items: [
       { to: "/admin/retention/surveys", label: "Parent Surveys", icon: Smile, match: (p) => p.startsWith("/admin/retention/surveys") || p.startsWith("/admin/marketing/nps") },
       { to: "/admin/retention/question-bank", label: "Core Question Bank", icon: ListChecks, match: (p) => p.startsWith("/admin/retention/question-bank") },
-      { to: "/admin/marketing/audits", label: "Audits", icon: ClipboardList, match: (p) => p.startsWith("/admin/marketing/audits") },
     ],
   };
   const adminEventsGroup: NavGroup = {
