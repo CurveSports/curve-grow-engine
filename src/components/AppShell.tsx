@@ -97,7 +97,14 @@ const ORG_GROUPS: NavGroup[] = [
       { to: "/marketing/media", label: "Content Library", icon: Folder, match: (p) => p.startsWith("/marketing/media") || p.startsWith("/marketing/library") },
       { to: "/marketing/contacts", label: "Audience", icon: UsersRound, match: (p) => p.startsWith("/marketing/contacts") || p.startsWith("/marketing/brand-kit") },
       { to: "/marketing/campaigns", label: "Campaigns", icon: Megaphone, match: (p) => p.startsWith("/marketing/campaigns") || p.startsWith("/marketing/approvals") },
-      { to: "/marketing/insights", label: "Insights", icon: BarChart2, match: (p) => p.startsWith("/marketing/insights") || p.startsWith("/marketing/nps") || p.startsWith("/marketing/ab-tests") || p.startsWith("/marketing/send-times") || p.startsWith("/marketing/shortlinks") },
+      { to: "/marketing/insights", label: "Insights", icon: BarChart2, match: (p) => p.startsWith("/marketing/insights") || p.startsWith("/marketing/ab-tests") || p.startsWith("/marketing/send-times") || p.startsWith("/marketing/shortlinks") },
+    ],
+  },
+  {
+    label: "Retention & Referrals",
+    items: [
+      { to: "/retention", label: "Hub", icon: Smile, match: (p) => p === "/retention" },
+      { to: "/retention/surveys", label: "Parent Surveys", icon: Smile, match: (p) => p.startsWith("/retention/surveys") || p.startsWith("/marketing/nps") },
     ],
   },
   {
@@ -152,8 +159,14 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       { to: "/admin/marketing/email-templates", label: "Email Templates", icon: Mail, match: (p) => p.startsWith("/admin/marketing/email-templates") },
       { to: "/admin/marketing/sequence-templates", label: "Sequence Templates", icon: Workflow, match: (p) => p.startsWith("/admin/marketing/sequence-templates") },
       { to: "/admin/marketing/schools", label: "Schools Library", icon: GraduationCap, match: (p) => p.startsWith("/admin/marketing/schools") },
-      { to: "/admin/marketing/nps", label: "NPS Surveys", icon: Smile, match: (p) => p.startsWith("/admin/marketing/nps") },
       { to: "/admin/marketing/audits", label: "Audits", icon: ClipboardList, match: (p) => p.startsWith("/admin/marketing/audits") },
+    ],
+  };
+  const adminRetentionGroup: NavGroup = {
+    label: "Retention & Referrals",
+    items: [
+      { to: "/admin/retention/surveys", label: "Parent Surveys", icon: Smile, match: (p) => p.startsWith("/admin/retention/surveys") || p.startsWith("/admin/marketing/nps") },
+      { to: "/admin/retention/question-bank", label: "Core Question Bank", icon: ListChecks, match: (p) => p.startsWith("/admin/retention/question-bank") },
     ],
   };
   const adminEventsGroup: NavGroup = {
@@ -169,7 +182,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   let groups = role === "admin" && hasModule("acquisitions")
     ? [...allegianceGroups, acquisitionsGroup]
     : (role === "admin" ? allegianceGroups : filteredBaseGroups);
-  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
+  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup, adminRetentionGroup];
   if (role === "admin" && hasModule("events")) groups = [...groups, adminEventsGroup];
 
   // When an admin is impersonating an org (URL: /admin/orgs/:orgId/marketing/...),
@@ -180,7 +193,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   if (impersonatedOrgId) {
     const prefix = `/admin/orgs/${impersonatedOrgId}`;
     const rewriteItem = (it: NavItem): NavItem => {
-      if (!it.to || !it.to.startsWith("/marketing")) return it;
+      if (!it.to || !(it.to.startsWith("/marketing") || it.to.startsWith("/retention"))) return it;
       const newTo = `${prefix}${it.to}`;
       return {
         ...it,
@@ -189,7 +202,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
       };
     };
     groups = ORG_GROUPS
-      .filter((g) => g.label === "Marketing")
+      .filter((g) => g.label === "Marketing" || g.label === "Retention & Referrals")
       .map((g) => ({ ...g, items: g.items.map(rewriteItem) }));
   }
   if (isCurveOwner) groups = [...groups, systemGroup];

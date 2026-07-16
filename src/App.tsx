@@ -80,16 +80,19 @@ import SequenceLaunch from "@/pages/marketing/SequenceLaunch";
 import SmsSetup from "@/pages/marketing/SmsSetup";
 import SmsComposer from "@/pages/marketing/SmsComposer";
 import SmsSends from "@/pages/marketing/SmsSends";
-import NpsSurveys from "@/pages/marketing/NpsSurveys";
-import NpsSurveyDetail from "@/pages/marketing/NpsSurveyDetail";
 import Insights from "@/pages/marketing/Insights";
 import Create from "@/pages/marketing/Create";
 import NpsResponse from "@/pages/NpsResponse";
 import PortfolioAnalytics from "@/pages/admin/marketing/PortfolioAnalytics";
 import AdminSequenceTemplates from "@/pages/admin/marketing/AdminSequenceTemplates";
 import AdminSchools from "@/pages/admin/marketing/AdminSchools";
-import AdminNpsOverview from "@/pages/admin/marketing/AdminNpsOverview";
 import AdminAudits from "@/pages/admin/marketing/AdminAudits";
+import RetentionHub from "@/pages/retention/RetentionHub";
+import Surveys from "@/pages/retention/Surveys";
+import SurveyDetail from "@/pages/retention/SurveyDetail";
+import AdminSurveysOverview from "@/pages/admin/retention/AdminSurveysOverview";
+import AdminQuestionBank from "@/pages/admin/retention/AdminQuestionBank";
+import { Navigate } from "react-router-dom";
 import AdminBrowseOrgs from "@/pages/admin/AdminBrowseOrgs";
 import EventIntake from "@/pages/events/EventIntake";
 import AdminEventIntake from "@/pages/admin/events/AdminEventIntake";
@@ -102,6 +105,26 @@ import NotFound from "./pages/NotFound.tsx";
 
 
 const queryClient = new QueryClient();
+
+function PathRedirect({ from, to }: { from: string; to: string }) {
+  // simple param substitution: replace :name tokens in `to` with values from `from` matched against location.
+  const path = window.location.pathname;
+  const fromParts = from.split("/");
+  const pathParts = path.split("/");
+  const params: Record<string, string> = {};
+  fromParts.forEach((p, i) => { if (p.startsWith(":")) params[p.slice(1)] = pathParts[i] ?? ""; });
+  const dest = to.replace(/:([a-zA-Z]+)/g, (_, k) => params[k] ?? "");
+  return <Navigate to={dest} replace />;
+}
+function OrgRedirect({ suffix }: { suffix: string }) {
+  const match = window.location.pathname.match(/^\/admin\/orgs\/([0-9a-fA-F-]{36})/);
+  const orgId = match?.[1] ?? "";
+  const idMatch = window.location.pathname.match(/\/nps\/([^/]+)$/);
+  const id = idMatch?.[1] ?? "";
+  const dest = `/admin/orgs/${orgId}${suffix}`.replace(":id", id);
+  return <Navigate to={dest} replace />;
+}
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -158,8 +181,11 @@ const App = () => (
             <Route path="/marketing/sms-setup" element={<ProtectedRoute><SmsSetup /></ProtectedRoute>} />
             <Route path="/marketing/sms" element={<ProtectedRoute><SmsSends /></ProtectedRoute>} />
             <Route path="/marketing/sms/new" element={<ProtectedRoute><SmsComposer /></ProtectedRoute>} />
-            <Route path="/marketing/nps" element={<ProtectedRoute><NpsSurveys /></ProtectedRoute>} />
-            <Route path="/marketing/nps/:id" element={<ProtectedRoute><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/marketing/nps" element={<Navigate to="/retention/surveys" replace />} />
+            <Route path="/marketing/nps/:id" element={<PathRedirect from="/marketing/nps/:id" to="/retention/surveys/:id" />} />
+            <Route path="/retention" element={<ProtectedRoute role="org_user"><RetentionHub /></ProtectedRoute>} />
+            <Route path="/retention/surveys" element={<ProtectedRoute role="org_user"><Surveys /></ProtectedRoute>} />
+            <Route path="/retention/surveys/:id" element={<ProtectedRoute role="org_user"><SurveyDetail /></ProtectedRoute>} />
             <Route path="/marketing/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
             <Route path="/marketing/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/create" element={<ProtectedRoute role="admin" module="marketing"><Create /></ProtectedRoute>} />
@@ -199,14 +225,19 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/sms-setup" element={<ProtectedRoute role="admin" module="marketing"><SmsSetup /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/sms" element={<ProtectedRoute role="admin" module="marketing"><SmsSends /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/sms/new" element={<ProtectedRoute role="admin" module="marketing"><SmsComposer /></ProtectedRoute>} />
-            <Route path="/admin/orgs/:orgId/marketing/nps" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveys /></ProtectedRoute>} />
-            <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<ProtectedRoute role="admin" module="marketing"><NpsSurveyDetail /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/marketing/nps" element={<OrgRedirect suffix="/retention/surveys" />} />
+            <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<OrgRedirect suffix="/retention/surveys/:id" />} />
+            <Route path="/admin/orgs/:orgId/retention" element={<ProtectedRoute role="admin" module="marketing"><RetentionHub /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/retention/surveys" element={<ProtectedRoute role="admin" module="marketing"><Surveys /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/retention/surveys/:id" element={<ProtectedRoute role="admin" module="marketing"><SurveyDetail /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/insights" element={<ProtectedRoute role="admin" module="marketing"><Insights /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/schools" element={<ProtectedRoute role="admin" module="marketing"><AdminSchools /></ProtectedRoute>} />
-            <Route path="/admin/marketing/nps" element={<ProtectedRoute role="admin" module="marketing"><AdminNpsOverview /></ProtectedRoute>} />
+            <Route path="/admin/marketing/nps" element={<Navigate to="/admin/retention/surveys" replace />} />
             <Route path="/admin/marketing/audits" element={<ProtectedRoute role="admin" module="marketing"><AdminAudits /></ProtectedRoute>} />
+            <Route path="/admin/retention/surveys" element={<ProtectedRoute role="admin"><AdminSurveysOverview /></ProtectedRoute>} />
+            <Route path="/admin/retention/question-bank" element={<ProtectedRoute role="admin"><AdminQuestionBank /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute role="admin" module="allegiance"><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/tasks" element={<ProtectedRoute role="admin" module="allegiance"><AdminTasksPage /></ProtectedRoute>} />
