@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, ExternalLink, Search } from "lucide-react";
 import { format } from "date-fns";
 import { avgRating, calcNps, categoryLabel } from "@/lib/surveys";
+import { SurveyTrendCharts } from "@/components/retention/SurveyTrendCharts";
 
 export default function AdminSurveysOverview() {
   const navigate = useNavigate();
