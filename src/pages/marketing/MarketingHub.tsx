@@ -135,7 +135,7 @@ export default function MarketingHub() {
       icon: AlertTriangle,
       label: `${stats.detractorsOpen} detractor${stats.detractorsOpen === 1 ? "" : "s"} need follow-up`,
       sub: "Personal outreach within 48h saves the relationship",
-      to: "/marketing/nps",
+      to: "/retention/surveys",
       tone: "warn",
     });
   }
@@ -290,7 +290,6 @@ export default function MarketingHub() {
           { to: "/marketing/campaigns", label: "Campaigns", desc: "One goal, many assets.", icon: Megaphone },
         ]} />
         <Section title="Measure" blurb="Squeeze more out of every send." tiles={[
-          { to: "/marketing/nps", label: "NPS Surveys", desc: "Track satisfaction; flag detractors.", icon: Heart },
           { to: "/marketing/ab-tests", label: "A/B Tests", desc: "Auto-send the winner.", icon: FlaskConical },
           { to: "/marketing/send-times", label: "Send-time Optimization", desc: "When your audience opens.", icon: Clock },
           { to: "/marketing/shortlinks", label: "Shortlinks & QR", desc: "Branded trackable links.", icon: Link2 },
