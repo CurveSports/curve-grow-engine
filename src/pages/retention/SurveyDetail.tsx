@@ -40,15 +40,13 @@ export default function SurveyDetail() {
   const [responses, setResponses] = useState<Response[]>([]);
   const [answers, setAnswers] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
-  const [segments, setSegments] = useState<any[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState<any>({});
   const [addOpen, setAddOpen] = useState(false);
   const [newQ, setNewQ] = useState<{ text: string; type: SurveyQuestionType; required: boolean }>({ text: "", type: "rating_5", required: false });
   const [teamFilter, setTeamFilter] = useState<string>("");
-  const [sending, setSending] = useState(false);
-  const [testEmail, setTestEmail] = useState("");
+  const [toggling, setToggling] = useState(false);
 
   const locked = survey?.status === "sent" && (survey?.response_count ?? 0) > 0;
 
