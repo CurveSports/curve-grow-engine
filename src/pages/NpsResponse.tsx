@@ -93,7 +93,10 @@ export default function NpsResponse() {
         (supabase as any).from("org_teams").select("id,name").eq("org_id", publicSurvey.org_id).order("name"),
         (supabase as any).from("org_retention_settings").select("team_name_options,age_group_options").eq("org_id", publicSurvey.org_id).maybeSingle(),
       ]);
-      setMaster((m as MasterQuestion[]) || []);
+      const allMaster = ((m as MasterQuestion[]) || []);
+      const includedIds: string[] | null = (publicSurvey as any).included_master_question_ids ?? null;
+      const filteredMaster = includedIds ? allMaster.filter((q) => includedIds.includes(q.id)) : allMaster;
+      setMaster(filteredMaster);
       setOrgQs((oq as OrgQuestion[]) || []);
       setTeams((tt as any[]) || []);
       setTeamNameOptions((settings as any)?.team_name_options ?? []);
