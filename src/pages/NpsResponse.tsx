@@ -198,11 +198,41 @@ export default function NpsResponse() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 py-6 px-4">
       <div className="max-w-xl mx-auto bg-card rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
-        {isPreview && (
-          <div className="px-3 py-2 rounded-md bg-amber-100 text-amber-900 text-xs font-medium text-center">
-            Preview mode — responses are not recorded.
-          </div>
-        )}
+        {isPreview && (() => {
+          const shareUrl = `${window.location.origin}/s/${survey.public_slug}`;
+          return (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2">
+              <div className="text-amber-900 text-xs font-medium text-center">
+                Preview mode — responses are not recorded.
+              </div>
+              <div className="flex items-center gap-2">
+                <Input readOnly value={shareUrl} className="h-9 text-xs bg-background" onFocus={(e) => e.currentTarget.select()} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareUrl);
+                      toast.success("Share link copied");
+                    } catch {
+                      toast.error("Could not copy");
+                    }
+                  }}
+                  disabled={!survey.is_open}
+                  title={survey.is_open ? "Copy public share link" : "Open the survey to activate this link"}
+                >
+                  <Copy className="h-4 w-4 mr-1" /> Copy
+                </Button>
+              </div>
+              {!survey.is_open && (
+                <div className="text-[11px] text-amber-800 text-center">
+                  This survey is not open yet — the share link won't accept responses until you open it.
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="text-center space-y-2">
           {survey.org_logo_url && <img src={survey.org_logo_url} alt={survey.org_name || ""} className="h-14 mx-auto object-contain" />}
