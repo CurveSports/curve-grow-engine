@@ -149,9 +149,27 @@ export default function SurveyDetail() {
     load();
   };
 
+  const orderedMaster = orderMasterQuestions(master, survey?.master_question_order ?? null);
   const includedIds: string[] | null = survey?.included_master_question_ids ?? null;
   const isMasterIncluded = (qid: string) => includedIds === null || includedIds.includes(qid);
-  const selectedMaster = master.filter((q) => isMasterIncluded(q.id));
+  const selectedMaster = orderedMaster.filter((q) => isMasterIncluded(q.id));
+
+  const reorderMaster = async (orderedIds: string[]) => {
+    if (locked) return;
+    const prev = survey;
+    setSurvey({ ...survey, master_question_order: orderedIds });
+    const { error } = await (supabase as any)
+      .from("org_nps_surveys")
+      .update({ master_question_order: orderedIds })
+      .eq("id", id);
+    if (error) {
+      setSurvey(prev);
+      toast.error(`Could not save order: ${error.message}`);
+      return;
+    }
+    toast.success("Question order saved");
+    load();
+  };
 
   const toggleMasterIncluded = async (qid: string, checked: boolean) => {
     if (locked) return;
