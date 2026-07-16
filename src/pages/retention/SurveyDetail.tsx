@@ -62,14 +62,13 @@ export default function SurveyDetail() {
     const version = s.master_version ?? 1;
     const [
       { data: m }, { data: oq }, { data: r }, { data: a },
-      { data: ss }, { data: seg }, { data: tt },
+      { data: ss }, { data: tt },
     ] = await Promise.all([
       (supabase as any).from("survey_master_questions").select("*").eq("version", version).eq("is_active", true).order("sort_order"),
       (supabase as any).from("org_survey_questions").select("*").eq("survey_id", id).order("sort_order"),
       (supabase as any).from("org_nps_responses").select("*").eq("survey_id", id).order("responded_at", { ascending: false }),
       (supabase as any).from("org_nps_answers").select("*, org_nps_responses!inner(survey_id)").eq("org_nps_responses.survey_id", id),
       (supabase as any).from("org_seasons").select("id,name").eq("org_id", s.org_id).order("season_end_date", { ascending: false }),
-      (supabase as any).from("org_contact_segments").select("id,name,contact_count").eq("org_id", s.org_id).order("name"),
       (supabase as any).from("org_teams").select("id,name").eq("org_id", s.org_id).order("name"),
     ]);
     setMaster((m as MasterQuestion[]) || []);
@@ -77,7 +76,6 @@ export default function SurveyDetail() {
     setResponses((r as Response[]) || []);
     setAnswers(a || []);
     setSeasons(ss || []);
-    setSegments(seg || []);
     setTeams(tt || []);
   };
 
@@ -87,7 +85,6 @@ export default function SurveyDetail() {
     setEditForm({
       name: survey.name || "",
       question: survey.question || "",
-      audience_segment_id: survey.audience_segment_id || "",
       season_id: survey.season_id || "",
       collect_team: survey.collect_team ?? true,
       collect_age_group: survey.collect_age_group ?? false,
@@ -100,7 +97,6 @@ export default function SurveyDetail() {
 
   const saveEdit = async () => {
     const payload = { ...editForm };
-    if (!payload.audience_segment_id) payload.audience_segment_id = null;
     if (!payload.season_id) payload.season_id = null;
     const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
     if (error) { toast.error(error.message); return; }
@@ -132,44 +128,45 @@ export default function SurveyDetail() {
     load();
   };
 
-  const moveQ = async (qid: string, dir: -1 | 1) => {
-    const idx = orgQs.findIndex((q) => q.id === qid);
-    const swapIdx = idx + dir;
-    if (swapIdx < 0 || swapIdx >= orgQs.length) return;
-    const a = orgQs[idx], b = orgQs[swapIdx];
-    await Promise.all([
-      (supabase as any).from("org_survey_questions").update({ sort_order: b.sort_order }).eq("id", a.id),
-      (supabase as any).from("org_survey_questions").update({ sort_order: a.sort_order }).eq("id", b.id),
-    ]);
+  const reorderQs = async (orderedIds: string[]) => {
+    // Optimistic UI: renumber locally, then persist in a batch (10, 20, 30…)
+    const byId = new Map(orgQs.map((q) => [q.id, q]));
+    const next = orderedIds.map((qid, i) => ({ ...(byId.get(qid) as OrgQuestion), sort_order: (i + 1) * 10 }));
+    setOrgQs(next);
+    await Promise.all(next.map((q) =>
+      (supabase as any).from("org_survey_questions").update({ sort_order: q.sort_order }).eq("id", q.id)
+    ));
+  };
+
+  const toggleOpen = async () => {
+    const nextOpen = !survey.is_open;
+    if (nextOpen && !confirm("Open this survey? The public link will start accepting responses.")) return;
+    if (!nextOpen && !confirm("Close this survey? The public link will stop accepting responses.")) return;
+    setToggling(true);
+    const payload: any = { is_open: nextOpen };
+    if (nextOpen && !survey.sent_at) payload.sent_at = new Date().toISOString();
+    if (nextOpen) payload.status = "sent"; // keep legacy status for existing analytics
+    const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
+    setToggling(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(nextOpen ? "Survey opened" : "Survey closed");
     load();
   };
 
-  const sendSurvey = async () => {
-    if (!survey?.audience_segment_id) { toast.error("Pick an audience under Edit first."); return; }
-    if (!confirm("Send this survey to everyone in the audience now?")) return;
-    setSending(true);
-    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id } });
-    setSending(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Sent to ${data?.sent ?? 0} of ${data?.total ?? 0}`);
-    load();
+  const publicUrl = survey?.public_slug ? `${window.location.origin}/s/${survey.public_slug}` : "";
+
+  const copyPublicLink = async () => {
+    if (!publicUrl) return;
+    await navigator.clipboard.writeText(publicUrl);
+    toast.success("Public link copied — paste it into your email or text");
   };
 
-  const sendTest = async () => {
-    if (!testEmail) return toast.error("Enter your email");
-    setSending(true);
-    const { data, error } = await supabase.functions.invoke("nps-send-survey", { body: { survey_id: id, test_email: testEmail } });
-    setSending(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(data?.sent ? "Test sent — check your inbox" : "Test failed");
-  };
-
-  const copyLink = async () => {
-    // Legacy public preview URL still works; per-recipient tokens are minted by the send function.
+  const copyPreviewLink = async () => {
     const url = `${window.location.origin}/nps/preview/${id}`;
     await navigator.clipboard.writeText(url);
     toast.success("Preview link copied");
   };
+
 
   const answersByResponse = new Map<string, any[]>();
   for (const a of answers) {
