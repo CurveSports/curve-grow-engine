@@ -97,7 +97,9 @@ export default function NpsResponse() {
       ]);
       const allMaster = ((m as MasterQuestion[]) || []);
       const includedIds: string[] | null = (publicSurvey as any).included_master_question_ids ?? null;
-      const filteredMaster = includedIds ? allMaster.filter((q) => includedIds.includes(q.id)) : allMaster;
+      const orderArr: string[] | null = (publicSurvey as any).master_question_order ?? null;
+      const orderedMaster = orderMasterQuestions(allMaster, orderArr);
+      const filteredMaster = includedIds ? orderedMaster.filter((q) => includedIds.includes(q.id)) : orderedMaster;
       setMaster(filteredMaster);
       setOrgQs((oq as OrgQuestion[]) || []);
       setTeams((tt as any[]) || []);
