@@ -412,7 +412,7 @@ export default function SurveyDetail() {
 
           {/* PER-QUESTION RESULTS */}
           <TabsContent value="results" className="space-y-3">
-            {[...master.map((q) => ({ q, src: "master" as const })), ...orgQs.map((q) => ({ q, src: "org" as const }))].map(({ q, src }) => {
+            {[...selectedMaster.map((q) => ({ q, src: "master" as const })), ...orgQs.map((q) => ({ q, src: "org" as const }))].map(({ q, src }) => {
               const agg: any = aggFor(q, src, q.question_type);
               return (
                 <Card key={`${src}:${q.id}`}>
