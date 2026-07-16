@@ -187,6 +187,7 @@ const App = () => (
             <Route path="/retention" element={<ProtectedRoute role="org_user"><RetentionHub /></ProtectedRoute>} />
             <Route path="/retention/surveys" element={<ProtectedRoute role="org_user"><Surveys /></ProtectedRoute>} />
             <Route path="/retention/surveys/:id" element={<ProtectedRoute role="org_user"><SurveyDetail /></ProtectedRoute>} />
+            <Route path="/retention/settings" element={<ProtectedRoute role="org_user"><RetentionSettings /></ProtectedRoute>} />
             <Route path="/marketing/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
             <Route path="/marketing/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/create" element={<ProtectedRoute role="admin" module="marketing"><Create /></ProtectedRoute>} />
