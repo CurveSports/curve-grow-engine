@@ -193,6 +193,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/create" element={<ProtectedRoute role="admin" module="marketing"><Create /></ProtectedRoute>} />
             <Route path="/nps/:token" element={<NpsResponse />} />
             <Route path="/nps/preview/:surveyId" element={<NpsResponse />} />
+            <Route path="/s/:slug" element={<NpsResponse />} />
             <Route path="/events/intake/:slug" element={<EventIntake />} />
             <Route path="/events/intake" element={<EventIntake />} />
             <Route path="/revenue-audit" element={<RevenueAudit />} />
