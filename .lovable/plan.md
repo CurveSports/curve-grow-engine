@@ -1,33 +1,61 @@
 ## Goal
-Let an org choose, per survey, which Curve template (master) questions to include — instead of every active master question being shown automatically. NPS scoring still works as long as the org keeps the NPS rating_10 question selected.
+
+On a survey's Questions tab, let the org owner reorder the Curve **core (template) questions** by drag-and-drop — same interaction they already have for their own custom questions. The chosen order flows through to the public link, the preview, and the report/CSV. Custom questions keep their existing drag-and-drop.
 
 ## Approach
-Add a single array column `included_master_question_ids uuid[]` to `org_nps_surveys`. `NULL` = "include all active master questions for this version" (backward compatible for existing surveys). A non-null array = only those specific master question IDs are shown.
 
-## Database (one migration)
-- Add column `included_master_question_ids uuid[]` on `public.org_nps_surveys`, default `NULL`.
-- Update `public.get_public_survey(...)` to also return the array so the public respondent page can filter.
-- No new tables, no RLS changes.
+Master questions are shared across orgs, so their global `sort_order` can't change per survey. Instead, store a per-survey override array of master question IDs on `org_nps_surveys`.
 
-## UI — org survey detail (`src/pages/retention/SurveyDetail.tsx`)
-In the "Core questions (Curve — cross-org benchmark)" card:
-- Show every active master question for the survey's version with a checkbox to include/exclude it.
-- Add a warning next to the NPS (rating_10) question: "Excluding this removes the NPS score from this survey."
-- Persist selection on toggle by writing the resulting `uuid[]` to `included_master_question_ids` (write `NULL` when every question is checked so defaults keep working).
-- Lock the checkboxes when the survey is locked (has responses).
-- Filter the master list rendered elsewhere on the page (per-question results, CSV export) to the selected IDs.
+### Database
 
-## UI — public respondent page (`src/pages/NpsResponse.tsx`)
-- Read `included_master_question_ids` from the RPC payload.
-- After loading master questions for the version, filter to the selected IDs (fall back to "all" when null).
-- Keep NPS-derived scoring conditional on the rating_10 master question actually being included.
+Add one column to `org_nps_surveys`:
 
-## Reports / CSV
-- `SurveyDetail` already passes the `master` array into `buildResponseCsv` and the results tab — filtering that array upstream is enough; no changes to `src/lib/surveys.ts`.
+- `master_question_order uuid[] DEFAULT NULL` — ordered list of master question IDs for this survey. `NULL` = use the master version's default `sort_order`.
 
-## Admin question bank
-- No changes. Admins still manage the master template globally; per-survey selection is an org-level choice.
+Update the `get_public_survey` RPC to return this column alongside `included_master_question_ids`.
+
+### Shared ordering helper
+
+Add a small helper in `src/lib/surveys.ts`:
+
+```
+orderMasterQuestions(master, order):
+  if order is null → return master sorted by sort_order (unchanged)
+  else → return [ ...master matching order in that sequence,
+                  ...any remaining master questions in default order ]
+```
+
+Any new master questions added later automatically appear at the end until the org reorders again.
+
+### Admin/org SurveyDetail (`src/pages/retention/SurveyDetail.tsx`)
+
+- Compute `orderedMaster = orderMasterQuestions(master, survey.master_question_order)`.
+- Replace the current `master.map(...)` block inside the "Core questions" card with `SortableQuestionList`:
+  - Items = `orderedMaster`.
+  - Each row keeps its checkbox (include/exclude), badge, label, type, NPS warning.
+  - `disabled={locked}` — no reordering after responses arrive.
+- `onReorder(ids)`: optimistic update of `survey.master_question_order`, persist to `org_nps_surveys.master_question_order`, revert + toast on error, `load()` on success. Same pattern as the existing custom-question `reorderQs`.
+- Downstream views that already read `selectedMaster` (per-question results, CSV export) switch to `orderedMaster.filter(isMasterIncluded)` so results and CSV columns follow the new order.
+
+### Public survey page (`src/pages/NpsResponse.tsx`)
+
+- Read `master_question_order` from the RPC payload.
+- Apply `orderMasterQuestions(allMaster, master_question_order)` before filtering by `included_master_question_ids`.
+
+### Preview page
+
+Preview reuses the same component/data, so it inherits the new order automatically.
 
 ## Out of scope
-- Reordering master questions per survey (org can still reorder their own custom questions; global master order is set in the admin question bank).
-- Migrating already-sent surveys — they keep `NULL` and behave exactly as today.
+
+- Reordering core questions from the Curve admin question bank (already exists there).
+- Mixing core and custom questions into one combined drag list — they stay in two sections.
+- Backfilling ordering for surveys that already have responses (locked).
+
+## Files touched
+
+- `supabase/migrations/<new>.sql` — add column + update `get_public_survey`.
+- `src/lib/surveys.ts` — add `orderMasterQuestions` helper.
+- `src/pages/retention/SurveyDetail.tsx` — sortable core-question list + persistence.
+- `src/pages/NpsResponse.tsx` — apply order to public render.
+- `src/integrations/supabase/types.ts` — regenerated after migration.
