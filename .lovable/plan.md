@@ -1,88 +1,137 @@
-# Retention & Referral Incentives — End-of-Season Parent Survey (v1)
 
-Create a new top-level area **Retention & Referral Incentives** that will house the end-of-season parent survey now and a referral incentives module next round. The existing NPS code under `/marketing/nps` is not live, so we'll move it out of Marketing into the new area and rebuild it into the full survey system described below (rather than build a parallel module).
+## Goals
 
-## Navigation & routing
+1. Drop the "send to an audience" concept for surveys. Each survey has a public URL the org owner copies and pastes into their own email/text.
+2. Drag-and-drop reordering for questions on both the org survey editor and the Curve admin question bank.
+3. Fix the broken preview URL (`/nps/preview/:id` currently renders nothing when opened while signed out).
 
-- New top-level nav item **Retention** in `AppShell` (visible to org users with marketing/retention access and to admins).
-- New route tree:
-  - `/retention` — landing hub with two cards: **Parent Surveys** (built now) and **Referral Incentives** (coming soon placeholder).
-  - `/retention/surveys` — list of survey instances (replaces `/marketing/nps`).
-  - `/retention/surveys/:id` — survey detail (questions, audience, responses, benchmarks).
-  - `/retention/surveys/:id/preview` — preview.
-- Admin: `/admin/retention/surveys` (cross-org overview + benchmarks, replaces `/admin/marketing/nps`) and `/admin/retention/question-bank` (master template editor).
-- Old `/marketing/nps*` routes redirect to `/retention/surveys*` so any existing links keep working.
-- Remove the NPS card from `MarketingHub.tsx`; add a "Retention & Referrals" pointer instead.
-- Public response URL stays `/nps/r/:token` (unchanged; already tokenized, no login).
+---
 
-## What the user gets
+## 1. Public shareable survey link (replaces send flow)
 
-**1. Curve-owned core question bank (cross-org benchmarks)**
-- Admin editor at `/admin/retention/question-bank` to manage the locked master question set (the 11 questions in the spec).
-- Versioned: editing a live question creates a new version; existing survey instances stay on the version they were created with. New instances default to the latest version.
+**UI (`src/pages/retention/SurveyDetail.tsx`)**
+- Remove: Send button, sendSurvey/sendTest handlers, test-email input, Send tab, audience segment picker in the Edit dialog.
+- Replace with a prominent "Share link" card at the top: read-only input showing `https://os.curvesports.com/s/<public_slug>`, Copy button, Open button, QR code (reuse `QrCodeBlock`).
+- Survey lifecycle simplifies to: `draft` (link inactive) → `open` (link live, accepting responses) → `closed` (link shows "This survey is closed"). Replace the Send button with an "Open survey" / "Close survey" toggle. Locking questions still triggers on first response.
 
-**2. Org survey builder** (`/retention/surveys/:id`)
-- **Questions** tab: core questions read-only, grouped by category, followed by an "Org-added questions" section where the org can add/reorder/remove custom questions (rating 1–5, rating 0–10 / NPS, yes/no/maybe, open text).
-- Bind the survey to an `org_seasons` row (existing) and an audience segment (existing). Optional open/close dates.
-- **Lock rule**: once a survey has `status = sent` and ≥1 response, master version + org custom questions freeze; further edits require a new instance for the next season.
+**UI (`src/pages/retention/Surveys.tsx`)**
+- Remove references to `sent`/audience. Show status badge and a quick "Copy link" action per row.
 
-**3. Public response page** (`/nps/r/:token`, extended)
-- Mobile-first. Org logo/name at top (existing branding hook).
-- Required respondent fields: **name**, **team** (dropdown from `org_teams` for that season, or free text if none), optional **age group**.
-- Renders master questions first (grouped by category), then org-added, in `sort_order`.
-- Rating types render as star row (1–5), numeric button row (0–10), yes/no/maybe pills, or textarea.
+**Public page (`src/pages/NpsResponse.tsx`)**
+- Add a new route `/s/:slug` that loads the survey by `public_slug` (no magic-link token, no contact binding).
+- Keep `/nps/preview/:id` for authenticated previews.
+- Keep `/nps/:token` intact for legacy magic-link responses (still works for anything already sent).
+- When the survey is `closed` or `draft`, show a friendly "not accepting responses" screen.
+- Since there is no per-recipient contact, the form must collect enough identity itself: name (required, already there), team, optional age group, optional email (new, optional — used only for org-side follow-up).
 
-**4. Org reporting** (survey detail page)
-- Response table with **team filter** and respondent name/team columns.
-- Per-question aggregates: avg rating for scale questions, NPS % for the 0–10 question (%promoters − %detractors), yes/no/maybe distribution, open-text lists.
-- CSV export widened to include all answers.
+**Data model (migration)**
+- `org_nps_surveys`:
+  - Add `public_slug text unique` (default generated short random string, backfill for existing rows).
+  - Add `is_open boolean not null default false` (or reuse `status` with new value `open`).
+  - Keep `audience_segment_id` column for now (nullable, unused) to avoid data loss; stop writing to it.
+- Add anon SELECT policy on `org_nps_surveys` limited to open surveys: `USING (is_open = true)` exposing only the columns needed by the public form. Simpler: create a `SECURITY DEFINER` function `get_public_survey(_slug text)` returning survey + org name + logo, and grant EXECUTE to anon. This avoids widening table-level RLS.
+- Add anon SELECT on `organizations` name/logo via the same RPC (do not add a table policy).
+- Add anon INSERT policy on `org_nps_responses` and `org_nps_answers` gated to responses whose survey is currently open. Prefer a `SECURITY DEFINER` RPC `submit_public_survey_response(_slug, payload jsonb)` for atomicity and to avoid loosening table RLS.
 
-**5. Curve admin benchmarks** (`/admin/retention/surveys`)
-- Per core question: org score vs. network average — the sellable insight, surfaced prominently.
-- Cross-org table with response counts and NPS. Drill-down into individual responses (open text especially). Manual close/reopen for any instance.
+**Edge function**
+- Keep `nps-send-survey` file in the repo for now but stop calling it from the UI. (Optional cleanup in a follow-up.)
 
-**6. Distribution**
-- Existing `nps-send-survey` edge function (Lovable Cloud email on `notify.os.curvesports.com`, audience segment) reused unchanged.
+---
 
-## Out of scope
-- Referral module (next round; area is being scaffolded now).
-- Reusing prior respondent identity across seasons.
-- SMS distribution.
-- Automatic season triggers.
+## 2. Drag-and-drop question ordering
 
-## Technical notes
+- Add `@dnd-kit/core` + `@dnd-kit/sortable` (already common in the stack; if not installed, add via `bun add`).
+- Build a small `SortableQuestionList` component in `src/components/retention/` that wraps a list, exposes `onReorder(ids: string[])`, and renders a drag handle.
+- Wire it in:
+  - `src/pages/retention/SurveyDetail.tsx` — the "Your custom questions" card. Replace up/down arrow buttons. On drop, update `sort_order` for each affected row in a single batch (renumber 10, 20, 30, …). Disabled when the survey is locked.
+  - `src/pages/admin/retention/AdminQuestionBank.tsx` — the version's question list. Same pattern. Update `sort_order` for all rows in the version after drop.
+- Keep keyboard fallback (dnd-kit supports it) and add `aria-label` on the handle.
 
-**Migration** — extend, don't replace. All new public tables get the standard CREATE → GRANT → ENABLE RLS → POLICY block. Anon grants only where the public form requires them.
+---
 
-New tables:
-- `survey_master_questions` — Curve-owned core bank. Cols: `id`, `version`, `question_text`, `question_type` (enum `rating_5|rating_10|yes_no_maybe|open_text`), `category`, `sort_order`, `is_required`, `is_active`, timestamps. Admin-only write; `SELECT` for authenticated + anon.
-- `org_survey_questions` — org-added. Cols: `id`, `org_id`, `survey_id` (fk → `org_nps_surveys`), `question_text`, `question_type`, `sort_order`, `is_required`, timestamps. RLS: org members manage own via `current_org_id()`; anon `SELECT` where parent survey is `sent`.
-- `org_nps_answers` — one row per (response, question). Cols: `id`, `response_id` (fk → `org_nps_responses`), `question_id`, `question_source` (`master|org`), `answer_value` (text). Anon `INSERT` guarded to responses whose survey is active; org `SELECT` via join.
+## 3. Fix the broken preview URL
 
-Additions to `org_nps_surveys`: `season_id` (fk → `org_seasons`, nullable), `master_version` (int), `collect_team` (bool default true), `collect_age_group` (bool default false). Reuse existing `scheduled_for`/`closed_at`.
+Root cause: `/nps/preview/:id` runs `select * from org_nps_surveys` while the visitor is unauthenticated, and the only policy on `org_nps_surveys` is `Org members manage own nps surveys` (authenticated). Result: no rows returned, page stays on "Loading…".
 
-Additions to `org_nps_responses`: `respondent_name`, `team_id` (fk → `org_teams`, nullable), `team_name_text` (free-text fallback), `age_group`.
+Fix:
+- Use the same `get_public_survey` RPC for preview (accept either a slug or an id). For preview, require the caller to hit `/nps/preview/:id` — the RPC allows fetching by id without the `is_open` check but only returns non-sensitive fields (name, question, org name, logo, master_version, collect_team, collect_age_group). No responses are ever inserted in preview mode.
+- Update `NpsResponse.tsx` to call the RPC instead of selecting the table directly, for both preview and public flows.
 
-Locking enforced by a `BEFORE UPDATE/DELETE` trigger on `org_survey_questions` that checks the parent survey's status + response count.
+---
 
-Benchmarks: a `security definer` function `get_core_question_benchmarks(_org_id)` returning org avg + network avg per master question id, called from both the org detail page and the admin overview.
+## Technical details
 
-Seed the 11 master questions at `version = 1`.
+**New/changed routes (`src/App.tsx`)**
+- Add `<Route path="/s/:slug" element={<NpsResponse />} />`.
+- Keep `/nps/:token` and `/nps/preview/:id`.
 
-**Files to change:**
-- New migration (tables, columns, trigger, benchmark function, seed).
-- `src/lib/surveys.ts` (new) — types, question-type helpers, NPS calc, CSV builder.
-- `src/components/AppShell.tsx` + `src/components/TopNav.tsx` — add Retention nav.
-- `src/App.tsx` — new routes + redirects from `/marketing/nps*`.
-- `src/pages/retention/RetentionHub.tsx` (new) — landing hub with Surveys card + Referrals "coming soon".
-- `src/pages/retention/Surveys.tsx` (new; moves logic from `src/pages/marketing/NpsSurveys.tsx`).
-- `src/pages/retention/SurveyDetail.tsx` (new; moves + extends `src/pages/marketing/NpsSurveyDetail.tsx` — adds Questions tab, season/team pickers, per-question aggregates, wider CSV).
-- `src/pages/NpsResponse.tsx` — render master + org questions, name/team/age header, submit into `org_nps_answers`.
-- `src/pages/admin/retention/AdminSurveysOverview.tsx` (new; moves from `AdminNpsOverview.tsx` + benchmark view + drill-down).
-- `src/pages/admin/retention/AdminQuestionBank.tsx` (new) — master question editor with versioning.
-- `src/pages/marketing/MarketingHub.tsx` — remove NPS card.
-- Delete old `src/pages/marketing/Nps*.tsx` and `src/pages/admin/marketing/AdminNpsOverview.tsx` after routes redirect.
-- `supabase/functions/nps-send-survey/index.ts` — no behavior change; sanity check against new columns.
+**Migration outline**
+```sql
+ALTER TABLE public.org_nps_surveys
+  ADD COLUMN public_slug text UNIQUE,
+  ADD COLUMN is_open boolean NOT NULL DEFAULT false;
 
-## Open questions
-None — extending existing NPS tables under a new top-level Retention area with `/retention/*` routes.
+UPDATE public.org_nps_surveys
+  SET public_slug = encode(gen_random_bytes(8), 'hex')
+  WHERE public_slug IS NULL;
+
+CREATE OR REPLACE FUNCTION public.get_public_survey(_slug text, _preview_id uuid)
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT to_jsonb(row) FROM (
+    SELECT s.id, s.name, s.question, s.master_version,
+           s.collect_team, s.collect_age_group, s.is_open,
+           s.followup_question_promoter, s.followup_question_passive, s.followup_question_detractor,
+           s.org_id, o.name AS org_name, o.logo_url AS org_logo_url
+    FROM public.org_nps_surveys s
+    JOIN public.organizations o ON o.id = s.org_id
+    WHERE (_slug IS NOT NULL AND s.public_slug = _slug AND s.is_open = true)
+       OR (_preview_id IS NOT NULL AND s.id = _preview_id)
+    LIMIT 1
+  ) row;
+$$;
+GRANT EXECUTE ON FUNCTION public.get_public_survey(text, uuid) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.submit_public_survey_response(
+  _slug text, _respondent_name text, _team_id uuid, _team_name_text text,
+  _age_group text, _email text, _answers jsonb
+) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_survey record; v_response_id uuid; v_nps int;
+BEGIN
+  SELECT id, org_id, is_open, master_version INTO v_survey
+  FROM public.org_nps_surveys WHERE public_slug = _slug;
+  IF NOT FOUND OR NOT v_survey.is_open THEN RAISE EXCEPTION 'Survey not open'; END IF;
+  -- derive NPS score from the rating_10 master answer if present
+  SELECT (value->>'answer_value')::int INTO v_nps
+  FROM jsonb_array_elements(_answers) value
+  JOIN public.survey_master_questions q
+    ON q.id = (value->>'question_id')::uuid
+   AND q.version = v_survey.master_version
+   AND q.question_type = 'rating_10'
+  WHERE value->>'question_source' = 'master'
+  LIMIT 1;
+  INSERT INTO public.org_nps_responses (survey_id, respondent_name, team_id, team_name_text,
+    age_group, respondent_email, score, responded_via)
+  VALUES (v_survey.id, _respondent_name, _team_id, _team_name_text, _age_group, _email, v_nps, 'public_link')
+  RETURNING id INTO v_response_id;
+  INSERT INTO public.org_nps_answers (response_id, question_id, question_source, answer_value)
+  SELECT v_response_id, (value->>'question_id')::uuid, value->>'question_source', value->>'answer_value'
+  FROM jsonb_array_elements(_answers) value;
+  RETURN v_response_id;
+END; $$;
+GRANT EXECUTE ON FUNCTION public.submit_public_survey_response(text, text, uuid, text, text, text, jsonb) TO anon, authenticated;
+```
+(Add `respondent_email` column to `org_nps_responses` in the same migration.)
+
+**Files to change**
+- Migration: new file under `supabase/migrations/`.
+- `src/App.tsx` — add `/s/:slug` route.
+- `src/pages/NpsResponse.tsx` — RPC-based load, submit via RPC, optional email field, handle `/s/:slug` vs `/nps/preview/:id`, closed state.
+- `src/pages/retention/SurveyDetail.tsx` — replace send UI with share-link card + open/close toggle; swap up/down arrows for dnd-kit sortable.
+- `src/pages/retention/Surveys.tsx` — remove send/audience references; add "Copy link" per row; drop status filter on `sent`.
+- `src/pages/admin/retention/AdminQuestionBank.tsx` — dnd-kit sortable list, batch renumber on drop.
+- New `src/components/retention/SortableQuestionList.tsx`.
+- `bun add @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities` if missing.
+
+**Out of scope**
+- Removing `nps-send-survey` edge function (leave for a later cleanup).
+- Referral module (next round).
