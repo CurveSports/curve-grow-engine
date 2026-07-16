@@ -406,13 +406,6 @@ export default function SurveyDetail() {
                   {seasons.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
-              <div>
-                <Label>Audience segment</Label>
-                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={editForm.audience_segment_id || ""} onChange={(e) => setEditForm({ ...editForm, audience_segment_id: e.target.value })}>
-                  <option value="">— Choose a segment —</option>
-                  {segments.map((s) => <option key={s.id} value={s.id}>{s.name} ({s.contact_count ?? 0})</option>)}
-                </select>
-              </div>
               <div className="flex gap-4">
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!editForm.collect_team} onChange={(e) => setEditForm({ ...editForm, collect_team: e.target.checked })} />Ask for team</label>
                 <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!editForm.collect_age_group} onChange={(e) => setEditForm({ ...editForm, collect_age_group: e.target.checked })} />Ask for age group</label>
