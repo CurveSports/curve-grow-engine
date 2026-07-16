@@ -230,7 +230,7 @@ export default function SurveyDetail() {
         answer_value: a.answer_value ?? "",
       })),
     }));
-    const csv = buildResponseCsv(master, orgQs, rich);
+    const csv = buildResponseCsv(selectedMaster, orgQs, rich);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
