@@ -18,6 +18,7 @@ import {
   MasterQuestion, OrgQuestion, QUESTION_TYPE_LABELS, SurveyQuestionType,
 } from "@/lib/surveys";
 import { SortableQuestionList } from "@/components/retention/SortableQuestionList";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Response = {
   id: string;
