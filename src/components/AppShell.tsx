@@ -182,7 +182,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   let groups = role === "admin" && hasModule("acquisitions")
     ? [...allegianceGroups, acquisitionsGroup]
     : (role === "admin" ? allegianceGroups : filteredBaseGroups);
-  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup];
+  if (role === "admin" && hasModule("marketing")) groups = [...groups, adminMarketingGroup, adminRetentionGroup];
   if (role === "admin" && hasModule("events")) groups = [...groups, adminEventsGroup];
 
   // When an admin is impersonating an org (URL: /admin/orgs/:orgId/marketing/...),
