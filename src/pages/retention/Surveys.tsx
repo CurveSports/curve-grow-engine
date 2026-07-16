@@ -134,6 +134,14 @@ export default function Surveys() {
           </Card>
         )}
 
+        <SurveyTrendCharts
+          surveys={surveys}
+          answers={answers}
+          master={master}
+          title="Trends across seasons"
+          emptyHint="Once you've closed at least two surveys, this will show NPS, response rate, and per-question averages over time."
+        />
+
         <div className="space-y-2">
           {surveys.length === 0 && <p className="text-muted-foreground p-4">No surveys yet — create your first one.</p>}
           {surveys.map((s) => (
