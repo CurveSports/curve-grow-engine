@@ -229,18 +229,38 @@ export default function SurveyDetail() {
           <div>
             <h1 className="text-3xl font-bold">{survey.name}</h1>
             <div className="flex gap-2 mt-2 items-center flex-wrap">
-              <Badge>{survey.status}</Badge>
+              <Badge variant={survey.is_open ? "default" : "secondary"}>{survey.is_open ? "Open — accepting responses" : "Closed"}</Badge>
               {survey.org_seasons?.name && <Badge variant="outline">{survey.org_seasons.name}</Badge>}
               {locked && <Badge variant="secondary">Locked — has responses</Badge>}
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-4 w-4 mr-1" />Preview link</Button>
             <Button variant="outline" size="sm" onClick={() => window.open(`/nps/preview/${id}`, "_blank")}><Eye className="h-4 w-4 mr-1" />Preview</Button>
             <Button variant="outline" size="sm" onClick={openEdit}>Edit</Button>
-            {survey.status === "draft" && <Button size="sm" onClick={sendSurvey} disabled={sending}><Send className="h-4 w-4 mr-1" />{sending ? "Sending…" : "Send"}</Button>}
+            <Button size="sm" variant={survey.is_open ? "outline" : "default"} onClick={toggleOpen} disabled={toggling}>
+              {survey.is_open ? <><Lock className="h-4 w-4 mr-1" />Close survey</> : <><Unlock className="h-4 w-4 mr-1" />Open survey</>}
+            </Button>
           </div>
         </div>
+
+        {/* SHARE LINK */}
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base">Share this survey</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Copy the public link below and send it out from your own email tool, text blast, or team app.
+              {!survey.is_open && <span className="block mt-1 text-amber-700">The survey is currently <b>closed</b> — open it above before sharing.</span>}
+            </p>
+            <div className="flex gap-2">
+              <Input readOnly value={publicUrl} className="font-mono text-xs" onFocus={(e) => e.currentTarget.select()} />
+              <Button variant="outline" onClick={copyPublicLink}><Copy className="h-4 w-4 mr-1" />Copy</Button>
+              <Button variant="outline" onClick={() => window.open(publicUrl, "_blank")} disabled={!publicUrl}><ExternalLink className="h-4 w-4 mr-1" />Open</Button>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Preview (won't record answers): <button className="underline" onClick={copyPreviewLink}>copy preview link</button>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-4 gap-4">
           <StatCard label="NPS Score" value={survey.nps_score != null ? Number(survey.nps_score).toFixed(0) : "—"} />
@@ -254,7 +274,6 @@ export default function SurveyDetail() {
             <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="responses">Responses ({responses.length})</TabsTrigger>
             <TabsTrigger value="results">Per-question results</TabsTrigger>
-            <TabsTrigger value="send">Send</TabsTrigger>
           </TabsList>
 
           {/* QUESTIONS */}
@@ -284,24 +303,27 @@ export default function SurveyDetail() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {locked && <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">This survey has responses — questions are locked. Create a new survey for the next season to change them.</p>}
-                {orgQs.map((q, idx) => (
-                  <div key={q.id} className="flex items-start gap-2 border rounded p-2">
-                    <div className="flex flex-col">
-                      <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === 0 || locked} onClick={() => moveQ(q.id, -1)}>↑</button>
-                      <button className="text-muted-foreground hover:text-foreground disabled:opacity-30" disabled={idx === orgQs.length - 1 || locked} onClick={() => moveQ(q.id, 1)}>↓</button>
+                {!locked && orgQs.length > 0 && <p className="text-xs text-muted-foreground">Drag <span className="inline-block align-middle">⋮⋮</span> to reorder.</p>}
+                <SortableQuestionList
+                  items={orgQs}
+                  disabled={locked}
+                  onReorder={reorderQs}
+                  renderItem={(q, handle) => (
+                    <div className="flex items-start gap-2 border rounded p-2 bg-card">
+                      <div className="pt-1">{handle}</div>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{q.question_text}</div>
+                        <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}{q.is_required ? " · required" : ""}</div>
+                      </div>
+                      <Button variant="ghost" size="icon" onClick={() => removeQ(q.id)} disabled={locked}><Trash2 className="h-4 w-4" /></Button>
                     </div>
-                    <GripVertical className="h-4 w-4 text-muted-foreground mt-1" />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{q.question_text}</div>
-                      <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}{q.is_required ? " · required" : ""}</div>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeQ(q.id)} disabled={locked}><Trash2 className="h-4 w-4" /></Button>
-                  </div>
-                ))}
+                  )}
+                />
                 {orgQs.length === 0 && <p className="text-sm text-muted-foreground">No custom questions yet.</p>}
               </CardContent>
             </Card>
           </TabsContent>
+
 
           {/* RESPONSES */}
           <TabsContent value="responses" className="space-y-3">
