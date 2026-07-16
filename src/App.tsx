@@ -90,6 +90,7 @@ import AdminAudits from "@/pages/admin/marketing/AdminAudits";
 import RetentionHub from "@/pages/retention/RetentionHub";
 import Surveys from "@/pages/retention/Surveys";
 import SurveyDetail from "@/pages/retention/SurveyDetail";
+import RetentionSettings from "@/pages/retention/RetentionSettings";
 import AdminSurveysOverview from "@/pages/admin/retention/AdminSurveysOverview";
 import AdminQuestionBank from "@/pages/admin/retention/AdminQuestionBank";
 import { Navigate } from "react-router-dom";
@@ -186,6 +187,7 @@ const App = () => (
             <Route path="/retention" element={<ProtectedRoute role="org_user"><RetentionHub /></ProtectedRoute>} />
             <Route path="/retention/surveys" element={<ProtectedRoute role="org_user"><Surveys /></ProtectedRoute>} />
             <Route path="/retention/surveys/:id" element={<ProtectedRoute role="org_user"><SurveyDetail /></ProtectedRoute>} />
+            <Route path="/retention/settings" element={<ProtectedRoute role="org_user"><RetentionSettings /></ProtectedRoute>} />
             <Route path="/marketing/insights" element={<ProtectedRoute><Insights /></ProtectedRoute>} />
             <Route path="/marketing/create" element={<ProtectedRoute><Create /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/create" element={<ProtectedRoute role="admin" module="marketing"><Create /></ProtectedRoute>} />
@@ -230,6 +232,7 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/retention" element={<ProtectedRoute role="admin" module="marketing"><RetentionHub /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/retention/surveys" element={<ProtectedRoute role="admin" module="marketing"><Surveys /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/retention/surveys/:id" element={<ProtectedRoute role="admin" module="marketing"><SurveyDetail /></ProtectedRoute>} />
+            <Route path="/admin/orgs/:orgId/retention/settings" element={<ProtectedRoute role="admin" module="marketing"><RetentionSettings /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/insights" element={<ProtectedRoute role="admin" module="marketing"><Insights /></ProtectedRoute>} />
             <Route path="/admin/marketing/portfolio" element={<ProtectedRoute role="admin" module="marketing"><PortfolioAnalytics /></ProtectedRoute>} />
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />

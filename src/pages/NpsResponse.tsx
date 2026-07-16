@@ -23,6 +23,8 @@ export default function NpsResponse() {
   const [master, setMaster] = useState<MasterQuestion[]>([]);
   const [orgQs, setOrgQs] = useState<OrgQuestion[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
+  const [teamNameOptions, setTeamNameOptions] = useState<string[]>([]);
+  const [ageOptions, setAgeOptions] = useState<string[]>([]);
   const [contactId, setContactId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
@@ -53,16 +55,21 @@ export default function NpsResponse() {
       setSurvey(s);
       setOrg({ name: s?.organizations?.name || "our club", logoUrl: s?.organizations?.logo_url });
       const version = s?.master_version ?? 1;
-      const [{ data: m }, { data: oq }, { data: tt }] = await Promise.all([
+      const [{ data: m }, { data: oq }, { data: tt }, { data: settings }] = await Promise.all([
         (supabase as any).from("survey_master_questions").select("*").eq("version", version).eq("is_active", true).order("sort_order"),
         (supabase as any).from("org_survey_questions").select("*").eq("survey_id", surveyId).order("sort_order"),
         s?.org_id
           ? (supabase as any).from("org_teams").select("id,name").eq("org_id", s.org_id).order("name")
           : Promise.resolve({ data: [] }),
+        s?.org_id
+          ? (supabase as any).from("org_retention_settings").select("team_name_options,age_group_options").eq("org_id", s.org_id).maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
       setMaster((m as MasterQuestion[]) || []);
       setOrgQs((oq as OrgQuestion[]) || []);
       setTeams(tt || []);
+      setTeamNameOptions(settings?.team_name_options ?? []);
+      setAgeOptions(settings?.age_group_options ?? []);
     })();
   }, [token, surveyIdParam, isPreview]);
 
@@ -89,7 +96,7 @@ export default function NpsResponse() {
       survey_id: survey.id,
       contact_id: contactId,
       respondent_name: name.trim(),
-      team_id: teamId || null,
+      team_id: teamId && /^[0-9a-f-]{36}$/i.test(teamId) ? teamId : null,
       team_name_text: teamText.trim() || teams.find((t) => t.id === teamId)?.name || null,
       age_group: ageGroup || null,
       score: npsScore,
@@ -154,22 +161,35 @@ export default function NpsResponse() {
           {survey.collect_team !== false && (
             <div>
               <Label>Team *</Label>
-              {teams.length > 0 ? (
-                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={teamId} onChange={(e) => { setTeamId(e.target.value); setTeamText(""); }}>
+              {(teams.length > 0 || teamNameOptions.length > 0) ? (
+                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={teamId || (teamText ? `__custom:${teamText}` : "")} onChange={(e) => {
+                  const v = e.target.value;
+                  if (v.startsWith("__custom:")) { setTeamId(""); setTeamText(v.slice(9)); }
+                  else if (v === "__other") { setTeamId("__other"); setTeamText(""); }
+                  else { setTeamId(v); setTeamText(""); }
+                }}>
                   <option value="">— Choose your team —</option>
                   {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {teamNameOptions.map((name) => <option key={`c:${name}`} value={`__custom:${name}`}>{name}</option>)}
                   <option value="__other">Other / not listed</option>
                 </select>
               ) : null}
-              {(teams.length === 0 || teamId === "__other") && (
+              {(teams.length === 0 && teamNameOptions.length === 0) || teamId === "__other" ? (
                 <Input className="mt-2" placeholder="Team name" value={teamText} onChange={(e) => setTeamText(e.target.value)} />
-              )}
+              ) : null}
             </div>
           )}
           {survey.collect_age_group && (
             <div>
               <Label>Age group</Label>
-              <Input value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} placeholder="e.g. 12U, 14U" />
+              {ageOptions.length > 0 ? (
+                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)}>
+                  <option value="">— Choose age group —</option>
+                  {ageOptions.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              ) : (
+                <Input value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} placeholder="e.g. 12U, 14U" />
+              )}
             </div>
           )}
         </div>
