@@ -149,6 +149,30 @@ export default function SurveyDetail() {
     load();
   };
 
+  const includedIds: string[] | null = survey?.included_master_question_ids ?? null;
+  const isMasterIncluded = (qid: string) => includedIds === null || includedIds.includes(qid);
+  const selectedMaster = master.filter((q) => isMasterIncluded(q.id));
+
+  const toggleMasterIncluded = async (qid: string, checked: boolean) => {
+    if (locked) return;
+    const currentIds = includedIds ?? master.map((q) => q.id);
+    const nextIds = checked
+      ? Array.from(new Set([...currentIds, qid]))
+      : currentIds.filter((x) => x !== qid);
+    const allIncluded = master.length > 0 && master.every((q) => nextIds.includes(q.id));
+    const payload = { included_master_question_ids: allIncluded ? null : nextIds };
+    const prev = survey;
+    setSurvey({ ...survey, ...payload });
+    const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
+    if (error) {
+      setSurvey(prev);
+      toast.error(`Could not save: ${error.message}`);
+      return;
+    }
+    toast.success(checked ? "Question included" : "Question removed");
+  };
+
+
 
   const toggleOpen = async () => {
     const nextOpen = !survey.is_open;
