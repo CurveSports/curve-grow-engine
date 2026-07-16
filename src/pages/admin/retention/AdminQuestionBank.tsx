@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { MasterQuestion, QUESTION_TYPE_LABELS, SurveyQuestionType, categoryLabel } from "@/lib/surveys";
+import { SortableQuestionList } from "@/components/retention/SortableQuestionList";
 
 export default function AdminQuestionBank() {
   const [questions, setQuestions] = useState<MasterQuestion[]>([]);
