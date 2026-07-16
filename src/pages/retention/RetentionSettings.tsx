@@ -69,6 +69,14 @@ export default function RetentionSettings() {
   const removeTeam = (v: string) =>
     setS({ ...s, team_name_options: s.team_name_options.filter((x) => x !== v) });
 
+  const moveTeam = (idx: number, dir: -1 | 1) => {
+    const next = [...s.team_name_options];
+    const j = idx + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[idx], next[j]] = [next[j], next[idx]];
+    setS({ ...s, team_name_options: next });
+  };
+
   const addAge = () => {
     const v = newAge.trim();
     if (!v) return;
