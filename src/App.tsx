@@ -90,6 +90,7 @@ import AdminAudits from "@/pages/admin/marketing/AdminAudits";
 import RetentionHub from "@/pages/retention/RetentionHub";
 import Surveys from "@/pages/retention/Surveys";
 import SurveyDetail from "@/pages/retention/SurveyDetail";
+import RetentionSettings from "@/pages/retention/RetentionSettings";
 import AdminSurveysOverview from "@/pages/admin/retention/AdminSurveysOverview";
 import AdminQuestionBank from "@/pages/admin/retention/AdminQuestionBank";
 import { Navigate } from "react-router-dom";
