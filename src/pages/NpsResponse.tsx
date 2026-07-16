@@ -23,6 +23,8 @@ export default function NpsResponse() {
   const [master, setMaster] = useState<MasterQuestion[]>([]);
   const [orgQs, setOrgQs] = useState<OrgQuestion[]>([]);
   const [teams, setTeams] = useState<any[]>([]);
+  const [teamNameOptions, setTeamNameOptions] = useState<string[]>([]);
+  const [ageOptions, setAgeOptions] = useState<string[]>([]);
   const [contactId, setContactId] = useState<string | null>(null);
 
   const [name, setName] = useState("");
