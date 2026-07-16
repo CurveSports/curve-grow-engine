@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, ExternalLink, Search } from "lucide-react";
 import { format } from "date-fns";
 import { avgRating, calcNps, categoryLabel } from "@/lib/surveys";
+import { SurveyTrendCharts } from "@/components/retention/SurveyTrendCharts";
 
 export default function AdminSurveysOverview() {
   const navigate = useNavigate();
@@ -66,6 +67,7 @@ export default function AdminSurveysOverview() {
         <Tabs defaultValue="benchmarks">
           <TabsList>
             <TabsTrigger value="benchmarks">Network Benchmarks</TabsTrigger>
+            <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="surveys">All Surveys</TabsTrigger>
           </TabsList>
 
@@ -86,6 +88,19 @@ export default function AdminSurveysOverview() {
                 </CardContent>
               </Card>
             ))}
+          </TabsContent>
+
+          <TabsContent value="trends" className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Longitudinal view across every survey in the Curve network — NPS, response rate, and per-question rating averages.
+            </p>
+            <SurveyTrendCharts
+              surveys={rows}
+              answers={answers}
+              master={master}
+              showOrgName
+              emptyHint="Once two or more Curve orgs have sent surveys, network-wide trends will appear here."
+            />
           </TabsContent>
 
           <TabsContent value="surveys" className="space-y-3">
