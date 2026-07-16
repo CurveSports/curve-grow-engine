@@ -161,22 +161,35 @@ export default function NpsResponse() {
           {survey.collect_team !== false && (
             <div>
               <Label>Team *</Label>
-              {teams.length > 0 ? (
-                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={teamId} onChange={(e) => { setTeamId(e.target.value); setTeamText(""); }}>
+              {(teams.length > 0 || teamNameOptions.length > 0) ? (
+                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={teamId || (teamText ? `__custom:${teamText}` : "")} onChange={(e) => {
+                  const v = e.target.value;
+                  if (v.startsWith("__custom:")) { setTeamId(""); setTeamText(v.slice(9)); }
+                  else if (v === "__other") { setTeamId("__other"); setTeamText(""); }
+                  else { setTeamId(v); setTeamText(""); }
+                }}>
                   <option value="">— Choose your team —</option>
                   {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {teamNameOptions.map((name) => <option key={`c:${name}`} value={`__custom:${name}`}>{name}</option>)}
                   <option value="__other">Other / not listed</option>
                 </select>
               ) : null}
-              {(teams.length === 0 || teamId === "__other") && (
+              {(teams.length === 0 && teamNameOptions.length === 0) || teamId === "__other" ? (
                 <Input className="mt-2" placeholder="Team name" value={teamText} onChange={(e) => setTeamText(e.target.value)} />
-              )}
+              ) : null}
             </div>
           )}
           {survey.collect_age_group && (
             <div>
               <Label>Age group</Label>
-              <Input value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} placeholder="e.g. 12U, 14U" />
+              {ageOptions.length > 0 ? (
+                <select className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm" value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)}>
+                  <option value="">— Choose age group —</option>
+                  {ageOptions.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              ) : (
+                <Input value={ageGroup} onChange={(e) => setAgeGroup(e.target.value)} placeholder="e.g. 12U, 14U" />
+              )}
             </div>
           )}
         </div>
