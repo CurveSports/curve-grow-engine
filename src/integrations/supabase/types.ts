@@ -5147,8 +5147,44 @@ export type Database = {
           },
         ]
       }
+      org_nps_answers: {
+        Row: {
+          answer_value: string | null
+          created_at: string
+          id: string
+          question_id: string
+          question_source: string
+          response_id: string
+        }
+        Insert: {
+          answer_value?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          question_source: string
+          response_id: string
+        }
+        Update: {
+          answer_value?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          question_source?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_nps_answers_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "org_nps_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_nps_responses: {
         Row: {
+          age_group: string | null
           category: string | null
           contact_id: string | null
           flagged_for_followup: boolean | null
@@ -5161,11 +5197,15 @@ export type Database = {
           ip_address: string | null
           responded_at: string | null
           responded_via: string | null
+          respondent_name: string | null
           score: number | null
           survey_id: string | null
+          team_id: string | null
+          team_name_text: string | null
           user_agent: string | null
         }
         Insert: {
+          age_group?: string | null
           category?: string | null
           contact_id?: string | null
           flagged_for_followup?: boolean | null
@@ -5178,11 +5218,15 @@ export type Database = {
           ip_address?: string | null
           responded_at?: string | null
           responded_via?: string | null
+          respondent_name?: string | null
           score?: number | null
           survey_id?: string | null
+          team_id?: string | null
+          team_name_text?: string | null
           user_agent?: string | null
         }
         Update: {
+          age_group?: string | null
           category?: string | null
           contact_id?: string | null
           flagged_for_followup?: boolean | null
@@ -5195,8 +5239,11 @@ export type Database = {
           ip_address?: string | null
           responded_at?: string | null
           responded_via?: string | null
+          respondent_name?: string | null
           score?: number | null
           survey_id?: string | null
+          team_id?: string | null
+          team_name_text?: string | null
           user_agent?: string | null
         }
         Relationships: [
@@ -5214,12 +5261,21 @@ export type Database = {
             referencedRelation: "org_nps_surveys"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "org_nps_responses_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "org_teams"
+            referencedColumns: ["id"]
+          },
         ]
       }
       org_nps_surveys: {
         Row: {
           audience_segment_id: string | null
           closed_at: string | null
+          collect_age_group: boolean
+          collect_team: boolean
           created_at: string | null
           created_by: string | null
           detractor_count: number | null
@@ -5227,6 +5283,7 @@ export type Database = {
           followup_question_passive: string | null
           followup_question_promoter: string | null
           id: string
+          master_version: number | null
           name: string | null
           nps_score: number | null
           org_id: string | null
@@ -5238,6 +5295,7 @@ export type Database = {
           scale_max: number | null
           scale_min: number | null
           scheduled_for: string | null
+          season_id: string | null
           send_channel: string | null
           sent_at: string | null
           status: string | null
@@ -5247,6 +5305,8 @@ export type Database = {
         Insert: {
           audience_segment_id?: string | null
           closed_at?: string | null
+          collect_age_group?: boolean
+          collect_team?: boolean
           created_at?: string | null
           created_by?: string | null
           detractor_count?: number | null
@@ -5254,6 +5314,7 @@ export type Database = {
           followup_question_passive?: string | null
           followup_question_promoter?: string | null
           id?: string
+          master_version?: number | null
           name?: string | null
           nps_score?: number | null
           org_id?: string | null
@@ -5265,6 +5326,7 @@ export type Database = {
           scale_max?: number | null
           scale_min?: number | null
           scheduled_for?: string | null
+          season_id?: string | null
           send_channel?: string | null
           sent_at?: string | null
           status?: string | null
@@ -5274,6 +5336,8 @@ export type Database = {
         Update: {
           audience_segment_id?: string | null
           closed_at?: string | null
+          collect_age_group?: boolean
+          collect_team?: boolean
           created_at?: string | null
           created_by?: string | null
           detractor_count?: number | null
@@ -5281,6 +5345,7 @@ export type Database = {
           followup_question_passive?: string | null
           followup_question_promoter?: string | null
           id?: string
+          master_version?: number | null
           name?: string | null
           nps_score?: number | null
           org_id?: string | null
@@ -5292,6 +5357,7 @@ export type Database = {
           scale_max?: number | null
           scale_min?: number | null
           scheduled_for?: string | null
+          season_id?: string | null
           send_channel?: string | null
           sent_at?: string | null
           status?: string | null
@@ -5311,6 +5377,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_nps_surveys_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "org_seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -6524,6 +6597,57 @@ export type Database = {
           },
         ]
       }
+      org_survey_questions: {
+        Row: {
+          created_at: string
+          id: string
+          is_required: boolean
+          org_id: string
+          question_text: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          sort_order: number
+          survey_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          org_id: string
+          question_text: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          sort_order?: number
+          survey_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_required?: boolean
+          org_id?: string
+          question_text?: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          sort_order?: number
+          survey_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_survey_questions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "org_nps_surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_task_assignees: {
         Row: {
           assigned_at: string
@@ -7703,6 +7827,45 @@ export type Database = {
         }
         Relationships: []
       }
+      survey_master_questions: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_required: boolean
+          question_text: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          sort_order: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          question_text: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_required?: boolean
+          question_text?: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          sort_order?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       system_integrations: {
         Row: {
           activate_when: string | null
@@ -8072,6 +8235,20 @@ export type Database = {
         Returns: string
       }
       generate_staff_token: { Args: never; Returns: string }
+      get_core_question_benchmarks: {
+        Args: { _org_id: string }
+        Returns: {
+          category: string
+          network_avg: number
+          network_responses: number
+          org_avg: number
+          org_responses: number
+          question_id: string
+          question_text: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          version: number
+        }[]
+      }
       get_org_sponsorship_view: {
         Args: { p_org_id: string }
         Returns: {
@@ -8202,6 +8379,11 @@ export type Database = {
       org_project_status: "draft" | "active" | "completed"
       org_sport: "baseball" | "softball" | "other"
       plan_status: "draft" | "active" | "parked"
+      survey_question_type:
+        | "rating_5"
+        | "rating_10"
+        | "yes_no_maybe"
+        | "open_text"
       task_action:
         | "created"
         | "status_changed"
@@ -8399,6 +8581,12 @@ export const Constants = {
       org_project_status: ["draft", "active", "completed"],
       org_sport: ["baseball", "softball", "other"],
       plan_status: ["draft", "active", "parked"],
+      survey_question_type: [
+        "rating_5",
+        "rating_10",
+        "yes_no_maybe",
+        "open_text",
+      ],
       task_action: [
         "created",
         "status_changed",
