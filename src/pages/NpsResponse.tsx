@@ -29,6 +29,7 @@ type PublicSurvey = {
   org_name: string | null;
   org_logo_url: string | null;
   included_master_question_ids: string[] | null;
+  master_question_order: string[] | null;
 };
 
 export default function NpsResponse() {
