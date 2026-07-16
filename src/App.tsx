@@ -162,7 +162,7 @@ const App = () => (
             <Route path="/marketing/sms" element={<ProtectedRoute><SmsSends /></ProtectedRoute>} />
             <Route path="/marketing/sms/new" element={<ProtectedRoute><SmsComposer /></ProtectedRoute>} />
             <Route path="/marketing/nps" element={<Navigate to="/retention/surveys" replace />} />
-            <Route path="/marketing/nps/:id" element={<NpsNpsRedirect />} />
+            <Route path="/marketing/nps/:id" element={<PathRedirect from="/marketing/nps/:id" to="/retention/surveys/:id" />} />
             <Route path="/retention" element={<ProtectedRoute role="org_user"><RetentionHub /></ProtectedRoute>} />
             <Route path="/retention/surveys" element={<ProtectedRoute role="org_user"><Surveys /></ProtectedRoute>} />
             <Route path="/retention/surveys/:id" element={<ProtectedRoute role="org_user"><SurveyDetail /></ProtectedRoute>} />
@@ -205,8 +205,8 @@ const App = () => (
             <Route path="/admin/orgs/:orgId/marketing/sms-setup" element={<ProtectedRoute role="admin" module="marketing"><SmsSetup /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/sms" element={<ProtectedRoute role="admin" module="marketing"><SmsSends /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/marketing/sms/new" element={<ProtectedRoute role="admin" module="marketing"><SmsComposer /></ProtectedRoute>} />
-            <Route path="/admin/orgs/:orgId/marketing/nps" element={<Navigate to="/retention/surveys" replace />} />
-            <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<AdminOrgNpsRedirect />} />
+            <Route path="/admin/orgs/:orgId/marketing/nps" element={<OrgRedirect suffix="/retention/surveys" />} />
+            <Route path="/admin/orgs/:orgId/marketing/nps/:id" element={<OrgRedirect suffix="/retention/surveys/:id" />} />
             <Route path="/admin/orgs/:orgId/retention" element={<ProtectedRoute role="admin" module="marketing"><RetentionHub /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/retention/surveys" element={<ProtectedRoute role="admin" module="marketing"><Surveys /></ProtectedRoute>} />
             <Route path="/admin/orgs/:orgId/retention/surveys/:id" element={<ProtectedRoute role="admin" module="marketing"><SurveyDetail /></ProtectedRoute>} />
@@ -215,6 +215,7 @@ const App = () => (
             <Route path="/admin/marketing/sequence-templates" element={<ProtectedRoute role="admin" module="marketing"><AdminSequenceTemplates /></ProtectedRoute>} />
             <Route path="/admin/marketing/schools" element={<ProtectedRoute role="admin" module="marketing"><AdminSchools /></ProtectedRoute>} />
             <Route path="/admin/marketing/nps" element={<Navigate to="/admin/retention/surveys" replace />} />
+            <Route path="/admin/marketing/audits" element={<ProtectedRoute role="admin" module="marketing"><AdminAudits /></ProtectedRoute>} />
             <Route path="/admin/retention/surveys" element={<ProtectedRoute role="admin"><AdminSurveysOverview /></ProtectedRoute>} />
             <Route path="/admin/retention/question-bank" element={<ProtectedRoute role="admin"><AdminQuestionBank /></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute role="admin" module="allegiance"><AdminCommunications /></ProtectedRoute>} />
