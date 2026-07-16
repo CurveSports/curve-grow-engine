@@ -111,16 +111,24 @@ export default function AdminQuestionBank() {
             <SortableQuestionList
               items={inVersion}
               onReorder={async (ids) => {
+                const prev = questions;
                 const byId = new Map(inVersion.map((q) => [q.id, q]));
                 const next = ids.map((qid, i) => ({ ...(byId.get(qid) as MasterQuestion), sort_order: (i + 1) * 10 }));
                 // optimistic
-                setQuestions((prev) => {
-                  const others = prev.filter((q) => q.version !== selectedVersion);
+                setQuestions((cur) => {
+                  const others = cur.filter((q) => q.version !== selectedVersion);
                   return [...others, ...next];
                 });
-                await Promise.all(next.map((q) =>
+                const results = await Promise.all(next.map((q) =>
                   (supabase as any).from("survey_master_questions").update({ sort_order: q.sort_order }).eq("id", q.id)
                 ));
+                const firstErr = results.find((r: any) => r?.error);
+                if (firstErr) {
+                  setQuestions(prev);
+                  toast.error(`Could not save order: ${firstErr.error.message}`);
+                  return;
+                }
+                toast.success("Question order saved");
                 load();
               }}
               renderItem={(q, handle) => (
