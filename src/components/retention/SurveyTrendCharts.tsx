@@ -155,15 +155,15 @@ export function SurveyTrendCharts({
           </CardHeader>
           <CardContent className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <ComposedChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" opacity={0.4} />
                 <XAxis dataKey="label" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
                 <YAxis yAxisId="left" tick={{ fontSize: 11 }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} domain={[0, 100]} unit="%" />
                 <Tooltip content={<TrendTooltip suffix="" />} />
                 <Bar yAxisId="left" dataKey="responseCount" fill={COLORS[0]} radius={[4, 4, 0, 0]} name="Responses" />
-                <Line yAxisId="right" type="monotone" dataKey="responseRate" stroke={COLORS[2]} strokeWidth={2} dot={{ r: 3 }} name="Response rate %" />
-              </BarChart>
+                <Line yAxisId="right" type="monotone" dataKey="responseRate" stroke={COLORS[2]} strokeWidth={2} dot={{ r: 3 }} name="Response rate %" connectNulls />
+              </ComposedChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
