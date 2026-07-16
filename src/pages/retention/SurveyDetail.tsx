@@ -15,7 +15,7 @@ import { ArrowLeft, Eye, Plus, Trash2, Copy, Download, ExternalLink, Lock, Unloc
 import { toast } from "sonner";
 import {
   avgRating, buildResponseCsv, calcNps, categoryLabel, distributeChoices,
-  MasterQuestion, OrgQuestion, QUESTION_TYPE_LABELS, SurveyQuestionType,
+  MasterQuestion, OrgQuestion, orderMasterQuestions, QUESTION_TYPE_LABELS, SurveyQuestionType,
 } from "@/lib/surveys";
 import { SortableQuestionList } from "@/components/retention/SortableQuestionList";
 import { Checkbox } from "@/components/ui/checkbox";
