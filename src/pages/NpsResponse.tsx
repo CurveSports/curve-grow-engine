@@ -55,16 +55,21 @@ export default function NpsResponse() {
       setSurvey(s);
       setOrg({ name: s?.organizations?.name || "our club", logoUrl: s?.organizations?.logo_url });
       const version = s?.master_version ?? 1;
-      const [{ data: m }, { data: oq }, { data: tt }] = await Promise.all([
+      const [{ data: m }, { data: oq }, { data: tt }, { data: settings }] = await Promise.all([
         (supabase as any).from("survey_master_questions").select("*").eq("version", version).eq("is_active", true).order("sort_order"),
         (supabase as any).from("org_survey_questions").select("*").eq("survey_id", surveyId).order("sort_order"),
         s?.org_id
           ? (supabase as any).from("org_teams").select("id,name").eq("org_id", s.org_id).order("name")
           : Promise.resolve({ data: [] }),
+        s?.org_id
+          ? (supabase as any).from("org_retention_settings").select("team_name_options,age_group_options").eq("org_id", s.org_id).maybeSingle()
+          : Promise.resolve({ data: null }),
       ]);
       setMaster((m as MasterQuestion[]) || []);
       setOrgQs((oq as OrgQuestion[]) || []);
       setTeams(tt || []);
+      setTeamNameOptions(settings?.team_name_options ?? []);
+      setAgeOptions(settings?.age_group_options ?? []);
     })();
   }, [token, surveyIdParam, isPreview]);
 
