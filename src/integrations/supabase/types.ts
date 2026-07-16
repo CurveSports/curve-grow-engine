@@ -5286,6 +5286,7 @@ export type Database = {
           followup_question_passive: string | null
           followup_question_promoter: string | null
           id: string
+          included_master_question_ids: string[] | null
           is_open: boolean
           master_version: number | null
           name: string | null
@@ -5319,6 +5320,7 @@ export type Database = {
           followup_question_passive?: string | null
           followup_question_promoter?: string | null
           id?: string
+          included_master_question_ids?: string[] | null
           is_open?: boolean
           master_version?: number | null
           name?: string | null
@@ -5352,6 +5354,7 @@ export type Database = {
           followup_question_passive?: string | null
           followup_question_promoter?: string | null
           id?: string
+          included_master_question_ids?: string[] | null
           is_open?: boolean
           master_version?: number | null
           name?: string | null
