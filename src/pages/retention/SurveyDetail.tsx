@@ -18,6 +18,7 @@ import {
   MasterQuestion, OrgQuestion, QUESTION_TYPE_LABELS, SurveyQuestionType,
 } from "@/lib/surveys";
 import { SortableQuestionList } from "@/components/retention/SortableQuestionList";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Response = {
   id: string;
@@ -148,6 +149,30 @@ export default function SurveyDetail() {
     load();
   };
 
+  const includedIds: string[] | null = survey?.included_master_question_ids ?? null;
+  const isMasterIncluded = (qid: string) => includedIds === null || includedIds.includes(qid);
+  const selectedMaster = master.filter((q) => isMasterIncluded(q.id));
+
+  const toggleMasterIncluded = async (qid: string, checked: boolean) => {
+    if (locked) return;
+    const currentIds = includedIds ?? master.map((q) => q.id);
+    const nextIds = checked
+      ? Array.from(new Set([...currentIds, qid]))
+      : currentIds.filter((x) => x !== qid);
+    const allIncluded = master.length > 0 && master.every((q) => nextIds.includes(q.id));
+    const payload = { included_master_question_ids: allIncluded ? null : nextIds };
+    const prev = survey;
+    setSurvey({ ...survey, ...payload });
+    const { error } = await (supabase as any).from("org_nps_surveys").update(payload).eq("id", id);
+    if (error) {
+      setSurvey(prev);
+      toast.error(`Could not save: ${error.message}`);
+      return;
+    }
+    toast.success(checked ? "Question included" : "Question removed");
+  };
+
+
 
   const toggleOpen = async () => {
     const nextOpen = !survey.is_open;
@@ -205,7 +230,7 @@ export default function SurveyDetail() {
         answer_value: a.answer_value ?? "",
       })),
     }));
-    const csv = buildResponseCsv(master, orgQs, rich);
+    const csv = buildResponseCsv(selectedMaster, orgQs, rich);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -289,18 +314,33 @@ export default function SurveyDetail() {
 
           {/* QUESTIONS */}
           <TabsContent value="questions" className="space-y-4">
+
             <Card>
               <CardHeader><CardTitle className="text-base">Core questions (Curve — cross-org benchmark)</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                {master.map((q) => (
-                  <div key={q.id} className="flex items-start gap-3 border-b last:border-b-0 py-2">
-                    <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{q.question_text}</div>
-                      <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}</div>
+                <p className="text-xs text-muted-foreground">Check the template questions you want to include on this survey. Unchecked questions won't appear in the public link or the report.</p>
+                {master.map((q) => {
+                  const included = isMasterIncluded(q.id);
+                  const isNps = q.question_type === "rating_10";
+                  return (
+                    <div key={q.id} className="flex items-start gap-3 border-b last:border-b-0 py-2">
+                      <Checkbox
+                        checked={included}
+                        onCheckedChange={(v) => toggleMasterIncluded(q.id, !!v)}
+                        disabled={locked}
+                        className="mt-1"
+                      />
+                      <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{q.question_text}</div>
+                        <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}</div>
+                        {isNps && !included && (
+                          <div className="text-xs text-amber-700 mt-1">Excluding this removes the NPS score from this survey.</div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {master.length === 0 && <p className="text-sm text-muted-foreground">No core questions in this version.</p>}
               </CardContent>
             </Card>
@@ -372,7 +412,7 @@ export default function SurveyDetail() {
 
           {/* PER-QUESTION RESULTS */}
           <TabsContent value="results" className="space-y-3">
-            {[...master.map((q) => ({ q, src: "master" as const })), ...orgQs.map((q) => ({ q, src: "org" as const }))].map(({ q, src }) => {
+            {[...selectedMaster.map((q) => ({ q, src: "master" as const })), ...orgQs.map((q) => ({ q, src: "org" as const }))].map(({ q, src }) => {
               const agg: any = aggFor(q, src, q.question_type);
               return (
                 <Card key={`${src}:${q.id}`}>
