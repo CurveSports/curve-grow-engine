@@ -19,6 +19,8 @@ export default function Surveys() {
   const { orgId, isImpersonating } = useEffectiveOrg();
   const [surveys, setSurveys] = useState<any[]>([]);
   const [seasons, setSeasons] = useState<any[]>([]);
+  const [answers, setAnswers] = useState<any[]>([]);
+  const [master, setMaster] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [seasonId, setSeasonId] = useState("");
@@ -27,12 +29,24 @@ export default function Surveys() {
 
   const load = async () => {
     if (!orgId) return;
-    const [{ data: s }, { data: ss }] = await Promise.all([
+    const [{ data: s }, { data: ss }, { data: m }] = await Promise.all([
       (supabase as any).from("org_nps_surveys").select("*, org_seasons(name)").eq("org_id", orgId).order("created_at", { ascending: false }),
       (supabase as any).from("org_seasons").select("id,name,season_end_date").eq("org_id", orgId).order("season_end_date", { ascending: false }),
+      (supabase as any).from("survey_master_questions").select("*").eq("is_active", true).order("sort_order"),
     ]);
     setSurveys(s || []);
     setSeasons(ss || []);
+    setMaster(m || []);
+    const surveyIds = (s || []).map((x: any) => x.id);
+    if (surveyIds.length) {
+      const { data: a } = await (supabase as any)
+        .from("org_nps_answers")
+        .select("question_id, question_source, answer_value, org_nps_responses!inner(survey_id)")
+        .in("org_nps_responses.survey_id", surveyIds);
+      setAnswers(a || []);
+    } else {
+      setAnswers([]);
+    }
   };
 
   useEffect(() => { load(); }, [orgId]);
