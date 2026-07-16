@@ -11,12 +11,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, Eye, Plus, Trash2, GripVertical, Copy, Download, Send } from "lucide-react";
+import { ArrowLeft, Eye, Plus, Trash2, Copy, Download, ExternalLink, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import {
   avgRating, buildResponseCsv, calcNps, categoryLabel, distributeChoices,
   MasterQuestion, OrgQuestion, QUESTION_TYPE_LABELS, SurveyQuestionType,
 } from "@/lib/surveys";
+import { SortableQuestionList } from "@/components/retention/SortableQuestionList";
 
 type Response = {
   id: string;
