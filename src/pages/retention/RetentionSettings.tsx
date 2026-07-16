@@ -159,10 +159,19 @@ export default function RetentionSettings() {
                   {s.team_name_options.length === 0 && (
                     <div className="text-sm text-muted-foreground italic">No custom team names yet.</div>
                   )}
-                  {s.team_name_options.map((v) => (
-                    <div key={v} className="flex items-center justify-between px-3 py-2 rounded-md border">
-                      <span className="text-sm">{v}</span>
-                      <Button variant="ghost" size="icon" onClick={() => removeTeam(v)}>
+                  {s.team_name_options.map((v, idx) => (
+                    <div key={v} className="flex items-center gap-2 px-3 py-2 rounded-md border bg-card">
+                      <div className="flex flex-col">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveTeam(idx, -1)} disabled={idx === 0} aria-label="Move up">
+                          <ArrowUp className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveTeam(idx, 1)} disabled={idx === s.team_name_options.length - 1} aria-label="Move down">
+                          <ArrowDown className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <span className="text-xs text-muted-foreground w-6 tabular-nums">#{idx + 1}</span>
+                      <span className="text-sm flex-1">{v}</span>
+                      <Button variant="ghost" size="icon" onClick={() => removeTeam(v)} aria-label={`Remove ${v}`}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -177,6 +186,49 @@ export default function RetentionSettings() {
                     onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTeam(); } }}
                   />
                   <Button variant="outline" onClick={addTeam}><Plus className="h-4 w-4 mr-1" />Add</Button>
+                </div>
+
+                <div className="pt-4 mt-4 border-t">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Smartphone className="h-4 w-4 text-muted-foreground" />
+                    <div className="text-sm font-medium">Live preview — public survey dropdown</div>
+                  </div>
+                  <div className="mx-auto max-w-xs rounded-2xl border-4 border-muted bg-background p-4 shadow-sm">
+                    <div className="text-xs font-medium mb-1">Team *</div>
+                    <select
+                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm pointer-events-none"
+                      value=""
+                      onChange={() => {}}
+                    >
+                      <option value="">— Choose your team —</option>
+                      {teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      {s.team_name_options.map((name) => <option key={`c:${name}`} value={`__custom:${name}`}>{name}</option>)}
+                      <option value="__other">Other / not listed</option>
+                    </select>
+                    <ul className="mt-3 space-y-1 max-h-56 overflow-auto text-sm">
+                      {teams.map((t) => (
+                        <li key={`p-r-${t.id}`} className="flex items-center justify-between px-2 py-1 rounded bg-muted/40">
+                          <span>{t.name}</span>
+                          <span className="text-[10px] uppercase text-muted-foreground">roster</span>
+                        </li>
+                      ))}
+                      {s.team_name_options.map((name) => (
+                        <li key={`p-c-${name}`} className="flex items-center justify-between px-2 py-1 rounded bg-primary/10">
+                          <span>{name}</span>
+                          <span className="text-[10px] uppercase text-primary">custom</span>
+                        </li>
+                      ))}
+                      <li className="flex items-center justify-between px-2 py-1 rounded bg-muted/20 text-muted-foreground italic">
+                        <span>Other / not listed</span>
+                        <span className="text-[10px] uppercase">fallback</span>
+                      </li>
+                    </ul>
+                    {teams.length === 0 && s.team_name_options.length === 0 && (
+                      <p className="text-xs text-muted-foreground mt-2 text-center italic">
+                        Parents will see a free-text field until you add options here or add teams to your roster.
+                      </p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
