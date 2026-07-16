@@ -314,21 +314,6 @@ export default function SurveyDetail() {
 
           {/* QUESTIONS */}
           <TabsContent value="questions" className="space-y-4">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Core questions (Curve — cross-org benchmark)</CardTitle></CardHeader>
-              <CardContent className="space-y-2">
-                {master.map((q) => (
-                  <div key={q.id} className="flex items-start gap-3 border-b last:border-b-0 py-2">
-                    <Badge variant="outline" className="mt-0.5 shrink-0">{categoryLabel(q.category)}</Badge>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{q.question_text}</div>
-                      <div className="text-xs text-muted-foreground">{QUESTION_TYPE_LABELS[q.question_type]}</div>
-                    </div>
-                  </div>
-                ))}
-                {master.length === 0 && <p className="text-sm text-muted-foreground">No core questions in this version.</p>}
-              </CardContent>
-            </Card>
 
             <Card>
               <CardHeader><CardTitle className="text-base">Core questions (Curve — cross-org benchmark)</CardTitle></CardHeader>
