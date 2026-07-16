@@ -67,6 +67,7 @@ export default function AdminSurveysOverview() {
         <Tabs defaultValue="benchmarks">
           <TabsList>
             <TabsTrigger value="benchmarks">Network Benchmarks</TabsTrigger>
+            <TabsTrigger value="trends">Trends</TabsTrigger>
             <TabsTrigger value="surveys">All Surveys</TabsTrigger>
           </TabsList>
 
