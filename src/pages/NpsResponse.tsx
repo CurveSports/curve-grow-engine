@@ -96,7 +96,7 @@ export default function NpsResponse() {
       survey_id: survey.id,
       contact_id: contactId,
       respondent_name: name.trim(),
-      team_id: teamId || null,
+      team_id: teamId && /^[0-9a-f-]{36}$/i.test(teamId) ? teamId : null,
       team_name_text: teamText.trim() || teams.find((t) => t.id === teamId)?.name || null,
       age_group: ageGroup || null,
       score: npsScore,
