@@ -5507,6 +5507,47 @@ export type Database = {
           },
         ]
       }
+      org_retention_settings: {
+        Row: {
+          age_group_options: string[]
+          created_at: string
+          default_collect_age_group: boolean
+          default_collect_team: boolean
+          id: string
+          org_id: string
+          team_name_options: string[]
+          updated_at: string
+        }
+        Insert: {
+          age_group_options?: string[]
+          created_at?: string
+          default_collect_age_group?: boolean
+          default_collect_team?: boolean
+          id?: string
+          org_id: string
+          team_name_options?: string[]
+          updated_at?: string
+        }
+        Update: {
+          age_group_options?: string[]
+          created_at?: string
+          default_collect_age_group?: boolean
+          default_collect_team?: boolean
+          id?: string
+          org_id?: string
+          team_name_options?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_retention_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_revenue_entries: {
         Row: {
           amount: number
