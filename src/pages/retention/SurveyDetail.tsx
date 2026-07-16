@@ -129,14 +129,25 @@ export default function SurveyDetail() {
   };
 
   const reorderQs = async (orderedIds: string[]) => {
-    // Optimistic UI: renumber locally, then persist in a batch (10, 20, 30…)
+    // Optimistic UI: renumber locally (10, 20, 30…), persist in a batch, verify by reloading.
+    const prevOrgQs = orgQs;
     const byId = new Map(orgQs.map((q) => [q.id, q]));
     const next = orderedIds.map((qid, i) => ({ ...(byId.get(qid) as OrgQuestion), sort_order: (i + 1) * 10 }));
     setOrgQs(next);
-    await Promise.all(next.map((q) =>
+    const results = await Promise.all(next.map((q) =>
       (supabase as any).from("org_survey_questions").update({ sort_order: q.sort_order }).eq("id", q.id)
     ));
+    const firstErr = results.find((r: any) => r?.error);
+    if (firstErr) {
+      setOrgQs(prevOrgQs);
+      toast.error(`Could not save order: ${firstErr.error.message}`);
+      return;
+    }
+    toast.success("Question order saved");
+    // Reload from the database so the report and preview reflect the persisted order.
+    load();
   };
+
 
   const toggleOpen = async () => {
     const nextOpen = !survey.is_open;
