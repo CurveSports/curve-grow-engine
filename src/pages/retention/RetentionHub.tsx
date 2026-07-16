@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import AppShell from "@/components/AppShell";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Smile, Gift, ArrowRight } from "lucide-react";
+import { Smile, Gift, ArrowRight, Settings as SettingsIcon } from "lucide-react";
 
 export default function RetentionHub() {
   return (
