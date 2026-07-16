@@ -90,6 +90,19 @@ export default function AdminSurveysOverview() {
             ))}
           </TabsContent>
 
+          <TabsContent value="trends" className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Longitudinal view across every survey in the Curve network — NPS, response rate, and per-question rating averages.
+            </p>
+            <SurveyTrendCharts
+              surveys={rows}
+              answers={answers}
+              master={master}
+              showOrgName
+              emptyHint="Once two or more Curve orgs have sent surveys, network-wide trends will appear here."
+            />
+          </TabsContent>
+
           <TabsContent value="surveys" className="space-y-3">
             <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
