@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { SurveyTrendCharts } from "@/components/retention/SurveyTrendCharts";
 
 export default function Surveys() {
   const navigate = useNavigate();
