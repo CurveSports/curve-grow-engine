@@ -46,10 +46,17 @@ export default function Surveys() {
       .limit(1)
       .maybeSingle();
     const master_version = latest?.version ?? 1;
+    const { data: settings } = await (supabase as any)
+      .from("org_retention_settings")
+      .select("default_collect_team,default_collect_age_group")
+      .eq("org_id", orgId)
+      .maybeSingle();
     const { data, error } = await (supabase as any).from("org_nps_surveys").insert({
       org_id: orgId, name, created_by: user!.id, status: "draft",
       season_id: seasonId || null,
       master_version,
+      collect_team: settings?.default_collect_team ?? true,
+      collect_age_group: settings?.default_collect_age_group ?? false,
     }).select().single();
     if (error) { toast.error(error.message); return; }
     toast.success("Survey created");
