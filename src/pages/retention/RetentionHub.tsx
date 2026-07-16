@@ -57,6 +57,21 @@ export default function RetentionHub() {
             </CardContent>
           </Card>
         </div>
+
+        <Link to="/retention/settings" className="group block">
+          <Card className="transition-shadow group-hover:shadow-md">
+            <CardContent className="p-5 flex items-center gap-4">
+              <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                <SettingsIcon className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold">Survey settings</h3>
+                <p className="text-sm text-muted-foreground">Manage team name and age group options shown on your public parent survey.</p>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        </Link>
       </div>
     </AppShell>
   );
