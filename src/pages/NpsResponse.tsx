@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Copy } from "lucide-react";
-import { categoryLabel, MasterQuestion, OrgQuestion, SurveyQuestionType } from "@/lib/surveys";
+import { categoryLabel, MasterQuestion, OrgQuestion, orderMasterQuestions, SurveyQuestionType } from "@/lib/surveys";
 
 type AnyQ = (MasterQuestion & { _source: "master" }) | (OrgQuestion & { _source: "org"; category?: string });
 
@@ -29,6 +29,7 @@ type PublicSurvey = {
   org_name: string | null;
   org_logo_url: string | null;
   included_master_question_ids: string[] | null;
+  master_question_order: string[] | null;
 };
 
 export default function NpsResponse() {
@@ -96,7 +97,9 @@ export default function NpsResponse() {
       ]);
       const allMaster = ((m as MasterQuestion[]) || []);
       const includedIds: string[] | null = (publicSurvey as any).included_master_question_ids ?? null;
-      const filteredMaster = includedIds ? allMaster.filter((q) => includedIds.includes(q.id)) : allMaster;
+      const orderArr: string[] | null = (publicSurvey as any).master_question_order ?? null;
+      const orderedMaster = orderMasterQuestions(allMaster, orderArr);
+      const filteredMaster = includedIds ? orderedMaster.filter((q) => includedIds.includes(q.id)) : orderedMaster;
       setMaster(filteredMaster);
       setOrgQs((oq as OrgQuestion[]) || []);
       setTeams((tt as any[]) || []);
