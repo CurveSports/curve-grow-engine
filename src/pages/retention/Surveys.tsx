@@ -146,21 +146,35 @@ export default function Surveys() {
           {surveys.length === 0 && <p className="text-muted-foreground p-4">No surveys yet — create your first one.</p>}
           {surveys.map((s) => (
             <Card key={s.id} className="cursor-pointer hover:shadow-md" onClick={() => navigate(linkTo(`/retention/surveys/${s.id}`))}>
-              <CardContent className="p-4 flex justify-between items-center">
-                <div>
-                  <div className="font-medium">{s.name}</div>
+              <CardContent className="p-4 flex justify-between items-center gap-3">
+                <div className="min-w-0">
+                  <div className="font-medium truncate">{s.name}</div>
                   <div className="text-sm text-muted-foreground">
                     {s.org_seasons?.name ? `${s.org_seasons.name} · ` : ""}
-                    {s.sent_at ? format(new Date(s.sent_at), "MMM d, yyyy") : "Not sent"} · {s.response_count || 0} responses
+                    {s.response_count || 0} responses
                   </div>
                 </div>
-                <div className="flex gap-3 items-center">
+                <div className="flex gap-2 items-center">
                   {s.nps_score != null && <span className="text-2xl font-bold">{Number(s.nps_score).toFixed(0)}</span>}
-                  <Badge variant={s.status === "sent" ? "default" : "secondary"}>{s.status}</Badge>
+                  <Badge variant={s.is_open ? "default" : "secondary"}>{s.is_open ? "Open" : "Closed"}</Badge>
+                  {s.public_slug && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(`${window.location.origin}/s/${s.public_slug}`);
+                        toast.success("Public link copied");
+                      }}
+                    >
+                      <Copy className="h-3.5 w-3.5 mr-1" />Link
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
+
         </div>
       </div>
     </AppShell>
