@@ -5288,6 +5288,7 @@ export type Database = {
           id: string
           included_master_question_ids: string[] | null
           is_open: boolean
+          master_question_order: string[] | null
           master_version: number | null
           name: string | null
           nps_score: number | null
@@ -5322,6 +5323,7 @@ export type Database = {
           id?: string
           included_master_question_ids?: string[] | null
           is_open?: boolean
+          master_question_order?: string[] | null
           master_version?: number | null
           name?: string | null
           nps_score?: number | null
@@ -5356,6 +5358,7 @@ export type Database = {
           id?: string
           included_master_question_ids?: string[] | null
           is_open?: boolean
+          master_question_order?: string[] | null
           master_version?: number | null
           name?: string | null
           nps_score?: number | null
