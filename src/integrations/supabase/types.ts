@@ -5330,7 +5330,7 @@ export type Database = {
           org_id?: string | null
           passive_count?: number | null
           promoter_count?: number | null
-          public_slug: string
+          public_slug?: string
           question?: string | null
           recipient_count?: number | null
           response_count?: number | null
