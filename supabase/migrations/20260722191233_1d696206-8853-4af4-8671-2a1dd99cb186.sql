@@ -1,0 +1,2 @@
+ALTER TABLE public.org_nps_surveys ALTER COLUMN public_slug SET DEFAULT encode(gen_random_bytes(8), 'hex');
+UPDATE public.org_nps_surveys SET public_slug = encode(gen_random_bytes(8), 'hex') WHERE public_slug IS NULL;
